@@ -6,8 +6,8 @@
     <groupId>com.silong</groupId>
     <artifactId>foundation</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
-    <description>Silong Java Fundation</description>
+    <version>1.0.0</version>
+    <description>Silong's microservice foundation based on java.</description>
 
     <developers>
         <developer>
@@ -38,14 +38,23 @@
         </license>
     </licenses>
 
+    <modules>
+        <module>crypto</module>
+    </modules>
+
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <!-- 插件 -->
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <!-- 插件 -->
         <!--开源组件-->
         <spring-boot.version>2.6.2</spring-boot.version>
         <guava.version>31.0.1-jre</guava.version>
+        <passay.version>1.6.1</passay.version>
+        <zxcvbn.version>1.5.2</zxcvbn.version>
         <!--开源组件-->
     </properties>
 
@@ -58,19 +67,38 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.passay</groupId>
+                <artifactId>passay</artifactId>
+                <version>${passay.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nulab-inc</groupId>
+                <artifactId>zxcvbn</artifactId>
+                <version>${zxcvbn.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
         <pluginManagement>
-
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                </plugin>
+            </plugins>
         </pluginManagement>
     </build>
 
