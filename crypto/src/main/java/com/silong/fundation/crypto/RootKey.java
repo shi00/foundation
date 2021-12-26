@@ -47,7 +47,7 @@ public final class RootKey {
 
   private static final Map<String, byte[]> WK_CACHE = new ConcurrentHashMap<>();
 
-  private static volatile RootKey rootKey;
+  private static RootKey rootKey;
 
   /** 根密钥 */
   private final SecretKey key;
@@ -137,7 +137,11 @@ public final class RootKey {
    * @param rootKeyParts 根密钥文件存放路径(classpath)
    * @return 根密钥
    */
-  public static RootKey initialize(String... rootKeyParts) {
+  public static synchronized RootKey initialize(String... rootKeyParts) {
+    if (rootKey != null) {
+      return rootKey;
+    }
+
     if (rootKeyParts == null || rootKeyParts.length != DEFAULT_ROOT_KEY_PARTS.size()) {
       throw new IllegalArgumentException(
           String.format("rootKeyParts must be %d.", DEFAULT_ROOT_KEY_PARTS.size()));
