@@ -71,8 +71,12 @@ public final class RootKey {
     if (workKey == null || workKey.isEmpty()) {
       throw new IllegalArgumentException("workKey must not be null or empty.");
     }
-    byte[] bytes = workKey.getBytes(UTF_8);
-    return AesGCMToolkit.encrypt(bytes, 0, bytes.length, key, randomIV());
+    try {
+      byte[] bytes = Pbkdf2.generate(workKey.toCharArray(), BITS_256.getBits());
+      return AesGCMToolkit.encrypt(bytes, 0, bytes.length, this.key, randomIV());
+    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   byte[] decryptWorkKey(String workKey) {

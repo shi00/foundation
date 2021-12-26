@@ -54,7 +54,7 @@ public final class AesGCMToolkit {
     return ThreadLocalCipher.decrypt(
         cipherBytes,
         offset,
-        length,
+        length - GCM_IV_LENGTH,
         GCM,
         key,
         new GCMParameterSpec(
