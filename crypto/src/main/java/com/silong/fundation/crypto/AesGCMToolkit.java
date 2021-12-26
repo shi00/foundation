@@ -25,7 +25,7 @@ public final class AesGCMToolkit {
 
   private static final int GCM_IV_LENGTH = 12;
 
-  private static final int GCM_TAG_LENGTH = 16;
+  private static final int GCM_TAG_LENGTH = 16 * Byte.SIZE;
 
   private static final Map<String, SecretKey> WK_CACHE = new ConcurrentHashMap<>();
 

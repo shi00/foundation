@@ -1,11 +1,15 @@
 package com.silong.fundation.crypto;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -31,15 +35,17 @@ import static java.util.stream.Collectors.joining;
  * @version 1.0.0
  * @since 2021-12-26 09:21
  */
+@Slf4j
 public final class RootKey {
+
+  /** 默认根密钥保存路径 */
+  public static final List<String> DEFAULT_ROOT_KEY_PARTS =
+      List.of("zoo/tiger", "zoo/north/penguin", "zoo/south/skunk", "zoo/west/peacock");
 
   static final boolean ENABLED_CACHE =
       Boolean.parseBoolean(System.getProperty("rootkey.cache.enabled", "true"));
 
   private static final Map<String, byte[]> WK_CACHE = new ConcurrentHashMap<>();
-
-  private static final List<String> DEFAULT_ROOT_KEY_PARTS =
-      List.of("zoo/tiger", "zoo/north/penguin", "zoo/south/skunk", "zoo/west/peacock");
 
   private static volatile RootKey rootKey;
 
@@ -104,7 +110,7 @@ public final class RootKey {
    * @param rootKeyPartPaths 根密钥保存位置
    * @throws IOException IO异常
    */
-  public void export(String... rootKeyPartPaths) throws IOException {
+  public static void export(String... rootKeyPartPaths) throws IOException {
     if (rootKeyPartPaths == null || rootKeyPartPaths.length != DEFAULT_ROOT_KEY_PARTS.size()) {
       throw new IllegalArgumentException(
           String.format("rootKeyPartPaths must be %d.", DEFAULT_ROOT_KEY_PARTS.size()));
@@ -112,8 +118,12 @@ public final class RootKey {
 
     String[] rootKeyParts = generate();
     for (int i = 0; i < rootKeyPartPaths.length; i++) {
-      Files.writeString(
-          Paths.get(rootKeyPartPaths[i]), rootKeyParts[i], UTF_8, CREATE, WRITE, TRUNCATE_EXISTING);
+      Path path = Paths.get(rootKeyPartPaths[i]);
+      File parentFile = path.toFile().getParentFile();
+      if (parentFile.mkdirs()) {
+        log.info("{} was successfully created.", parentFile.getCanonicalPath());
+      }
+      Files.writeString(path, rootKeyParts[i], UTF_8, CREATE, WRITE, TRUNCATE_EXISTING);
     }
   }
 

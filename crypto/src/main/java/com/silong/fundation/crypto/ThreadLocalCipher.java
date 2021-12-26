@@ -6,6 +6,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
@@ -22,7 +23,8 @@ import static javax.crypto.Cipher.ENCRYPT_MODE;
 public class ThreadLocalCipher {
 
   /** 为了线程复用Cipher对象，此处不能在每次调用后remove */
-  private static final ThreadLocal<Map<String, Cipher>> TL_CIPHER = new ThreadLocal<>();
+  private static final ThreadLocal<Map<String, Cipher>> TL_CIPHER =
+      ThreadLocal.withInitial(HashMap::new);
 
   @FunctionalInterface
   private interface Function5<T1, T2, T3, T4, R> {
