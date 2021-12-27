@@ -140,6 +140,12 @@ public class ThreadLocalCipher {
 
   private static Cipher getInstance(
       String algorithm, int opMode, Key key, AlgorithmParameterSpec spec) {
+    if (algorithm == null || algorithm.isEmpty()) {
+      throw new IllegalArgumentException("algorithm must not be null or empty.");
+    }
+    if (key == null) {
+      throw new IllegalArgumentException("key must not be null.");
+    }
     try {
       Cipher cipher = TL_CIPHER.get().computeIfAbsent(algorithm, ThreadLocalCipher::getInstance);
       SecureRandom secureRandom = ThreadLocalSecureRandom.get();

@@ -44,8 +44,8 @@ public class AesGCMTests {
 
   @Test
   void test1() {
-    String encrypt = AesGCMToolkit.encrypt(plaintext, workKey);
-    String decrypt = AesGCMToolkit.decrypt(encrypt, workKey);
+    String encrypt = AesGcmToolkit.encrypt(plaintext, workKey);
+    String decrypt = AesGcmToolkit.decrypt(encrypt, workKey);
     Assertions.assertEquals(decrypt, plaintext);
   }
 }

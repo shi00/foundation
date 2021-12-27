@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @version 1.0.0
  * @since 2021-12-26 09:20
  */
-public final class AesGCMToolkit {
+public final class AesGcmToolkit {
 
   static final String AES = "AES";
 
@@ -34,7 +34,7 @@ public final class AesGCMToolkit {
   private static final Map<String, SecretKey> WK_CACHE = new ConcurrentHashMap<>();
 
   /** 禁止实例化 */
-  private AesGCMToolkit() {}
+  private AesGcmToolkit() {}
 
   private static SecretKey decreptWorkKey(String workKey) {
     return ENABLED_CACHE
@@ -43,7 +43,18 @@ public final class AesGCMToolkit {
         : new SecretKeySpec(RootKey.getInstance().decryptWorkKey(workKey), AES);
   }
 
-  static String encrypt(byte[] plainBytes, int offset, int length, SecretKey key, byte[] iv) {
+  /**
+   * 使用指定密钥和初始向量加密数据
+   *
+   * @param plainBytes 明文数据
+   * @param offset 数据偏移
+   * @param length 数据长度
+   * @param key 密钥
+   * @param iv 初始向量
+   * @return 加密结果
+   */
+  public static String encrypt(
+      byte[] plainBytes, int offset, int length, SecretKey key, byte[] iv) {
     byte[] encrypt =
         ThreadLocalCipher.encrypt(
             plainBytes, offset, length, GCM, key, new GCMParameterSpec(GCM_TAG_LENGTH, iv));
@@ -54,7 +65,16 @@ public final class AesGCMToolkit {
     return SecurityWrapper.wrap(encode);
   }
 
-  static byte[] decrypt(byte[] cipherBytes, int offset, int length, SecretKey key) {
+  /**
+   * 解密数据
+   *
+   * @param cipherBytes 加密数据
+   * @param offset 数据偏移
+   * @param length 数据长度
+   * @param key 解密密钥
+   * @return 解密结果
+   */
+  public static byte[] decrypt(byte[] cipherBytes, int offset, int length, SecretKey key) {
     return ThreadLocalCipher.decrypt(
         cipherBytes,
         offset,
@@ -65,7 +85,14 @@ public final class AesGCMToolkit {
             GCM_TAG_LENGTH, cipherBytes, offset + length - GCM_IV_LENGTH, GCM_IV_LENGTH));
   }
 
-  static byte[] decrypt(String cipherText, SecretKey key) {
+  /**
+   * 使用给定密钥解密字符串
+   *
+   * @param cipherText 加密字符串
+   * @param key 密钥
+   * @return 解密结果
+   */
+  public static byte[] decrypt(String cipherText, SecretKey key) {
     String unwrap = SecurityWrapper.unwrap(cipherText);
     byte[] decode = Base64.getDecoder().decode(unwrap);
     return decrypt(decode, 0, decode.length, key);
@@ -86,7 +113,7 @@ public final class AesGCMToolkit {
       throw new IllegalArgumentException("workKey must not be null or empty.");
     }
     byte[] bytes = plainText.getBytes(UTF_8);
-    return encrypt(bytes, 0, bytes.length, decreptWorkKey(workKey), randomIV());
+    return encrypt(bytes, 0, bytes.length, decreptWorkKey(workKey), randomIv());
   }
 
   /**
@@ -111,7 +138,7 @@ public final class AesGCMToolkit {
    *
    * @return 初始向量
    */
-  static byte[] randomIV() {
+  public static byte[] randomIv() {
     return ThreadLocalSecureRandom.random(GCM_IV_LENGTH);
   }
 }

@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.silong.fundation.crypto.AesGCMToolkit.AES;
-import static com.silong.fundation.crypto.AesGCMToolkit.randomIV;
+import static com.silong.fundation.crypto.AesGcmToolkit.AES;
+import static com.silong.fundation.crypto.AesGcmToolkit.randomIv;
 import static com.silong.fundation.crypto.aes.AesKeySize.BITS_256;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
@@ -77,7 +77,7 @@ public final class RootKey {
     }
     try {
       byte[] bytes = Pbkdf2.generate(workKey.toCharArray(), BITS_256.getBits());
-      return AesGCMToolkit.encrypt(bytes, 0, bytes.length, this.key, randomIV());
+      return AesGcmToolkit.encrypt(bytes, 0, bytes.length, this.key, randomIv());
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException(e);
     }
@@ -94,8 +94,8 @@ public final class RootKey {
       throw new IllegalArgumentException("workKey must not be null or empty.");
     }
     return ENABLED_CACHE
-        ? WK_CACHE.computeIfAbsent(workKey, k -> AesGCMToolkit.decrypt(k, key))
-        : AesGCMToolkit.decrypt(workKey, key);
+        ? WK_CACHE.computeIfAbsent(workKey, k -> AesGcmToolkit.decrypt(k, key))
+        : AesGcmToolkit.decrypt(workKey, key);
   }
 
   /**
