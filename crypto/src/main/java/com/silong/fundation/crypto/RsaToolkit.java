@@ -8,6 +8,13 @@ package com.silong.fundation.crypto;
  * @since 2021-12-26 19:27
  */
 public final class RsaToolkit {
-    private RsaToolkit() {
-    }
+
+  static final String RSA = "RSA";
+
+  /** 禁止实例化 */
+  private RsaToolkit() {}
+
+
+
+
 }
