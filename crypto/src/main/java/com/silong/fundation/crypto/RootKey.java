@@ -1,5 +1,6 @@
 package com.silong.fundation.crypto;
 
+import com.silong.fundation.crypto.aes.AesGcmToolkit;
 import com.silong.fundation.crypto.pbkdf2.Pbkdf2;
 import com.silong.fundation.crypto.utils.ThreadLocalSecureRandom;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.silong.fundation.crypto.AesGcmToolkit.AES;
-import static com.silong.fundation.crypto.AesGcmToolkit.randomIv;
+import static com.silong.fundation.crypto.aes.AesGcmToolkit.AES;
+import static com.silong.fundation.crypto.aes.AesGcmToolkit.randomIv;
 import static com.silong.fundation.crypto.aes.AesKeySize.BITS_256;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
@@ -46,7 +47,8 @@ public final class RootKey {
       unmodifiableList(
           Arrays.asList("zoo/tiger", "zoo/north/penguin", "zoo/south/skunk", "zoo/west/peacock"));
 
-  static final boolean ENABLED_CACHE =
+  /** 是否启用缓存 */
+  public static final boolean ENABLED_CACHE =
       Boolean.parseBoolean(System.getProperty("rootkey.cache.enabled", "true"));
 
   private static final Map<String, byte[]> WK_CACHE = new ConcurrentHashMap<>();

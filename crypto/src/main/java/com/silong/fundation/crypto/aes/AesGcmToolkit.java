@@ -1,5 +1,6 @@
-package com.silong.fundation.crypto;
+package com.silong.fundation.crypto.aes;
 
+import com.silong.fundation.crypto.RootKey;
 import com.silong.fundation.crypto.utils.SecurityWrapper;
 import com.silong.fundation.crypto.utils.ThreadLocalCipher;
 import com.silong.fundation.crypto.utils.ThreadLocalSecureRandom;
@@ -23,7 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public final class AesGcmToolkit {
 
-  static final String AES = "AES";
+  public static final String AES = "AES";
 
   private static final String GCM = "AES/GCM/NoPadding";
 
