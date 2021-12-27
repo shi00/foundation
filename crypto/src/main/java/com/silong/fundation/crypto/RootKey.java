@@ -20,11 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.silong.fundation.crypto.AesGCMToolkit.AES;
 import static com.silong.fundation.crypto.AesGCMToolkit.randomIV;
 import static com.silong.fundation.crypto.AesKeySize.BITS_256;
-import static com.silong.fundation.crypto.AesGCMToolkit.AES;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
@@ -40,7 +41,8 @@ public final class RootKey {
 
   /** 默认根密钥保存路径 */
   public static final List<String> DEFAULT_ROOT_KEY_PARTS =
-      List.of("zoo/tiger", "zoo/north/penguin", "zoo/south/skunk", "zoo/west/peacock");
+      unmodifiableList(
+          Arrays.asList("zoo/tiger", "zoo/north/penguin", "zoo/south/skunk", "zoo/west/peacock"));
 
   static final boolean ENABLED_CACHE =
       Boolean.parseBoolean(System.getProperty("rootkey.cache.enabled", "true"));
@@ -105,7 +107,7 @@ public final class RootKey {
    * @return 根密钥
    */
   public static RootKey initialize() {
-    return initialize(DEFAULT_ROOT_KEY_PARTS.toArray(String[]::new));
+    return initialize(DEFAULT_ROOT_KEY_PARTS.toArray(new String[0]));
   }
 
   /**
@@ -127,7 +129,7 @@ public final class RootKey {
       if (parentFile.mkdirs()) {
         log.info("{} was successfully created.", parentFile.getCanonicalPath());
       }
-      Files.writeString(path, rootKeyParts[i], UTF_8, CREATE, WRITE, TRUNCATE_EXISTING);
+      Files.write(path, rootKeyParts[i].getBytes(UTF_8), CREATE, WRITE, TRUNCATE_EXISTING);
     }
   }
 
