@@ -1,4 +1,4 @@
-package com.silong.fundation.crypto;
+package com.silong.fundation.crypto.rsa;
 
 /**
  * RSA非对称加解密工具

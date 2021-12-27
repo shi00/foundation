@@ -1,4 +1,4 @@
-package com.silong.fundation.crypto;
+package com.silong.fundation.crypto.pbkdf2;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;

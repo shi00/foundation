@@ -1,5 +1,6 @@
 package com.silong.fundation.crypto;
 
+import com.silong.fundation.crypto.pbkdf2.Pbkdf2;
 import com.silong.fundation.crypto.utils.ThreadLocalSecureRandom;
 import lombok.extern.slf4j.Slf4j;
 
@@ -82,7 +83,16 @@ public final class RootKey {
     }
   }
 
-  byte[] decryptWorkKey(String workKey) {
+  /**
+   * 解密工作密钥
+   *
+   * @param workKey 工作密钥
+   * @return 解密工作密钥
+   */
+  public byte[] decryptWorkKey(String workKey) {
+    if (workKey == null || workKey.isEmpty()) {
+      throw new IllegalArgumentException("workKey must not be null or empty.");
+    }
     return ENABLED_CACHE
         ? WK_CACHE.computeIfAbsent(workKey, k -> AesGCMToolkit.decrypt(k, key))
         : AesGCMToolkit.decrypt(workKey, key);
