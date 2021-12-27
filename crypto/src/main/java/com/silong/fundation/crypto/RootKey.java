@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.silong.fundation.crypto.AesGCMToolkit.AES;
 import static com.silong.fundation.crypto.AesGCMToolkit.randomIV;
-import static com.silong.fundation.crypto.AesKeySize.BITS_256;
+import static com.silong.fundation.crypto.aes.AesKeySize.BITS_256;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
 import static java.util.Collections.unmodifiableList;
