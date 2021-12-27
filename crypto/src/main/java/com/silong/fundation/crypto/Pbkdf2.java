@@ -5,7 +5,7 @@ import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
-import static com.silong.fundation.crypto.ThreadLocalSecureRandom.random;
+import static com.silong.fundation.crypto.utils.ThreadLocalSecureRandom.random;
 
 /**
  * PBKDF2密钥生成工具，使用PBKDF2WithHmacSHA512算法。<br>

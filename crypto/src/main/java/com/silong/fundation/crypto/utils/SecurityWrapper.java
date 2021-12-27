@@ -1,4 +1,4 @@
-package com.silong.fundation.crypto;
+package com.silong.fundation.crypto.utils;
 
 /**
  * 加密字符串包裹工具

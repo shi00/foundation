@@ -1,4 +1,4 @@
-package com.silong.fundation.crypto;
+package com.silong.fundation.crypto.utils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;

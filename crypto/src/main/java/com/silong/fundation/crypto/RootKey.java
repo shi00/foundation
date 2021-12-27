@@ -1,5 +1,6 @@
 package com.silong.fundation.crypto;
 
+import com.silong.fundation.crypto.utils.ThreadLocalSecureRandom;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.crypto.SecretKey;
