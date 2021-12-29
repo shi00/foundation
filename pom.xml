@@ -40,6 +40,7 @@
 
     <modules>
         <module>crypto</module>
+        <module>duuid</module>
     </modules>
 
     <properties>
@@ -55,6 +56,7 @@
         <guava.version>31.0.1-jre</guava.version>
         <passay.version>1.6.1</passay.version>
         <zxcvbn.version>1.5.2</zxcvbn.version>
+        <disruptor.version>3.4.4</disruptor.version>
         <!--开源组件-->
     </properties>
 
@@ -81,6 +83,11 @@
                 <groupId>com.nulab-inc</groupId>
                 <artifactId>zxcvbn</artifactId>
                 <version>${zxcvbn.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.lmax</groupId>
+                <artifactId>disruptor</artifactId>
+                <version>${disruptor.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
