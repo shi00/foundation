@@ -6,7 +6,7 @@
     <groupId>com.silong</groupId>
     <artifactId>foundation</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.0</version>
+    <version>${fundation.version}</version>
     <description>Silong's microservice foundation based on java.</description>
 
     <developers>
@@ -40,7 +40,8 @@
 
     <modules>
         <module>crypto</module>
-        <module>duuid</module>
+        <module>duuid/idgen</module>
+        <module>duuid/workid-provider</module>
     </modules>
 
     <properties>
@@ -57,7 +58,11 @@
         <passay.version>1.6.1</passay.version>
         <zxcvbn.version>1.5.2</zxcvbn.version>
         <disruptor.version>3.4.4</disruptor.version>
+        <jctools.version>3.3.0</jctools.version>
         <!--开源组件-->
+        <fundation.version>1.0.0</fundation.version>
+        <crypto.version>1.0.0</crypto.version>
+        <id-gennerator.version>1.0.0</id-gennerator.version>
     </properties>
 
     <dependencyManagement>
@@ -88,6 +93,11 @@
                 <groupId>com.lmax</groupId>
                 <artifactId>disruptor</artifactId>
                 <version>${disruptor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jctools</groupId>
+                <artifactId>jctools-core</artifactId>
+                <version>${jctools.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

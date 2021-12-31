@@ -1,4 +1,4 @@
-package com.silong.fundation.duuid;
+package com.silong.fundation.duuid.generator;
 
 /**
  * 分布式ID生成器
@@ -12,8 +12,7 @@ public interface DuuidGenerator {
   /**
    * 生成uuid
    *
-   * @return id
-   * @throws Exception id生成异常
+   * @return 生成id
    */
-  long generate() throws Exception;
+  long nextId();
 }

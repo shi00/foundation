@@ -6,10 +6,12 @@
         <artifactId>foundation</artifactId>
         <groupId>com.silong</groupId>
         <version>1.0.0</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>Duuid is a distributed unique ID generator inspired by Twitter's Snowflake.</description>
-    <artifactId>duuid</artifactId>
+    <description>Assign a workerid to the duuid generator.</description>
+    <artifactId>workid-provider</artifactId>
+    <version>${id-gennerator.version}</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -18,13 +20,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
-
 </project>

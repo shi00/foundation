@@ -6,12 +6,12 @@
         <artifactId>foundation</artifactId>
         <groupId>com.silong</groupId>
         <version>1.0.0</version>
-        <relativePath>../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>Common encryption and decryption toolkit</description>
-    <artifactId>crypto</artifactId>
-    <version>${crypto.version}</version>
+    <description>Id-Generator is a distributed unique ID generator inspired by Twitter's Snowflake.</description>
+    <artifactId>id-generator</artifactId>
+    <version>${id-gennerator.version}</version>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -20,6 +20,14 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
@@ -27,16 +35,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
