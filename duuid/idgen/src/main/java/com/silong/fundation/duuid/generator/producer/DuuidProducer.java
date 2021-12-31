@@ -20,6 +20,7 @@ public class DuuidProducer extends Thread {
   /** 环状队列填充率，即需要保证环状队列内的填充的id和容量的占比 */
   private final double paddingFactor;
 
+  /** id生成器 */
   private final Supplier<Long> idSupplier;
 
   /**
@@ -45,6 +46,7 @@ public class DuuidProducer extends Thread {
     this.idSupplier = idSupplier;
     this.paddingFactor = paddingFactor;
     start();
+    log.info("duuid-producer thread started successfully.");
   }
 
   /** 循环生成id，填充环状队列 */
@@ -53,11 +55,12 @@ public class DuuidProducer extends Thread {
     queue.fill(
         idSupplier,
         idleCounter -> {
-          // 计算当前队列填充率，如果大于等于阈值则放弃CPU时间片，马上重新竞争时间片
+          // 计算当前队列填充率，如果大于等于阈值则放弃CPU时间片，马上重新竞争时间片，给其他任务执行机会
           while ((queue.size() * 1.0 / queue.capacity()) >= paddingFactor) {
             try {
               Thread.sleep(0);
             } catch (InterruptedException e) {
+              // never happen
               log.error("Fatal error.", e);
             }
           }

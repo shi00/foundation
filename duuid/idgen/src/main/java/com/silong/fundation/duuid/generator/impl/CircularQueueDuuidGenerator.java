@@ -7,6 +7,7 @@ import org.jctools.queues.SpmcArrayQueue;
 import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 
+import static com.silong.fundation.duuid.generator.utils.Constants.*;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -54,27 +55,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @since 2021-12-28 22:30
  */
 public class CircularQueueDuuidGenerator implements DuuidGenerator {
-
-  /** 默认环状队列容量，为确保队列性能必须为2的次方 */
-  public static final int DEFAULT_QUEUE_CAPACITY = 8192;
-
-  /** 环状队列填充率 */
-  public static final double DEFAULT_PADDING_FACTOR = 0.7;
-
-  /** 以2020-01-01 00:00:00为起始时间距1970-01-01 00:00:00的天数差 */
-  public static final long EPOCH = 18261;
-
-  /** 最高位为符号位，为了确保生成id为正数，符号位固定为0 */
-  public static final int SIGN_BIT = 1;
-
-  /** 节点id占用的bits */
-  public static final int DEFAULT_WORK_ID_BITS = 23;
-
-  /** 启动时间与基准时间的差值，单位：天 */
-  public static final int DEFAULT_DELTA_DAYS_BITS = 15;
-
-  /** 序号占用bit位 */
-  public static final int DEFAULT_SEQUENCE_BITS = 25;
 
   /** 安全随机数生成器 */
   private static final SecureRandom SECURE_RANDOM = new SecureRandom();
