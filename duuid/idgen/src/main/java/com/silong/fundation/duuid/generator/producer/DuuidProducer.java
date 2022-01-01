@@ -23,6 +23,9 @@ public class DuuidProducer extends Thread {
   /** id生成器 */
   private final Supplier<Long> idSupplier;
 
+  /** producer是否运行中 */
+  private volatile boolean isRunning;
+
   /**
    * 构造方法，启动生产者线程
    *
@@ -52,13 +55,14 @@ public class DuuidProducer extends Thread {
     this.queue = queue;
     this.idSupplier = idSupplier;
     this.paddingFactor = paddingFactor;
+    this.isRunning = true;
     start();
-    log.info("{} thread started successfully.", threadName);
   }
 
   /** 循环生成id，填充环状队列 */
   @Override
   public void run() {
+    log.info("Thread {} started successfully.", this.getName());
     queue.fill(
         idSupplier,
         idleCounter -> {
@@ -67,12 +71,20 @@ public class DuuidProducer extends Thread {
             try {
               Thread.sleep(0);
             } catch (InterruptedException e) {
-              // never happen
-              log.error("Fatal error.", e);
+              // never happen in regular
             }
           }
           return idleCounter;
         },
-        () -> true);
+        () -> isRunning);
+    log.info("Thread {} runs to the end.", this.getName());
+  }
+
+  /** 停止运行，测试用 */
+  @Deprecated
+  public void finish() {
+    this.isRunning = false;
+    this.queue.clear();
+    this.interrupt();
   }
 }

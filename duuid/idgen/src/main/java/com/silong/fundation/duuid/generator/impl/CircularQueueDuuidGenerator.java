@@ -69,6 +69,9 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
   /** 比特位计算器 */
   protected final LongBitsCalculator longBitsCalculator;
 
+  /** id生产者 */
+  protected final DuuidProducer duuidProducer;
+
   /** worker id */
   protected long workerId;
 
@@ -169,7 +172,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
     this.sequence = sequence;
 
     // 启动生产者线程
-    new DuuidProducer(DUUID_PRODUCER, queue, this::generate, paddingFactor);
+    this.duuidProducer = new DuuidProducer(DUUID_PRODUCER, queue, this::generate, paddingFactor);
   }
 
   /**
@@ -204,6 +207,12 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
       id = queue.poll();
     }
     return id;
+  }
+
+  /** 结束id生成器，测试使用 */
+  @Deprecated
+  public void finish() {
+    duuidProducer.finish();
   }
 
   /**

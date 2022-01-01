@@ -1,9 +1,19 @@
 package com.silong.fundation.duuid.generator;
 
 import com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator;
+import org.apache.commons.lang3.RandomUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 单元测试
@@ -14,16 +24,35 @@ import org.junit.jupiter.api.Test;
  */
 public class DuuidTests {
 
-  static DuuidGenerator duuidGenerator;
+  CircularQueueDuuidGenerator duuidGenerator;
 
-  @BeforeAll
-  static void init() {
-    duuidGenerator = new CircularQueueDuuidGenerator(1, false);
+  @BeforeEach
+  void init() {
+    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(1, 8000000), false);
+  }
+
+  @AfterEach
+  void cleanup() {
+    duuidGenerator.finish();
   }
 
   @Test
-  void test1() {
-    long id = duuidGenerator.nextId();
-    Assertions.assertTrue(id > 0);
+  void test1() throws InterruptedException {
+    List<Long> list = Collections.synchronizedList(new LinkedList<>());
+    CountDownLatch latch = new CountDownLatch(100);
+    for (int i = 0; i < 100; i++) {
+      new Thread(
+              () -> {
+                for (int j = 0; j < 10000; j++) {
+                  list.add(duuidGenerator.nextId());
+                }
+                latch.countDown();
+              })
+          .start();
+    }
+
+    latch.await();
+
+    assertEquals(list.stream().distinct().count(), list.size());
   }
 }
