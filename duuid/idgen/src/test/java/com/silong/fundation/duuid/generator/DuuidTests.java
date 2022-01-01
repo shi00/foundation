@@ -28,7 +28,7 @@ public class DuuidTests {
 
   @BeforeEach
   void init() {
-    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(1, 8000000), false);
+    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(1, 8000000), true);
   }
 
   @AfterEach
@@ -63,7 +63,7 @@ public class DuuidTests {
           for (int i = 0; i < 100; i++) {
             new Thread(
                     () -> {
-                      for (int j = 0; j < 10000; j++) {
+                      for (int j = 0; j < 3000; j++) {
                         duuidGenerator.nextId();
                       }
                       latch.countDown();

@@ -5,7 +5,7 @@ import com.silong.fundation.duuid.generator.producer.DuuidProducer;
 import com.silong.fundation.duuid.generator.utils.LongBitsCalculator;
 import org.jctools.queues.SpmcArrayQueue;
 
-import java.security.SecureRandom;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static com.silong.fundation.duuid.generator.utils.Constants.*;
@@ -56,9 +56,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @since 2021-12-28 22:30
  */
 public class CircularQueueDuuidGenerator implements DuuidGenerator {
-
-  /** 安全随机数生成器 */
-  private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
   /** 是否开启序号随机，避免生成id连续可能引起的潜在安全问题 */
   protected final boolean enableSequenceRandom;
@@ -197,7 +194,8 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    * @return 随机增量
    */
   protected long randomIncrement() {
-    return enableSequenceRandom ? SECURE_RANDOM.nextInt(32) + 1 : 1;
+    // 随机数生成器，此处考虑性能，无需使用安全随机，只要保证生成id不连续即可
+    return enableSequenceRandom ? ThreadLocalRandom.current().nextInt(32) + 1 : 1;
   }
 
   @Override
