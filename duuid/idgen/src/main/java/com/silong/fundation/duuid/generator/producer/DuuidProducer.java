@@ -83,8 +83,10 @@ public class DuuidProducer extends Thread {
   /** 停止运行，测试用 */
   @Deprecated
   public void finish() {
-    this.isRunning = false;
-    this.queue.clear();
-    this.interrupt();
+    if (isRunning) {
+      this.isRunning = false;
+      this.queue.clear();
+      this.interrupt();
+    }
   }
 }

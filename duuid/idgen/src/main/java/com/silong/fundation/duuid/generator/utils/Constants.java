@@ -10,7 +10,7 @@ package com.silong.fundation.duuid.generator.utils;
 public interface Constants {
 
   /** 默认：生产者线程名 */
-  String DUUID_PRODUCER = "DUuid-Producer";
+  String DUUID_PRODUCER = "Duuid-Producer";
 
   /** 默认环状队列容量，为确保队列性能必须为2的次方 */
   int DEFAULT_QUEUE_CAPACITY = 8192;
