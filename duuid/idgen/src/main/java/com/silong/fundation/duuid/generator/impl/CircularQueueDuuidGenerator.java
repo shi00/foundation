@@ -2,6 +2,7 @@ package com.silong.fundation.duuid.generator.impl;
 
 import com.silong.fundation.duuid.generator.DuuidGenerator;
 import com.silong.fundation.duuid.generator.producer.DuuidProducer;
+import com.silong.fundation.duuid.generator.utils.LongBitsCalculator;
 import org.jctools.queues.SpmcArrayQueue;
 
 import java.security.SecureRandom;
@@ -59,54 +60,36 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
   /** 安全随机数生成器 */
   private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-  /** workId占用比特位数 */
-  protected int workIdBits;
-
-  /** deltaDays占用比特位数 */
-  protected int deltaDaysBits;
-
-  /** 序号占用比特位数 */
-  protected int sequenceBits;
-
-  /** 最大可用workid值，workid取值范围：[0, maxWorkId - 1] */
-  protected long maxWorkId;
-
-  /** 最大可用delta-days值，delta-days取值范围：[0, maxDeltaDays - 1] */
-  protected long maxDeltaDays;
-
-  /** 最大可用sequence值，sequence取值范围：[0, maxSequence - 1] */
-  protected long maxSequence;
-
-  /** deltaDays左移位数 */
-  protected int deltaDaysLeftShiftBits;
-
-  /** workId左移位数 */
-  protected int workIdLeftShiftBits;
-
-  protected long workId;
-
-  protected long deltaDays;
-
-  protected long sequence;
-
   /** 是否开启序号随机，避免生成id连续可能引起的潜在安全问题 */
-  protected boolean enableSequenceRandom;
+  protected final boolean enableSequenceRandom;
 
   /** 单生产者，多消费者环状队列 */
   protected final SpmcArrayQueue<Long> queue;
 
+  /** 比特位计算器 */
+  protected final LongBitsCalculator longBitsCalculator;
+
+  /** worker id */
+  protected long workerId;
+
+  /** 与基准时间的时差 */
+  protected long deltaDays;
+
+  /** 序列号 */
+  protected long sequence;
+
   /**
    * 构造方法
    *
-   * @param workId workerId编号
+   * @param workerId workerId编号
    * @param enableSequenceRandom 是否开启序列号不连续
    */
-  public CircularQueueDuuidGenerator(long workId, boolean enableSequenceRandom) {
+  public CircularQueueDuuidGenerator(long workerId, boolean enableSequenceRandom) {
     this(
         DEFAULT_WORK_ID_BITS,
         DEFAULT_DELTA_DAYS_BITS,
         DEFAULT_SEQUENCE_BITS,
-        workId,
+        workerId,
         calculateDeltaDays(),
         0,
         DEFAULT_QUEUE_CAPACITY,
@@ -117,18 +100,18 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
   /**
    * 构造方法
    *
-   * @param workId workerId编号
+   * @param workerId workerId编号
    * @param deltaDays 时间差
    * @param sequence 序列号起始值
    * @param enableSequenceRandom 是否开启序列号不连续
    */
   public CircularQueueDuuidGenerator(
-      long workId, long deltaDays, long sequence, boolean enableSequenceRandom) {
+      long workerId, long deltaDays, long sequence, boolean enableSequenceRandom) {
     this(
         DEFAULT_WORK_ID_BITS,
         DEFAULT_DELTA_DAYS_BITS,
         DEFAULT_SEQUENCE_BITS,
-        workId,
+        workerId,
         deltaDays,
         sequence,
         DEFAULT_QUEUE_CAPACITY,
@@ -139,7 +122,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
   /**
    * 构造方法
    *
-   * @param workIdBits workId占用比特位数量
+   * @param workerIdBits workerId占用比特位数量
    * @param deltaDaysBits 时间差占用比特位数量
    * @param sequenceBits 序列号占用比特位数量
    * @param workerId workerId编号
@@ -150,7 +133,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    * @param enableSequenceRandom 是否开启id随机，避免id连续
    */
   public CircularQueueDuuidGenerator(
-      int workIdBits,
+      int workerIdBits,
       int deltaDaysBits,
       int sequenceBits,
       long workerId,
@@ -159,40 +142,29 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
       int queueCapacity,
       double paddingFactor,
       boolean enableSequenceRandom) {
-    if (workIdBits + deltaDaysBits + sequenceBits + SIGN_BIT != Long.SIZE) {
-      throw new IllegalArgumentException(
-          String.format(
-              "The equation [workIdBits + deltaDaysBits + sequenceBits == %d] must hold.",
-              Long.SIZE - SIGN_BIT));
-    }
-
-    this.queue = new SpmcArrayQueue<>(queueCapacity);
-    this.workIdBits = workIdBits;
-    this.deltaDaysBits = deltaDaysBits;
-    this.sequenceBits = sequenceBits;
-    this.maxWorkId = maxValues(workIdBits);
-    this.maxDeltaDays = maxValues(deltaDaysBits);
-    this.maxSequence = maxValues(sequenceBits);
-    this.deltaDaysLeftShiftBits = sequenceBits;
-    this.workIdLeftShiftBits = deltaDaysBits + sequenceBits;
     this.enableSequenceRandom = enableSequenceRandom;
+    this.queue = new SpmcArrayQueue<>(queueCapacity);
+    this.longBitsCalculator = new LongBitsCalculator(workerIdBits, deltaDaysBits, sequenceBits);
 
+    long maxWorkId = longBitsCalculator.getMaxWorkerId();
     if (workerId < 0 || workerId >= maxWorkId) {
       throw new IllegalArgumentException(
           String.format("workerId value range [0, %d]", maxWorkId - 1));
     }
 
+    long maxDeltaDays = longBitsCalculator.getMaxDeltaDays();
     if (deltaDays < 0 || deltaDays >= maxDeltaDays) {
       throw new IllegalArgumentException(
           String.format("deltaDays value range [0, %d]", maxDeltaDays - 1));
     }
 
+    long maxSequence = longBitsCalculator.getMaxSequence();
     if (sequence < 0 || sequence >= maxSequence) {
       throw new IllegalArgumentException(
           String.format("sequence value range [0, %d]", maxSequence - 1));
     }
 
-    this.workId = workerId;
+    this.workerId = workerId;
     this.deltaDays = deltaDays;
     this.sequence = sequence;
 
@@ -208,21 +180,21 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    */
   protected long generate() {
     // 如果序列号耗尽，则预支明天序列号
-    sequence = (sequence + randomIncrement()) & maxSequence;
+    sequence = (sequence + randomIncrement()) & longBitsCalculator.getMaxSequence();
     if (sequence == 0) {
       deltaDays++;
     }
-    return (workId << workIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
+    return longBitsCalculator.combine(workerId, deltaDays, sequence);
   }
 
   /**
-   * 如果开启随机增量，增量值随机范围[1，128]<br>
+   * 如果开启随机增量，增量值随机范围[1，32]<br>
    * 否则自增值固定为1。
    *
    * @return 随机增量
    */
   protected long randomIncrement() {
-    return enableSequenceRandom ? SECURE_RANDOM.nextInt(128) + 1 : 1;
+    return enableSequenceRandom ? SECURE_RANDOM.nextInt(32) + 1 : 1;
   }
 
   @Override
@@ -241,19 +213,5 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    */
   private static long calculateDeltaDays() {
     return TimeUnit.DAYS.convert(System.currentTimeMillis(), MILLISECONDS) - EPOCH;
-  }
-
-  /**
-   * 按照比特位计算最大值
-   *
-   * @param bits 比特位
-   * @return 最大值
-   */
-  private static long maxValues(int bits) {
-    if (bits > 0) {
-      return ~(1L << bits);
-    } else {
-      throw new IllegalArgumentException("Invalid bits: " + bits);
-    }
   }
 }
