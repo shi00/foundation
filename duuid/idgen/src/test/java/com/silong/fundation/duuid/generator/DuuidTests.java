@@ -3,17 +3,17 @@ package com.silong.fundation.duuid.generator;
 import com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 /**
  * 单元测试
@@ -50,9 +50,27 @@ public class DuuidTests {
               })
           .start();
     }
-
     latch.await();
-
     assertEquals(list.stream().distinct().count(), list.size());
+  }
+
+  @Test
+  void test2() {
+    assertTimeout(
+        Duration.ofSeconds(1),
+        () -> {
+          CountDownLatch latch = new CountDownLatch(100);
+          for (int i = 0; i < 100; i++) {
+            new Thread(
+                    () -> {
+                      for (int j = 0; j < 10000; j++) {
+                        duuidGenerator.nextId();
+                      }
+                      latch.countDown();
+                    })
+                .start();
+          }
+          latch.await();
+        });
   }
 }

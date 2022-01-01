@@ -6,7 +6,7 @@
     <groupId>com.silong</groupId>
     <artifactId>foundation</artifactId>
     <packaging>pom</packaging>
-    <version>${fundation.version}</version>
+    <version>1.0.0</version>
     <description>Silong's microservice foundation based on java.</description>
 
     <developers>
@@ -60,9 +60,6 @@
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>3.3.0</jctools.version>
         <!--开源组件-->
-        <fundation.version>1.0.0</fundation.version>
-        <crypto.version>1.0.0</crypto.version>
-        <id-gennerator.version>1.0.0</id-gennerator.version>
     </properties>
 
     <dependencyManagement>
