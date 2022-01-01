@@ -79,7 +79,7 @@ public final class LongBitsCalculator {
    */
   public long maxValues(int bits) {
     assert bits > 0 : "Invalid bits: " + bits;
-    return ~(1L << bits);
+    return ~(-1L << bits);
   }
 
   /**
