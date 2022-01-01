@@ -99,8 +99,9 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    * 构造方法
    *
    * @param workId workerId编号
+   * @param enableSequenceRandom 是否开启序列号不连续
    */
-  public CircularQueueDuuidGenerator(long workId) {
+  public CircularQueueDuuidGenerator(long workId, boolean enableSequenceRandom) {
     this(
         DEFAULT_WORK_ID_BITS,
         DEFAULT_DELTA_DAYS_BITS,
@@ -110,7 +111,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
         0,
         DEFAULT_QUEUE_CAPACITY,
         DEFAULT_PADDING_FACTOR,
-        false);
+        enableSequenceRandom);
   }
 
   /**
@@ -119,8 +120,10 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    * @param workId workerId编号
    * @param deltaDays 时间差
    * @param sequence 序列号起始值
+   * @param enableSequenceRandom 是否开启序列号不连续
    */
-  public CircularQueueDuuidGenerator(long workId, long deltaDays, long sequence) {
+  public CircularQueueDuuidGenerator(
+      long workId, long deltaDays, long sequence, boolean enableSequenceRandom) {
     this(
         DEFAULT_WORK_ID_BITS,
         DEFAULT_DELTA_DAYS_BITS,
@@ -130,7 +133,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
         sequence,
         DEFAULT_QUEUE_CAPACITY,
         DEFAULT_PADDING_FACTOR,
-        false);
+        enableSequenceRandom);
   }
 
   /**
@@ -194,7 +197,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
     this.sequence = sequence;
 
     // 启动生产者线程
-    new DuuidProducer(queue, this::generate, paddingFactor);
+    new DuuidProducer(DUUID_PRODUCER, queue, this::generate, paddingFactor);
   }
 
   /**

@@ -26,12 +26,19 @@ public class DuuidProducer extends Thread {
   /**
    * 构造方法，启动生产者线程
    *
+   * @param threadName 生产者线程名称
    * @param queue 环状队列
    * @param idSupplier id供应商
    * @param paddingFactor 队列填充率
    */
   public DuuidProducer(
-      SpmcArrayQueue<Long> queue, Supplier<Long> idSupplier, double paddingFactor) {
+      String threadName,
+      SpmcArrayQueue<Long> queue,
+      Supplier<Long> idSupplier,
+      double paddingFactor) {
+    if (threadName == null || threadName.isEmpty()) {
+      throw new IllegalArgumentException("threadName must not be null or empty.");
+    }
     if (queue == null) {
       throw new IllegalArgumentException("queue must not be null.");
     }
@@ -41,12 +48,12 @@ public class DuuidProducer extends Thread {
     if (paddingFactor <= 0 || paddingFactor > 1.0) {
       throw new IllegalArgumentException("paddingFactor value range (0, 1.0].");
     }
-    setName("duuid-producer");
+    setName(threadName);
     this.queue = queue;
     this.idSupplier = idSupplier;
     this.paddingFactor = paddingFactor;
     start();
-    log.info("duuid-producer thread started successfully.");
+    log.info("{} thread started successfully.", threadName);
   }
 
   /** 循环生成id，填充环状队列 */
