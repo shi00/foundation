@@ -126,10 +126,10 @@ public class DuuidTests {
   }
 
   @Test
-  @DisplayName("SPMC-randomIncrement-[thread:200]-10000000")
+  @DisplayName("SPMC-randomIncrement-[thread:200]-1000000")
   void test5() throws InterruptedException {
     int threadCount = 200;
-    int callCount = 50000;
+    int callCount = 5000;
     duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(0, maxWorkerId), true);
     NonBlockingHashMapLong<Boolean> map = new NonBlockingHashMapLong<>(callCount * threadCount);
     CountDownLatch latch = new CountDownLatch(threadCount);
@@ -156,10 +156,10 @@ public class DuuidTests {
   }
 
   @Test
-  @DisplayName("SPMC-[inc:1]-[thread:200]-10000000")
+  @DisplayName("SPMC-[inc:1]-[thread:200]-1000000")
   void test6() throws InterruptedException {
     int threadCount = 200;
-    int callCount = 50000;
+    int callCount = 5000;
     duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(0, maxWorkerId), false);
     NonBlockingHashMapLong<Boolean> map = new NonBlockingHashMapLong<>(callCount * threadCount);
     CountDownLatch latch = new CountDownLatch(threadCount);
