@@ -289,8 +289,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @return id
    */
   protected long generate() {
-    // 如果序列号耗尽，则预支明天序列号
     sequence = sequence + randomIncrement();
+    // 如果序列号耗尽，则预支明天序列号
     if (sequence > maxSequence) {
       deltaDays++;
       sequence = sequence - maxSequence;
