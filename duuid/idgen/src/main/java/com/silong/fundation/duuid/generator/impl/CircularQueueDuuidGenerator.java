@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.silong.fundation.duuid.generator.utils.Constants.*;
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -58,6 +59,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Data
 @Slf4j
 public class CircularQueueDuuidGenerator implements DuuidGenerator {
+
+  private static final AtomicLong NAME_COUNTER = new AtomicLong(0);
 
   /** 是否开启序号随机，避免生成id连续可能引起的潜在安全问题 */
   protected final boolean enableSequenceRandom;
@@ -211,7 +214,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
 
     // 启动生产者线程
     this.isRunning = true;
-    new Thread(this::run, DUUID_PRODUCER).start();
+    new Thread(this::run, DUUID_PRODUCER_NAME_PREFIX + NAME_COUNTER.incrementAndGet()).start();
   }
 
   private void run() {

@@ -9,8 +9,8 @@ package com.silong.fundation.duuid.generator.utils;
  */
 public interface Constants {
 
-  /** 默认：生产者线程名 */
-  String DUUID_PRODUCER = "Duuid-Producer";
+  /** 默认：生产者线程名前缀 */
+  String DUUID_PRODUCER_NAME_PREFIX = "Duuid-Producer-";
 
   /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的16次方 */
   int DEFAULT_QUEUE_CAPACITY = 65536;
