@@ -231,7 +231,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
           // 计算当前队列填充率，如果大于等于阈值则放弃CPU时间片，马上重新竞争时间片，给其他任务执行机会
           while ((queue.size() * 1.0 / queue.capacity()) >= paddingFactor) {
             try {
-              Thread.sleep(1L);
+              MILLISECONDS.sleep(0);
             } catch (InterruptedException e) {
               // never happen in regular
             }
