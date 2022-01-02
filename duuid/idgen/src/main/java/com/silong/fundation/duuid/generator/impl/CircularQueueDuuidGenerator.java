@@ -1,14 +1,15 @@
 package com.silong.fundation.duuid.generator.impl;
 
 import com.silong.fundation.duuid.generator.DuuidGenerator;
-import com.silong.fundation.duuid.generator.producer.DuuidProducer;
-import com.silong.fundation.duuid.generator.utils.LongBitsCalculator;
+import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static com.silong.fundation.duuid.generator.utils.Constants.*;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -55,6 +56,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @version 1.0.0
  * @since 2021-12-28 22:30
  */
+@Slf4j
 public class CircularQueueDuuidGenerator implements DuuidGenerator {
 
   /** 是否开启序号随机，避免生成id连续可能引起的潜在安全问题 */
@@ -63,11 +65,38 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
   /** 单生产者，多消费者环状队列 */
   protected final SpmcArrayQueue<Long> queue;
 
-  /** 比特位计算器 */
-  protected final LongBitsCalculator longBitsCalculator;
+  /** workerId占用比特位数 */
+  protected final int workerIdBits;
 
-  /** id生产者 */
-  protected final DuuidProducer duuidProducer;
+  /** deltaDays占用比特位数 */
+  protected final int deltaDaysBits;
+
+  /** 序号占用比特位数 */
+  protected final int sequenceBits;
+
+  /** 最大可用workerId值，workerId取值范围：[0, maxWorkId - 1] */
+  protected final long maxWorkerId;
+
+  /** 最大可用delta-days值，delta-days取值范围：[0, maxDeltaDays - 1] */
+  protected final long maxDeltaDays;
+
+  /** 最大可用sequence值，sequence取值范围：[0, maxSequence - 1] */
+  protected final long maxSequence;
+
+  /** deltaDays左移位数 */
+  protected final int deltaDaysLeftShiftBits;
+
+  /** workId左移位数 */
+  protected final int workerIdLeftShiftBits;
+
+  /** 环状队列填充率，即需要保证环状队列内的填充的id和容量的占比 */
+  protected final double paddingFactor;
+
+  /** producer是否运行中 */
+  protected volatile boolean isRunning;
+
+  /** 生产者线程 */
+  protected final Thread idProducer;
 
   /** worker id */
   protected long workerId;
@@ -144,21 +173,44 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
       boolean enableSequenceRandom) {
     this.enableSequenceRandom = enableSequenceRandom;
     this.queue = new SpmcArrayQueue<>(queueCapacity);
-    this.longBitsCalculator = new LongBitsCalculator(workerIdBits, deltaDaysBits, sequenceBits);
-
-    long maxWorkId = longBitsCalculator.getMaxWorkerId();
-    if (workerId < 0 || workerId >= maxWorkId) {
+    if (workerIdBits <= 0) {
+      throw new IllegalArgumentException("workerIdBits must be greater than 0.");
+    }
+    if (deltaDaysBits <= 0) {
+      throw new IllegalArgumentException("deltaDaysBits must be greater than 0.");
+    }
+    if (sequenceBits <= 0) {
+      throw new IllegalArgumentException("sequenceBits must be greater than 0.");
+    }
+    if (workerIdBits + deltaDaysBits + sequenceBits + SIGN_BIT != Long.SIZE) {
       throw new IllegalArgumentException(
-          String.format("workerId value range [0, %d]", maxWorkId - 1));
+          String.format(
+              "The equation [workIdBits + deltaDaysBits + sequenceBits == %d] must hold.",
+              Long.SIZE - SIGN_BIT));
+    }
+    if (paddingFactor <= 0 || paddingFactor > 1.0) {
+      throw new IllegalArgumentException("paddingFactor value range (0, 1.0].");
     }
 
-    long maxDeltaDays = longBitsCalculator.getMaxDeltaDays();
+    this.workerIdBits = workerIdBits;
+    this.deltaDaysBits = deltaDaysBits;
+    this.sequenceBits = sequenceBits;
+    this.maxWorkerId = maxValues(workerIdBits);
+    this.maxDeltaDays = maxValues(deltaDaysBits);
+    this.maxSequence = maxValues(sequenceBits);
+    this.deltaDaysLeftShiftBits = sequenceBits;
+    this.workerIdLeftShiftBits = deltaDaysBits + sequenceBits;
+
+    if (workerId < 0 || workerId >= maxWorkerId) {
+      throw new IllegalArgumentException(
+          String.format("workerId value range [0, %d]", maxWorkerId - 1));
+    }
+
     if (deltaDays < 0 || deltaDays >= maxDeltaDays) {
       throw new IllegalArgumentException(
           String.format("deltaDays value range [0, %d]", maxDeltaDays - 1));
     }
 
-    long maxSequence = longBitsCalculator.getMaxSequence();
     if (sequence < 0 || sequence >= maxSequence) {
       throw new IllegalArgumentException(
           String.format("sequence value range [0, %d]", maxSequence - 1));
@@ -167,9 +219,41 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
     this.workerId = workerId;
     this.deltaDays = deltaDays;
     this.sequence = sequence;
+    this.paddingFactor = paddingFactor;
 
     // 启动生产者线程
-    this.duuidProducer = new DuuidProducer(DUUID_PRODUCER, queue, this::generate, paddingFactor);
+    this.isRunning = true;
+    this.idProducer = new Thread(this::run, DUUID_PRODUCER);
+    this.idProducer.start();
+  }
+
+  private void run() {
+    log.info("Thread {} started successfully.", Thread.currentThread().getName());
+    queue.fill(
+        this::generate,
+        idleCounter -> {
+          // 计算当前队列填充率，如果大于等于阈值则放弃CPU时间片，马上重新竞争时间片，给其他任务执行机会
+          while ((queue.size() * 1.0 / queue.capacity()) >= paddingFactor) {
+            try {
+              Thread.sleep(1L);
+            } catch (InterruptedException e) {
+              // never happen in regular
+            }
+          }
+          return idleCounter + 1;
+        },
+        () -> isRunning);
+    log.info("Thread {} runs to the end.", Thread.currentThread().getName());
+  }
+
+  /** 停止运行，测试用 */
+  @Deprecated
+  public void finish() {
+    if (isRunning) {
+      this.isRunning = false;
+      this.queue.clear();
+      this.idProducer.interrupt();
+    }
   }
 
   /**
@@ -180,11 +264,11 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    */
   protected long generate() {
     // 如果序列号耗尽，则预支明天序列号
-    sequence = (sequence + randomIncrement()) & longBitsCalculator.getMaxSequence();
+    sequence = (sequence + randomIncrement()) & maxSequence;
     if (sequence == 0) {
       deltaDays++;
     }
-    return longBitsCalculator.combine(workerId, deltaDays, sequence);
+    return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
   }
 
   /**
@@ -207,10 +291,15 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
     return id;
   }
 
-  /** 结束id生成器，测试使用 */
-  @Deprecated
-  public void finish() {
-    duuidProducer.finish();
+  /**
+   * 按照比特位计算最大值
+   *
+   * @param bits 比特位
+   * @return 最大值
+   */
+  protected long maxValues(int bits) {
+    assert bits > 0 : "Invalid bits: " + bits;
+    return ~(-1L << bits);
   }
 
   /**

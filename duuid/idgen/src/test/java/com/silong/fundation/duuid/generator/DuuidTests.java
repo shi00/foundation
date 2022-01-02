@@ -7,9 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,39 +37,63 @@ public class DuuidTests {
 
   @Test
   void test1() throws InterruptedException {
-    List<Long> list = Collections.synchronizedList(new LinkedList<>());
-    CountDownLatch latch = new CountDownLatch(100);
-    for (int i = 0; i < 100; i++) {
+    Deque<Long> deque = new ConcurrentLinkedDeque<>();
+    int threadCount = 100;
+    int callCount = 100000;
+    CountDownLatch latch = new CountDownLatch(threadCount);
+    CountDownLatch latch1 = new CountDownLatch(1);
+    for (int i = 0; i < threadCount; i++) {
       new Thread(
               () -> {
-                for (int j = 0; j < 10000; j++) {
-                  list.add(duuidGenerator.nextId());
+                try {
+                  latch1.await();
+                  for (int j = 0; j < callCount; j++) {
+                    deque.add(duuidGenerator.nextId());
+                  }
+                  latch.countDown();
+                } catch (Exception e) {
+                  e.printStackTrace();
                 }
-                latch.countDown();
               })
           .start();
     }
+    latch1.countDown();
     latch.await();
-    assertEquals(list.stream().distinct().count(), list.size());
+
+    assertEquals(callCount * threadCount, deque.size());
+    assertEquals(deque.stream().distinct().count(), deque.size());
   }
 
   @Test
   void test2() {
+    int threadCount = 100;
+    int callCount = 1000;
+    CountDownLatch latch = new CountDownLatch(threadCount);
+    CountDownLatch latch1 = new CountDownLatch(1);
+    Deque<Long> deque = new ConcurrentLinkedDeque<>();
     assertTimeout(
         Duration.ofSeconds(1),
         () -> {
-          CountDownLatch latch = new CountDownLatch(100);
-          for (int i = 0; i < 100; i++) {
+          for (int i = 0; i < threadCount; i++) {
             new Thread(
                     () -> {
-                      for (int j = 0; j < 3000; j++) {
-                        duuidGenerator.nextId();
+                      try {
+                        latch1.await();
+                        for (int j = 0; j < callCount; j++) {
+                          deque.add(duuidGenerator.nextId());
+                        }
+                        latch.countDown();
+                      } catch (Exception e) {
+                        e.printStackTrace();
                       }
-                      latch.countDown();
                     })
                 .start();
           }
+          latch1.countDown();
           latch.await();
         });
+
+    assertEquals(threadCount * callCount, deque.size());
+    assertEquals(deque.stream().distinct().count(), deque.size());
   }
 }
