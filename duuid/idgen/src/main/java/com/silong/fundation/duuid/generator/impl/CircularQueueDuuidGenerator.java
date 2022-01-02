@@ -309,6 +309,11 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     return enableSequenceRandom ? ThreadLocalRandom.current().nextInt(maxRandomIncrement) + 1 : 1;
   }
 
+  /**
+   * 从环状队列中取出id
+   *
+   * @return duuid
+   */
   @Override
   public long nextId() {
     Long id = queue.poll();
