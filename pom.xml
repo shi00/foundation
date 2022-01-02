@@ -42,6 +42,7 @@
         <module>crypto</module>
         <module>duuid/idgen</module>
         <module>duuid/workid-provider</module>
+        <module>duuid/etcdv3-workerid-provider</module>
     </modules>
 
     <properties>
@@ -60,6 +61,7 @@
         <zxcvbn.version>1.5.2</zxcvbn.version>
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>3.3.0</jctools.version>
+        <jetcd.version>0.6.1</jetcd.version>
         <!--开源组件-->
     </properties>
 
@@ -96,6 +98,11 @@
                 <groupId>org.jctools</groupId>
                 <artifactId>jctools-core</artifactId>
                 <version>${jctools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.etcd</groupId>
+                <artifactId>jetcd-core</artifactId>
+                <version>${jetcd.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
