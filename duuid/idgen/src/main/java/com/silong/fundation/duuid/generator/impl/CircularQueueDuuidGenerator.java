@@ -2,6 +2,9 @@ package com.silong.fundation.duuid.generator.impl;
 
 import com.silong.fundation.duuid.generator.DuuidGenerator;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
@@ -56,56 +59,56 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @version 1.0.0
  * @since 2021-12-28 22:30
  */
-@Data
 @Slf4j
+@EqualsAndHashCode
 public class CircularQueueDuuidGenerator implements DuuidGenerator {
 
   private static final AtomicLong NAME_COUNTER = new AtomicLong(0);
 
   /** 是否开启序号随机，避免生成id连续可能引起的潜在安全问题 */
-  protected final boolean enableSequenceRandom;
+  @Getter protected final boolean enableSequenceRandom;
 
   /** 单生产者，多消费者环状队列 */
-  protected final SpmcArrayQueue<Long> queue;
+  @Getter protected final SpmcArrayQueue<Long> queue;
 
   /** workerId占用比特位数 */
-  protected final int workerIdBits;
+  @Getter protected final int workerIdBits;
 
   /** deltaDays占用比特位数 */
-  protected final int deltaDaysBits;
+  @Getter protected final int deltaDaysBits;
 
   /** 序号占用比特位数 */
-  protected final int sequenceBits;
+  @Getter protected final int sequenceBits;
 
   /** 最大可用workerId值，workerId取值范围：[0, maxWorkId - 1] */
-  protected final long maxWorkerId;
+  @Getter protected final long maxWorkerId;
 
   /** 最大可用delta-days值，delta-days取值范围：[0, maxDeltaDays - 1] */
-  protected final long maxDeltaDays;
+  @Getter protected final long maxDeltaDays;
 
   /** 最大可用sequence值，sequence取值范围：[0, maxSequence - 1] */
-  protected final long maxSequence;
+  @Getter protected final long maxSequence;
 
   /** deltaDays左移位数 */
-  protected final int deltaDaysLeftShiftBits;
+  @Getter protected final int deltaDaysLeftShiftBits;
 
   /** workId左移位数 */
-  protected final int workerIdLeftShiftBits;
+  @Getter protected final int workerIdLeftShiftBits;
 
   /** 环状队列填充率，即需要保证环状队列内的填充的id和容量的占比 */
-  protected final double paddingFactor;
+  @Getter protected final double paddingFactor;
 
   /** worker id */
-  protected long workerId;
+  @Getter protected long workerId;
 
   /** 与基准时间的时差 */
-  protected long deltaDays;
+  @Getter protected long deltaDays;
 
   /** 序列号 */
-  protected long sequence;
+  @Getter protected long sequence;
 
   /** producer是否运行中 */
-  protected volatile boolean isRunning;
+  @Getter protected volatile boolean isRunning;
 
   /**
    * 构造方法
