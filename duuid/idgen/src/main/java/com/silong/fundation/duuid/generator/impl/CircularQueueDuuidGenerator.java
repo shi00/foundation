@@ -1,7 +1,6 @@
 package com.silong.fundation.duuid.generator.impl;
 
 import com.silong.fundation.duuid.generator.DuuidGenerator;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
@@ -58,8 +57,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @since 2021-12-28 22:30
  */
 @Slf4j
-@EqualsAndHashCode
-public class CircularQueueDuuidGenerator implements DuuidGenerator {
+public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerator {
 
   private static final AtomicLong NAME_COUNTER = new AtomicLong(0);
 
@@ -94,7 +92,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
   @Getter protected final int workerIdLeftShiftBits;
 
   /** 环状队列填充率，即需要保证环状队列内的填充的id和容量的占比 */
-  @Getter protected final double paddingFactor;
+  @Getter protected final double fillingFactor;
 
   /** worker id */
   @Getter protected long workerId;
@@ -150,7 +148,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    * @param deltaDays 时间差
    * @param sequence 序列号初始值
    * @param queueCapacity 队列容量，必须位2的次方
-   * @param paddingFactor 队列填充率，取值：(0, 1.0]
+   * @param fillingFactor 队列填充率，取值：(0, 1.0]
    * @param enableSequenceRandom 是否开启id随机，避免id连续
    */
   public CircularQueueDuuidGenerator(
@@ -161,7 +159,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
       long deltaDays,
       long sequence,
       int queueCapacity,
-      double paddingFactor,
+      double fillingFactor,
       boolean enableSequenceRandom) {
     if (workerIdBits <= 0) {
       throw new IllegalArgumentException("workerIdBits must be greater than 0.");
@@ -178,8 +176,8 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
               "The equation [workIdBits + deltaDaysBits + sequenceBits == %d] must hold.",
               Long.SIZE - SIGN_BIT));
     }
-    if (paddingFactor <= 0 || paddingFactor > 1.0) {
-      throw new IllegalArgumentException("paddingFactor value range (0, 1.0].");
+    if (fillingFactor <= 0 || fillingFactor > 1.0) {
+      throw new IllegalArgumentException("fillingFactor value range (0, 1.0].");
     }
 
     this.enableSequenceRandom = enableSequenceRandom;
@@ -211,52 +209,50 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
     this.workerId = workerId;
     this.deltaDays = deltaDays;
     this.sequence = sequence;
-    this.paddingFactor = paddingFactor;
+    this.fillingFactor = fillingFactor;
 
     // 启动生产者线程
     this.isRunning = true;
-    new Thread(this::run, DUUID_PRODUCER_NAME_PREFIX + NAME_COUNTER.incrementAndGet()).start();
+    setName(DUUID_PRODUCER_NAME_PREFIX + NAME_COUNTER.incrementAndGet());
+    start();
   }
 
-  private void run() {
-    log.info("Thread {} started successfully.", Thread.currentThread().getName());
-    while (isRunning) {
-      try {
-        queue.fill(
-            this::generate,
-            idleCounter -> {
-              try {
-                MILLISECONDS.sleep(1L);
-              } catch (InterruptedException e) {
-                // never happen in regular
-                throw new RuntimeException(e);
-              }
-              return idleCounter + 1;
-            },
-            // 计算当前队列填充率，如果小于阈值则不再进行队列填充
-            () -> isRunning && (((queue.size() * 1.0) / queue.capacity()) < paddingFactor));
-        MILLISECONDS.sleep(1L);
-      } catch (Exception e) {
-        // never happen in regular
-        log.error("Failed to fill circular-array with ids.", e);
-      }
-    }
-    log.info("Thread {} runs to the end.", Thread.currentThread().getName());
+  /** id生产 */
+  @Override
+  public void run() {
+    log.info("Thread {} started successfully.", getName());
+    queue.fill(
+        this::generate,
+        idleCounter -> {
+          while (((queue.size() * 1.0) / queue.capacity()) > fillingFactor) {
+            try {
+              MILLISECONDS.sleep(1);
+            } catch (InterruptedException e) {
+              // never happen in regular
+              log.error("Thread {} is interrupted and ends running", getName());
+            }
+          }
+          return idleCounter + 1;
+        },
+        () -> isRunning);
+    log.info("Thread {} runs to the end.", getName());
   }
 
   /** 停止运行 */
-  public void stop() {
+  public void finish() {
     if (isRunning) {
       this.isRunning = false;
       this.queue.clear();
+      this.interrupt();
     }
   }
 
   /**
    * 根据定义的格式生成id，由于是单生产者多消费者模型，所以无需同步<br>
-   * 为了避免id连续可能带来的潜在安全问题，此处加入初始值随机开关。
+   * 为了避免id连续可能带来的潜在安全问题，此处加入初始值随机开关。<br>
+   * 此方法不能抛出异常，否则会导致环状队列奔溃。
    *
-   * @return duuid
+   * @return id
    */
   protected long generate() {
     // 如果序列号耗尽，则预支明天序列号
