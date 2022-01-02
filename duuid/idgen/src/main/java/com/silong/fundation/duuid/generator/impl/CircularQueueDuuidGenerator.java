@@ -111,16 +111,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    * @param enableSequenceRandom 是否开启序列号不连续
    */
   public CircularQueueDuuidGenerator(long workerId, boolean enableSequenceRandom) {
-    this(
-        DEFAULT_WORK_ID_BITS,
-        DEFAULT_DELTA_DAYS_BITS,
-        DEFAULT_SEQUENCE_BITS,
-        workerId,
-        calculateDeltaDays(),
-        0,
-        DEFAULT_QUEUE_CAPACITY,
-        DEFAULT_PADDING_FACTOR,
-        enableSequenceRandom);
+    this(workerId, calculateDeltaDays(), 0, enableSequenceRandom);
   }
 
   /**
