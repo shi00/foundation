@@ -92,9 +92,6 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
   /** 环状队列填充率，即需要保证环状队列内的填充的id和容量的占比 */
   protected final double paddingFactor;
 
-  /** 生产者线程 */
-  protected final Thread idProducer;
-
   /** worker id */
   protected long workerId;
 
@@ -223,8 +220,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
 
     // 启动生产者线程
     this.isRunning = true;
-    this.idProducer = new Thread(this::run, DUUID_PRODUCER);
-    this.idProducer.start();
+    new Thread(this::run, DUUID_PRODUCER).start();
   }
 
   private void run() {
@@ -251,7 +247,6 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
     if (isRunning) {
       this.isRunning = false;
       this.queue.clear();
-      this.idProducer.interrupt();
     }
   }
 

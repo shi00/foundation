@@ -34,7 +34,7 @@ public class DuuidTests {
   void init() {
     duuidGenerator =
         new CircularQueueDuuidGenerator(
-            RandomUtils.nextInt(0, (int) ~(-1L << DEFAULT_WORK_ID_BITS)), true);
+            RandomUtils.nextInt(0, (int) (~(-1L << DEFAULT_WORK_ID_BITS))), true);
     count.set(0);
   }
 
