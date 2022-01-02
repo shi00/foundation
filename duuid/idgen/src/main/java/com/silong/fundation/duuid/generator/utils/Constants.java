@@ -32,4 +32,7 @@ public interface Constants {
 
   /** 序号占用bit位 */
   int DEFAULT_SEQUENCE_BITS = 25;
+
+  /** 默认最大随机增量32 */
+  int DEFAULT_MAX_RANDOM_INCREMENT = 32;
 }

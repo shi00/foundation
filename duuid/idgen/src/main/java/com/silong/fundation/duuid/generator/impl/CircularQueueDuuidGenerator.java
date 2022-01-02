@@ -48,6 +48,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * 无锁环状队列(SpmcArrayQueue)，避免id生成使用同步代码块，大幅提升性能，
  * 实现更高的吞吐率。
  *
+ * 安全性：
+ * 为了避免在某些场景下对ID连续性可能带来的安全影响，可以通过配置随机增量确保
+ * 生成id不连续，增强安全性。
+ *
  * Duuid生成器支持定制各分段占用比特位，用户可以按需调整。
  *
  * </pre>
@@ -94,6 +98,9 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /** 环状队列填充率，即需要保证环状队列内的填充的id和容量的占比 */
   @Getter protected final double fillingFactor;
 
+  /** 最大随机上限 */
+  @Getter protected final int maxRandomIncrement;
+
   /** worker id */
   @Getter protected long workerId;
 
@@ -126,6 +133,24 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    */
   public CircularQueueDuuidGenerator(
       long workerId, long deltaDays, long sequence, boolean enableSequenceRandom) {
+    this(workerId, deltaDays, sequence, enableSequenceRandom, DEFAULT_MAX_RANDOM_INCREMENT);
+  }
+
+  /**
+   * 构造方法
+   *
+   * @param workerId workerId编号
+   * @param deltaDays 时间差
+   * @param sequence 序列号起始值
+   * @param enableSequenceRandom 是否开启序列号不连续
+   * @param maxRandomIncrement 最大随机增量
+   */
+  public CircularQueueDuuidGenerator(
+      long workerId,
+      long deltaDays,
+      long sequence,
+      boolean enableSequenceRandom,
+      int maxRandomIncrement) {
     this(
         DEFAULT_WORK_ID_BITS,
         DEFAULT_DELTA_DAYS_BITS,
@@ -135,7 +160,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         sequence,
         DEFAULT_QUEUE_CAPACITY,
         DEFAULT_PADDING_FACTOR,
-        enableSequenceRandom);
+        enableSequenceRandom,
+        maxRandomIncrement);
   }
 
   /**
@@ -150,6 +176,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @param queueCapacity 队列容量，必须位2的次方
    * @param fillingFactor 队列填充率，取值：(0, 1.0]
    * @param enableSequenceRandom 是否开启id随机，避免id连续
+   * @param maxRandomIncrement 最大随机增量值，必须大于0
    */
   public CircularQueueDuuidGenerator(
       int workerIdBits,
@@ -160,7 +187,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       long sequence,
       int queueCapacity,
       double fillingFactor,
-      boolean enableSequenceRandom) {
+      boolean enableSequenceRandom,
+      int maxRandomIncrement) {
     if (workerIdBits <= 0) {
       throw new IllegalArgumentException("workerIdBits must be greater than 0.");
     }
@@ -180,7 +208,13 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       throw new IllegalArgumentException("fillingFactor value range (0, 1.0].");
     }
 
+    // 如果开启随机增量则校验
+    if (enableSequenceRandom && maxRandomIncrement <= 0) {
+      throw new IllegalArgumentException("maxRandomIncrement must be greater than 0.");
+    }
+
     this.enableSequenceRandom = enableSequenceRandom;
+    this.maxRandomIncrement = maxRandomIncrement;
     this.queue = new SpmcArrayQueue<>(queueCapacity);
     this.workerIdBits = workerIdBits;
     this.deltaDaysBits = deltaDaysBits;
@@ -226,7 +260,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         idleCounter -> {
           while (((queue.size() * 1.0) / queue.capacity()) > fillingFactor) {
             try {
-              MILLISECONDS.sleep(1);
+              MILLISECONDS.sleep(0);
             } catch (InterruptedException e) {
               // never happen in regular
               log.error("Thread {} is interrupted and ends running", getName());
@@ -272,7 +306,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    */
   protected long randomIncrement() {
     // 随机数生成器，此处考虑性能，无需使用安全随机，只要保证生成id不连续即可
-    return enableSequenceRandom ? ThreadLocalRandom.current().nextInt(32) + 1 : 1;
+    return enableSequenceRandom ? ThreadLocalRandom.current().nextInt(maxRandomIncrement) + 1 : 1;
   }
 
   @Override
