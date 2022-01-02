@@ -2,6 +2,7 @@ package com.silong.fundation.duuid.generator;
 
 import com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator;
 import org.apache.commons.lang3.RandomUtils;
+import org.jctools.maps.ConcurrentAutoTable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,9 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.LongAdder;
 
+import static com.silong.fundation.duuid.generator.utils.Constants.DEFAULT_WORK_ID_BITS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 
@@ -25,28 +28,33 @@ public class DuuidTests {
 
   CircularQueueDuuidGenerator duuidGenerator;
 
+  ConcurrentAutoTable count = new ConcurrentAutoTable();
+
   @BeforeEach
   void init() {
-    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(1, 8000000), true);
+    duuidGenerator =
+        new CircularQueueDuuidGenerator(
+            RandomUtils.nextInt(0, (int) ~(-1L << DEFAULT_WORK_ID_BITS)), true);
+    count.set(0);
   }
 
   @AfterEach
   void cleanup() {
-    duuidGenerator.finish();
+    duuidGenerator.stop();
   }
 
   @Test
   void test1() throws InterruptedException {
     Deque<Long> deque = new ConcurrentLinkedDeque<>();
     int threadCount = 100;
-    int callCount = 100000;
+    int callCount = 50000;
     CountDownLatch latch = new CountDownLatch(threadCount);
-    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch starter = new CountDownLatch(1);
     for (int i = 0; i < threadCount; i++) {
       new Thread(
               () -> {
                 try {
-                  latch1.await();
+                  starter.await();
                   for (int j = 0; j < callCount; j++) {
                     deque.add(duuidGenerator.nextId());
                   }
@@ -57,20 +65,23 @@ public class DuuidTests {
               })
           .start();
     }
-    latch1.countDown();
+    starter.countDown();
     latch.await();
 
     assertEquals(callCount * threadCount, deque.size());
-    assertEquals(deque.stream().distinct().count(), deque.size());
+    assertEquals(deque.size(), deque.stream().distinct().count());
+  }
+
+  private void count(long id) {
+    count.increment();
   }
 
   @Test
   void test2() {
     int threadCount = 100;
-    int callCount = 1000;
+    int callCount = 10000;
     CountDownLatch latch = new CountDownLatch(threadCount);
     CountDownLatch latch1 = new CountDownLatch(1);
-    Deque<Long> deque = new ConcurrentLinkedDeque<>();
     assertTimeout(
         Duration.ofSeconds(1),
         () -> {
@@ -80,7 +91,7 @@ public class DuuidTests {
                       try {
                         latch1.await();
                         for (int j = 0; j < callCount; j++) {
-                          deque.add(duuidGenerator.nextId());
+                          count(duuidGenerator.nextId());
                         }
                         latch.countDown();
                       } catch (Exception e) {
@@ -93,7 +104,6 @@ public class DuuidTests {
           latch.await();
         });
 
-    assertEquals(threadCount * callCount, deque.size());
-    assertEquals(deque.stream().distinct().count(), deque.size());
+    assertEquals(threadCount * callCount, count.get());
   }
 }

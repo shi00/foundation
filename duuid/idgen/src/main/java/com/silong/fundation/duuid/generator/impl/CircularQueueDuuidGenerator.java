@@ -1,15 +1,14 @@
 package com.silong.fundation.duuid.generator.impl;
 
 import com.silong.fundation.duuid.generator.DuuidGenerator;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 import static com.silong.fundation.duuid.generator.utils.Constants.*;
-import static java.util.concurrent.Executors.newFixedThreadPool;
+import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -56,6 +55,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @version 1.0.0
  * @since 2021-12-28 22:30
  */
+@Data
 @Slf4j
 public class CircularQueueDuuidGenerator implements DuuidGenerator {
 
@@ -92,9 +92,6 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
   /** 环状队列填充率，即需要保证环状队列内的填充的id和容量的占比 */
   protected final double paddingFactor;
 
-  /** producer是否运行中 */
-  protected volatile boolean isRunning;
-
   /** 生产者线程 */
   protected final Thread idProducer;
 
@@ -106,6 +103,9 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
 
   /** 序列号 */
   protected long sequence;
+
+  /** producer是否运行中 */
+  protected volatile boolean isRunning;
 
   /**
    * 构造方法
@@ -171,8 +171,6 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
       int queueCapacity,
       double paddingFactor,
       boolean enableSequenceRandom) {
-    this.enableSequenceRandom = enableSequenceRandom;
-    this.queue = new SpmcArrayQueue<>(queueCapacity);
     if (workerIdBits <= 0) {
       throw new IllegalArgumentException("workerIdBits must be greater than 0.");
     }
@@ -192,6 +190,8 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
       throw new IllegalArgumentException("paddingFactor value range (0, 1.0].");
     }
 
+    this.enableSequenceRandom = enableSequenceRandom;
+    this.queue = new SpmcArrayQueue<>(queueCapacity);
     this.workerIdBits = workerIdBits;
     this.deltaDaysBits = deltaDaysBits;
     this.sequenceBits = sequenceBits;
@@ -232,13 +232,13 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
     queue.fill(
         this::generate,
         idleCounter -> {
-          // 计算当前队列填充率，如果大于等于阈值则放弃CPU时间片，马上重新竞争时间片，给其他任务执行机会
-          while ((queue.size() * 1.0 / queue.capacity()) >= paddingFactor) {
-            try {
+          try {
+            // 计算当前队列填充率，如果大于等于阈值则放弃CPU时间片，马上重新竞争时间片，给其他任务执行机会
+            while ((queue.size() * 1.0 / queue.capacity()) >= paddingFactor) {
               Thread.sleep(1L);
-            } catch (InterruptedException e) {
-              // never happen in regular
             }
+          } catch (InterruptedException e) {
+            // never happen in regular
           }
           return idleCounter + 1;
         },
@@ -246,9 +246,8 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
     log.info("Thread {} runs to the end.", Thread.currentThread().getName());
   }
 
-  /** 停止运行，测试用 */
-  @Deprecated
-  public void finish() {
+  /** 停止运行 */
+  public void stop() {
     if (isRunning) {
       this.isRunning = false;
       this.queue.clear();
@@ -307,7 +306,23 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    *
    * @return 时间差
    */
-  private static long calculateDeltaDays() {
-    return TimeUnit.DAYS.convert(System.currentTimeMillis(), MILLISECONDS) - EPOCH;
+  protected static long calculateDeltaDays() {
+    return DAYS.convert(System.currentTimeMillis(), MILLISECONDS) - EPOCH;
+  }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "%s[workerIdBits:%d, deltaDaysBits:%d, sequenceBits:%d, maxWorkerId:%d, maxDeltaDays:%d, maxSequence:%d, workerId:%d, deltaDays:%d, sequence:%d]",
+        getClass().getSimpleName(),
+        workerIdBits,
+        deltaDaysBits,
+        sequenceBits,
+        maxWorkerId,
+        maxDeltaDays,
+        maxSequence,
+        workerId,
+        deltaDays,
+        sequence);
   }
 }
