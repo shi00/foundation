@@ -1,10 +1,8 @@
 package com.silong.fundation.duuid.generator.impl;
 
 import com.silong.fundation.duuid.generator.DuuidGenerator;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
@@ -222,20 +220,27 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
 
   private void run() {
     log.info("Thread {} started successfully.", Thread.currentThread().getName());
-    queue.fill(
-        this::generate,
-        idleCounter -> {
-          // 计算当前队列填充率，如果大于等于阈值则放弃CPU时间片，马上重新竞争时间片，给其他任务执行机会
-          while ((queue.size() * 1.0 / queue.capacity()) >= paddingFactor) {
-            try {
-              MILLISECONDS.sleep(0);
-            } catch (InterruptedException e) {
-              // never happen in regular
-            }
-          }
-          return idleCounter + 1;
-        },
-        () -> isRunning);
+    while (isRunning) {
+      try {
+        queue.fill(
+            this::generate,
+            idleCounter -> {
+              try {
+                MILLISECONDS.sleep(1L);
+              } catch (InterruptedException e) {
+                // never happen in regular
+                throw new RuntimeException(e);
+              }
+              return idleCounter + 1;
+            },
+            // 计算当前队列填充率，如果小于阈值则不再进行队列填充
+            () -> isRunning && (((queue.size() * 1.0) / queue.capacity()) < paddingFactor));
+        MILLISECONDS.sleep(1L);
+      } catch (Exception e) {
+        // never happen in regular
+        log.error("Failed to fill circular-array with ids.", e);
+      }
+    }
     log.info("Thread {} runs to the end.", Thread.currentThread().getName());
   }
 
@@ -255,9 +260,10 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    */
   protected long generate() {
     // 如果序列号耗尽，则预支明天序列号
-    sequence = (sequence + randomIncrement()) & maxSequence;
-    if (sequence == 0) {
+    sequence = sequence + randomIncrement();
+    if (sequence > maxSequence) {
       deltaDays++;
+      sequence = sequence - maxSequence;
     }
     return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
   }
@@ -298,7 +304,7 @@ public class CircularQueueDuuidGenerator implements DuuidGenerator {
    *
    * @return 时间差
    */
-  protected static long calculateDeltaDays() {
+  public static long calculateDeltaDays() {
     return DAYS.convert(System.currentTimeMillis(), MILLISECONDS) - EPOCH;
   }
 

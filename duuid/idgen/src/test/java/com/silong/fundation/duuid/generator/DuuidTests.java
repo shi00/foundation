@@ -3,19 +3,17 @@ package com.silong.fundation.duuid.generator;
 import com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator;
 import org.apache.commons.lang3.RandomUtils;
 import org.jctools.maps.ConcurrentAutoTable;
+import org.jctools.maps.NonBlockingHashMapLong;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.LongAdder;
 
 import static com.silong.fundation.duuid.generator.utils.Constants.DEFAULT_WORK_ID_BITS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 单元测试
@@ -26,28 +24,54 @@ import static org.junit.jupiter.api.Assertions.assertTimeout;
  */
 public class DuuidTests {
 
-  CircularQueueDuuidGenerator duuidGenerator;
-
+  int maxWorkerId = (int) (~(-1L << DEFAULT_WORK_ID_BITS)) + 1;
   ConcurrentAutoTable count = new ConcurrentAutoTable();
-
-  @BeforeEach
-  void init() {
-    duuidGenerator =
-        new CircularQueueDuuidGenerator(
-            RandomUtils.nextInt(0, (int) (~(-1L << DEFAULT_WORK_ID_BITS))), true);
-    count.set(0);
-  }
+  CircularQueueDuuidGenerator duuidGenerator;
 
   @AfterEach
   void cleanup() {
-    duuidGenerator.stop();
+    if (duuidGenerator != null) {
+      duuidGenerator.stop();
+    }
   }
 
   @Test
-  void test1() throws InterruptedException {
-    Deque<Long> deque = new ConcurrentLinkedDeque<>();
+  @DisplayName("SPSC-randomIncrement-33554432")
+  void test1() {
+    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(0, maxWorkerId), true);
+    int length = 33554432;
+    long[] array = new long[length];
+    for (int i = 0; i < length; i++) {
+      array[i] = duuidGenerator.nextId();
+    }
+    long[] clone = new long[length];
+    System.arraycopy(array, 0, clone, 0, length);
+    Arrays.sort(array);
+    assertArrayEquals(clone, array);
+  }
+
+  @Test
+  @DisplayName("SPSC-[inc:1]-33554432")
+  void test2() {
+    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(0, maxWorkerId), false);
+    int length = 33554432;
+    long[] array = new long[length];
+    for (int i = 0; i < length; i++) {
+      array[i] = duuidGenerator.nextId();
+    }
+    long[] clone = new long[length];
+    System.arraycopy(array, 0, clone, 0, length);
+    Arrays.sort(array);
+    assertArrayEquals(clone, array);
+  }
+
+  @Test
+  @DisplayName("SPMC-[inc:1]-[thread:100]-10000000")
+  void test3() throws InterruptedException {
     int threadCount = 100;
-    int callCount = 50000;
+    int callCount = 100000;
+    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(0, maxWorkerId), false);
+    NonBlockingHashMapLong<Boolean> map = new NonBlockingHashMapLong<>(callCount * threadCount);
     CountDownLatch latch = new CountDownLatch(threadCount);
     CountDownLatch starter = new CountDownLatch(1);
     for (int i = 0; i < threadCount; i++) {
@@ -56,7 +80,7 @@ public class DuuidTests {
                 try {
                   starter.await();
                   for (int j = 0; j < callCount; j++) {
-                    deque.add(duuidGenerator.nextId());
+                    map.put(duuidGenerator.nextId(), Boolean.TRUE);
                   }
                   latch.countDown();
                 } catch (Exception e) {
@@ -68,8 +92,37 @@ public class DuuidTests {
     starter.countDown();
     latch.await();
 
-    assertEquals(callCount * threadCount, deque.size());
-    assertEquals(deque.size(), deque.stream().distinct().count());
+    assertEquals(threadCount * callCount, map.size());
+  }
+
+  @Test
+  @DisplayName("SPMC-randomIncrement-[thread:100]-10000000")
+  void test4() throws InterruptedException {
+    int threadCount = 100;
+    int callCount = 100000;
+    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(0, maxWorkerId), true);
+    NonBlockingHashMapLong<Boolean> map = new NonBlockingHashMapLong<>(callCount * threadCount);
+    CountDownLatch latch = new CountDownLatch(threadCount);
+    CountDownLatch starter = new CountDownLatch(1);
+    for (int i = 0; i < threadCount; i++) {
+      new Thread(
+              () -> {
+                try {
+                  starter.await();
+                  for (int j = 0; j < callCount; j++) {
+                    map.put(duuidGenerator.nextId(), Boolean.TRUE);
+                  }
+                  latch.countDown();
+                } catch (Exception e) {
+                  e.printStackTrace();
+                }
+              })
+          .start();
+    }
+    starter.countDown();
+    latch.await();
+
+    assertEquals(threadCount * callCount, map.size());
   }
 
   private void count(long id) {
@@ -77,9 +130,11 @@ public class DuuidTests {
   }
 
   @Test
-  void test2() {
-    int threadCount = 100;
+  @DisplayName("SPMC-randomIncrement-[thread:200]-20000000")
+  void test5() {
+    int threadCount = 200;
     int callCount = 10000;
+    duuidGenerator = new CircularQueueDuuidGenerator(RandomUtils.nextInt(0, maxWorkerId), true);
     CountDownLatch latch = new CountDownLatch(threadCount);
     CountDownLatch latch1 = new CountDownLatch(1);
     assertTimeout(
