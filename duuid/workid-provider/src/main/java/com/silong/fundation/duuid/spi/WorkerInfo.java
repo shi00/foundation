@@ -1,5 +1,6 @@
 package com.silong.fundation.duuid.spi;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
  * @since 2021-12-30 21:50
  */
 @Data
+@Builder
 public class WorkerInfo {
   /** worker name */
   private final String name;
