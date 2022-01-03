@@ -53,6 +53,7 @@
         <!-- 插件 -->
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
+        <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
         <!-- 插件 -->
         <!--开源组件-->
         <spring-boot.version>2.6.2</spring-boot.version>
@@ -62,7 +63,9 @@
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>3.3.0</jctools.version>
         <jetcd.version>0.6.1</jetcd.version>
+        <jmh.version>1.34</jmh.version>
         <!--开源组件-->
+
     </properties>
 
     <dependencyManagement>
@@ -104,6 +107,16 @@
                 <artifactId>jetcd-core</artifactId>
                 <version>${jetcd.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-core</artifactId>
+                <version>${jmh.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.jmh</groupId>
+                <artifactId>jmh-generator-annprocess</artifactId>
+                <version>${jmh.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -124,6 +137,11 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
