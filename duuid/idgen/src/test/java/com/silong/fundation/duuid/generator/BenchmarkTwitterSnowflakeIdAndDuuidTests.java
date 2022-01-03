@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(
     value = 2,
     jvmArgs = {"-Xms1G", "-Xmx1G"})
-public class BenchmarkTwitterSnowflakeIdAndDuuid {
+public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
 
   @Param({"10000000"})
   private int counter;
@@ -38,7 +38,7 @@ public class BenchmarkTwitterSnowflakeIdAndDuuid {
   public static void main(String[] args) throws RunnerException {
     Options opt =
         new OptionsBuilder()
-            .include(BenchmarkTwitterSnowflakeIdAndDuuid.class.getSimpleName())
+            .include(BenchmarkTwitterSnowflakeIdAndDuuidTests.class.getSimpleName())
             .forks(1)
             .build();
     new Runner(opt).run();
