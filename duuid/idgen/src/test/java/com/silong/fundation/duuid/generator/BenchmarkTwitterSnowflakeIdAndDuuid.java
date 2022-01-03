@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 8)
 @Fork(
     value = 2,
-    jvmArgs = {"-Xms2G", "-Xmx2G"})
+    jvmArgs = {"-Xms1G", "-Xmx1G"})
 public class BenchmarkTwitterSnowflakeIdAndDuuid {
 
   @Param({"10000000"})
