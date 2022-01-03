@@ -43,6 +43,8 @@
         <module>duuid/idgen</module>
         <module>duuid/workid-provider</module>
         <module>duuid/etcdv3-workerid-provider</module>
+        <module>duuid/duuid-server</module>
+        <module>common-model</module>
     </modules>
 
     <properties>
