@@ -26,7 +26,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Slf4j
 public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
 
-  /** etcd服务器端点地址列表 */
+  /** etcd服务器端点地址列表，多个地址用逗号(,)分隔 */
   public static final String ETCDV3_ENDPOINTS = "etcdv3.endpoints";
 
   /** etcd用户 */
