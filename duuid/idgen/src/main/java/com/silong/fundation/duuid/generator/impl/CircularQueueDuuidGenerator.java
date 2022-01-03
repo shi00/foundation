@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.silong.fundation.duuid.generator.utils.Constants.*;
-import static java.util.concurrent.TimeUnit.DAYS;
+import static com.silong.fundation.duuid.generator.utils.DaysUtils.calculateDeltaDays;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -159,7 +159,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         deltaDays,
         sequence,
         DEFAULT_QUEUE_CAPACITY,
-        DEFAULT_PADDING_FACTOR,
+        DEFAULT_FILLING_FACTOR,
         enableSequenceRandom,
         maxRandomIncrement);
   }
@@ -332,15 +332,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   protected long maxValues(int bits) {
     assert bits > 0 : "Invalid bits: " + bits;
     return ~(-1L << bits);
-  }
-
-  /**
-   * 获取当前时间到时间起算点之差
-   *
-   * @return 时间差
-   */
-  public static long calculateDeltaDays() {
-    return DAYS.convert(System.currentTimeMillis(), MILLISECONDS) - EPOCH;
   }
 
   @Override

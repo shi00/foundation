@@ -16,7 +16,7 @@ public interface Constants {
   int DEFAULT_QUEUE_CAPACITY = 65536;
 
   /** 环状队列填充率，默认：0.7 */
-  double DEFAULT_PADDING_FACTOR = 0.7;
+  double DEFAULT_FILLING_FACTOR = 0.7;
 
   /** 以2020-01-01 00:00:00为起始时间距1970-01-01 00:00:00的天数差，默认值：18261 */
   long EPOCH = 18261;
