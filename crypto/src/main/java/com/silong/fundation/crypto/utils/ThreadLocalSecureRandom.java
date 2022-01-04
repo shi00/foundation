@@ -2,8 +2,6 @@ package com.silong.fundation.crypto.utils;
 
 import java.security.SecureRandom;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * 安全随机数线程局部变量
  *
@@ -51,7 +49,10 @@ public final class ThreadLocalSecureRandom {
    * @throws NullPointerException array == null
    */
   public static byte[] random(byte[] array) {
-    TLSR.get().nextBytes(requireNonNull(array, "array must not be null."));
+    if (array == null || array.length == 0) {
+      throw new IllegalArgumentException("array must not be null or empty.");
+    }
+    TLSR.get().nextBytes(array);
     return array;
   }
 }
