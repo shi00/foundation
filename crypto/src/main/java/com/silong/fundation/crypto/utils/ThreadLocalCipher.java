@@ -85,8 +85,11 @@ public class ThreadLocalCipher {
       Key key,
       AlgorithmParameterSpec spec,
       Function5<Cipher, byte[], Integer, Integer, byte[]> doFinal) {
-    return requireNonNull(doFinal, "doFinal must not be null.")
-        .apply(getInstance(algorithm, ENCRYPT_MODE, key, spec), plainBytes, offset, length);
+    if (doFinal == null) {
+      throw new IllegalArgumentException("doFinal must not be null.");
+    }
+    return doFinal.apply(
+        getInstance(algorithm, ENCRYPT_MODE, key, spec), plainBytes, offset, length);
   }
 
   /**
@@ -134,8 +137,11 @@ public class ThreadLocalCipher {
       Key key,
       AlgorithmParameterSpec spec,
       Function5<Cipher, byte[], Integer, Integer, byte[]> doFinal) {
-    return requireNonNull(doFinal, "doFinal must not be null.")
-        .apply(getInstance(algorithm, DECRYPT_MODE, key, spec), cipherBytes, offset, length);
+    if (doFinal == null) {
+      throw new IllegalArgumentException("doFinal must not be null.");
+    }
+    return doFinal.apply(
+        getInstance(algorithm, DECRYPT_MODE, key, spec), cipherBytes, offset, length);
   }
 
   private static Cipher getInstance(
