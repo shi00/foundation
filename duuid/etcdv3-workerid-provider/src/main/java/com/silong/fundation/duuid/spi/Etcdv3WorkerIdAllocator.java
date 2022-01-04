@@ -3,7 +3,6 @@ package com.silong.fundation.duuid.spi;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
-import io.etcd.jetcd.KV;
 import io.etcd.jetcd.kv.PutResponse;
 import io.etcd.jetcd.options.PutOption;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -36,55 +35,53 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
   public static final String ETCDV3_PASSWORD = "etcdv3.password";
 
   private static final ByteSequence KEY = ByteSequence.from("duuid/worker-id".getBytes(UTF_8));
-  private static final ByteSequence VALUE = ByteSequence.from("useless".getBytes(UTF_8));
   private static final PutOption PUT_OPTION =
       PutOption.newBuilder().withLeaseId(0).withPrevKV().build();
 
-  /** ETCD v3客户端 */
-  private KV kvClient;
-
   @Override
   public int allocate(WorkerInfo info) {
-    try {
-      // 初始化客户端
-      initialize(info);
-      PutResponse putResponse = kvClient.put(KEY, VALUE, PUT_OPTION).get();
+    try (Client client = getClient(info)) {
+      PutResponse putResponse =
+          client
+              .getKVClient()
+              .put(
+                  KEY,
+                  ByteSequence.from(String.valueOf(System.currentTimeMillis()), UTF_8),
+                  PUT_OPTION)
+              .get();
       return putResponse.hasPrevKv() ? (int) putResponse.getPrevKv().getVersion() : 0;
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private synchronized void initialize(WorkerInfo info) throws Exception {
-    if (kvClient == null) {
-      Map<String, String> extraInfo;
-      if (info == null || (extraInfo = info.getExtraInfo()) == null) {
-        throw new IllegalArgumentException("info and info.extraInfo must not be null.");
-      }
-      if (!extraInfo.containsKey(ETCDV3_ENDPOINTS)) {
-        throw new IllegalArgumentException(
-            String.format("must contain %s in info.extraInfo.", ETCDV3_ENDPOINTS));
-      }
-      String[] endpoints =
-          Arrays.stream(extraInfo.get(ETCDV3_ENDPOINTS).split(","))
-              .filter(endpoint -> !endpoint.trim().isEmpty())
-              .toArray(String[]::new);
-
-      ClientBuilder builder = Client.builder().endpoints(endpoints);
-
-      // 是否启用https
-      if (Stream.of(endpoints).anyMatch(endpoint -> endpoint.startsWith("https://"))) {
-        builder.sslContext(SslContextBuilder.forClient().build());
-      }
-
-      // 设置访问用户密码
-      if (extraInfo.containsKey(ETCDV3_USER) && extraInfo.containsKey(ETCDV3_PASSWORD)) {
-        builder
-            .user(ByteSequence.from(extraInfo.get(ETCDV3_USER).getBytes(UTF_8)))
-            .password(ByteSequence.from(extraInfo.get(ETCDV3_PASSWORD).getBytes(UTF_8)));
-      }
-
-      kvClient = builder.build().getKVClient();
+  private Client getClient(WorkerInfo info) throws Exception {
+    Map<String, String> extraInfo;
+    if (info == null || (extraInfo = info.getExtraInfo()) == null) {
+      throw new IllegalArgumentException("info and info.extraInfo must not be null.");
     }
+    if (!extraInfo.containsKey(ETCDV3_ENDPOINTS)) {
+      throw new IllegalArgumentException(
+          String.format("must contain %s in info.extraInfo.", ETCDV3_ENDPOINTS));
+    }
+    String[] endpoints =
+        Arrays.stream(extraInfo.get(ETCDV3_ENDPOINTS).split(","))
+            .filter(endpoint -> !endpoint.trim().isEmpty())
+            .toArray(String[]::new);
+
+    ClientBuilder builder = Client.builder().endpoints(endpoints);
+
+    // 是否启用https
+    if (Stream.of(endpoints).anyMatch(endpoint -> endpoint.startsWith("https://"))) {
+      builder.sslContext(SslContextBuilder.forClient().build());
+    }
+
+    // 设置访问用户密码
+    if (extraInfo.containsKey(ETCDV3_USER) && extraInfo.containsKey(ETCDV3_PASSWORD)) {
+      builder
+          .user(ByteSequence.from(extraInfo.get(ETCDV3_USER).getBytes(UTF_8)))
+          .password(ByteSequence.from(extraInfo.get(ETCDV3_PASSWORD).getBytes(UTF_8)));
+    }
+    return builder.build();
   }
 }
