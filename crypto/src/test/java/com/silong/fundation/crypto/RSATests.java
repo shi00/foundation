@@ -23,11 +23,18 @@ public class RSATests {
 
   static RsaKeyPair keyPair;
 
+  static RootKey rootKey;
+
   String plaintext;
 
   @BeforeAll
   static void init() throws Exception {
     Path dir = new File("target/test-classes").toPath();
+    RootKey.export(
+        RootKey.DEFAULT_ROOT_KEY_PARTS.stream()
+            .map(s -> dir.resolve(s).toFile().getAbsolutePath())
+            .toArray(String[]::new));
+    rootKey = RootKey.initialize();
     RsaKeyPair rsaKeyPair = RsaToolkit.generate(RsaKeySize.BITS_3072);
     String pubkey = dir.resolve("pubkey").toFile().getCanonicalPath();
     String prikey = dir.resolve("prikey").toFile().getCanonicalPath();

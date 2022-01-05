@@ -1,5 +1,6 @@
 package com.silong.fundation.crypto.rsa;
 
+import com.silong.fundation.crypto.RootKey;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.ToString;
@@ -89,18 +90,18 @@ public final class RsaKeyPair {
     }
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(new FileInputStream(keyFile)))) {
-      return Base64.getDecoder()
-          .decode(
-              reader
-                  .lines()
-                  .filter(
-                      line ->
-                          !line.equals(PUBLIC_KEY_END)
-                              && !line.equals(PUBLIC_KEY_HEADER)
-                              && !line.equals(PRIVATE_KEY_END)
-                              && !line.equals(PRIVATE_KEY_HEADER))
-                  .map(String::trim)
-                  .collect(Collectors.joining()));
+      String workKey =
+          reader
+              .lines()
+              .filter(
+                  line ->
+                      !line.equals(PUBLIC_KEY_END)
+                          && !line.equals(PUBLIC_KEY_HEADER)
+                          && !line.equals(PRIVATE_KEY_END)
+                          && !line.equals(PRIVATE_KEY_HEADER))
+              .map(String::trim)
+              .collect(Collectors.joining());
+      return RootKey.getInstance().decryptWorkKey(workKey);
     }
   }
 
@@ -136,14 +137,15 @@ public final class RsaKeyPair {
       }
     }
 
-    output2File(publicKeyFile, this.publicKey.getEncoded(), false);
-    output2File(privateKeyFile, this.privateKey.getEncoded(), true);
+    RootKey rootKey = RootKey.getInstance();
+    output2File(publicKeyFile, rootKey.encryptWorkKey(publicKey.getEncoded()), false);
+    output2File(privateKeyFile, rootKey.encryptWorkKey(privateKey.getEncoded()), true);
   }
 
-  private void output2File(File file, byte[] bytes, boolean isPrivateKey) throws IOException {
-    String str = Base64.getEncoder().encodeToString(bytes);
+  private void output2File(File file, String cipherKey, boolean isPrivateKey) throws IOException {
     LinkedList<String> lines =
-        Stream.of(str.split("(?<=\\G.{64})")).collect(Collectors.toCollection(LinkedList::new));
+        Stream.of(cipherKey.split("(?<=\\G.{64})"))
+            .collect(Collectors.toCollection(LinkedList::new));
     lines.add(0, isPrivateKey ? PRIVATE_KEY_HEADER : PUBLIC_KEY_HEADER);
     lines.add(isPrivateKey ? PRIVATE_KEY_END : PUBLIC_KEY_END);
     Files.write(file.toPath(), lines, UTF_8, WRITE, CREATE, TRUNCATE_EXISTING);

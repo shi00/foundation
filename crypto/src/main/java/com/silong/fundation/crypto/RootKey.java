@@ -70,6 +70,19 @@ public final class RootKey {
   /**
    * 使用根密钥加密工作密钥
    *
+   * @param keyBytes 密钥
+   * @return 加密结果
+   */
+  public String encryptWorkKey(byte[] keyBytes) {
+    if (keyBytes == null || keyBytes.length == 0) {
+      throw new IllegalArgumentException("keyBytes must not be null or empty.");
+    }
+    return AesGcmToolkit.encrypt(keyBytes, 0, keyBytes.length, this.key, randomIv());
+  }
+
+  /**
+   * 使用根密钥加密工作密钥
+   *
    * @param workKey 工作密钥明文
    * @return 加密后工作密钥
    */
