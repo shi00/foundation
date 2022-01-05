@@ -27,7 +27,7 @@ public class ThreadLocalCipher {
       ThreadLocal.withInitial(HashMap::new);
 
   @FunctionalInterface
-  private interface Function5<T1, T2, T3, T4, R> {
+  public interface Function5<T1, T2, T3, T4, R> {
     /**
      * 加密/解密
      *
