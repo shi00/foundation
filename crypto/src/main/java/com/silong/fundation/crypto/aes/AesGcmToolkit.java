@@ -37,7 +37,7 @@ public final class AesGcmToolkit {
   /** 禁止实例化 */
   private AesGcmToolkit() {}
 
-  private static SecretKey decreptWorkKey(String workKey) {
+  private static SecretKey decryptWorkKey(String workKey) {
     return ENABLED_CACHE
         ? WK_CACHE.computeIfAbsent(
             workKey, k -> new SecretKeySpec(RootKey.getInstance().decryptWorkKey(k), AES))
@@ -114,7 +114,7 @@ public final class AesGcmToolkit {
       throw new IllegalArgumentException("workKey must not be null or empty.");
     }
     byte[] bytes = plainText.getBytes(UTF_8);
-    return encrypt(bytes, 0, bytes.length, decreptWorkKey(workKey), randomIv());
+    return encrypt(bytes, 0, bytes.length, decryptWorkKey(workKey), randomIv());
   }
 
   /**
@@ -131,7 +131,7 @@ public final class AesGcmToolkit {
     if (workKey == null || workKey.isEmpty()) {
       throw new IllegalArgumentException("workKey must not be null or empty.");
     }
-    return new String(decrypt(cipherText, decreptWorkKey(workKey)), UTF_8);
+    return new String(decrypt(cipherText, decryptWorkKey(workKey)), UTF_8);
   }
 
   /**
