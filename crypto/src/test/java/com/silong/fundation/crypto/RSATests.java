@@ -60,7 +60,7 @@ public class RSATests {
   @DisplayName("PrivateKey-encrypt|PublicKey-decrypt|long-str")
   void test3() {
     for (int i = 0; i < 30; i++) {
-      plaintext = RandomStringUtils.random(RandomUtils.nextInt(Short.MAX_VALUE, Integer.MAX_VALUE));
+      plaintext = RandomStringUtils.random(RandomUtils.nextInt(1000, Short.MAX_VALUE));
       String encrypt = encryptByPrivateKey(keyPair.getPrivateKey(), plaintext);
       String decrypt = decryptByPublicKey(keyPair.getPublicKey(), encrypt);
       Assertions.assertEquals(plaintext, decrypt);
@@ -71,7 +71,7 @@ public class RSATests {
   @DisplayName("PublicKey-encrypt|PrivateKey-decrypt|long-str")
   void test4() {
     for (int i = 0; i < 20; i++) {
-      plaintext = RandomStringUtils.random(RandomUtils.nextInt(Short.MAX_VALUE, Integer.MAX_VALUE));
+      plaintext = RandomStringUtils.random(RandomUtils.nextInt(2000, Short.MAX_VALUE));
       String encrypt = encryptByPublicKey(keyPair.getPublicKey(), plaintext);
       String decrypt = decryptByPrivateKey(keyPair.getPrivateKey(), encrypt);
       Assertions.assertEquals(plaintext, decrypt);

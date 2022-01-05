@@ -26,7 +26,7 @@ public final class RsaToolkit {
 
   public static final String RSA_ECB_PKCS_1_PADDING = "RSA/ECB/PKCS1Padding";
 
-  private static final int BUFFER_SIZE = 1024;
+  private static final int BUF_SIZE = 8192;
 
   /** 禁止实例化 */
   private RsaToolkit() {}
@@ -244,7 +244,7 @@ public final class RsaToolkit {
       maxBlock = maxBlock - 11;
     }
 
-    try (ByteArrayOutputStream out = new ByteArrayOutputStream(BUFFER_SIZE)) {
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream(BUF_SIZE)) {
       byte[] buff;
       int i = 0;
       while (length > offset) {
