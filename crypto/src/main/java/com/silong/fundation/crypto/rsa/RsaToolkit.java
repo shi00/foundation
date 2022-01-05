@@ -1,12 +1,15 @@
 package com.silong.fundation.crypto.rsa;
 
+import com.silong.fundation.crypto.utils.SecurityWrapper;
 import com.silong.fundation.crypto.utils.ThreadLocalCipher;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
 import java.security.*;
 import java.security.interfaces.RSAKey;
+import java.util.Base64;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 
@@ -30,6 +33,64 @@ public final class RsaToolkit {
 
   private static int getkeySize(Key key) {
     return ((RSAKey) key).getModulus().bitLength();
+  }
+
+  /**
+   * 使用私钥加密文本
+   *
+   * @param key 私钥
+   * @param plainText 明文文本
+   * @return 加密文本
+   */
+  public static String encryptByPrivateKey(PrivateKey key, String plainText) {
+    if (plainText == null || plainText.isEmpty()) {
+      throw new IllegalArgumentException("plainText must not be null or empty.");
+    }
+    return SecurityWrapper.wrap(
+        Base64.getEncoder().encodeToString(encryptByPrivateKey(key, plainText.getBytes(UTF_8))));
+  }
+
+  /**
+   * 公钥解密文本
+   *
+   * @param key 公钥
+   * @param cipherText 加密文本
+   * @return 解密文本
+   */
+  public static String decryptByPublicKey(PublicKey key, String cipherText) {
+    String unwrap = SecurityWrapper.unwrap(cipherText);
+    byte[] decode = Base64.getDecoder().decode(unwrap);
+    byte[] bytes = decryptByPublicKey(key, decode);
+    return new String(bytes, UTF_8);
+  }
+
+  /**
+   * 使用公钥加密文本
+   *
+   * @param key 公钥
+   * @param plainText 明文文本
+   * @return 加密文本
+   */
+  public static String encryptByPublicKey(PublicKey key, String plainText) {
+    if (plainText == null || plainText.isEmpty()) {
+      throw new IllegalArgumentException("plainText must not be null or empty.");
+    }
+    return SecurityWrapper.wrap(
+        Base64.getEncoder().encodeToString(encryptByPublicKey(key, plainText.getBytes(UTF_8))));
+  }
+
+  /**
+   * 私钥解密文本
+   *
+   * @param key 私钥
+   * @param cipherText 加密文本
+   * @return 解密文本
+   */
+  public static String decryptByPrivateKey(PrivateKey key, String cipherText) {
+    String unwrap = SecurityWrapper.unwrap(cipherText);
+    byte[] decode = Base64.getDecoder().decode(unwrap);
+    byte[] bytes = decryptByPrivateKey(key, decode);
+    return new String(bytes, UTF_8);
   }
 
   /**

@@ -99,6 +99,7 @@ public final class RsaKeyPair {
                               && !line.equals(PUBLIC_KEY_HEADER)
                               && !line.equals(PRIVATE_KEY_END)
                               && !line.equals(PRIVATE_KEY_HEADER))
+                  .map(String::trim)
                   .collect(Collectors.joining()));
     }
   }
