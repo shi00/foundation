@@ -44,9 +44,11 @@ public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
     new Runner(opt).run();
   }
 
+  long workerId;
+
   @Setup
   public void setup() {
-    circular = new CircularQueueDuuidGenerator(0, false);
+    circular = new CircularQueueDuuidGenerator(() -> ++workerId, false);
     twitter = new TwitterSnowFlakeIdGenerator(1, 1);
   }
 

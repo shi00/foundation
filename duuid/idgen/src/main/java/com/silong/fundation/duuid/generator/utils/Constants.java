@@ -9,14 +9,11 @@ package com.silong.fundation.duuid.generator.utils;
  */
 public interface Constants {
 
-  /** 默认：生产者线程名前缀 */
-  String DUUID_PRODUCER_NAME_PREFIX = "Duuid-Producer-";
+  /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的9次方 */
+  int DEFAULT_QUEUE_CAPACITY = 512;
 
-  /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的16次方 */
-  int DEFAULT_QUEUE_CAPACITY = 65536;
-
-  /** 环状队列填充率，默认：0.7 */
-  double DEFAULT_FILLING_FACTOR = 0.7;
+  /** 环状队列填充率，默认：0.8 */
+  double DEFAULT_FILLING_FACTOR = 0.8;
 
   /** 以2020-01-01 00:00:00为起始时间距1970-01-01 00:00:00的天数差，默认值：18261 */
   long EPOCH = 18261;
