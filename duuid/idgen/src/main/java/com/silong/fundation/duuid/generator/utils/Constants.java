@@ -9,11 +9,11 @@ package com.silong.fundation.duuid.generator.utils;
  */
 public interface Constants {
 
-  /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的9次方 */
-  int DEFAULT_QUEUE_CAPACITY = 512;
+  /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的10次方 */
+  int DEFAULT_QUEUE_CAPACITY = 1024;
 
-  /** id生成器期望QPS：默认：100000 */
-  long DEFAULT_EXPECTED_QPS = 100000;
+  /** id生成器期望QPS：默认：10000 */
+  long DEFAULT_EXPECTED_QPS = 10000;
 
   /** 最小Id生成器预期QPS */
   long MIN_EXPECTED_QPS = 10000;

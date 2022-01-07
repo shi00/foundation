@@ -215,6 +215,9 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     if (workerIdSupplier == null) {
       throw new IllegalArgumentException("workerIdSupplier must not be null.");
     }
+    if (!isPowOfTwo(queueCapacity)) {
+      throw new IllegalArgumentException("queueCapacity must be a power of 2.");
+    }
 
     this.enableSequenceRandom = enableSequenceRandom;
     this.maxRandomIncrement = maxRandomIncrement;
@@ -267,6 +270,10 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     return utc;
   }
 
+  private boolean isPowOfTwo(int x) {
+    return x > 0 & (x & (x - 1)) == 0;
+  }
+
   /** id生产 */
   @Override
   public void run() {
@@ -275,6 +282,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         this::generate,
         idleCounter -> {
           try {
+            // 按照保留队列填充率在一半情况下，按照1000线程并发，进行休眠时间计算
             MILLISECONDS.sleep((long) (queue.capacity() * 0.5 / expectedQps));
           } catch (InterruptedException e) {
             // never happen in regular
@@ -303,22 +311,29 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @return id
    */
   protected long generate() {
-    // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
-    if (System.currentTimeMillis() >= tomorrowStartTime.getTimeInMillis()) {
-      // 时间变更异步清除当前队列中的所有已生成id，过期了
-      CompletableFuture.runAsync(queue::clear);
-      deltaDays++;
-      tomorrowStartTime.add(DAY_OF_YEAR, 1);
-    }
+    CompletableFuture<Void> evictidsFuture = null;
+    try {
+      // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
+      if (System.currentTimeMillis() >= tomorrowStartTime.getTimeInMillis()) {
+        // 时间变更异步清除当前队列中的所有已生成id，过期了
+        evictidsFuture = CompletableFuture.runAsync(queue::clear);
+        deltaDays++;
+        tomorrowStartTime.add(DAY_OF_YEAR, 1);
+      }
 
-    sequence = sequence + randomIncrement();
-    // 如果序列号耗尽，则变更workerId
-    if (sequence > maxSequence) {
-      workerId = workerIdSupplier.get();
-      sequence = sequence - maxSequence;
-    }
+      sequence = sequence + randomIncrement();
+      // 如果序列号耗尽，则变更workerId
+      if (sequence > maxSequence) {
+        workerId = workerIdSupplier.get();
+        sequence = sequence - maxSequence;
+      }
 
-    return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
+      return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
+    } finally {
+      if (evictidsFuture != null) {
+        evictidsFuture.join();
+      }
+    }
   }
 
   /**
