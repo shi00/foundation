@@ -12,8 +12,11 @@ public interface Constants {
   /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的9次方 */
   int DEFAULT_QUEUE_CAPACITY = 512;
 
-  /** 环状队列填充率，默认：0.8 */
-  double DEFAULT_FILLING_FACTOR = 0.8;
+  /** id生成器期望QPS：默认：100000 */
+  long DEFAULT_EXPECTED_QPS = 100000;
+
+  /** 最小Id生成器预期QPS */
+  long MIN_EXPECTED_QPS = 10000;
 
   /** 以2020-01-01 00:00:00为起始时间距1970-01-01 00:00:00的天数差，默认值：18261 */
   long EPOCH = 18261;

@@ -100,8 +100,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /** workId左移位数 */
   protected final int workerIdLeftShiftBits;
 
-  /** 环状队列填充率，即需要保证环状队列内的填充的id和容量的占比 */
-  protected final double fillingFactor;
+  /** 期望的id生成器QPS */
+  protected final long expectedQps;
 
   /** 最大随机上限 */
   protected final int maxRandomIncrement;
@@ -136,7 +136,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         workerIdSupplier,
         0,
         DEFAULT_QUEUE_CAPACITY,
-        DEFAULT_FILLING_FACTOR,
+        DEFAULT_EXPECTED_QPS,
         enableSequenceRandom,
         DEFAULT_MAX_RANDOM_INCREMENT);
   }
@@ -147,7 +147,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @param workerIdSupplier workerId提供者
    * @param initialSequence 初始序列号
    * @param queueCapacity 队列容量
-   * @param fillingFactor 队列填充率
+   * @param expectedQps 期望的id生成器QPS，如果小于10000则按10000计算
    * @param enableSequenceRandom 是否随机id增量
    * @param maxRandomIncrement 序列号随机增量最大值
    */
@@ -155,7 +155,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       Supplier<Long> workerIdSupplier,
       long initialSequence,
       int queueCapacity,
-      double fillingFactor,
+      long expectedQps,
       boolean enableSequenceRandom,
       int maxRandomIncrement) {
     this(
@@ -165,7 +165,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         workerIdSupplier,
         initialSequence,
         queueCapacity,
-        fillingFactor,
+        expectedQps,
         enableSequenceRandom,
         maxRandomIncrement);
   }
@@ -179,7 +179,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @param workerIdSupplier workerId提供器
    * @param sequence 序列号初始值
    * @param queueCapacity 队列容量，必须位2的次方
-   * @param fillingFactor 队列填充率，取值：(0, 1.0]
+   * @param expectedQps 期望的id生成器QPS，如果小于10000则按10000计算
    * @param enableSequenceRandom 是否开启id随机，避免id连续
    * @param maxRandomIncrement 最大随机增量值，必须大于0
    */
@@ -190,7 +190,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       Supplier<Long> workerIdSupplier,
       long sequence,
       int queueCapacity,
-      double fillingFactor,
+      long expectedQps,
       boolean enableSequenceRandom,
       int maxRandomIncrement) {
     if (workerIdBits <= 0) {
@@ -207,9 +207,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
           String.format(
               "The equation [workIdBits + deltaDaysBits + sequenceBits == %d] must hold.",
               Long.SIZE - SIGN_BIT));
-    }
-    if (fillingFactor <= 0 || fillingFactor > 1.0) {
-      throw new IllegalArgumentException("fillingFactor value range (0, 1.0].");
     }
     // 如果开启随机增量则校验
     if (enableSequenceRandom && maxRandomIncrement <= 0) {
@@ -233,6 +230,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     this.workerIdSupplier = workerIdSupplier;
     this.workerId = workerIdSupplier.get();
     this.deltaDays = DAYS.convert(System.currentTimeMillis(), MILLISECONDS) - EPOCH;
+    this.expectedQps = Math.max(expectedQps, MIN_EXPECTED_QPS);
 
     // 计算从服务启动时间到明天0点时间差
     this.tomorrowStartTime = calculateTomorrowStartTime();
@@ -253,7 +251,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     }
 
     this.sequence = sequence;
-    this.fillingFactor = fillingFactor;
 
     // 启动生产者线程
     this.isRunning = true;
@@ -277,15 +274,13 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     queue.fill(
         this::generate,
         idleCounter -> {
-          while (((queue.size() * 1.0) / queue.capacity()) > fillingFactor) {
-            try {
-              MILLISECONDS.sleep(0);
-            } catch (InterruptedException e) {
-              // never happen in regular
-              log.error("Thread {} is interrupted and ends running", getName());
-            }
+          try {
+            MILLISECONDS.sleep((long) (queue.capacity() * 0.5 / expectedQps));
+          } catch (InterruptedException e) {
+            // never happen in regular
+            log.error("Thread {} is interrupted and ends running", getName());
           }
-          return idleCounter + 1;
+          return idleCounter;
         },
         () -> isRunning);
     log.info("Thread {} runs to the end.", getName());
@@ -308,30 +303,22 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @return id
    */
   protected long generate() {
-    CompletableFuture<Void> completableFuture = null;
-    try {
-      // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
-      if (System.currentTimeMillis() >= tomorrowStartTime.getTimeInMillis()) {
-        deltaDays++;
-        tomorrowStartTime.add(DAY_OF_YEAR, 1);
-
-        // 时间变更异步清除当前队列中的所有已生成id，过期了
-        completableFuture = CompletableFuture.runAsync(queue::clear);
-      }
-
-      sequence = sequence + randomIncrement();
-      // 如果序列号耗尽，则变更workerId
-      if (sequence > maxSequence) {
-        workerId = workerIdSupplier.get();
-        sequence = sequence - maxSequence;
-      }
-
-      return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
-    } finally {
-      if (completableFuture != null) {
-        completableFuture.join();
-      }
+    // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
+    if (System.currentTimeMillis() >= tomorrowStartTime.getTimeInMillis()) {
+      // 时间变更异步清除当前队列中的所有已生成id，过期了
+      CompletableFuture.runAsync(queue::clear);
+      deltaDays++;
+      tomorrowStartTime.add(DAY_OF_YEAR, 1);
     }
+
+    sequence = sequence + randomIncrement();
+    // 如果序列号耗尽，则变更workerId
+    if (sequence > maxSequence) {
+      workerId = workerIdSupplier.get();
+      sequence = sequence - maxSequence;
+    }
+
+    return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
   }
 
   /**
