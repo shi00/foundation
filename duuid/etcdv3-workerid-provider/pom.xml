@@ -36,6 +36,21 @@
             <artifactId>workid-provider</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.etcd</groupId>
+            <artifactId>jetcd-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

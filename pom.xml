@@ -120,6 +120,11 @@
                 <version>${jetcd.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.etcd</groupId>
+                <artifactId>jetcd-launcher</artifactId>
+                <version>${jetcd.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.openjdk.jmh</groupId>
                 <artifactId>jmh-core</artifactId>
                 <version>${jmh.version}</version>
