@@ -1,7 +1,6 @@
 package com.silong.fundation.duuid.generator;
 
 import com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator;
-import org.jctools.maps.NonBlockingHashMapLong;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,9 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static com.silong.fundation.duuid.generator.utils.Constants.DEFAULT_MAX_RANDOM_INCREMENT;
+import static com.silong.fundation.duuid.generator.utils.Constants.DEFAULT_QUEUE_CAPACITY;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 单元测试
@@ -127,5 +129,54 @@ public class DuuidTests {
     int threadCount = 200;
     int callCount = 335545;
     test(threadCount, callCount, false);
+  }
+
+  @Test
+  @DisplayName("SPSC-[inc:1]-[thread:1]-1024-mocktime")
+  void test7() throws InterruptedException {
+    long now = System.currentTimeMillis();
+    long tomorrow = now + DAYS.toMillis(1);
+    AtomicLong count = new AtomicLong(0);
+    duuidGenerator =
+        new CircularQueueDuuidGenerator(
+            () -> ++workerId,
+            () -> count.getAndIncrement() <= DEFAULT_QUEUE_CAPACITY - 30 ? now : tomorrow,
+            0,
+            DEFAULT_QUEUE_CAPACITY,
+            false,
+            DEFAULT_MAX_RANDOM_INCREMENT);
+    long id1 = duuidGenerator.nextId();
+    Thread.sleep(1000L);
+    long id2 = duuidGenerator.nextId();
+    assertTrue(id2 > id1);
+  }
+
+  @Test
+  @DisplayName("SPMC-[inc:1]-[thread:101]-1024-mocktime")
+  void test8() throws InterruptedException {
+    long now = System.currentTimeMillis();
+    long tomorrow = now + DAYS.toMillis(1);
+    AtomicLong count = new AtomicLong(0);
+    duuidGenerator =
+        new CircularQueueDuuidGenerator(
+            () -> ++workerId,
+            () -> count.getAndIncrement() <= DEFAULT_QUEUE_CAPACITY - 30 ? now : tomorrow,
+            0,
+            DEFAULT_QUEUE_CAPACITY,
+            false,
+            DEFAULT_MAX_RANDOM_INCREMENT);
+    long id1 = duuidGenerator.nextId();
+    CountDownLatch latch = new CountDownLatch(100);
+    for (int i = 0; i < 100; i++) {
+      new Thread(
+              () -> {
+                System.out.println(duuidGenerator.nextId());
+                latch.countDown();
+              })
+          .start();
+    }
+    latch.await();
+    long id2 = duuidGenerator.nextId();
+    assertTrue(id2 > id1);
   }
 }

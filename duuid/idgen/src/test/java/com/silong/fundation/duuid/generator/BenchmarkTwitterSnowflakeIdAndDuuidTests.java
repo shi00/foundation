@@ -19,10 +19,10 @@ import java.util.concurrent.TimeUnit;
  * @since 2022-01-03 08:48
  */
 @BenchmarkMode(Mode.All)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 3)
-@Measurement(iterations = 8)
+@Measurement(iterations = 5)
 @Fork(
     value = 2,
     jvmArgs = {"-Xms1G", "-Xmx1G"})
@@ -31,9 +31,10 @@ public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
   @Param({"10000000"})
   private int counter;
 
-  private DuuidGenerator circular;
+  @Param({"1", "2"})
+  private int type;
 
-  private DuuidGenerator twitter;
+  private DuuidGenerator generator;
 
   public static void main(String[] args) throws RunnerException {
     Options opt =
@@ -48,23 +49,16 @@ public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
 
   @Setup
   public void setup() {
-    circular = new CircularQueueDuuidGenerator(() -> ++workerId, false);
-    twitter = new TwitterSnowFlakeIdGenerator(1, 1);
+    generator =
+        type == 1
+            ? new TwitterSnowFlakeIdGenerator(1, 1)
+            : new CircularQueueDuuidGenerator(() -> ++workerId, false);
   }
 
   @Benchmark
-  public void circular(Blackhole bh) {
+  public void spsc(Blackhole bh) {
     for (int i = 0; i < counter; i++) {
-      long id = circular.nextId();
-      bh.consume(id);
-    }
-  }
-
-  @Benchmark
-  public void twitter(Blackhole bh) {
-    for (int i = 0; i < counter; i++) {
-      long id = twitter.nextId();
-      bh.consume(id);
+      bh.consume(generator.nextId());
     }
   }
 }

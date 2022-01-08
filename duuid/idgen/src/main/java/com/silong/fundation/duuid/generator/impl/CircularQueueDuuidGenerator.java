@@ -6,7 +6,6 @@ import org.jctools.queues.SpmcArrayQueue;
 
 import java.util.Calendar;
 import java.util.TimeZone;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
@@ -302,29 +301,22 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @return id
    */
   protected long generate() {
-    CompletableFuture<Void> evictidsFuture = null;
-    try {
-      // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
-      if (utcTimeProvider.get() >= tomorrowStartTime.getTimeInMillis()) {
-        // 时间变更异步清除当前队列中的所有已生成id，过期了
-        evictidsFuture = CompletableFuture.runAsync(queue::clear);
-        deltaDays++;
-        tomorrowStartTime.add(DAY_OF_YEAR, 1);
-      }
-
-      sequence = sequence + randomIncrement();
-      // 如果序列号耗尽，则变更workerId
-      if (sequence > maxSequence) {
-        workerId = workerIdProvider.get();
-        sequence = sequence - maxSequence;
-      }
-
-      return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
-    } finally {
-      if (evictidsFuture != null) {
-        evictidsFuture.join();
-      }
+    // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
+    if (utcTimeProvider.get() >= tomorrowStartTime.getTimeInMillis()) {
+      // 时间变更异步清除当前队列中的所有已生成id，过期了
+      queue.clear();
+      deltaDays++;
+      tomorrowStartTime.add(DAY_OF_YEAR, 1);
     }
+
+    sequence = sequence + randomIncrement();
+    // 如果序列号耗尽，则变更workerId
+    if (sequence > maxSequence) {
+      workerId = workerIdProvider.get();
+      sequence = sequence - maxSequence;
+    }
+
+    return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
   }
 
   /**
