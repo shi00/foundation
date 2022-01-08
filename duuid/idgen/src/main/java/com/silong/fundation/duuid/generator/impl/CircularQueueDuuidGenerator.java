@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
@@ -103,7 +104,10 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   protected final int maxRandomIncrement;
 
   /** worker id提供器 */
-  protected final Supplier<Long> workerIdSupplier;
+  protected final Supplier<Long> workerIdProvider;
+
+  /** 时间提供者 */
+  protected final Supplier<Long> utcTimeProvider;
 
   /** 以服务启动时间为基准，计算明天0点 */
   protected final Calendar tomorrowStartTime;
@@ -123,13 +127,14 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /**
    * 构造方法
    *
-   * @param workerIdSupplier workerId提供者
+   * @param workerIdProvider workerId提供者
    * @param enableSequenceRandom 是否随机id增量
    */
   public CircularQueueDuuidGenerator(
-      Supplier<Long> workerIdSupplier, boolean enableSequenceRandom) {
+      Supplier<Long> workerIdProvider, boolean enableSequenceRandom) {
     this(
-        workerIdSupplier,
+        workerIdProvider,
+        SYSTEM_CLOCK_PROVIDER,
         0,
         DEFAULT_QUEUE_CAPACITY,
         enableSequenceRandom,
@@ -139,14 +144,16 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /**
    * 构造方法
    *
-   * @param workerIdSupplier workerId提供者
+   * @param workerIdProvider workerId提供者
+   * @param utcTimeProvider 时间提供者
    * @param initialSequence 初始序列号
    * @param queueCapacity 队列容量
    * @param enableSequenceRandom 是否随机id增量
    * @param maxRandomIncrement 序列号随机增量最大值
    */
   public CircularQueueDuuidGenerator(
-      Supplier<Long> workerIdSupplier,
+      Supplier<Long> workerIdProvider,
+      Supplier<Long> utcTimeProvider,
       long initialSequence,
       int queueCapacity,
       boolean enableSequenceRandom,
@@ -155,7 +162,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         DEFAULT_WORK_ID_BITS,
         DEFAULT_DELTA_DAYS_BITS,
         DEFAULT_SEQUENCE_BITS,
-        workerIdSupplier,
+        workerIdProvider,
+        utcTimeProvider,
         initialSequence,
         queueCapacity,
         enableSequenceRandom,
@@ -168,7 +176,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @param workerIdBits workerId占用比特位数量
    * @param deltaDaysBits 时间差占用比特位数量
    * @param sequenceBits 序列号占用比特位数量
-   * @param workerIdSupplier workerId提供器
+   * @param workerIdProvider workerId提供器
+   * @param utcTimeProvider utc时间提供者
    * @param sequence 序列号初始值
    * @param queueCapacity 队列容量，必须位2的次方
    * @param enableSequenceRandom 是否开启id随机，避免id连续
@@ -178,7 +187,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       int workerIdBits,
       int deltaDaysBits,
       int sequenceBits,
-      Supplier<Long> workerIdSupplier,
+      Supplier<Long> workerIdProvider,
+      Supplier<Long> utcTimeProvider,
       long sequence,
       int queueCapacity,
       boolean enableSequenceRandom,
@@ -202,8 +212,11 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     if (enableSequenceRandom && maxRandomIncrement <= 0) {
       throw new IllegalArgumentException("maxRandomIncrement must be greater than 0.");
     }
-    if (workerIdSupplier == null) {
-      throw new IllegalArgumentException("workerIdSupplier must not be null.");
+    if (workerIdProvider == null) {
+      throw new IllegalArgumentException("workerIdProvider must not be null.");
+    }
+    if (utcTimeProvider == null) {
+      throw new IllegalArgumentException("utcTimeProvider must not be null.");
     }
     if (!isPowOfTwo(queueCapacity)) {
       throw new IllegalArgumentException("queueCapacity must be a power of 2.");
@@ -220,15 +233,16 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     this.maxSequence = maxValues(sequenceBits);
     this.deltaDaysLeftShiftBits = sequenceBits;
     this.workerIdLeftShiftBits = deltaDaysBits + sequenceBits;
-    this.workerIdSupplier = workerIdSupplier;
-    this.workerId = workerIdSupplier.get();
+    this.workerIdProvider = workerIdProvider;
+    this.utcTimeProvider = utcTimeProvider;
+    this.workerId = workerIdProvider.get();
     if (workerId < 0 || workerId > maxWorkerId) {
       throw new IllegalArgumentException(
           String.format("workerId value range [0, %d]", maxWorkerId));
     }
 
     // 计算从服务启动时间到明天0点时间
-    long now = System.currentTimeMillis();
+    long now = utcTimeProvider.get();
     this.tomorrowStartTime = calculateTomorrowStartTime(now);
     this.deltaDays = DAYS.convert(now, MILLISECONDS) - EPOCH;
     if (deltaDays < 0 || deltaDays > maxDeltaDays) {
@@ -291,7 +305,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     CompletableFuture<Void> evictidsFuture = null;
     try {
       // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
-      if (System.currentTimeMillis() >= tomorrowStartTime.getTimeInMillis()) {
+      if (utcTimeProvider.get() >= tomorrowStartTime.getTimeInMillis()) {
         // 时间变更异步清除当前队列中的所有已生成id，过期了
         evictidsFuture = CompletableFuture.runAsync(queue::clear);
         deltaDays++;
@@ -301,7 +315,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       sequence = sequence + randomIncrement();
       // 如果序列号耗尽，则变更workerId
       if (sequence > maxSequence) {
-        workerId = workerIdSupplier.get();
+        workerId = workerIdProvider.get();
         sequence = sequence - maxSequence;
       }
 
@@ -354,14 +368,14 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /**
    * 获取以now为基准时间的明天0点日历
    *
-   * @param nowUtc，取至System.currentTimeMillis
+   * @param nowUtc utc时间，单位：ms
    * @return 明天0点日历
    */
   protected Calendar calculateTomorrowStartTime(long nowUtc) {
     if (nowUtc <= 0) {
       throw new IllegalArgumentException("nowUtc must be greater than 0.");
     }
-    Calendar tomorrowZero = getInstance();
+    Calendar tomorrowZero = getInstance(TimeZone.getTimeZone("UTC"));
     tomorrowZero.setTimeInMillis(nowUtc);
     tomorrowZero.add(DAY_OF_YEAR, 1);
     tomorrowZero.set(MINUTE, 0);

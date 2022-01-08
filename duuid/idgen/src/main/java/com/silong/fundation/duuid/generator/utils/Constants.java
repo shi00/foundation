@@ -1,5 +1,7 @@
 package com.silong.fundation.duuid.generator.utils;
 
+import java.util.function.Supplier;
+
 /**
  * 常量
  *
@@ -8,6 +10,9 @@ package com.silong.fundation.duuid.generator.utils;
  * @since 2021-12-31 22:39
  */
 public interface Constants {
+
+  /** 系统时钟提供器 */
+  Supplier<Long> SYSTEM_CLOCK_PROVIDER = System::currentTimeMillis;
 
   /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的10次方 */
   int DEFAULT_QUEUE_CAPACITY = 1024;
