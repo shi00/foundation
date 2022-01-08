@@ -257,9 +257,10 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         idleCounter -> {
           try {
             // 考虑1000线程并发时10w QPS时队列等待时间，绝大多数情况为0
+            // 此处计算逻辑是在确保当前队列容量一半已经填充的情况下，剩下的id数量与期望QPS的比值
             // 此处是为了确保高并发情况下，单线程生产者及时生成id填充队列
             // 避免出现消费者饿死，大幅降低服务性能
-            MILLISECONDS.sleep(queue.size() / DEFAULT_SERVICE_QPS);
+            MILLISECONDS.sleep(queue.capacity() / (DEFAULT_SERVICE_QPS * 2));
           } catch (InterruptedException e) {
             // never happen in regular
             log.error("Thread {} is interrupted and ends running", getName());
