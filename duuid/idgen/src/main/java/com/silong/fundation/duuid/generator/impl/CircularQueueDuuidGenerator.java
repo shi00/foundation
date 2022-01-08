@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
 import java.util.Calendar;
-import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
@@ -100,9 +99,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /** workId左移位数 */
   protected final int workerIdLeftShiftBits;
 
-  /** 期望的id生成器QPS */
-  protected final long expectedQps;
-
   /** 最大随机上限 */
   protected final int maxRandomIncrement;
 
@@ -136,7 +132,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         workerIdSupplier,
         0,
         DEFAULT_QUEUE_CAPACITY,
-        DEFAULT_EXPECTED_QPS,
         enableSequenceRandom,
         DEFAULT_MAX_RANDOM_INCREMENT);
   }
@@ -147,7 +142,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @param workerIdSupplier workerId提供者
    * @param initialSequence 初始序列号
    * @param queueCapacity 队列容量
-   * @param expectedQps 期望的id生成器QPS，如果小于10000则按10000计算
    * @param enableSequenceRandom 是否随机id增量
    * @param maxRandomIncrement 序列号随机增量最大值
    */
@@ -155,7 +149,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       Supplier<Long> workerIdSupplier,
       long initialSequence,
       int queueCapacity,
-      long expectedQps,
       boolean enableSequenceRandom,
       int maxRandomIncrement) {
     this(
@@ -165,7 +158,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         workerIdSupplier,
         initialSequence,
         queueCapacity,
-        expectedQps,
         enableSequenceRandom,
         maxRandomIncrement);
   }
@@ -179,7 +171,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @param workerIdSupplier workerId提供器
    * @param sequence 序列号初始值
    * @param queueCapacity 队列容量，必须位2的次方
-   * @param expectedQps 期望的id生成器QPS，如果小于10000则按10000计算
    * @param enableSequenceRandom 是否开启id随机，避免id连续
    * @param maxRandomIncrement 最大随机增量值，必须大于0
    */
@@ -190,7 +181,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       Supplier<Long> workerIdSupplier,
       long sequence,
       int queueCapacity,
-      long expectedQps,
       boolean enableSequenceRandom,
       int maxRandomIncrement) {
     if (workerIdBits <= 0) {
@@ -232,46 +222,30 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     this.workerIdLeftShiftBits = deltaDaysBits + sequenceBits;
     this.workerIdSupplier = workerIdSupplier;
     this.workerId = workerIdSupplier.get();
-    this.deltaDays = DAYS.convert(System.currentTimeMillis(), MILLISECONDS) - EPOCH;
-    this.expectedQps = Math.max(expectedQps, MIN_EXPECTED_QPS);
-
-    // 计算从服务启动时间到明天0点时间差
-    this.tomorrowStartTime = calculateTomorrowStartTime();
-
     if (workerId < 0 || workerId > maxWorkerId) {
       throw new IllegalArgumentException(
           String.format("workerId value range [0, %d]", maxWorkerId));
     }
 
+    // 计算从服务启动时间到明天0点时间
+    long now = System.currentTimeMillis();
+    this.tomorrowStartTime = calculateTomorrowStartTime(now);
+    this.deltaDays = DAYS.convert(now, MILLISECONDS) - EPOCH;
     if (deltaDays < 0 || deltaDays > maxDeltaDays) {
       throw new IllegalArgumentException(
           String.format("deltaDays value range [0, %d]", maxDeltaDays));
     }
 
+    this.sequence = sequence;
     if (sequence < 0 || sequence > maxSequence) {
       throw new IllegalArgumentException(
           String.format("sequence value range [0, %d]", maxSequence));
     }
 
-    this.sequence = sequence;
-
     // 启动生产者线程
     this.isRunning = true;
     setName(DUUID_PRODUCER_THREAD_PREFIX);
     start();
-  }
-
-  private Calendar calculateTomorrowStartTime() {
-    Calendar utc = getInstance(TimeZone.getTimeZone("UTC"));
-    utc.add(DAY_OF_YEAR, 1);
-    utc.set(MINUTE, 0);
-    utc.set(SECOND, 0);
-    utc.set(HOUR_OF_DAY, 0);
-    return utc;
-  }
-
-  private boolean isPowOfTwo(int x) {
-    return x > 0 & (x & (x - 1)) == 0;
   }
 
   /** id生产 */
@@ -282,13 +256,15 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
         this::generate,
         idleCounter -> {
           try {
-            // 按照保留队列填充率在一半情况下，按照1000线程并发，进行休眠时间计算
-            MILLISECONDS.sleep((long) (queue.capacity() * 0.5 / expectedQps));
+            // 考虑1000线程并发时10w QPS时队列等待时间，绝大多数情况为0
+            // 此处是为了确保高并发情况下，单线程生产者及时生成id填充队列
+            // 避免出现消费者饿死，大幅降低服务性能
+            MILLISECONDS.sleep(queue.size() / DEFAULT_SERVICE_QPS);
           } catch (InterruptedException e) {
             // never happen in regular
             log.error("Thread {} is interrupted and ends running", getName());
           }
-          return idleCounter;
+          return idleCounter + 1;
         },
         () -> isRunning);
     log.info("Thread {} runs to the end.", getName());
@@ -369,9 +345,38 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    */
   protected long maxValues(int bits) {
     if (bits <= 0) {
-      throw new IllegalArgumentException("Invalid bits: " + bits);
+      throw new IllegalArgumentException("bits must be greater than 0.");
     }
     return ~(-1L << bits);
+  }
+
+  /**
+   * 获取以now为基准时间的明天0点日历
+   *
+   * @param nowUtc，取至System.currentTimeMillis
+   * @return 明天0点日历
+   */
+  protected Calendar calculateTomorrowStartTime(long nowUtc) {
+    if (nowUtc <= 0) {
+      throw new IllegalArgumentException("nowUtc must be greater than 0.");
+    }
+    Calendar tomorrowZero = getInstance();
+    tomorrowZero.setTimeInMillis(nowUtc);
+    tomorrowZero.add(DAY_OF_YEAR, 1);
+    tomorrowZero.set(MINUTE, 0);
+    tomorrowZero.set(SECOND, 0);
+    tomorrowZero.set(HOUR_OF_DAY, 0);
+    return tomorrowZero;
+  }
+
+  /**
+   * 指定整数是否是2的幂
+   *
+   * @param x 整数
+   * @return true or false
+   */
+  protected boolean isPowOfTwo(int x) {
+    return x > 0 & (x & (x - 1)) == 0;
   }
 
   @Override
