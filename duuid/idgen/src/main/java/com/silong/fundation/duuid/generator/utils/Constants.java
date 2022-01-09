@@ -14,8 +14,8 @@ public interface Constants {
   /** 系统时钟提供器 */
   Supplier<Long> SYSTEM_CLOCK_PROVIDER = System::currentTimeMillis;
 
-  /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的10次方 */
-  int DEFAULT_QUEUE_CAPACITY = 1024;
+  /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的13次方 */
+  int DEFAULT_QUEUE_CAPACITY = 8192;
 
   /** 默认的服务QPS */
   int DEFAULT_SERVICE_QPS = 100000;

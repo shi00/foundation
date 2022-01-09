@@ -152,7 +152,7 @@ public class DuuidTests {
   }
 
   @Test
-  @DisplayName("SPMC-[inc:1]-[thread:101]-1024-mocktime")
+  @DisplayName("SPMC-randomIncrement-[thread:101]-1024-mocktime")
   void test8() throws InterruptedException {
     long now = System.currentTimeMillis();
     long tomorrow = now + DAYS.toMillis(1);
@@ -163,7 +163,7 @@ public class DuuidTests {
             () -> count.getAndIncrement() <= DEFAULT_QUEUE_CAPACITY - 30 ? now : tomorrow,
             0,
             DEFAULT_QUEUE_CAPACITY,
-            false,
+            true,
             DEFAULT_MAX_RANDOM_INCREMENT);
     long id1 = duuidGenerator.nextId();
     CountDownLatch latch = new CountDownLatch(100);
