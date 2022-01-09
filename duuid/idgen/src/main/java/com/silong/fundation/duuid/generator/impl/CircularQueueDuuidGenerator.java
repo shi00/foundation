@@ -303,7 +303,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   protected long generate() {
     // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
     if (utcTimeProvider.get() >= tomorrowStartTime.getTimeInMillis()) {
-      // 时间变更异步清除当前队列中的所有已生成id，过期了
+      // 时间变更清除当前队列中的所有已生成id
       queue.clear();
       deltaDays++;
       tomorrowStartTime.add(DAY_OF_YEAR, 1);
