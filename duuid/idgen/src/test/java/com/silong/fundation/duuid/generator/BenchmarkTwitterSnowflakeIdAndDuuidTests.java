@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Threads(1)
 @Fork(
     value = 1,
-    jvmArgs = {"-Xms1G", "-Xmx1G"})
+    jvmArgs = {"-Xms64M", "-Xmx64M"})
 public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
 
   @Param({"10000"})
@@ -41,6 +41,8 @@ public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
 
   private DuuidGenerator generator;
 
+  private final AtomicLong workerId = new AtomicLong(0);
+
   public static void main(String[] args) throws RunnerException {
     Options opt =
         new OptionsBuilder()
@@ -48,8 +50,6 @@ public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
             .build();
     new Runner(opt).run();
   }
-
-  AtomicLong workerId = new AtomicLong(0);
 
   @Setup
   public void setup() {
@@ -60,15 +60,8 @@ public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
   }
 
   @Benchmark
+  @Threads(Threads.MAX)
   public void spsc(Blackhole bh) {
-    for (int i = 0; i < loop; i++) {
-      bh.consume(generator.nextId());
-    }
-  }
-
-  @Benchmark
-  @Threads(100)
-  public void spmc(Blackhole bh) {
     for (int i = 0; i < loop; i++) {
       bh.consume(generator.nextId());
     }
