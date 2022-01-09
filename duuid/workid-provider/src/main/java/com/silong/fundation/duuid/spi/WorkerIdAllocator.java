@@ -14,5 +14,5 @@ public interface WorkerIdAllocator {
    * @param info worker信息
    * @return workerid
    */
-  int allocate(WorkerInfo info);
+  long allocate(WorkerInfo info);
 }

@@ -10,7 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <description>Assign a workerid to the duuid generator.</description>
-    <artifactId>workid-provider</artifactId>
+    <artifactId>duuid-workid-provider</artifactId>
     <version>1.0.0</version>
 
     <properties>
