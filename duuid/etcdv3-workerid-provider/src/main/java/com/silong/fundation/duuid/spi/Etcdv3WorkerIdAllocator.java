@@ -5,10 +5,14 @@ import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
 import io.etcd.jetcd.kv.PutResponse;
 import io.etcd.jetcd.options.PutOption;
-import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.*;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -34,9 +38,27 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
   /** etcd用户密码 */
   public static final String ETCDV3_PASSWORD = "etcdv3.password";
 
+  /**
+   * Trusted certificates for verifying the remote endpoint's certificate. The file should contain
+   * an X.509 certificate collection in PEM format.
+   */
+  public static final String ETCDV3_TRUST_CERT_COLLECTION_FILE = "etcdv3.trustCertCollectionFile";
+  /** an X.509 certificate chain file in PEM format */
+  public static final String ETCDV3_KEY_CERT_CHAIN_FILE = "etcdv3.keyCertChainFile";
+  /** a PKCS#8 private key file in PEM format */
+  public static final String ETCDV3_KEY_FILE = "etcdv3.keyFile";
+
+  private static final String HTTPS_PREFIX = "https://";
   private static final ByteSequence KEY = ByteSequence.from("duuid/worker-id".getBytes(UTF_8));
   private static final PutOption PUT_OPTION =
       PutOption.newBuilder().withLeaseId(0).withPrevKV().build();
+  private static final ApplicationProtocolConfig ALPN =
+      new ApplicationProtocolConfig(
+          ApplicationProtocolConfig.Protocol.ALPN,
+          ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+          ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+          ApplicationProtocolNames.HTTP_1_1,
+          ApplicationProtocolNames.HTTP_2);
 
   @Override
   public long allocate(WorkerInfo info) {
@@ -46,7 +68,12 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
               .getKVClient()
               .put(
                   KEY,
-                  ByteSequence.from(String.valueOf(System.currentTimeMillis()), UTF_8),
+                  ByteSequence.from(
+                      String.format(
+                          "%s---%s",
+                          info.getName(),
+                          new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())),
+                      UTF_8),
                   PUT_OPTION)
               .get();
       return putResponse.hasPrevKv() ? (int) putResponse.getPrevKv().getVersion() : 0;
@@ -72,8 +99,33 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
     ClientBuilder builder = Client.builder().endpoints(endpoints);
 
     // 是否启用https
-    if (Stream.of(endpoints).anyMatch(endpoint -> endpoint.startsWith("https://"))) {
-      builder.sslContext(SslContextBuilder.forClient().build());
+    if (Stream.of(endpoints).anyMatch(endpoint -> endpoint.startsWith(HTTPS_PREFIX))) {
+      SslContextBuilder sslContextBuilder =
+          SslContextBuilder.forClient()
+              // 设置alpn
+              .applicationProtocolConfig(ALPN)
+              // 设置使用的那种ssl实现方式
+              .sslProvider(SslProvider.OPENSSL);
+
+      if (extraInfo.containsKey(ETCDV3_TRUST_CERT_COLLECTION_FILE)) {
+        sslContextBuilder.trustManager(new File(extraInfo.get(ETCDV3_TRUST_CERT_COLLECTION_FILE)));
+      } else {
+        sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+      }
+
+      if (extraInfo.containsKey(ETCDV3_KEY_FILE)
+          && extraInfo.containsKey(ETCDV3_KEY_CERT_CHAIN_FILE)) {
+        sslContextBuilder
+            // 设置客户端证书
+            .keyManager(
+            new File(extraInfo.get(ETCDV3_KEY_CERT_CHAIN_FILE)),
+            new File(extraInfo.get(ETCDV3_KEY_FILE)));
+      } else {
+        sslContextBuilder
+            // 设置客户端证书
+            .keyManager(null, (File) null);
+      }
+      builder.sslContext(sslContextBuilder.build());
     }
 
     // 设置访问用户密码
