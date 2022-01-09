@@ -39,7 +39,7 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
       PutOption.newBuilder().withLeaseId(0).withPrevKV().build();
 
   @Override
-  public int allocate(WorkerInfo info) {
+  public long allocate(WorkerInfo info) {
     try (Client client = getClient(info)) {
       PutResponse putResponse =
           client

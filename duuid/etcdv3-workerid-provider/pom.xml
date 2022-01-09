@@ -33,7 +33,7 @@
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>
-            <artifactId>workid-provider</artifactId>
+            <artifactId>duuid-workid-provider</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
