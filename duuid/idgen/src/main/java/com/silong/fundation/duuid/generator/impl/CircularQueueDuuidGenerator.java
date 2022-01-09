@@ -9,7 +9,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
-import static com.silong.fundation.duuid.generator.utils.Constants.*;
+import static com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.*;
 import static java.util.Calendar.*;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -68,6 +68,43 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerator {
 
   private static final String DUUID_PRODUCER_THREAD_PREFIX = "DUuid-Producer";
+
+  /**
+   * 常量
+   *
+   * @author louis sin
+   * @version 1.0.0
+   * @since 2021-12-31 22:39
+   */
+  public interface Constants {
+
+    /** 系统时钟提供器 */
+    Supplier<Long> SYSTEM_CLOCK_PROVIDER = System::currentTimeMillis;
+
+    /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的13次方 */
+    int DEFAULT_QUEUE_CAPACITY = 8192;
+
+    /** 默认的服务QPS */
+    int DEFAULT_SERVICE_QPS = 100000;
+
+    /** 以2020-01-01 00:00:00为起始时间距1970-01-01 00:00:00的天数差，默认值：18261 */
+    long EPOCH = 18261;
+
+    /** 最高位为符号位，为了确保生成id为正数，符号位固定为0 */
+    int SIGN_BIT = 1;
+
+    /** 节点id占用的bits */
+    int DEFAULT_WORK_ID_BITS = 23;
+
+    /** 启动时间与基准时间的差值，单位：天 */
+    int DEFAULT_DELTA_DAYS_BITS = 15;
+
+    /** 序号占用bit位 */
+    int DEFAULT_SEQUENCE_BITS = 25;
+
+    /** 默认最大随机增量10 */
+    int DEFAULT_MAX_RANDOM_INCREMENT = 10;
+  }
 
   /** 是否开启序号随机，避免生成id连续可能引起的潜在安全问题 */
   protected final boolean enableSequenceRandom;

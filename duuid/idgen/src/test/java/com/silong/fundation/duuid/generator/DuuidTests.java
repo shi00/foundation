@@ -13,8 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.silong.fundation.duuid.generator.utils.Constants.DEFAULT_MAX_RANDOM_INCREMENT;
-import static com.silong.fundation.duuid.generator.utils.Constants.DEFAULT_QUEUE_CAPACITY;
+import static com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.DEFAULT_MAX_RANDOM_INCREMENT;
+import static com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.DEFAULT_QUEUE_CAPACITY;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static org.junit.jupiter.api.Assertions.*;
 
