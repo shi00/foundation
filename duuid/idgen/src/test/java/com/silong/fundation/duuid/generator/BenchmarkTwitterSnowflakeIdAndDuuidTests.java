@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 3, time = 10)
-@Measurement(iterations = 5)
+@Measurement(iterations = 10)
 @Threads(1)
 @Fork(
     value = 1,
