@@ -10,7 +10,6 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * JHM对比推特雪花id实现与duuid实现性能
@@ -41,7 +40,7 @@ public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
 
   private DuuidGenerator generator;
 
-  private final AtomicLong workerId = new AtomicLong(0);
+  private long workerId;
 
   public static void main(String[] args) throws RunnerException {
     Options opt =
@@ -56,11 +55,11 @@ public class BenchmarkTwitterSnowflakeIdAndDuuidTests {
     generator =
         type.equals("TwitterSnowFlakeIdGenerator")
             ? new TwitterSnowFlakeIdGenerator(1, 1)
-            : new CircularQueueDuuidGenerator(workerId::incrementAndGet, randomIncrement);
+            : new CircularQueueDuuidGenerator(() -> ++workerId, randomIncrement);
   }
 
   @Benchmark
-  @Threads(Threads.MAX)
+  @Threads(5)
   public void spsc(Blackhole bh) {
     for (int i = 0; i < loop; i++) {
       bh.consume(generator.nextId());
