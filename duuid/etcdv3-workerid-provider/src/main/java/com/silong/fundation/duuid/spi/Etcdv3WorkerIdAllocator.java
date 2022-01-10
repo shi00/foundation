@@ -5,7 +5,8 @@ import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
 import io.etcd.jetcd.kv.PutResponse;
 import io.etcd.jetcd.options.PutOption;
-import io.netty.handler.ssl.*;
+import io.grpc.netty.GrpcSslContexts;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,13 +53,6 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
   private static final ByteSequence KEY = ByteSequence.from("duuid/worker-id".getBytes(UTF_8));
   private static final PutOption PUT_OPTION =
       PutOption.newBuilder().withLeaseId(0).withPrevKV().build();
-  private static final ApplicationProtocolConfig ALPN =
-      new ApplicationProtocolConfig(
-          ApplicationProtocolConfig.Protocol.ALPN,
-          ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-          ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-          ApplicationProtocolNames.HTTP_1_1,
-          ApplicationProtocolNames.HTTP_2);
 
   @Override
   public long allocate(WorkerInfo info) {
@@ -100,12 +94,7 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
 
     // 是否启用https
     if (Stream.of(endpoints).anyMatch(endpoint -> endpoint.startsWith(HTTPS_PREFIX))) {
-      SslContextBuilder sslContextBuilder =
-          SslContextBuilder.forClient()
-              // 设置alpn
-              .applicationProtocolConfig(ALPN)
-              // 设置使用的那种ssl实现方式
-              .sslProvider(SslProvider.OPENSSL);
+      SslContextBuilder sslContextBuilder = GrpcSslContexts.forClient();
 
       if (extraInfo.containsKey(ETCDV3_TRUST_CERT_COLLECTION_FILE)) {
         sslContextBuilder.trustManager(new File(extraInfo.get(ETCDV3_TRUST_CERT_COLLECTION_FILE)));

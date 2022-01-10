@@ -1,18 +1,17 @@
 package com.silong.fundation.duuid.spi;
 
 import com.google.common.collect.ImmutableList;
-import io.etcd.jetcd.Auth;
-import io.etcd.jetcd.ByteSequence;
-import io.etcd.jetcd.Client;
 import io.etcd.jetcd.launcher.EtcdContainer;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
+import java.io.File;
+
 import static com.silong.fundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -31,23 +30,19 @@ public class Etcdv3WorkerIdAllocatorTests {
 
   EtcdContainer container;
 
+  @BeforeEach
+  void init() {
+    container = new EtcdContainer(QUAY_IO_COREOS_ETCD_V_3_5_0, "server", ImmutableList.of());
+  }
+
   @AfterEach
-  void einit() {
+  void cleanUp() {
     if (container != null) {
       container.close();
     }
   }
 
-  @Test
-  @DisplayName("SingleNode-Http-without-credentials")
-  void test1() {
-    container = new EtcdContainer(QUAY_IO_COREOS_ETCD_V_3_5_0, "test-node", ImmutableList.of());
-    container.start();
-    WorkerInfo info =
-        WorkerInfo.builder()
-            .name(SystemUtils.getHostName())
-            .extraInfo(ImmutableMap.of(ETCDV3_ENDPOINTS, container.clientEndpoint().toString()))
-            .build();
+  private void test(WorkerInfo info) {
     long allocate = -1;
     int i = 0;
     for (; i < 100; i++) {
@@ -57,25 +52,42 @@ public class Etcdv3WorkerIdAllocatorTests {
   }
 
   @Test
-  @DisplayName("SingleNode-Http-with-credentials")
-  void test2() {
-    container = new EtcdContainer(QUAY_IO_COREOS_ETCD_V_3_5_0, "test-node", ImmutableList.of());
+  @DisplayName("SingleNode-Http-without-credentials")
+  void test1() {
     container.start();
-    String url = container.clientEndpoint().toString();
-    Client client = Client.builder().endpoints(url).build();
-    Auth authClient = client.getAuthClient();
-    authClient.userAdd(ByteSequence.from("UserA", UTF_8), ByteSequence.from("123456", UTF_8));
-    authClient.authEnable();
-    WorkerInfo info =
+    test(
+        WorkerInfo.builder()
+            .name(SystemUtils.getHostName())
+            .extraInfo(ImmutableMap.of(ETCDV3_ENDPOINTS, container.clientEndpoint().toString()))
+            .build());
+  }
+
+  @Test
+  @DisplayName("SingleNode-Https(oneway)-without-credentials")
+  void test2() {
+    container.withSll(true).start();
+    test(
+        WorkerInfo.builder()
+            .name(SystemUtils.getHostName())
+            .extraInfo(ImmutableMap.of(ETCDV3_ENDPOINTS, container.clientEndpoint().toString()))
+            .build());
+  }
+
+  @Test
+  @DisplayName("SingleNode-Https(oneway+client.key)-without-credentials")
+  void test3() {
+    container.withSll(true).start();
+    test(
         WorkerInfo.builder()
             .name(SystemUtils.getHostName())
             .extraInfo(
                 ImmutableMap.of(
-                    ETCDV3_ENDPOINTS, url, ETCDV3_USER, "UserA", ETCDV3_PASSWORD, "123456"))
-            .build();
-    for (int i = 0; i < 100; i++) {
-      long allocate = allocator.allocate(info);
-      assertEquals(i, allocate);
-    }
+                    ETCDV3_ENDPOINTS,
+                    container.clientEndpoint().toString(),
+                    ETCDV3_KEY_CERT_CHAIN_FILE,
+                    new File("src/test/resources/ssl/cert/client.pem").getAbsolutePath(),
+                    ETCDV3_KEY_FILE,
+                    new File("src/test/resources/ssl/cert/client.key").getAbsolutePath()))
+            .build());
   }
 }
