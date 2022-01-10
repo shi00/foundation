@@ -344,6 +344,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
       queue.clear();
       deltaDays++;
       tomorrowStartTime.add(DAY_OF_YEAR, 1);
+      sequence = 0;
     }
 
     sequence = sequence + randomIncrement();
