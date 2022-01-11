@@ -3,6 +3,7 @@ package com.silong.fundation.duuid.spi;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
+import io.etcd.jetcd.KV;
 import io.etcd.jetcd.kv.PutResponse;
 import io.etcd.jetcd.options.PutOption;
 import io.grpc.netty.GrpcSslContexts;
@@ -59,23 +60,19 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
   @Override
   public long allocate(WorkerInfo info) {
     try (Client client = getClient(info)) {
+      KV kvClient = client.getKVClient();
+      SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+      String value = String.format("%s---%s", info.getName(), simpleDateFormat.format(new Date()));
       PutResponse putResponse =
-          client
-              .getKVClient()
-              .put(
-                  KEY,
-                  ByteSequence.from(
-                      String.format(
-                          "%s---%s",
-                          info.getName(),
-                          new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())),
-                      UTF_8),
-                  PUT_OPTION)
-              .get();
+          kvClient.put(KEY, ByteSequence.from(value, UTF_8), PUT_OPTION).get();
       return putResponse.hasPrevKv() ? (int) putResponse.getPrevKv().getVersion() : 0;
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private boolean isEmpty(String str) {
+    return str == null || str.isEmpty();
   }
 
   private Client getClient(WorkerInfo info) throws Exception {
@@ -83,12 +80,14 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
     if (info == null || (extraInfo = info.getExtraInfo()) == null) {
       throw new IllegalArgumentException("info and info.extraInfo must not be null.");
     }
-    if (!extraInfo.containsKey(ETCDV3_ENDPOINTS)) {
+
+    String endpointsStr = extraInfo.get(ETCDV3_ENDPOINTS);
+    if (isEmpty(endpointsStr)) {
       throw new IllegalArgumentException(
-          String.format("must contain %s in info.extraInfo.", ETCDV3_ENDPOINTS));
+          String.format("%s must not be null or empty in extraInfo.", ETCDV3_ENDPOINTS));
     }
     String[] endpoints =
-        Arrays.stream(extraInfo.get(ETCDV3_ENDPOINTS).split(","))
+        Arrays.stream(endpointsStr.split(","))
             .filter(endpoint -> !endpoint.trim().isEmpty())
             .toArray(String[]::new);
 
@@ -98,23 +97,25 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
     if (Stream.of(endpoints).anyMatch(endpoint -> endpoint.startsWith(HTTPS_PREFIX))) {
       SslContextBuilder sslContextBuilder = GrpcSslContexts.forClient();
 
-      if (extraInfo.containsKey(ETCDV3_TRUST_CERT_COLLECTION_FILE)) {
-        sslContextBuilder.trustManager(new File(extraInfo.get(ETCDV3_TRUST_CERT_COLLECTION_FILE)));
-      } else {
+      String trustCertCollectionFile = extraInfo.get(ETCDV3_TRUST_CERT_COLLECTION_FILE);
+      if (isEmpty(trustCertCollectionFile)) {
         sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+      } else {
+        sslContextBuilder.trustManager(new File(trustCertCollectionFile));
       }
 
-      if (extraInfo.containsKey(ETCDV3_KEY_FILE)
-          && extraInfo.containsKey(ETCDV3_KEY_CERT_CHAIN_FILE)) {
+      String keyFile = extraInfo.get(ETCDV3_KEY_FILE);
+      String keyCertChainFile = extraInfo.get(ETCDV3_KEY_CERT_CHAIN_FILE);
+      if (isEmpty(keyFile) || isEmpty(keyCertChainFile)) {
+        sslContextBuilder
+            // 设置客户端证书
+            .keyManager(null, (File) null);
+      } else {
         sslContextBuilder
             // 设置客户端证书
             .keyManager(
             new File(extraInfo.get(ETCDV3_KEY_CERT_CHAIN_FILE)),
             new File(extraInfo.get(ETCDV3_KEY_FILE)));
-      } else {
-        sslContextBuilder
-            // 设置客户端证书
-            .keyManager(null, (File) null);
       }
       builder.sslContext(sslContextBuilder.build());
     }
