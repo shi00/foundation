@@ -90,4 +90,24 @@ public class Etcdv3WorkerIdAllocatorTests {
                     new File("src/test/resources/ssl/cert/client.key").getAbsolutePath()))
             .build());
   }
+
+  @Test
+  @DisplayName("SingleNode-Https(twoway)-without-credentials")
+  void test4() {
+    container.withSll(true).start();
+    test(
+        WorkerInfo.builder()
+            .name(SystemUtils.getHostName())
+            .extraInfo(
+                ImmutableMap.of(
+                    ETCDV3_ENDPOINTS,
+                    container.clientEndpoint().toString(),
+                    ETCDV3_TRUST_CERT_COLLECTION_FILE,
+                    new File("src/test/resources/ssl/cert/ca.pem").getAbsolutePath(),
+                    ETCDV3_KEY_CERT_CHAIN_FILE,
+                    new File("src/test/resources/ssl/cert/client.pem").getAbsolutePath(),
+                    ETCDV3_KEY_FILE,
+                    new File("src/test/resources/ssl/cert/client.key").getAbsolutePath()))
+            .build());
+  }
 }
