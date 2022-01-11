@@ -44,8 +44,10 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
    * an X.509 certificate collection in PEM format.
    */
   public static final String ETCDV3_TRUST_CERT_COLLECTION_FILE = "etcdv3.trustCertCollectionFile";
+
   /** an X.509 certificate chain file in PEM format */
   public static final String ETCDV3_KEY_CERT_CHAIN_FILE = "etcdv3.keyCertChainFile";
+
   /** a PKCS#8 private key file in PEM format */
   public static final String ETCDV3_KEY_FILE = "etcdv3.keyFile";
 
