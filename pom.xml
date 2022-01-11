@@ -69,8 +69,8 @@
         <jetcd.version>0.6.1</jetcd.version>
         <jmh.version>1.34</jmh.version>
         <testcontainers.version>1.16.2</testcontainers.version>
+        <springfox-boot-starter.version>3.0.0</springfox-boot-starter.version>
         <!--开源组件-->
-
     </properties>
 
     <dependencyManagement>
@@ -133,6 +133,11 @@
                 <groupId>org.openjdk.jmh</groupId>
                 <artifactId>jmh-generator-annprocess</artifactId>
                 <version>${jmh.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-boot-starter</artifactId>
+                <version>${springfox-boot-starter.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

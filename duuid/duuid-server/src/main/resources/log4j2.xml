@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Log4j 2.x 配置文件。每30秒自动检查和应用配置文件的更新； -->
+<Configuration monitorInterval="300" name="duuid" status="warn" strict="true">
+    <Properties>
+        <!-- 日志打印根目录 -->
+        <Property name="baseDir">logs</Property>
+        <!-- 日志打印格式 -->
+        <Property name="logging.pattern">%d{yyyy-MM-dd HH:mm:ss,SSS}:%4p %t %X{uuid} (%M:%F:%L) - %m%n
+        </Property>
+    </Properties>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${logging.pattern}"/>
+        </Console>
+        <RollingRandomAccessFile fileName="${baseDir}/duuid[${date:yyyy-MM-dd HH.mm.ss.SSS}].log"
+                                 filePattern="${baseDir}/$${date:yyyy-MM}/duuid-%d{yyyy-MM-dd}-%i.log.zip"
+                                 name="RollingFile">
+            <PatternLayout pattern="${logging.pattern}"/>
+
+            <!-- 组合策略，满足任一策略即会触发文件rollover -->
+            <Policies>
+                <!-- 程序起始时对上一次的日志进行备份 -->
+                <OnStartupTriggeringPolicy/>
+                <!-- 超过20MB换文件 -->
+                <SizeBasedTriggeringPolicy size="20MB"/>
+                <!-- 每天换文件 -->
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+
+            <!-- 最多保持输出20个日志文件，对备份文件进行压缩 -->
+            <DefaultRolloverStrategy compressionLevel="5" fileIndex="max"
+                                     max="20" min="1">
+                <!-- Nested conditions: the inner condition is only evaluated on files
+                  for which the outer conditions are true. -->
+                <Delete basePath="${baseDir}" maxDepth="2">
+                    <!-- 如果是系统日志文件则校验文件最后修改时间 -->
+                    <IfFileName glob="*/duuid-*.log.zip">
+                        <IfAny>
+                            <!-- 日志文件总量超出上限 1GB，保留最近1GB文件 -->
+                            <IfAccumulatedFileSize exceeds="1GB"/>
+                        </IfAny>
+                    </IfFileName>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+    </Appenders>
+    <Loggers>
+        <Logger additivity="false" level="info" name="com.silong">
+            <AppenderRef level="debug" ref="RollingFile"/>
+            <AppenderRef level="debug" ref="Console"/>
+        </Logger>
+        <Logger additivity="false" level="warn" name="org.apache">
+            <AppenderRef level="debug" ref="RollingFile"/>
+            <AppenderRef level="debug" ref="Console"/>
+        </Logger>
+        <Logger additivity="false" level="warn" name="org.springframework">
+            <AppenderRef level="debug" ref="RollingFile"/>
+            <AppenderRef level="debug" ref="Console"/>
+        </Logger>
+        <Root level="warn">
+            <AppenderRef ref="RollingFile"/>
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
