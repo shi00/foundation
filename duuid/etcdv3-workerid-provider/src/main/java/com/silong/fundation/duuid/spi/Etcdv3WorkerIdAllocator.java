@@ -113,18 +113,18 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
       } else {
         sslContextBuilder
             // 设置客户端证书
-            .keyManager(
-            new File(extraInfo.get(ETCDV3_KEY_CERT_CHAIN_FILE)),
-            new File(extraInfo.get(ETCDV3_KEY_FILE)));
+            .keyManager(new File(keyCertChainFile), new File(keyFile));
       }
       builder.sslContext(sslContextBuilder.build());
     }
 
     // 设置访问用户密码
-    if (extraInfo.containsKey(ETCDV3_USER) && extraInfo.containsKey(ETCDV3_PASSWORD)) {
+    String userName = extraInfo.get(ETCDV3_USER);
+    String password = extraInfo.get(ETCDV3_PASSWORD);
+    if (!isEmpty(userName) && !isEmpty(password)) {
       builder
-          .user(ByteSequence.from(extraInfo.get(ETCDV3_USER).getBytes(UTF_8)))
-          .password(ByteSequence.from(extraInfo.get(ETCDV3_PASSWORD).getBytes(UTF_8)));
+          .user(ByteSequence.from(userName.getBytes(UTF_8)))
+          .password(ByteSequence.from(password.getBytes(UTF_8)));
     }
     return builder.build();
   }
