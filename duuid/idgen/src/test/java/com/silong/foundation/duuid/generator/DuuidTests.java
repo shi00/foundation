@@ -98,33 +98,33 @@ public class DuuidTests {
   }
 
   @Test
-  @DisplayName("SPMC-[inc:1]-[thread:100]-33554500")
+  @DisplayName("SPMC-[inc:1]-[thread:10]-33554500")
   void test3() throws Exception {
-    int threadCount = 100;
+    int threadCount = 10;
     int callCount = 335545;
     test(threadCount, callCount, false);
   }
 
   @Test
-  @DisplayName("SPMC-randomIncrement-[thread:100]-33554500")
+  @DisplayName("SPMC-randomIncrement-[thread:10]-3355450")
   void test4() throws Exception {
-    int threadCount = 100;
+    int threadCount = 10;
     int callCount = 335545;
     test(threadCount, callCount, true);
   }
 
   @Test
-  @DisplayName("SPMC-randomIncrement-[thread:200]-33554500")
+  @DisplayName("SPMC-randomIncrement-[thread:20]-3355450")
   void test5() throws Exception {
-    int threadCount = 200;
+    int threadCount = 20;
     int callCount = 335545;
     test(threadCount, callCount, true);
   }
 
   @Test
-  @DisplayName("SPMC-[inc:1]-[thread:200]-33554500")
+  @DisplayName("SPMC-[inc:1]-[thread:20]-3355450")
   void test6() throws Exception {
-    int threadCount = 200;
+    int threadCount = 20;
     int callCount = 335545;
     test(threadCount, callCount, false);
   }
@@ -150,7 +150,7 @@ public class DuuidTests {
   }
 
   @Test
-  @DisplayName("SPMC-randomIncrement-[thread:101]-1024-mocktime")
+  @DisplayName("SPMC-randomIncrement-[thread:11]-1024-mocktime")
   void test8() throws InterruptedException {
     long now = System.currentTimeMillis();
     long tomorrow = now + DAYS.toMillis(1);
@@ -164,7 +164,7 @@ public class DuuidTests {
             true,
             CircularQueueDuuidGenerator.Constants.DEFAULT_MAX_RANDOM_INCREMENT);
     long id1 = duuidGenerator.nextId();
-    CountDownLatch latch = new CountDownLatch(100);
+    CountDownLatch latch = new CountDownLatch(10);
     for (int i = 0; i < 100; i++) {
       new Thread(
               () -> {
