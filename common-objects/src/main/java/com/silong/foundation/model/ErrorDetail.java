@@ -1,4 +1,4 @@
-package com.silong.fundation.model.response;
+package com.silong.foundation.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;

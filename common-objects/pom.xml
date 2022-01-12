@@ -9,8 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <version>1.0.0</version>
-    <artifactId>common-model</artifactId>
-    <description>Common data models.</description>
+    <artifactId>common-objects</artifactId>
+    <description>Common objects.</description>
 
     <properties>
         <java.version>1.8</java.version>

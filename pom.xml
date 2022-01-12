@@ -44,7 +44,7 @@
         <module>duuid/workerid-provider</module>
         <module>duuid/etcdv3-workerid-provider</module>
         <module>duuid/duuid-server</module>
-        <module>common-model</module>
+        <module>common-objects</module>
     </modules>
 
     <properties>

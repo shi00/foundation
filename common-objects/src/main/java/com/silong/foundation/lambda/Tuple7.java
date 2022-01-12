@@ -1,4 +1,4 @@
-package com.silong.fundation.model.lambda;
+package com.silong.foundation.lambda;
 
 import lombok.Builder;
 import lombok.Data;
