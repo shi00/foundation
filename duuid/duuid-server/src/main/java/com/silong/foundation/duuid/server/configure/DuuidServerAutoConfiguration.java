@@ -1,15 +1,14 @@
-package com.silong.fundation.duuidserver.configure;
+package com.silong.foundation.duuid.server.configure;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Streams;
-import com.silong.fundation.duuid.generator.DuuidGenerator;
-import com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator;
-import com.silong.fundation.duuid.spi.WorkerIdAllocator;
-import com.silong.fundation.duuid.spi.WorkerInfo;
-import com.silong.fundation.duuidserver.configure.properties.DuuidGeneratorProperties;
-import com.silong.fundation.duuidserver.configure.properties.DuuidServerProperties;
-import com.silong.fundation.duuidserver.configure.properties.EtcdProperties;
-import com.silong.fundation.duuidserver.handlers.IdGeneratorHandler;
+import com.silong.foundation.duuid.generator.DuuidGenerator;
+import com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator;
+import com.silong.foundation.duuid.server.configure.properties.DuuidGeneratorProperties;
+import com.silong.foundation.duuid.server.configure.properties.DuuidServerProperties;
+import com.silong.foundation.duuid.server.configure.properties.EtcdProperties;
+import com.silong.foundation.duuid.spi.WorkerIdAllocator;
+import com.silong.foundation.duuid.spi.WorkerInfo;
+import com.silong.foundation.duuid.server.handlers.IdGeneratorHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +25,12 @@ import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import java.util.ServiceLoader;
+import java.util.stream.StreamSupport;
 
-import static com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.SYSTEM_CLOCK_PROVIDER;
-import static com.silong.fundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
+import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.SYSTEM_CLOCK_PROVIDER;
+import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
+import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterators.spliteratorUnknownSize;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
@@ -59,7 +61,7 @@ public class DuuidServerAutoConfiguration {
   @Bean
   WorkerIdAllocator registerWorkerIdAllocator() {
     ServiceLoader<WorkerIdAllocator> load = ServiceLoader.load(WorkerIdAllocator.class);
-    return Streams.stream(load.iterator())
+    return StreamSupport.stream(spliteratorUnknownSize(load.iterator(), ORDERED), false)
         .filter(
             allocator ->
                 StringUtils.isEmpty(generatorProperties.getWorkerIdAllocatorFqdn())

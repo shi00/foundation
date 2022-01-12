@@ -1,4 +1,4 @@
-package com.silong.fundation.duuidserver;
+package com.silong.foundation.duuid.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

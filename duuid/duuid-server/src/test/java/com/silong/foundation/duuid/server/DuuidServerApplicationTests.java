@@ -1,6 +1,5 @@
-package com.silong.fundation.duuidserver;
+package com.silong.foundation.duuid.server;
 
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 /**
@@ -13,6 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class DuuidServerApplicationTests {
 
-  @Test
-  void contextLoads() {}
+  //  @Test
+  //  void contextLoads() {}
 }

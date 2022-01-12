@@ -1,4 +1,4 @@
-package com.silong.fundation.duuidserver.configure.properties;
+package com.silong.foundation.duuid.server.configure.properties;
 
 import lombok.Builder;
 import lombok.Data;

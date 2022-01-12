@@ -1,5 +1,7 @@
 package com.silong.foundation.crypto.utils;
 
+import com.silong.foundation.lambda.Function4;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -9,7 +11,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Objects.requireNonNull;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 
@@ -25,20 +26,6 @@ public class ThreadLocalCipher {
   /** 为了线程复用Cipher对象，此处不能在每次调用后remove */
   private static final ThreadLocal<Map<String, Cipher>> TL_CIPHER =
       ThreadLocal.withInitial(HashMap::new);
-
-  @FunctionalInterface
-  public interface Function5<T1, T2, T3, T4, R> {
-    /**
-     * 加密/解密
-     *
-     * @param t1 param1
-     * @param t2 param2
-     * @param t3 param3
-     * @param t4 param4
-     * @return result
-     */
-    R apply(T1 t1, T2 t2, T3 t3, T4 t4);
-  }
 
   /**
    * 加密数据
@@ -84,7 +71,7 @@ public class ThreadLocalCipher {
       String algorithm,
       Key key,
       AlgorithmParameterSpec spec,
-      Function5<Cipher, byte[], Integer, Integer, byte[]> doFinal) {
+      Function4<Cipher, byte[], Integer, Integer, byte[]> doFinal) {
     if (doFinal == null) {
       throw new IllegalArgumentException("doFinal must not be null.");
     }
@@ -136,7 +123,7 @@ public class ThreadLocalCipher {
       String algorithm,
       Key key,
       AlgorithmParameterSpec spec,
-      Function5<Cipher, byte[], Integer, Integer, byte[]> doFinal) {
+      Function4<Cipher, byte[], Integer, Integer, byte[]> doFinal) {
     if (doFinal == null) {
       throw new IllegalArgumentException("doFinal must not be null.");
     }

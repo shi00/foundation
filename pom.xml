@@ -60,6 +60,7 @@
         <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
         <serviceloader-maven-plugin.version>1.4.0</serviceloader-maven-plugin.version>
         <os-maven-plugin.version>1.7.0</os-maven-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
@@ -178,6 +179,11 @@
                     <groupId>kr.motd.maven</groupId>
                     <artifactId>os-maven-plugin</artifactId>
                     <version>${os-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven-source-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

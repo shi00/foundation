@@ -1,4 +1,4 @@
-package com.silong.fundation.duuidserver.configure.properties;
+package com.silong.foundation.duuid.server.configure.properties;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 
-import static com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.*;
+import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.*;
 
 /**
  * 服务配置
