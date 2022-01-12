@@ -9,7 +9,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>Assign a workerid to the duuid generator.</description>
+    <description>WorkerId assigner to assign WorkerId to Duuid generator.</description>
     <artifactId>duuid-workid-provider</artifactId>
     <version>1.0.0</version>
 
