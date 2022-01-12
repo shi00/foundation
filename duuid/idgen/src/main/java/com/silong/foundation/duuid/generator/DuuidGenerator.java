@@ -1,4 +1,4 @@
-package com.silong.fundation.duuid.generator;
+package com.silong.foundation.duuid.generator;
 
 /**
  * 分布式ID生成器

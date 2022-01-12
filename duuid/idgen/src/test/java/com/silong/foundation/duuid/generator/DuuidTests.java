@@ -1,6 +1,6 @@
-package com.silong.fundation.duuid.generator;
+package com.silong.foundation.duuid.generator;
 
-import com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator;
+import com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,8 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.DEFAULT_MAX_RANDOM_INCREMENT;
-import static com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.DEFAULT_QUEUE_CAPACITY;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -140,11 +138,11 @@ public class DuuidTests {
     duuidGenerator =
         new CircularQueueDuuidGenerator(
             () -> ++workerId,
-            () -> count.getAndIncrement() <= DEFAULT_QUEUE_CAPACITY - 30 ? now : tomorrow,
+            () -> count.getAndIncrement() <= CircularQueueDuuidGenerator.Constants.DEFAULT_QUEUE_CAPACITY - 30 ? now : tomorrow,
             0,
-            DEFAULT_QUEUE_CAPACITY,
+            CircularQueueDuuidGenerator.Constants.DEFAULT_QUEUE_CAPACITY,
             false,
-            DEFAULT_MAX_RANDOM_INCREMENT);
+            CircularQueueDuuidGenerator.Constants.DEFAULT_MAX_RANDOM_INCREMENT);
     long id1 = duuidGenerator.nextId();
     Thread.sleep(1000L);
     long id2 = duuidGenerator.nextId();
@@ -160,11 +158,11 @@ public class DuuidTests {
     duuidGenerator =
         new CircularQueueDuuidGenerator(
             () -> ++workerId,
-            () -> count.getAndIncrement() <= DEFAULT_QUEUE_CAPACITY - 30 ? now : tomorrow,
+            () -> count.getAndIncrement() <= CircularQueueDuuidGenerator.Constants.DEFAULT_QUEUE_CAPACITY - 30 ? now : tomorrow,
             0,
-            DEFAULT_QUEUE_CAPACITY,
+            CircularQueueDuuidGenerator.Constants.DEFAULT_QUEUE_CAPACITY,
             true,
-            DEFAULT_MAX_RANDOM_INCREMENT);
+            CircularQueueDuuidGenerator.Constants.DEFAULT_MAX_RANDOM_INCREMENT);
     long id1 = duuidGenerator.nextId();
     CountDownLatch latch = new CountDownLatch(100);
     for (int i = 0; i < 100; i++) {

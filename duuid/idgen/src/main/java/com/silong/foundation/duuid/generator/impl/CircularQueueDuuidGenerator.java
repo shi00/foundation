@@ -1,6 +1,6 @@
-package com.silong.fundation.duuid.generator.impl;
+package com.silong.foundation.duuid.generator.impl;
 
-import com.silong.fundation.duuid.generator.DuuidGenerator;
+import com.silong.foundation.duuid.generator.DuuidGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
@@ -9,7 +9,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
-import static com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.*;
+import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.*;
 import static java.util.Calendar.*;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

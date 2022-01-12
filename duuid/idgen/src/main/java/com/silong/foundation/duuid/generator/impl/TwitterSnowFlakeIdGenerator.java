@@ -1,6 +1,6 @@
-package com.silong.fundation.duuid.generator.impl;
+package com.silong.foundation.duuid.generator.impl;
 
-import com.silong.fundation.duuid.generator.DuuidGenerator;
+import com.silong.foundation.duuid.generator.DuuidGenerator;
 
 /**
  * Twitter SnowFlake ID

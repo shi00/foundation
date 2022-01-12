@@ -1,7 +1,7 @@
-package com.silong.fundation.duuid.generator;
+package com.silong.foundation.duuid.generator;
 
-import com.silong.fundation.duuid.generator.impl.CircularQueueDuuidGenerator;
-import com.silong.fundation.duuid.generator.impl.TwitterSnowFlakeIdGenerator;
+import com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator;
+import com.silong.foundation.duuid.generator.impl.TwitterSnowFlakeIdGenerator;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
