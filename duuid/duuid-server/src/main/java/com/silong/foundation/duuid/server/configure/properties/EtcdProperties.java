@@ -1,6 +1,5 @@
 package com.silong.foundation.duuid.server.configure.properties;
 
-import lombok.Builder;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -20,7 +19,6 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
  * @since 2022-01-11 22:42
  */
 @Data
-@Builder
 @Validated
 @ConfigurationProperties(prefix = "duuid.worker-id-provider.etcdv3")
 public class EtcdProperties {
@@ -34,17 +32,17 @@ public class EtcdProperties {
    * Trusted certificates for verifying the remote endpoint's certificate. The file should contain
    * an X.509 certificate collection in PEM format.
    */
-  @Builder.Default private String trustCertCollectionFile = EMPTY;
+  private String trustCertCollectionFile = EMPTY;
 
   /** a PKCS#8 private key file in PEM format */
-  @Builder.Default private String keyFile = EMPTY;
+  private String keyFile = EMPTY;
 
   /** an X.509 certificate chain file in PEM format */
-  @Builder.Default private String keyCertChainFile = EMPTY;
+  private String keyCertChainFile = EMPTY;
 
   /** 用户名 */
-  @Builder.Default private String userName = EMPTY;
+  private String userName = EMPTY;
 
   /** 密码 */
-  @Builder.Default private String password = EMPTY;
+  private String password = EMPTY;
 }
