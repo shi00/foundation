@@ -1,4 +1,4 @@
-package com.silong.fundation.crypto.aes;
+package com.silong.foundation.crypto.aes;
 
 import lombok.Getter;
 

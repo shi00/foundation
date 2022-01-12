@@ -1,7 +1,7 @@
-package com.silong.fundation.crypto;
+package com.silong.foundation.crypto;
 
-import com.silong.fundation.crypto.pbkdf2.Pbkdf2;
-import com.silong.fundation.crypto.utils.ThreadLocalSecureRandom;
+import com.silong.foundation.crypto.pbkdf2.Pbkdf2;
+import com.silong.foundation.crypto.utils.ThreadLocalSecureRandom;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Assertions;
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
-import static com.silong.fundation.crypto.pbkdf2.Pbkdf2.MIN_SALT_LENGTH;
+import static com.silong.foundation.crypto.pbkdf2.Pbkdf2.MIN_SALT_LENGTH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**

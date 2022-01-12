@@ -1,6 +1,6 @@
-package com.silong.fundation.crypto.rsa;
+package com.silong.foundation.crypto.rsa;
 
-import com.silong.fundation.crypto.RootKey;
+import com.silong.foundation.crypto.RootKey;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.ToString;
@@ -13,12 +13,10 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.silong.fundation.crypto.rsa.RsaToolkit.RSA;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
 
@@ -66,7 +64,7 @@ public final class RsaKeyPair {
   public static PublicKey importRsaPublicKey(String publicKeyFile) throws Exception {
     byte[] bytes = readRsaKeyFile(publicKeyFile);
     X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytes);
-    KeyFactory keyFactory = KeyFactory.getInstance(RSA);
+    KeyFactory keyFactory = KeyFactory.getInstance(RsaToolkit.RSA);
     return keyFactory.generatePublic(keySpec);
   }
 
@@ -80,7 +78,7 @@ public final class RsaKeyPair {
   public static PrivateKey importRsaPrivateKey(String privateKeyFile) throws Exception {
     byte[] bytes = readRsaKeyFile(privateKeyFile);
     PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(bytes);
-    KeyFactory keyFactory = KeyFactory.getInstance(RSA);
+    KeyFactory keyFactory = KeyFactory.getInstance(RsaToolkit.RSA);
     return keyFactory.generatePrivate(keySpec);
   }
 

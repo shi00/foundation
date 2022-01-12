@@ -1,11 +1,11 @@
-package com.silong.fundation.crypto.pbkdf2;
+package com.silong.foundation.crypto.pbkdf2;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
-import static com.silong.fundation.crypto.utils.ThreadLocalSecureRandom.random;
+import static com.silong.foundation.crypto.utils.ThreadLocalSecureRandom.random;
 
 /**
  * PBKDF2密钥生成工具，使用PBKDF2WithHmacSHA512算法。<br>

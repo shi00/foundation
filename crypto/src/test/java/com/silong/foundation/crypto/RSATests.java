@@ -1,8 +1,8 @@
-package com.silong.fundation.crypto;
+package com.silong.foundation.crypto;
 
-import com.silong.fundation.crypto.rsa.RsaKeyPair;
-import com.silong.fundation.crypto.rsa.RsaKeySize;
-import com.silong.fundation.crypto.rsa.RsaToolkit;
+import com.silong.foundation.crypto.rsa.RsaKeySize;
+import com.silong.foundation.crypto.rsa.RsaKeyPair;
+import com.silong.foundation.crypto.rsa.RsaToolkit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.*;
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.*;
 import java.io.File;
 import java.nio.file.Path;
 
-import static com.silong.fundation.crypto.rsa.RsaToolkit.*;
+import static com.silong.foundation.crypto.rsa.RsaToolkit.*;
 
 /**
  * 单元测试

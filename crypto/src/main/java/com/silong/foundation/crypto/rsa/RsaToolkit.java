@@ -1,7 +1,7 @@
-package com.silong.fundation.crypto.rsa;
+package com.silong.foundation.crypto.rsa;
 
-import com.silong.fundation.crypto.utils.SecurityWrapper;
-import com.silong.fundation.crypto.utils.ThreadLocalCipher;
+import com.silong.foundation.crypto.utils.SecurityWrapper;
+import com.silong.foundation.crypto.utils.ThreadLocalCipher;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;

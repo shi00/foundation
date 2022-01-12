@@ -1,8 +1,9 @@
-package com.silong.fundation.crypto;
+package com.silong.foundation.crypto;
 
-import com.silong.fundation.crypto.aes.AesGcmToolkit;
-import com.silong.fundation.crypto.pbkdf2.Pbkdf2;
-import com.silong.fundation.crypto.utils.ThreadLocalSecureRandom;
+import com.silong.foundation.crypto.aes.AesGcmToolkit;
+import com.silong.foundation.crypto.aes.AesKeySize;
+import com.silong.foundation.crypto.pbkdf2.Pbkdf2;
+import com.silong.foundation.crypto.utils.ThreadLocalSecureRandom;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.crypto.SecretKey;
@@ -23,9 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.silong.fundation.crypto.aes.AesGcmToolkit.AES;
-import static com.silong.fundation.crypto.aes.AesGcmToolkit.randomIv;
-import static com.silong.fundation.crypto.aes.AesKeySize.BITS_256;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
 import static java.util.Collections.unmodifiableList;
@@ -77,7 +75,7 @@ public final class RootKey {
     if (keyBytes == null || keyBytes.length == 0) {
       throw new IllegalArgumentException("keyBytes must not be null or empty.");
     }
-    return AesGcmToolkit.encrypt(keyBytes, 0, keyBytes.length, this.key, randomIv());
+    return AesGcmToolkit.encrypt(keyBytes, 0, keyBytes.length, this.key, AesGcmToolkit.randomIv());
   }
 
   /**
@@ -91,8 +89,8 @@ public final class RootKey {
       throw new IllegalArgumentException("workKey must not be null or empty.");
     }
     try {
-      byte[] bytes = Pbkdf2.generate(workKey.toCharArray(), BITS_256.getBits());
-      return AesGcmToolkit.encrypt(bytes, 0, bytes.length, this.key, randomIv());
+      byte[] bytes = Pbkdf2.generate(workKey.toCharArray(), AesKeySize.BITS_256.getBits());
+      return AesGcmToolkit.encrypt(bytes, 0, bytes.length, this.key, AesGcmToolkit.randomIv());
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException(e);
     }
@@ -186,8 +184,8 @@ public final class RootKey {
       chars[i] = (char) (keyParts[1][i] ^ keyParts[2][i] ^ keyParts[3][i]);
     }
     try {
-      byte[] key = Pbkdf2.generate(chars, salt, BITS_256.getBits());
-      return rootKey = new RootKey(new SecretKeySpec(key, AES));
+      byte[] key = Pbkdf2.generate(chars, salt, AesKeySize.BITS_256.getBits());
+      return rootKey = new RootKey(new SecretKeySpec(key, AesGcmToolkit.AES));
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       throw new RuntimeException(e);
     }
@@ -211,7 +209,7 @@ public final class RootKey {
    */
   public static String[] generate() {
     String[] parts = new String[DEFAULT_ROOT_KEY_PARTS.size()];
-    byte[] array = new byte[BITS_256.getBits()];
+    byte[] array = new byte[AesKeySize.BITS_256.getBits()];
     Base64.Encoder encoder = Base64.getEncoder();
     SecureRandom secureRandom = ThreadLocalSecureRandom.get();
     for (int i = 0; i < parts.length; i++) {

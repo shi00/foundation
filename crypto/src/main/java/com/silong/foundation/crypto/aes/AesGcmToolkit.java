@@ -1,9 +1,9 @@
-package com.silong.fundation.crypto.aes;
+package com.silong.foundation.crypto.aes;
 
-import com.silong.fundation.crypto.RootKey;
-import com.silong.fundation.crypto.utils.SecurityWrapper;
-import com.silong.fundation.crypto.utils.ThreadLocalCipher;
-import com.silong.fundation.crypto.utils.ThreadLocalSecureRandom;
+import com.silong.foundation.crypto.RootKey;
+import com.silong.foundation.crypto.utils.SecurityWrapper;
+import com.silong.foundation.crypto.utils.ThreadLocalCipher;
+import com.silong.foundation.crypto.utils.ThreadLocalSecureRandom;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -12,7 +12,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.silong.fundation.crypto.RootKey.ENABLED_CACHE;
+import static com.silong.foundation.crypto.RootKey.ENABLED_CACHE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**

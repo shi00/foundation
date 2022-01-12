@@ -1,6 +1,6 @@
-package com.silong.fundation.crypto;
+package com.silong.foundation.crypto;
 
-import com.silong.fundation.crypto.aes.AesGcmToolkit;
+import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Assertions;

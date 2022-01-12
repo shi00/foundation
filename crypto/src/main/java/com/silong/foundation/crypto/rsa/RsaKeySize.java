@@ -1,4 +1,4 @@
-package com.silong.fundation.crypto.rsa;
+package com.silong.foundation.crypto.rsa;
 
 import lombok.Getter;
 
