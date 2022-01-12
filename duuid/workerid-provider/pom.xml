@@ -9,8 +9,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>WorkerId assigner to assign WorkerId to Duuid generator.</description>
-    <artifactId>duuid-workid-provider</artifactId>
+    <description>WorkerId assigner to assign workerid to Duuid generator.</description>
+    <artifactId>duuid-workerid-provider</artifactId>
     <version>1.0.0</version>
 
     <properties>
