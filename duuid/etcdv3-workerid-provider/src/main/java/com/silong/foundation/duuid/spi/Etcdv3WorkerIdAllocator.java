@@ -1,4 +1,4 @@
-package com.silong.fundation.duuid.spi;
+package com.silong.foundation.duuid.spi;
 
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
@@ -65,7 +65,7 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
       String value = String.format("%s---%s", info.getName(), simpleDateFormat.format(new Date()));
       PutResponse putResponse =
           kvClient.put(KEY, ByteSequence.from(value, UTF_8), PUT_OPTION).get();
-      return putResponse.hasPrevKv() ? (int) putResponse.getPrevKv().getVersion() : 0;
+      return putResponse.hasPrevKv() ? putResponse.getPrevKv().getVersion() : 0;
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

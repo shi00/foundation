@@ -1,4 +1,4 @@
-package com.silong.fundation.duuid.spi;
+package com.silong.foundation.duuid.spi;
 
 import com.google.common.collect.ImmutableList;
 import io.etcd.jetcd.launcher.EtcdContainer;
@@ -11,7 +11,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 
-import static com.silong.fundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
+import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**

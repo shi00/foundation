@@ -38,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>
-            <artifactId>duuid-workid-provider</artifactId>
+            <artifactId>duuid-workerid-provider</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
@@ -65,7 +65,7 @@
                 <artifactId>serviceloader-maven-plugin</artifactId>
                 <configuration>
                     <services>
-                        <param>com.silong.fundation.duuid.spi.WorkerIdAllocator</param>
+                        <param>com.silong.foundation.duuid.spi.WorkerIdAllocator</param>
                     </services>
                 </configuration>
                 <executions>
