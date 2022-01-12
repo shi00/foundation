@@ -4,6 +4,7 @@ import com.silong.foundation.duuid.generator.DuuidGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.concurrent.ThreadLocalRandom;
@@ -67,8 +68,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Slf4j
 public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerator {
 
-  private static final String DUUID_PRODUCER_THREAD_PREFIX = "DUuid-Producer";
-
   /**
    * 常量
    *
@@ -105,6 +104,11 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     /** 默认最大随机增量10 */
     int DEFAULT_MAX_RANDOM_INCREMENT = 10;
   }
+
+  /** 日期格式化 */
+  private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+  private static final String DUUID_PRODUCER_THREAD_PREFIX = "DUuid-Producer";
 
   /** 是否开启序号随机，避免生成id连续可能引起的潜在安全问题 */
   protected final boolean enableSequenceRandom;
@@ -301,7 +305,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /** id生产 */
   @Override
   public void run() {
-    log.info("Thread {} started successfully.", getName());
+    log.info("Duuid producer thread started successfully.");
+    log.info("Initial states: {}", this);
     queue.fill(
         this::generate,
         idleCounter -> {
@@ -313,17 +318,18 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
             MILLISECONDS.sleep(queue.capacity() / (DEFAULT_SERVICE_QPS * 2));
           } catch (InterruptedException e) {
             // never happen in regular
-            log.error("Thread {} is interrupted and ends running", getName());
+            log.error("Thread is interrupted and ends running.");
           }
-          return idleCounter + 1;
+          return idleCounter;
         },
         () -> isRunning);
-    log.info("Thread {} runs to the end.", getName());
+    log.info("Duuid producer thread runs to the end.");
   }
 
   /** 停止运行 */
   public void finish() {
     if (isRunning) {
+      log.info("Duuid producer thread finishes running.");
       this.isRunning = false;
       this.queue.clear();
       this.interrupt();
@@ -333,25 +339,33 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /**
    * 根据定义的格式生成id，由于是单生产者多消费者模型，所以无需同步<br>
    * 为了避免id连续可能带来的潜在安全问题，此处加入初始值随机开关。<br>
-   * 此方法不能抛出异常，否则会导致环状队列奔溃。
+   * 此方法不能抛出异常，否则会导致环状队列崩溃。
    *
    * @return id
    */
   protected long generate() {
     // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
     if (utcTimeProvider.get() >= tomorrowStartTime.getTimeInMillis()) {
-      // 时间变更清除当前队列中的所有已生成id
-      queue.clear();
+      sequence = 0;
       deltaDays++;
       tomorrowStartTime.add(DAY_OF_YEAR, 1);
-      sequence = 0;
+      log.info(
+          "Time has elapsed to {}, reset sequence to 0. {}",
+          SDF.format(tomorrowStartTime.getTime()),
+          this);
     }
 
     sequence = sequence + randomIncrement();
-    // 如果序列号耗尽，则变更workerId
+
+    // 如果序列号耗尽，则重新申请workerId
     if (sequence > maxSequence) {
       workerId = workerIdProvider.get();
       sequence = sequence - maxSequence;
+      log.info(
+          "sequence has exceeded maximum {}, reassign workerId and reset sequence to {}. {}",
+          maxSequence,
+          sequence,
+          this);
     }
 
     return (workerId << workerIdLeftShiftBits) | (deltaDays << deltaDaysLeftShiftBits) | sequence;
