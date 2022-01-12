@@ -61,6 +61,7 @@
         <serviceloader-maven-plugin.version>1.4.0</serviceloader-maven-plugin.version>
         <os-maven-plugin.version>1.7.0</os-maven-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
@@ -184,6 +185,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>${maven-source-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.spotify</groupId>
+                    <artifactId>dockerfile-maven-plugin</artifactId>
+                    <version>${dockerfile-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
