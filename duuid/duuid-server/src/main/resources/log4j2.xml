@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Log4j 2.x 配置文件。每30秒自动检查和应用配置文件的更新； -->
-<Configuration monitorInterval="300" name="duuid" status="warn" strict="true">
+<!-- Log4j 2.x 配置文件。每60秒自动检查和应用配置文件的更新； -->
+<Configuration monitorInterval="60" name="duuid-server" status="warn" strict="true">
     <Properties>
         <!-- 日志打印根目录 -->
         <Property name="baseDir">../logs</Property>
+        <Property name="logFile">duuid-server</Property>
         <!-- 日志打印格式 -->
         <Property name="logging.pattern">%d{yyyy-MM-dd HH:mm:ss,SSS}:%4p %t %X{uuid} (%M:%F:%L) - %m%n
         </Property>
@@ -12,9 +13,9 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="${logging.pattern}"/>
         </Console>
-        <RollingRandomAccessFile fileName="${baseDir}/duuid[${date:yyyy-MM-dd HH.mm.ss.SSS}].log"
+        <RollingRandomAccessFile fileName="${baseDir}/${logFile}.log"
                                  immediateFlush="false"
-                                 filePattern="${baseDir}/$${date:yyyy-MM}/duuid-%d{yyyy-MM-dd}-%i.log.zip"
+                                 filePattern="${baseDir}/$${date:yyyy-MM}/${logFile}-%d{yyyy-MM-dd}-%i.log.zip"
                                  name="RollingFile">
             <PatternLayout pattern="${logging.pattern}"/>
 
@@ -35,7 +36,7 @@
                   for which the outer conditions are true. -->
                 <Delete basePath="${baseDir}" maxDepth="2">
                     <!-- 如果是系统日志文件则校验文件最后修改时间 -->
-                    <IfFileName glob="*/duuid-*.log.zip">
+                    <IfFileName glob="*/${logFile}-*.log.zip">
                         <IfAny>
                             <!-- 日志文件总量超出上限 1GB，保留最近1GB文件 -->
                             <IfAccumulatedFileSize exceeds="1GB"/>
@@ -50,6 +51,10 @@
             <AppenderRef level="debug" ref="RollingFile"/>
             <AppenderRef level="debug" ref="Console"/>
         </Logger>
+        <Logger additivity="false" level="warn" name="reactor.netty.http.server.AccessLog">
+            <AppenderRef level="debug" ref="RollingFile"/>
+            <AppenderRef level="debug" ref="Console"/>
+        </Logger>
         <Logger additivity="false" level="warn" name="org.apache">
             <AppenderRef level="debug" ref="RollingFile"/>
             <AppenderRef level="debug" ref="Console"/>
@@ -58,10 +63,6 @@
             <AppenderRef level="debug" ref="RollingFile"/>
             <AppenderRef level="debug" ref="Console"/>
         </Logger>
-        <logger name="reactor.netty.http.server.AccessLog" level="info" additivity="false">
-            <AppenderRef level="debug" ref="RollingFile"/>
-            <AppenderRef level="debug" ref="Console"/>
-        </logger>
         <Root level="warn">
             <AppenderRef ref="RollingFile"/>
             <AppenderRef ref="Console"/>
