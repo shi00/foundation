@@ -10,10 +10,11 @@ FROM openjdk:11.0.13-jre-slim
 
 LABEL maintainer="louis2sin@gmail.com"
 LABEL jre="11.0.13"
+LABEL service-name="duuid-server"
 
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-ENV JAVA_OPTS="-Xms256m -Xmx256m"
+ENV JAVA_OPTS="-Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector -Dreactor.netty.http.server.accessLogEnabled=true -Xms256m -Xmx256m"
 
 WORKDIR application
 

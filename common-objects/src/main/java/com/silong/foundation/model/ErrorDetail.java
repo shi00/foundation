@@ -20,6 +20,11 @@ public class ErrorDetail {
   @JsonProperty("error_code")
   private final String errorCode;
   /** 错误描述 */
-  @JsonProperty("error_code")
+  @JsonProperty("error_msg")
   private final String errorMessage;
+
+  @Override
+  public String toString() {
+    return String.format("Error[code:%s, message:%s]", errorCode, errorMessage);
+  }
 }
