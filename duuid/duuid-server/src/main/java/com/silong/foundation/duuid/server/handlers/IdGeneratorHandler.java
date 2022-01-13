@@ -20,6 +20,8 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  */
 public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
 
+  private static final ThreadLocal<Duuid> DUUID_THREAD_LOCAL = ThreadLocal.withInitial(Duuid::new);
+
   /** id生成器 */
   private final DuuidGenerator duuidGenerator;
 
@@ -36,6 +38,6 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
   public Mono<ServerResponse> handle(ServerRequest request) {
     return ServerResponse.ok()
         .contentType(APPLICATION_JSON)
-        .body(BodyInserters.fromValue(new Duuid(String.valueOf(duuidGenerator.nextId()))));
+        .body(BodyInserters.fromValue(DUUID_THREAD_LOCAL.get().id(duuidGenerator.nextId())));
   }
 }

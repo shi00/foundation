@@ -1,8 +1,9 @@
 package com.silong.foundation.duuid.server.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 /**
  * duuid结果
@@ -12,8 +13,9 @@ import lombok.Data;
  * @since 2022-01-13 13:17
  */
 @Data
-@AllArgsConstructor
+@NoArgsConstructor
+@Accessors(fluent = true)
 public class Duuid {
   /** 生成的duuid */
-  @JsonProperty private String id;
+  @JsonProperty private long id;
 }

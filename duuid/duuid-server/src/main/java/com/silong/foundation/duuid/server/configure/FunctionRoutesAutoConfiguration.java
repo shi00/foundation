@@ -80,26 +80,29 @@ public class FunctionRoutesAutoConfiguration {
   }
 
   @Bean
+  WorkerInfo registerWorkerInfo() {
+    return WorkerInfo.builder()
+        .name(SystemUtils.getHostName())
+        .extraInfo(
+            ImmutableMap.of(
+                ETCDV3_ENDPOINTS,
+                String.join(",", etcdProperties.getServerAddresses()),
+                ETCDV3_TRUST_CERT_COLLECTION_FILE,
+                etcdProperties.getTrustCertCollectionFile(),
+                ETCDV3_KEY_CERT_CHAIN_FILE,
+                etcdProperties.getKeyCertChainFile(),
+                ETCDV3_KEY_FILE,
+                etcdProperties.getKeyFile(),
+                ETCDV3_USER,
+                etcdProperties.getUserName(),
+                ETCDV3_PASSWORD,
+                etcdProperties.getPassword()))
+        .build();
+  }
+
+  @Bean
   @ConditionalOnProperty(name = "duuid.worker-id-provider.etcdv3.enabled", havingValue = "true")
-  DuuidGenerator registerIdGenerator(WorkerIdAllocator allocator) {
-    WorkerInfo workerInfo =
-        WorkerInfo.builder()
-            .name(SystemUtils.getHostName())
-            .extraInfo(
-                ImmutableMap.of(
-                    ETCDV3_ENDPOINTS,
-                    String.join(",", etcdProperties.getServerAddresses()),
-                    ETCDV3_TRUST_CERT_COLLECTION_FILE,
-                    etcdProperties.getTrustCertCollectionFile(),
-                    ETCDV3_KEY_CERT_CHAIN_FILE,
-                    etcdProperties.getKeyCertChainFile(),
-                    ETCDV3_KEY_FILE,
-                    etcdProperties.getKeyFile(),
-                    ETCDV3_USER,
-                    etcdProperties.getUserName(),
-                    ETCDV3_PASSWORD,
-                    etcdProperties.getPassword()))
-            .build();
+  DuuidGenerator registerIdGenerator(WorkerIdAllocator allocator, WorkerInfo workerInfo) {
     return new CircularQueueDuuidGenerator(
         generatorProperties.getWorkerIdBits(),
         generatorProperties.getDeltaDaysBits(),
@@ -133,15 +136,15 @@ public class FunctionRoutesAutoConfiguration {
                   responses = {
                     @ApiResponse(
                         responseCode = OK,
-                        description = "Successful operation",
+                        description = "OK",
                         content = @Content(schema = @Schema(implementation = Duuid.class))),
                     @ApiResponse(
                         responseCode = UNAUTHORIZED,
-                        description = "Authentication failed",
+                        description = "UNAUTHORIZED",
                         content = @Content(schema = @Schema(implementation = ErrorDetail.class))),
                     @ApiResponse(
                         responseCode = FORBIDDEN,
-                        description = "Operation prohibited",
+                        description = "FORBIDDEN",
                         content = @Content(schema = @Schema(implementation = ErrorDetail.class)))
                   })))
   RouterFunction<ServerResponse> routes(IdGeneratorHandler handler) {

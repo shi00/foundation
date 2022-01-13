@@ -20,7 +20,7 @@ import org.springframework.security.web.server.context.NoOpServerSecurityContext
 @Configuration
 @EnableWebFluxSecurity
 @EnableConfigurationProperties({DuuidServerProperties.class})
-public class DuuidServerAutoConfiguration {
+public class SecurityAutoConfiguration {
 
   /** 配置注入 */
   private DuuidServerProperties serverProperties;

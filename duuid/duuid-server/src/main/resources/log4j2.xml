@@ -49,27 +49,27 @@
     <Loggers>
         <Logger additivity="false" level="info" name="com.silong">
             <AppenderRef level="debug" ref="RollingFile"/>
-            <AppenderRef level="debug" ref="Console"/>
+<!--            <AppenderRef level="debug" ref="Console"/>-->
         </Logger>
         <Logger additivity="false" level="warn" name="reactor.netty.http.server.AccessLog">
             <AppenderRef level="debug" ref="RollingFile"/>
-            <AppenderRef level="debug" ref="Console"/>
+<!--            <AppenderRef level="debug" ref="Console"/>-->
         </Logger>
         <Logger additivity="false" level="warn" name="org.apache">
             <AppenderRef level="debug" ref="RollingFile"/>
-            <AppenderRef level="debug" ref="Console"/>
+<!--            <AppenderRef level="debug" ref="Console"/>-->
         </Logger>
         <Logger additivity="false" level="warn" name="org.springframework">
             <AppenderRef level="debug" ref="RollingFile"/>
-            <AppenderRef level="debug" ref="Console"/>
+<!--            <AppenderRef level="debug" ref="Console"/>-->
         </Logger>
         <Logger additivity="false" level="warn" name="com.fasterxml">
             <AppenderRef level="debug" ref="RollingFile"/>
-            <AppenderRef level="debug" ref="Console"/>
+<!--            <AppenderRef level="debug" ref="Console"/>-->
         </Logger>
         <Root level="warn">
             <AppenderRef ref="RollingFile"/>
-            <AppenderRef ref="Console"/>
+<!--            <AppenderRef ref="Console"/>-->
         </Root>
     </Loggers>
 </Configuration>
