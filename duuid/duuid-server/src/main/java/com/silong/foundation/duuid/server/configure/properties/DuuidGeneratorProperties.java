@@ -22,6 +22,7 @@ import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGener
 public class DuuidGeneratorProperties {
   /** workerId占用比特数量，默认：23 */
   @Positive private int workerIdBits = DEFAULT_WORK_ID_BITS;
+
   /** deltaDays占用比特数量，默认：15 */
   @Positive private int deltaDaysBits = DEFAULT_DELTA_DAYS_BITS;
 
