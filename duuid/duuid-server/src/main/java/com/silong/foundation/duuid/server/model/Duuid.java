@@ -1,6 +1,7 @@
 package com.silong.foundation.duuid.server.model;
 
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
@@ -11,8 +12,8 @@ import lombok.Data;
  * @since 2022-01-13 13:17
  */
 @Data
-@Builder
+@AllArgsConstructor
 public class Duuid {
-  /** 生产的duuid */
-  private String id;
+  /** 生成的duuid */
+  @JsonProperty private String id;
 }

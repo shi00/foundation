@@ -1,6 +1,8 @@
 package com.silong.foundation.duuid.server.handlers;
 
 import com.silong.foundation.duuid.generator.DuuidGenerator;
+import com.silong.foundation.duuid.server.model.Duuid;
+import lombok.NonNull;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.HandlerFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -26,7 +28,7 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
    *
    * @param duuidGenerator id生成器
    */
-  public IdGeneratorHandler(DuuidGenerator duuidGenerator) {
+  public IdGeneratorHandler(@NonNull DuuidGenerator duuidGenerator) {
     this.duuidGenerator = duuidGenerator;
   }
 
@@ -34,6 +36,6 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
   public Mono<ServerResponse> handle(ServerRequest request) {
     return ServerResponse.ok()
         .contentType(APPLICATION_JSON)
-        .body(BodyInserters.fromValue(duuidGenerator.nextId()));
+        .body(BodyInserters.fromValue(new Duuid(String.valueOf(duuidGenerator.nextId()))));
   }
 }
