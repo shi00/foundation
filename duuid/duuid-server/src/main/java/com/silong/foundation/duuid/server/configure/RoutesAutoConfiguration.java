@@ -54,7 +54,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
   EtcdProperties.class,
   DuuidServerProperties.class
 })
-public class FunctionRoutesAutoConfiguration {
+public class RoutesAutoConfiguration {
 
   /** 配置注入 */
   private DuuidGeneratorProperties generatorProperties;

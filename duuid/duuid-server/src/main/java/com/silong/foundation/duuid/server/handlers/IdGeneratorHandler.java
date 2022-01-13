@@ -34,6 +34,12 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
     this.duuidGenerator = duuidGenerator;
   }
 
+  /**
+   * 根据请求生成uuid
+   *
+   * @param request 请求
+   * @return 响应
+   */
   @Override
   public Mono<ServerResponse> handle(ServerRequest request) {
     return ServerResponse.ok()
