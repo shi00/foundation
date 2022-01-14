@@ -13,9 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -56,6 +59,7 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
   private static final ByteSequence KEY = ByteSequence.from("duuid/worker-id".getBytes(UTF_8));
   private static final PutOption PUT_OPTION =
       PutOption.newBuilder().withLeaseId(0).withPrevKV().build();
+  private static final Duration TIMEOUT = Duration.of(10, ChronoUnit.SECONDS);
 
   @Override
   public long allocate(WorkerInfo info) {
@@ -64,7 +68,9 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
       SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       String value = String.format("%s---%s", info.getName(), simpleDateFormat.format(new Date()));
       PutResponse putResponse =
-          kvClient.put(KEY, ByteSequence.from(value, UTF_8), PUT_OPTION).get();
+          kvClient
+              .put(KEY, ByteSequence.from(value, UTF_8), PUT_OPTION)
+              .get(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
       return putResponse.hasPrevKv() ? putResponse.getPrevKv().getVersion() : 0;
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -91,7 +97,8 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
             .filter(endpoint -> !endpoint.trim().isEmpty())
             .toArray(String[]::new);
 
-    ClientBuilder builder = Client.builder().endpoints(endpoints);
+    ClientBuilder builder =
+        Client.builder().endpoints(endpoints).connectTimeout(TIMEOUT).keepaliveTimeout(TIMEOUT);
 
     // 是否启用https
     if (Stream.of(endpoints).anyMatch(endpoint -> endpoint.startsWith(HTTPS_PREFIX))) {
