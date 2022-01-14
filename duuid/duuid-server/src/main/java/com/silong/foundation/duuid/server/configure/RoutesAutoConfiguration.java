@@ -127,7 +127,6 @@ public class RoutesAutoConfiguration {
   @Bean
   @RouterOperations(
       @RouterOperation(
-          path = "/duuid",
           produces = {APPLICATION_JSON_VALUE},
           consumes = {ALL_VALUE},
           method = POST,
