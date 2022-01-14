@@ -56,7 +56,7 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
         .body(BodyInserters.fromValue(DUUID_THREAD_LOCAL.get().id(duuidGenerator.nextId())))
         .onErrorResume(
             t -> {
-              log.error("Failed to generate duuid.", t);
+              log.error("Failed to generate id.", t);
               return ServerResponse.status(INTERNAL_SERVER_ERROR)
                   .contentType(APPLICATION_JSON)
                   .body(BodyInserters.fromValue(SERVICE_INTERNAL_ERROR.format(serviceName)));
