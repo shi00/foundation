@@ -20,6 +20,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.springdoc.core.annotations.RouterOperation;
 import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -116,8 +117,9 @@ public class RoutesAutoConfiguration {
   }
 
   @Bean
-  IdGeneratorHandler registerHandler(DuuidGenerator duuidGenerator) {
-    return new IdGeneratorHandler(duuidGenerator);
+  IdGeneratorHandler registerHandler(
+      @Value("spring.application.name") String applicationName, DuuidGenerator duuidGenerator) {
+    return new IdGeneratorHandler(applicationName, duuidGenerator);
   }
 
   @Bean
