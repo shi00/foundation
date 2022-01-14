@@ -66,8 +66,10 @@ public class RoutesAutoConfiguration {
 
   @Bean
   WorkerIdAllocator registerWorkerIdAllocator() {
-    ServiceLoader<WorkerIdAllocator> load = ServiceLoader.load(WorkerIdAllocator.class);
-    return StreamSupport.stream(spliteratorUnknownSize(load.iterator(), ORDERED), false)
+    ServiceLoader<WorkerIdAllocator> workerIdAllocators =
+        ServiceLoader.load(WorkerIdAllocator.class);
+    return StreamSupport.stream(
+            spliteratorUnknownSize(workerIdAllocators.iterator(), ORDERED), false)
         .filter(
             allocator ->
                 StringUtils.isEmpty(generatorProperties.getWorkerIdAllocatorFqdn())
@@ -133,7 +135,7 @@ public class RoutesAutoConfiguration {
           beanMethod = "handle",
           operation =
               @Operation(
-                  operationId = "nextId",
+                  operationId = "generateDUuid",
                   summary = "Generate a globally unique id",
                   responses = {
                     @ApiResponse(
