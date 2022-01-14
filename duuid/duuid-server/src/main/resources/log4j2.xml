@@ -63,7 +63,7 @@
             <AppenderRef level="debug" ref="RollingFile"/>
 <!--            <AppenderRef level="debug" ref="Console"/>-->
         </Logger>
-        <Logger additivity="false" level="warn" name="com.fasterxml">
+        <Logger additivity="false" level="warn" name="com.fasterxml.jackson">
             <AppenderRef level="debug" ref="RollingFile"/>
 <!--            <AppenderRef level="debug" ref="Console"/>-->
         </Logger>
