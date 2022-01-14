@@ -9,6 +9,9 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 /**
  * 服务自动装配
@@ -25,6 +28,14 @@ public class SecurityAutoConfiguration {
   /** 配置注入 */
   private DuuidServerProperties serverProperties;
 
+  private CorsConfigurationSource corsConfiguration() {
+    CorsConfiguration corsConfig = new CorsConfiguration();
+    corsConfig.applyPermitDefaultValues();
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", corsConfig);
+    return source;
+  }
+
   /**
    * For Spring Security webflux, a chain of filters will provide user authentication and
    * authorization, we add custom filters to enable JWT token approach.
@@ -37,6 +48,9 @@ public class SecurityAutoConfiguration {
   SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
     http.csrf()
         .disable()
+        .cors()
+        .configurationSource(corsConfiguration())
+        .and()
         .formLogin()
         .disable()
         .httpBasic()

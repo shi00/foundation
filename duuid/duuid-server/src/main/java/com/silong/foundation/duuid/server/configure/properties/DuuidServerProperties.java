@@ -4,7 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 
 /**
  * 服务配置
@@ -18,5 +18,5 @@ import javax.validation.constraints.NotBlank;
 @ConfigurationProperties(prefix = "duuid.server")
 public class DuuidServerProperties {
   /** 服务访问路径，默认：/duuid */
-  @NotBlank private String path = "/duuid";
+  @NotEmpty private String path = "/duuid";
 }

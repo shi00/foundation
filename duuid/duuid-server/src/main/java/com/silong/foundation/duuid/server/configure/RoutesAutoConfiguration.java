@@ -25,7 +25,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -39,6 +38,7 @@ import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static org.springframework.http.MediaType.*;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 
@@ -130,13 +130,14 @@ public class RoutesAutoConfiguration {
           path = "/duuid",
           produces = {APPLICATION_JSON_VALUE},
           consumes = {ALL_VALUE},
-          method = RequestMethod.POST,
+          method = POST,
           beanClass = IdGeneratorHandler.class,
           beanMethod = "handle",
           operation =
               @Operation(
-                  operationId = "generateDUuid",
+                  operationId = "nextId",
                   summary = "Generate a globally unique id",
+                  tags = {"nextId"},
                   responses = {
                     @ApiResponse(
                         responseCode = OK,

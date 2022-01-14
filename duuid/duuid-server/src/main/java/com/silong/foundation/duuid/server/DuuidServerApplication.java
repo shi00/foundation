@@ -1,5 +1,9 @@
 package com.silong.foundation.duuid.server;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.info.License;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -11,6 +15,17 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @since 2022-01-03 00:25
  */
 @SpringBootApplication
+@OpenAPIDefinition(
+    info =
+        @Info(
+            title = "${spring.application.name}",
+            version = "v1.0.0",
+            contact = @Contact(email = "louis2sin@gmail.com"),
+            license =
+                @License(
+                    name = "Apache License 2.0",
+                    url = "https://www.apache.org/licenses/LICENSE-2.0"),
+            description = "Distributed UUID Generation Service"))
 public class DuuidServerApplication {
 
   /**
