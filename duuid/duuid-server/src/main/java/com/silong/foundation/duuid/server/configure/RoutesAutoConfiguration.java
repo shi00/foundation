@@ -103,7 +103,7 @@ public class RoutesAutoConfiguration {
         .build();
   }
 
-  @Bean
+  @Bean(destroyMethod = "close")
   @ConditionalOnProperty(name = "duuid.worker-id-provider.etcdv3.enabled", havingValue = "true")
   DuuidGenerator registerIdGenerator(WorkerIdAllocator allocator, WorkerInfo workerInfo) {
     return new CircularQueueDuuidGenerator(

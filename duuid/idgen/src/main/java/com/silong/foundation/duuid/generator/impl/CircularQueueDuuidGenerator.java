@@ -327,7 +327,8 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   }
 
   /** 停止运行 */
-  public void finish() {
+  @Override
+  public void close() {
     if (isRunning) {
       log.info("Duuid producer thread finishes running.");
       this.isRunning = false;

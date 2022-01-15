@@ -32,7 +32,7 @@ public class DuuidTests {
   @AfterEach
   void cleanup() {
     if (duuidGenerator != null) {
-      duuidGenerator.finish();
+      duuidGenerator.close();
     }
   }
 
