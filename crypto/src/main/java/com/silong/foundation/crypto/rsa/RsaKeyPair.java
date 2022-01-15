@@ -93,10 +93,10 @@ public final class RsaKeyPair {
               .lines()
               .filter(
                   line ->
-                      !line.equals(PUBLIC_KEY_END)
-                          && !line.equals(PUBLIC_KEY_HEADER)
-                          && !line.equals(PRIVATE_KEY_END)
-                          && !line.equals(PRIVATE_KEY_HEADER))
+                      !PUBLIC_KEY_END.equals(line)
+                          && !PUBLIC_KEY_HEADER.equals(line)
+                          && !PRIVATE_KEY_END.equals(line)
+                          && !PRIVATE_KEY_HEADER.equals(line))
               .map(String::trim)
               .collect(Collectors.joining());
       return RootKey.getInstance().decryptWorkKey(workKey);
