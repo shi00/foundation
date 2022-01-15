@@ -20,7 +20,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         @Info(
             title = "${spring.application.name}",
             version = "v1.0.0",
-            contact = @Contact(email = "louis2sin@gmail.com"),
+            contact =
+                @Contact(email = "louis2sin@gmail.com", name = "Silong Technologies Co., Ltd."),
             license =
                 @License(
                     name = "Apache License 2.0",

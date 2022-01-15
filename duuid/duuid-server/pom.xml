@@ -230,10 +230,11 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <apiDocsUrl>http://localhost:9090/actuator/openapi/springdocDefault</apiDocsUrl>
+                    <apiDocsUrl>http://localhost:9090/actuator/openapi/duuid-server</apiDocsUrl>
                     <outputFileName>openapi.json</outputFileName>
                     <outputDir>${project.basedir}/openapi</outputDir>
                     <skip>false</skip>
+                    <attachArtifact>false</attachArtifact>
                 </configuration>
             </plugin>
         </plugins>
