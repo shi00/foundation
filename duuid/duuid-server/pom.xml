@@ -211,6 +211,8 @@
                 <configuration>
                     <repository>com.silong/${project.artifactId}</repository>
                     <tag>${project.version}</tag>
+                    <readTimeoutMillis>30000</readTimeoutMillis>
+                    <googleContainerRegistryEnabled>false</googleContainerRegistryEnabled>
                     <dockerfile>Dockerfile</dockerfile>
                     <contextDirectory>${project.basedir}</contextDirectory>
                     <buildArgs>
@@ -239,5 +241,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

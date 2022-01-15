@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @since 2022-01-11 20:49
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(locations = "classpath:application-test.properties")
+@ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 class DuuidServerApplicationTests {
 
