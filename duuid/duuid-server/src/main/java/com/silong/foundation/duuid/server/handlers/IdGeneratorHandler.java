@@ -2,6 +2,7 @@ package com.silong.foundation.duuid.server.handlers;
 
 import com.silong.foundation.duuid.generator.DuuidGenerator;
 import com.silong.foundation.duuid.server.model.Duuid;
+import io.micrometer.core.annotation.Timed;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -50,6 +51,7 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
    * @return 响应
    */
   @Override
+  @Timed(value = "nextId.time", description = "Time taken to return duuid.")
   public Mono<ServerResponse> handle(ServerRequest request) {
     return ServerResponse.ok()
         .contentType(APPLICATION_JSON)

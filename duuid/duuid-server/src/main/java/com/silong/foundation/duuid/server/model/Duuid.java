@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 /**
- * duuid结果
+ * duuid结果。
  *
  * @author louis sin
  * @version 1.0.0
