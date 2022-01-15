@@ -389,7 +389,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    * @return duuid
    */
   @Override
-  public long nextId() {
+  public Long nextId() {
     Long id = queue.poll();
     while (id == null) {
       id = queue.poll();

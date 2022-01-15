@@ -14,12 +14,11 @@ public interface DuuidGenerator extends Closeable {
   /** 释放资源 */
   @Override
   default void close() {}
-  ;
 
   /**
    * 生成uuid
    *
    * @return 生成id
    */
-  long nextId();
+  Long nextId();
 }

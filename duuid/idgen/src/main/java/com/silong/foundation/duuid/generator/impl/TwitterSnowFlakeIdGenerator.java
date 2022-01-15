@@ -68,7 +68,7 @@ public class TwitterSnowFlakeIdGenerator implements DuuidGenerator {
    * @return id
    */
   @Override
-  public synchronized long nextId() {
+  public synchronized Long nextId() {
     long currStmp = getNewstmp();
     if (currStmp < lastStmp) {
       throw new RuntimeException("Clock moved backwards.  Refusing to generate id");

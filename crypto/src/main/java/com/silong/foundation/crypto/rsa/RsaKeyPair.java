@@ -87,7 +87,7 @@ public final class RsaKeyPair {
       throw new IllegalArgumentException("keyFile must not be null or empty.");
     }
     try (BufferedReader reader =
-        new BufferedReader(new InputStreamReader(new FileInputStream(keyFile)))) {
+        new BufferedReader(new InputStreamReader(new FileInputStream(keyFile), UTF_8))) {
       String workKey =
           reader
               .lines()
