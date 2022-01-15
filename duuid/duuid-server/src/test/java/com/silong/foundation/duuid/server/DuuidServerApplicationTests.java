@@ -12,6 +12,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -43,5 +48,16 @@ class DuuidServerApplicationTests {
     long id1 = restTemplate.postForObject(endpoint, null, Duuid.class).id();
     long id2 = restTemplate.postForObject(endpoint, null, Duuid.class).id();
     assertTrue(id2 > id1);
+  }
+
+  @Test
+  void test2() {
+    LinkedList<Long> list = new LinkedList<>();
+    for (int i = 0; i < 10000; i++) {
+      list.add(restTemplate.postForObject(endpoint, null, Duuid.class).id());
+    }
+    List<Long> back = new ArrayList<>(list);
+    back.sort(Long::compare);
+    assertEquals(list, back);
   }
 }
