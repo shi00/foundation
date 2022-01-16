@@ -330,7 +330,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   @Override
   public void close() {
     if (isRunning) {
-      log.info("Duuid producer thread finishes running.");
       this.isRunning = false;
       this.queue.clear();
       this.interrupt();
