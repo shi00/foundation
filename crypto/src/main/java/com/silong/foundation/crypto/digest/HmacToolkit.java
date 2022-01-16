@@ -40,6 +40,11 @@ public final class HmacToolkit {
     }
   }
 
+  private static SecretKeySpec getKey(String workKey, String algorithm) {
+    return CACHE.computeIfAbsent(
+        workKey, k -> new SecretKeySpec(RootKey.getInstance().decryptWorkKey(workKey), algorithm));
+  }
+
   /**
    * hmacsha512
    *
@@ -106,10 +111,5 @@ public final class HmacToolkit {
    */
   public static String hmacSha512(String plainText, String workKey) {
     return Base64.getEncoder().encodeToString(hmacSha512Hash(plainText, workKey));
-  }
-
-  private static SecretKeySpec getKey(String workKey, String algorithm) {
-    return CACHE.computeIfAbsent(
-        workKey, k -> new SecretKeySpec(RootKey.getInstance().decryptWorkKey(workKey), algorithm));
   }
 }
