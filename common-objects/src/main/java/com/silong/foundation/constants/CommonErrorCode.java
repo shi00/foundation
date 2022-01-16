@@ -13,7 +13,13 @@ import lombok.Getter;
 public enum CommonErrorCode {
 
   /** 服务内部错误 */
-  SERVICE_INTERNAL_ERROR("%s.error.0001", "An internal error occurred in the %s.");
+  SERVICE_INTERNAL_ERROR("%s.error.0001", "An internal error occurred in the %s."),
+
+  /** 权限不足 */
+  INSUFFICIENT_PERMISSIONS("%s.error.0002", "Not authorized to operate."),
+
+  /** 鉴权失败 */
+  AUTHENTICATION_FAILED("%s.error.0003", "Authentication failed.");
 
   /** 错误码 */
   @Getter private final String code;

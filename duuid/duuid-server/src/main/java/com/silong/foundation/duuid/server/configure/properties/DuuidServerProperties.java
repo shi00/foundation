@@ -18,5 +18,5 @@ import javax.validation.constraints.NotEmpty;
 @ConfigurationProperties(prefix = "duuid.server")
 public class DuuidServerProperties {
   /** 服务访问路径，默认：/duuid */
-  @NotEmpty private String path = "/duuid";
+  @NotEmpty private String contextPath = "/duuid";
 }
