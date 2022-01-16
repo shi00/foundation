@@ -1,7 +1,11 @@
 package com.silong.foundation.duuid.server.configure;
 
-import com.google.common.collect.Lists;
+import com.google.common.base.Splitter;
+import com.silong.foundation.duuid.server.configure.properties.DuuidServerProperties;
+import com.silong.foundation.duuid.server.security.authencation.SimpleAuthenticationWebFilter;
+import com.silong.foundation.duuid.server.security.authorization.SimpleReactiveAuthorizationManager;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,8 +13,8 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.authorization.AuthorizationWebFilter;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.security.web.server.savedrequest.NoOpServerRequestCache;
 import org.springframework.web.cors.CorsConfiguration;
@@ -19,11 +23,13 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.silong.foundation.constants.CommonErrorCode.AUTHENTICATION_FAILED;
 import static com.silong.foundation.constants.CommonErrorCode.INSUFFICIENT_PERMISSIONS;
+import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.AUTHENTICATION;
+import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.AUTHORIZATION;
 
 /**
  * 服务自动装配
@@ -37,21 +43,16 @@ import static com.silong.foundation.constants.CommonErrorCode.INSUFFICIENT_PERMI
 @EnableWebFluxSecurity
 public class SecurityAutoConfiguration {
 
-  /**
-   * For Spring Security webflux, a chain of filters will provide user authentication and
-   * authorization, we add custom filters to enable JWT token approach.
-   *
-   * @param http An initial object to build common filter scenarios. Customized filters are added
-   *     here.
-   * @return SecurityWebFilterChain A filter chain for web exchanges that will provide security
-   */
+  /** 配置 */
+  private DuuidServerProperties properties;
+
   @Bean
   SecurityWebFilterChain springSecurityFilterChain(
       ServerHttpSecurity http,
       @Value("${spring.application.name}") String appName,
-      @Value("${duuid.server.context-path}") String servicesPath,
-      @Value("${management.endpoints.web.base-path") String actuatorPath) {
-    http.csrf()
+      @Value("${management.endpoints.web.base-path}") String actuatorBasePath,
+      @Value("${management.endpoints.web.exposure.include}") String actuatorExportEndpoints) {
+    return http.csrf()
         .disable()
         .cors()
         .configurationSource(corsConfiguration())
@@ -72,15 +73,37 @@ public class SecurityAutoConfiguration {
         .exceptionHandling()
         .accessDeniedHandler((exchange, e) -> handleAccessDeniedException(appName, exchange, e))
         // 定制鉴权失败异常处理
-        .authenticationEntryPoint(
-            (exchange, e) -> handleAuthenticationException(appName, exchange, e))
+        .authenticationEntryPoint((exchange, e) -> handleAuthenticationException(appName, exchange))
         .and()
         .authorizeExchange()
-        .pathMatchers(Stream.of(actuatorPath, servicesPath).toArray(String[]::new))
+        .pathMatchers(properties.getAuthWhiteList().toArray(new String[0]))
+        .permitAll()
+        .pathMatchers(
+            authPaths(properties.getServicePath(), actuatorBasePath, actuatorExportEndpoints))
         .authenticated()
         .anyExchange()
-        .denyAll();
-    return http.build();
+        .denyAll()
+        .and()
+        // 配置鉴权过滤器
+        .addFilterAt(new SimpleAuthenticationWebFilter(properties), AUTHENTICATION)
+        // 配置授权过滤器
+        .addFilterAt(
+            new AuthorizationWebFilter(
+                new SimpleReactiveAuthorizationManager(
+                    properties.getUserRolesMappings(), properties.getRolePathsMappings())),
+            AUTHORIZATION)
+        .build();
+  }
+
+  private String[] authPaths(
+      String servicePath, String actuatorBasePath, String actuatorExportEndpoints) {
+    return Stream.concat(
+            Stream.of(servicePath),
+            StreamSupport.stream(
+                    Splitter.on(",").trimResults().split(actuatorExportEndpoints).spliterator(),
+                    false)
+                .map(s -> String.format("%s/%s", actuatorBasePath, s)))
+        .toArray(String[]::new);
   }
 
   private CorsConfigurationSource corsConfiguration() {
@@ -91,10 +114,7 @@ public class SecurityAutoConfiguration {
     return source;
   }
 
-  private Mono<Void> handleAuthenticationException(
-      String appName, ServerWebExchange exchange, AuthenticationException e) {
-    ServerHttpRequest request = exchange.getRequest();
-    log.error("Authentication failed, {} {}", request.getMethod(), request.getPath().value(), e);
+  private Mono<Void> handleAuthenticationException(String appName, ServerWebExchange exchange) {
     return exchange
         .getResponse()
         .writeAndFlushWith(Mono.fromRunnable(() -> AUTHENTICATION_FAILED.format(appName)));
@@ -107,5 +127,10 @@ public class SecurityAutoConfiguration {
     return exchange
         .getResponse()
         .writeAndFlushWith(Mono.fromRunnable(() -> INSUFFICIENT_PERMISSIONS.format(appName)));
+  }
+
+  @Autowired
+  public void setProperties(DuuidServerProperties properties) {
+    this.properties = properties;
   }
 }

@@ -1,5 +1,6 @@
 package com.silong.foundation.duuid.server;
 
+import com.silong.foundation.crypto.RootKey;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
@@ -28,6 +29,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
                     url = "https://www.apache.org/licenses/LICENSE-2.0"),
             description = "Distributed UUID Generation Service"))
 public class DuuidServerApplication {
+
+  static {
+    RootKey.initialize();
+  }
 
   /**
    * 服务启动入口

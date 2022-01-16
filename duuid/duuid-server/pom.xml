@@ -59,6 +59,11 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
+            <groupId>com.silong</groupId>
+            <artifactId>crypto</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
             <scope>runtime</scope>

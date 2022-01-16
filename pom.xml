@@ -66,7 +66,7 @@
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-pmd-plugin.version>3.15.0</maven-pmd-plugin.version>
         <maven-failsafe-plugin.version>3.0.0-M5</maven-failsafe-plugin.version>
-        <findbugs-maven-plugin.version>3.0.6-SNAPSHOT</findbugs-maven-plugin.version>
+        <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>
         <checkstyle.version>9.2.1</checkstyle.version>
         <p3c-pmd.version>2.1.1</p3c-pmd.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>

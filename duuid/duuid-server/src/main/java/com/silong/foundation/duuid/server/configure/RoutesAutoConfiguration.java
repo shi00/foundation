@@ -152,7 +152,7 @@ public class RoutesAutoConfiguration {
                         content = @Content(schema = @Schema(implementation = ErrorDetail.class)))
                   })))
   RouterFunction<ServerResponse> routes(IdGeneratorHandler handler) {
-    return RouterFunctions.route(POST(serverProperties.getContextPath()).and(accept(ALL)), handler);
+    return RouterFunctions.route(POST(serverProperties.getServicePath()).and(accept(ALL)), handler);
   }
 
   @Autowired

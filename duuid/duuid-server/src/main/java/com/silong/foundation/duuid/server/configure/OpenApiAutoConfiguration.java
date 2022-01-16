@@ -27,7 +27,7 @@ public class OpenApiAutoConfiguration {
       @Value("${server.ssl.enabled}") boolean sslEnabled,
       @Value("${server.address}") String listenAddr,
       @Value("${server.port}") int port,
-      @Value("${duuid.server.path}") String path,
+      @Value("${duuid.server.service-path}") String path,
       @Value("${spring.application.name}") String name) {
     return GroupedOpenApi.builder()
         .packagesToScan(DuuidServerApplication.class.getPackage().getName())
