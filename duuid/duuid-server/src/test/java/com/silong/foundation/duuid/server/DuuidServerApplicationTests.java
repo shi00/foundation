@@ -87,7 +87,9 @@ class DuuidServerApplicationTests {
   void test2() {
     LinkedList<Long> list = new LinkedList<>();
     for (int i = 0; i < 10000; i++) {
-      list.add(restTemplate.postForObject(endpoint, null, Duuid.class).id());
+      buildHeaders("client");
+      HttpEntity<Void> entity = new HttpEntity<>(headers);
+      list.add(restTemplate.postForObject(endpoint, entity, Duuid.class).id());
     }
     List<Long> back = new ArrayList<>(list);
     back.sort(Long::compare);

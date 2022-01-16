@@ -1,12 +1,14 @@
 package com.silong.foundation.duuid.server.configure;
 
-import com.google.common.base.Splitter;
 import com.silong.foundation.duuid.server.configure.properties.DuuidServerProperties;
 import com.silong.foundation.duuid.server.security.authencation.SimpleAuthenticationWebFilter;
 import com.silong.foundation.duuid.server.security.authorization.SimpleReactiveAuthorizationManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;
+import org.springframework.boot.actuate.autoconfigure.web.server.ManagementServerProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -23,8 +25,8 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.Collection;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static com.silong.foundation.constants.CommonErrorCode.AUTHENTICATION_FAILED;
 import static com.silong.foundation.constants.CommonErrorCode.INSUFFICIENT_PERMISSIONS;
@@ -41,17 +43,19 @@ import static org.springframework.security.config.web.server.SecurityWebFiltersO
 @Slf4j
 @Configuration
 @EnableWebFluxSecurity
+@EnableConfigurationProperties(ManagementServerProperties.class)
 public class SecurityAutoConfiguration {
 
   /** 配置 */
-  private DuuidServerProperties properties;
+  private DuuidServerProperties duuidServerProperties;
+
+  private WebEndpointProperties webEndpointProperties;
 
   @Bean
   SecurityWebFilterChain springSecurityFilterChain(
       ServerHttpSecurity http,
       @Value("${spring.application.name}") String appName,
-      @Value("${management.endpoints.web.base-path}") String actuatorBasePath,
-      @Value("${management.endpoints.web.exposure.include}") String actuatorExportEndpoints) {
+      @Value("${management.endpoints.web.base-path}") String actuatorBasePath) {
     return http.csrf()
         .disable()
         .cors()
@@ -76,33 +80,34 @@ public class SecurityAutoConfiguration {
         .authenticationEntryPoint((exchange, e) -> handleAuthenticationException(appName, exchange))
         .and()
         .authorizeExchange()
-        .pathMatchers(properties.getAuthWhiteList().toArray(new String[0]))
+        .pathMatchers(duuidServerProperties.getAuthWhiteList().toArray(new String[0]))
         .permitAll()
         .pathMatchers(
-            authPaths(properties.getServicePath(), actuatorBasePath, actuatorExportEndpoints))
+            authPaths(
+                duuidServerProperties.getServicePath(),
+                actuatorBasePath,
+                webEndpointProperties.getExposure().getInclude()))
         .authenticated()
         .anyExchange()
         .denyAll()
         .and()
         // 配置鉴权过滤器
-        .addFilterAt(new SimpleAuthenticationWebFilter(properties), AUTHENTICATION)
+        .addFilterAt(new SimpleAuthenticationWebFilter(duuidServerProperties), AUTHENTICATION)
         // 配置授权过滤器
         .addFilterAt(
             new AuthorizationWebFilter(
                 new SimpleReactiveAuthorizationManager(
-                    properties.getUserRolesMappings(), properties.getRolePathsMappings())),
+                    duuidServerProperties.getUserRolesMappings(),
+                    duuidServerProperties.getRolePathsMappings())),
             AUTHORIZATION)
         .build();
   }
 
   private String[] authPaths(
-      String servicePath, String actuatorBasePath, String actuatorExportEndpoints) {
+      String servicePath, String actuatorBasePath, Collection<String> exportEndpoints) {
     return Stream.concat(
             Stream.of(servicePath),
-            StreamSupport.stream(
-                    Splitter.on(",").trimResults().split(actuatorExportEndpoints).spliterator(),
-                    false)
-                .map(s -> String.format("%s/%s", actuatorBasePath, s)))
+            exportEndpoints.stream().map(s -> String.format("%s/%s", actuatorBasePath, s)))
         .toArray(String[]::new);
   }
 
@@ -130,7 +135,12 @@ public class SecurityAutoConfiguration {
   }
 
   @Autowired
-  public void setProperties(DuuidServerProperties properties) {
-    this.properties = properties;
+  public void setWebEndpointProperties(WebEndpointProperties webEndpointProperties) {
+    this.webEndpointProperties = webEndpointProperties;
+  }
+
+  @Autowired
+  public void setDuuidServerProperties(DuuidServerProperties duuidServerProperties) {
+    this.duuidServerProperties = duuidServerProperties;
   }
 }
