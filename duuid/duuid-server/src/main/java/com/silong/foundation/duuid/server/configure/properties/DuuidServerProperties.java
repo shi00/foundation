@@ -7,7 +7,6 @@ import org.springframework.validation.annotation.Validated;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,7 +43,10 @@ public class DuuidServerProperties {
   @NotEmpty private String workKey;
 
   /** 鉴权白名单 */
-  @Valid @NotEmpty private List<@NotEmpty String> authWhiteList;
+  @Valid @NotEmpty private Set<@NotEmpty String> authWhiteList;
+
+  /** 鉴权名单 */
+  @Valid @NotEmpty private Set<@NotEmpty String> authList;
 
   /** 用户到角色映射 */
   @Valid @NotEmpty
