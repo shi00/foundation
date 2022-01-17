@@ -12,6 +12,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -22,8 +23,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 /**
@@ -47,13 +47,16 @@ class DuuidServerApplicationTests {
 
   @Autowired private SimpleAuthProperties properties;
 
-  private String endpoint;
+  private String idGenEngdpoint;
+
+  private String prometheusEngdpoint;
 
   private HttpHeaders headers;
 
   @BeforeEach
   void init() {
-    endpoint = String.format("http://localhost:%d/duuid", port);
+    idGenEngdpoint = String.format("http://localhost:%d/duuid", port);
+    prometheusEngdpoint = String.format("http://localhost:%d/actuator/prometheus", port);
     headers = new HttpHeaders();
     // set `content-type` header
     headers.setContentType(APPLICATION_JSON);
@@ -76,10 +79,10 @@ class DuuidServerApplicationTests {
   void test1() {
     buildHeaders("client");
     HttpEntity<Void> entity = new HttpEntity<>(headers);
-    long id1 = restTemplate.postForObject(endpoint, entity, Duuid.class).id();
+    long id1 = restTemplate.postForObject(idGenEngdpoint, entity, Duuid.class).id();
     buildHeaders("client");
     entity = new HttpEntity<>(headers);
-    long id2 = restTemplate.postForObject(endpoint, entity, Duuid.class).id();
+    long id2 = restTemplate.postForObject(idGenEngdpoint, entity, Duuid.class).id();
     assertTrue(id2 > id1);
   }
 
@@ -89,10 +92,19 @@ class DuuidServerApplicationTests {
     for (int i = 0; i < 10000; i++) {
       buildHeaders("client");
       HttpEntity<Void> entity = new HttpEntity<>(headers);
-      list.add(restTemplate.postForObject(endpoint, entity, Duuid.class).id());
+      list.add(restTemplate.postForObject(idGenEngdpoint, entity, Duuid.class).id());
     }
     List<Long> back = new ArrayList<>(list);
     back.sort(Long::compare);
     assertEquals(list, back);
+  }
+
+  @Test
+  void test3() {
+    buildHeaders("prometheus");
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+    String metrics =
+        restTemplate.exchange(prometheusEngdpoint, HttpMethod.GET, entity, String.class).getBody();
+    assertFalse(metrics == null || metrics.isEmpty());
   }
 }

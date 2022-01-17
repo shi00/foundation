@@ -7,6 +7,9 @@ import org.springdoc.core.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
@@ -21,6 +24,15 @@ import java.util.List;
 public class OpenApiAutoConfiguration {
 
   private static final String ANY_IPV4_ADDRESS = "0.0.0.0";
+
+  @Bean
+  CorsConfigurationSource corsConfiguration() {
+    CorsConfiguration corsConfig = new CorsConfiguration();
+    corsConfig.applyPermitDefaultValues();
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", corsConfig);
+    return source;
+  }
 
   @Bean
   public GroupedOpenApi groupedOpenApi(
