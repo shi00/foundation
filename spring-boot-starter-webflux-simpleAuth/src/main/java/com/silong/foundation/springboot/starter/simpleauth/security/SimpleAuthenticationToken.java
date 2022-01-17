@@ -1,10 +1,12 @@
-package com.silong.foundation.duuid.server.security.authencation;
+package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
-import static com.google.common.collect.Lists.newArrayList;
+import java.util.Collection;
 
 /**
  * 简介
@@ -13,19 +15,31 @@ import static com.google.common.collect.Lists.newArrayList;
  * @version 1.0.0
  * @since 2022-01-16 11:30
  */
+@Getter
+@Setter
+@Accessors(fluent = true)
 public class SimpleAuthenticationToken extends AbstractAuthenticationToken {
 
   /** 请求头签名信息 */
-  @Getter private final String signature;
+  private String signature;
 
   /** 请求身份标识 */
-  @Getter private final String identifier;
+  private String identifier;
 
   /** 时间戳 */
-  @Getter private final String timestamp;
+  private String timestamp;
 
   /** 随机内容 */
-  @Getter private final String random;
+  private String random;
+
+  /**
+   * 构造方法
+   *
+   * @param authorities 授权列表
+   */
+  public SimpleAuthenticationToken(Collection<GrantedAuthority> authorities) {
+    super(authorities);
+  }
 
   /**
    * 构造方法
@@ -34,15 +48,15 @@ public class SimpleAuthenticationToken extends AbstractAuthenticationToken {
    * @param identifier 请求身份标识
    * @param timestamp 请求时间戳
    * @param random 随机字符串
-   * @param authority 授权信息
+   * @param authorities 授权列表
    */
   public SimpleAuthenticationToken(
       String signature,
       String identifier,
       String timestamp,
       String random,
-      GrantedAuthority authority) {
-    super(newArrayList(authority));
+      Collection<GrantedAuthority> authorities) {
+    super(authorities);
     this.signature = signature;
     this.identifier = identifier;
     this.timestamp = timestamp;

@@ -1,10 +1,11 @@
-package com.silong.foundation.duuid.server.security.authencation;
+package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
@@ -35,10 +36,11 @@ public class SimpleServerAuthenticationSuccessHandler
   @Override
   public Mono<Void> onAuthenticationSuccess(
       WebFilterExchange webFilterExchange, Authentication authentication) {
+    ServerWebExchange exchange = webFilterExchange.getExchange();
     if (log.isDebugEnabled()) {
-      ServerHttpRequest request = webFilterExchange.getExchange().getRequest();
+      ServerHttpRequest request = exchange.getRequest();
       log.debug("{} {} Authentication succeeded.", request.getMethod(), request.getPath());
     }
-    return Mono.empty();
+    return webFilterExchange.getChain().filter(exchange);
   }
 }

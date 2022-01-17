@@ -45,6 +45,7 @@
         <module>duuid/etcdv3-workerid-provider</module>
         <module>duuid/duuid-server</module>
         <module>common-objects</module>
+        <module>spring-boot-starter-webflux-simpleAuth</module>
     </modules>
 
     <properties>

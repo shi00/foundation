@@ -1,8 +1,8 @@
 package com.silong.foundation.duuid.server;
 
 import com.silong.foundation.crypto.digest.HmacToolkit;
-import com.silong.foundation.duuid.server.configure.properties.DuuidServerProperties;
 import com.silong.foundation.duuid.server.model.Duuid;
+import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,7 +45,7 @@ class DuuidServerApplicationTests {
 
   @Autowired private TestRestTemplate restTemplate;
 
-  @Autowired private DuuidServerProperties properties;
+  @Autowired private SimpleAuthProperties properties;
 
   private String endpoint;
 
