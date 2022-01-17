@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collection;
 
@@ -37,7 +37,7 @@ public class SimpleAuthenticationToken extends AbstractAuthenticationToken {
    *
    * @param authorities 授权列表
    */
-  public SimpleAuthenticationToken(Collection<GrantedAuthority> authorities) {
+  public SimpleAuthenticationToken(Collection<SimpleGrantedAuthority> authorities) {
     super(authorities);
   }
 
@@ -55,7 +55,7 @@ public class SimpleAuthenticationToken extends AbstractAuthenticationToken {
       String identifier,
       String timestamp,
       String random,
-      Collection<GrantedAuthority> authorities) {
+      Collection<SimpleGrantedAuthority> authorities) {
     super(authorities);
     this.signature = signature;
     this.identifier = identifier;

@@ -2,8 +2,8 @@ package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
@@ -11,10 +11,13 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.springframework.security.core.authority.AuthorityUtils.NO_AUTHORITIES;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  * 请求鉴权转换器，提取请求头内鉴权信息供后续模块使用
@@ -25,10 +28,15 @@ import static org.springframework.security.core.authority.AuthorityUtils.NO_AUTH
  */
 public class SimpleServerAuthenticationConverter implements ServerAuthenticationConverter {
 
+  /** 匿名用户角色 */
+  public static final String ANONYMOUS = "anonymous";
+
   /** 服务配置 */
   private final SimpleAuthProperties properties;
 
-  private final List<GrantedAuthority> authorities;
+  private final List<SimpleGrantedAuthority> anonymousAuthorities;
+
+  private final Map<String, List<SimpleGrantedAuthority>> cache = new HashMap<>();
 
   private final ServerWebExchangeMatcher noAuthServerWebExchangeMatcher;
 
@@ -41,13 +49,17 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
    */
   public SimpleServerAuthenticationConverter(SimpleAuthProperties properties) {
     this.properties = properties;
-    this.authorities =
-        properties.getRolePathsMappings().keySet().stream()
-            .map(SimpleGrantedAuthority::new)
-            .collect(Collectors.toList());
-    authServerWebExchangeMatcher =
+    this.anonymousAuthorities = singletonList(new SimpleGrantedAuthority(ANONYMOUS));
+    properties
+        .getUserRolesMappings()
+        .forEach(
+            (key, value) ->
+                cache.put(
+                    key,
+                    value.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())));
+    this.authServerWebExchangeMatcher =
         ServerWebExchangeMatchers.pathMatchers(properties.getAuthList().toArray(new String[0]));
-    noAuthServerWebExchangeMatcher =
+    this.noAuthServerWebExchangeMatcher =
         ServerWebExchangeMatchers.pathMatchers(properties.getWhiteList().toArray(new String[0]));
   }
 
@@ -62,21 +74,26 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
                 .matches(exchange)
                 .filter(ServerWebExchangeMatcher.MatchResult::isMatch)
                 .map(matchResult -> getNeedAuthentication(exchange))
-                .switchIfEmpty(Mono.just(new SimpleAuthenticationToken(NO_AUTHORITIES))));
+                .switchIfEmpty(Mono.just(new SimpleAuthenticationToken(emptyList()))));
   }
 
   private SimpleAuthenticationToken getNeedAuthentication(ServerWebExchange exchange) {
     HttpHeaders httpHeaders = exchange.getRequest().getHeaders();
+    String identifier = httpHeaders.getFirst(properties.getHttpHeaderIdentifier());
+    List<SimpleGrantedAuthority> grantedAuthorities = cache.get(identifier);
+    if (grantedAuthorities == null || grantedAuthorities.isEmpty()) {
+      throw new BadCredentialsException("Could not find any roles for the request.");
+    }
     return new SimpleAuthenticationToken(
         httpHeaders.getFirst(properties.getHttpHeaderSignature()),
-        httpHeaders.getFirst(properties.getHttpHeaderIdentifier()),
+        identifier,
         httpHeaders.getFirst(properties.getHttpHeaderTimestamp()),
         httpHeaders.getFirst(properties.getHttpHeaderRandom()),
-        authorities);
+        grantedAuthorities);
   }
 
   private Authentication getNoNeedAuthentication() {
-    Authentication simpleAuthenticationToken = new SimpleAuthenticationToken(authorities);
+    Authentication simpleAuthenticationToken = new SimpleAuthenticationToken(anonymousAuthorities);
     simpleAuthenticationToken.setAuthenticated(true);
     return simpleAuthenticationToken;
   }
