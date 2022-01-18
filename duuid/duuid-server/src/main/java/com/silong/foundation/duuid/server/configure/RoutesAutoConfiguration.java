@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.springdoc.core.annotations.RouterOperation;
@@ -35,6 +36,7 @@ import java.util.stream.StreamSupport;
 import static com.silong.foundation.constants.HttpStatusCode.*;
 import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.SYSTEM_CLOCK_PROVIDER;
 import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static org.springframework.http.MediaType.*;
@@ -140,6 +142,12 @@ public class RoutesAutoConfiguration {
                   operationId = "nextId",
                   summary = "Generate a globally unique id",
                   tags = {"nextId"},
+                  security = {
+                    @SecurityRequirement(name = IDENTITY),
+                    @SecurityRequirement(name = SIGNATURE),
+                    @SecurityRequirement(name = RANDOM),
+                    @SecurityRequirement(name = TIMESTAMP)
+                  },
                   responses = {
                     @ApiResponse(
                         responseCode = OK,

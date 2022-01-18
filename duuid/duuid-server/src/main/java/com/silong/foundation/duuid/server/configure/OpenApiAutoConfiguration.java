@@ -35,7 +35,7 @@ public class OpenApiAutoConfiguration {
   }
 
   @Bean
-  public GroupedOpenApi groupedOpenApi(
+  GroupedOpenApi groupedOpenApi(
       @Value("${server.ssl.enabled}") boolean sslEnabled,
       @Value("${server.address}") String listenAddr,
       @Value("${server.port}") int port,

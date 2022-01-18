@@ -21,20 +21,9 @@ import java.util.Set;
 @Validated
 @ConfigurationProperties(prefix = "simple-auth")
 public class SimpleAuthProperties {
-  /** http请求头内签名字段，默认：Signature */
-  @NotEmpty private String httpHeaderSignature = "Signature";
 
   /** 客户端和服务端可接受的时间差，默认：10000毫秒 */
   @Positive private int acceptableTimeDiffMills = 10000;
-
-  /** http请求头内时间戳字段，默认：Timestamp */
-  @NotEmpty private String httpHeaderTimestamp = "Timestamp";
-
-  /** http请求头内身份标识字段，默认：Identifier */
-  @NotEmpty private String httpHeaderIdentifier = "Identifier";
-
-  /** http请求头内随机字符串字段，默认：Random */
-  @NotEmpty private String httpHeaderRandom = "Random";
 
   /** 使用HmacSha256签名使用的密钥 */
   @NotEmpty private String workKey;

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -31,9 +32,6 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
   /** 匿名用户角色 */
   public static final String ANONYMOUS = "anonymous";
 
-  /** 服务配置 */
-  private final SimpleAuthProperties properties;
-
   private final List<SimpleGrantedAuthority> anonymousAuthorities;
 
   private final Map<String, List<SimpleGrantedAuthority>> cache = new HashMap<>();
@@ -48,7 +46,6 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
    * @param properties 服务配置
    */
   public SimpleServerAuthenticationConverter(SimpleAuthProperties properties) {
-    this.properties = properties;
     this.anonymousAuthorities = singletonList(new SimpleGrantedAuthority(ANONYMOUS));
     properties
         .getUserRolesMappings()
@@ -79,16 +76,16 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
 
   private SimpleAuthenticationToken getNeedAuthentication(ServerWebExchange exchange) {
     HttpHeaders httpHeaders = exchange.getRequest().getHeaders();
-    String identifier = httpHeaders.getFirst(properties.getHttpHeaderIdentifier());
-    List<SimpleGrantedAuthority> grantedAuthorities = cache.get(identifier);
+    String identity = httpHeaders.getFirst(IDENTITY);
+    List<SimpleGrantedAuthority> grantedAuthorities = cache.get(identity);
     if (grantedAuthorities == null || grantedAuthorities.isEmpty()) {
       throw new BadCredentialsException("Could not find any roles for the request.");
     }
     return new SimpleAuthenticationToken(
-        httpHeaders.getFirst(properties.getHttpHeaderSignature()),
-        identifier,
-        httpHeaders.getFirst(properties.getHttpHeaderTimestamp()),
-        httpHeaders.getFirst(properties.getHttpHeaderRandom()),
+        httpHeaders.getFirst(SIGNATURE),
+        identity,
+        httpHeaders.getFirst(TIMESTAMP),
+        httpHeaders.getFirst(RANDOM),
         grantedAuthorities);
   }
 

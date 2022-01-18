@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -19,13 +20,16 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.TEXT_PLAIN;
 
 /**
  * 服务集成测试
@@ -37,12 +41,17 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = DuuidServerApplication.class)
-@TestPropertySource(locations = "classpath:application-test.properties")
+@TestPropertySource(
+    locations = "classpath:application-test.properties",
+    properties = {"management.server.port=35671"})
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 class DuuidServerApplicationTests {
 
   @LocalServerPort private int port;
+
+  @Value("${management.server.port}")
+  private int actuatorPort;
 
   @Autowired private TestRestTemplate restTemplate;
 
@@ -59,24 +68,24 @@ class DuuidServerApplicationTests {
   @BeforeEach
   void init() {
     idGenEngdpoint = String.format("http://localhost:%d/duuid", port);
-    prometheusEngdpoint = String.format("http://localhost:%d/actuator/prometheus", port + 1);
-    openApiEngdpoint = String.format("http://localhost:%d/actuator/openapi/duuid-server", port + 1);
+    prometheusEngdpoint = String.format("http://localhost:%d/actuator/prometheus", actuatorPort);
+    openApiEngdpoint =
+        String.format("http://localhost:%d/actuator/openapi/duuid-server", actuatorPort);
     headers = new HttpHeaders();
     // set `content-type` header
     headers.setContentType(APPLICATION_JSON);
     // set `accept` header
-    headers.setAccept(Collections.singletonList(APPLICATION_JSON));
+    headers.setAccept(Arrays.asList(APPLICATION_JSON, TEXT_PLAIN));
   }
 
-  private void buildHeaders(String identifier) {
+  private void buildHeaders(String identity) {
     long now = System.currentTimeMillis();
-    headers.set(properties.getHttpHeaderIdentifier(), identifier);
-    headers.set(properties.getHttpHeaderTimestamp(), String.valueOf(now));
+    headers.set(IDENTITY, identity);
+    headers.set(TIMESTAMP, String.valueOf(now));
     String random = RandomStringUtils.randomAlphabetic(64);
-    headers.set(properties.getHttpHeaderRandom(), random);
+    headers.set(RANDOM, random);
     headers.set(
-        properties.getHttpHeaderSignature(),
-        HmacToolkit.hmacSha256(identifier + now + random, properties.getWorkKey()));
+        SIGNATURE, HmacToolkit.hmacSha256(identity + now + random, properties.getWorkKey()));
   }
 
   @Test
@@ -111,9 +120,17 @@ class DuuidServerApplicationTests {
 
   @Test
   void test4() {
+    headers = new HttpHeaders();
     buildHeaders("prometheus");
     HttpEntity<Void> entity = new HttpEntity<>(headers);
-    ResponseEntity<String> exchange = restTemplate.exchange(prometheusEngdpoint, GET, entity, String.class);
-    assertFalse(exchange.getBody() == null || exchange.getBody().isEmpty());
+    ResponseEntity<Object> responseEntity =
+        restTemplate.exchange(
+            prometheusEngdpoint,
+            //            "http://localhost:27891/actuator/prometheus",
+            GET,
+            entity,
+            Object.class);
+    System.out.println(responseEntity.getBody());
+    //    assertFalse(responseEntity.getBody() == null || responseEntity.getBody().isEmpty());
   }
 }

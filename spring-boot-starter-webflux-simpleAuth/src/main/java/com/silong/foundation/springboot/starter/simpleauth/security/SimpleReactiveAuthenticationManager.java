@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import reactor.core.publisher.Mono;
 
 import static com.silong.foundation.crypto.digest.HmacToolkit.hmacSha256;
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
 import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
 
 /**
@@ -48,10 +49,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
       throw new BadCredentialsException(
           String.format(
               "The request header must contain the following contents [%s, %s, %s, %s]",
-              properties.getHttpHeaderIdentifier(),
-              properties.getHttpHeaderTimestamp(),
-              properties.getHttpHeaderRandom(),
-              properties.getHttpHeaderSignature()));
+              SIGNATURE, TIMESTAMP, RANDOM, IDENTITY));
     }
 
     long now = System.currentTimeMillis();
