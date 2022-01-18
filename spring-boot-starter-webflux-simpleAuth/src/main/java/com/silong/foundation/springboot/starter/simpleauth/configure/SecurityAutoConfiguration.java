@@ -1,5 +1,6 @@
 package com.silong.foundation.springboot.starter.simpleauth.configure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
 import com.silong.foundation.springboot.starter.simpleauth.security.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
+import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.security.web.server.savedrequest.NoOpServerRequestCache;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
@@ -35,33 +37,75 @@ public class SecurityAutoConfiguration {
 
   @Bean
   @ConditionalOnProperty(prefix = "simple-auth", value = "work-key")
-  @ConditionalOnBean(CorsConfigurationSource.class)
+  @ConditionalOnBean({CorsConfigurationSource.class, ObjectMapper.class})
   SecurityWebFilterChain springSecurityFilterChain(
       ServerHttpSecurity http,
+      ObjectMapper objectMapper,
       SimpleAuthProperties simpleAuthProperties,
       CorsConfigurationSource corsConfigurationSource) {
-    return http.csrf()
-        .disable()
-        .cors()
-        .configurationSource(corsConfigurationSource)
-        .and()
-        .formLogin()
-        .disable()
-        .httpBasic()
-        .disable()
-        .logout()
-        .disable()
-        .anonymous()
-        .disable()
-        .requestCache()
-        .requestCache(NoOpServerRequestCache.getInstance())
-        .and()
-        .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+    return configure(
+            http,
+            simpleAuthProperties,
+            corsConfigurationSource,
+            new SimpleServerAuthenticationEntryPoint(appName, objectMapper),
+            new SimpleServerAccessDeniedHandler(appName, objectMapper))
+        .build();
+  }
+
+  @Bean
+  @ConditionalOnProperty(prefix = "simple-auth", value = "work-key")
+  @ConditionalOnBean({ObjectMapper.class})
+  SecurityWebFilterChain springSecurityFilterChain(
+      ServerHttpSecurity http,
+      ObjectMapper objectMapper,
+      SimpleAuthProperties simpleAuthProperties) {
+    return configure(
+            http,
+            simpleAuthProperties,
+            null,
+            new SimpleServerAuthenticationEntryPoint(appName, objectMapper),
+            new SimpleServerAccessDeniedHandler(appName, objectMapper))
+        .build();
+  }
+
+  private ServerHttpSecurity configure(
+      ServerHttpSecurity http,
+      SimpleAuthProperties simpleAuthProperties,
+      CorsConfigurationSource corsConfigurationSource,
+      SimpleServerAuthenticationEntryPoint authenticationEntryPoint,
+      SimpleServerAccessDeniedHandler accessDeniedHandler) {
+    // 关闭csrf
+    http = http.csrf().disable();
+
+    // 是否开启CORS
+    if (corsConfigurationSource != null) {
+      http = http.cors().configurationSource(corsConfigurationSource).and();
+    }
+
+    // 关闭http基础鉴权
+    http = http.httpBasic().disable();
+
+    // 关闭表单登录
+    http = http.formLogin().disable();
+
+    // 关闭登出
+    http = http.logout().disable();
+
+    // 关闭匿名用户
+    http = http.anonymous().disable();
+
+    // 关闭请求缓存
+    http = http.requestCache().requestCache(NoOpServerRequestCache.getInstance()).and();
+
+    // 无安全上下文缓存
+    http = http.securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
+
+    return http
         // 定制权限不足异常处理
         .exceptionHandling()
-        .accessDeniedHandler(new SimpleServerAccessDeniedHandler(appName))
+        .accessDeniedHandler(accessDeniedHandler)
         // 定制鉴权失败异常处理
-        .authenticationEntryPoint(new SimpleServerAuthenticationEntryPoint(appName))
+        .authenticationEntryPoint(authenticationEntryPoint)
         .and()
         .authorizeExchange()
         .pathMatchers(simpleAuthProperties.getWhiteList().toArray(new String[0]))
@@ -71,17 +115,23 @@ public class SecurityAutoConfiguration {
         .anyExchange()
         .denyAll()
         .and()
-        .addFilterAt(authenticationWebFilter(simpleAuthProperties), AUTHENTICATION)
-        .build();
+        // 定制鉴权过滤器
+        .addFilterAt(
+            authenticationWebFilter(simpleAuthProperties, authenticationEntryPoint),
+            AUTHENTICATION);
   }
 
-  AuthenticationWebFilter authenticationWebFilter(SimpleAuthProperties simpleAuthProperties) {
+  AuthenticationWebFilter authenticationWebFilter(
+      SimpleAuthProperties simpleAuthProperties,
+      SimpleServerAuthenticationEntryPoint simpleServerAuthenticationEntryPoint) {
     AuthenticationWebFilter authenticationWebFilter =
         new AuthenticationWebFilter(new SimpleReactiveAuthenticationManager(simpleAuthProperties));
     authenticationWebFilter.setServerAuthenticationConverter(
         new SimpleServerAuthenticationConverter(simpleAuthProperties));
     authenticationWebFilter.setAuthenticationSuccessHandler(
         SimpleServerAuthenticationSuccessHandler.getInstance());
+    authenticationWebFilter.setAuthenticationFailureHandler(
+        new ServerAuthenticationEntryPointFailureHandler(simpleServerAuthenticationEntryPoint));
     return authenticationWebFilter;
   }
 }

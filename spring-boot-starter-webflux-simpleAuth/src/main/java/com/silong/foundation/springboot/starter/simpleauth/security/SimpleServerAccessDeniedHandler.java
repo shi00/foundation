@@ -1,13 +1,21 @@
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.silong.foundation.model.ErrorDetail;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import static com.silong.foundation.constants.CommonErrorCode.INSUFFICIENT_PERMISSIONS;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 /**
  * 请求拒绝处理器
@@ -21,21 +29,30 @@ public class SimpleServerAccessDeniedHandler implements ServerAccessDeniedHandle
 
   private final String appName;
 
+  private final ObjectMapper objectMapper;
+
   /**
    * 构造方法
    *
    * @param appName 服务名
+   * @param objectMapper jackson
    */
-  public SimpleServerAccessDeniedHandler(String appName) {
+  public SimpleServerAccessDeniedHandler(String appName, ObjectMapper objectMapper) {
     this.appName = appName;
+    this.objectMapper = objectMapper;
   }
 
   @Override
+  @SneakyThrows
   public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException denied) {
     ServerHttpRequest request = exchange.getRequest();
     log.error("Not authorized to {} {}", request.getMethod(), request.getPath().value(), denied);
-    return exchange
-        .getResponse()
-        .writeAndFlushWith(Mono.fromRunnable(() -> INSUFFICIENT_PERMISSIONS.format(appName)));
+    ServerHttpResponse response = exchange.getResponse();
+    response.setStatusCode(FORBIDDEN);
+    response.getHeaders().setContentType(APPLICATION_JSON);
+    ErrorDetail errorDetail = INSUFFICIENT_PERMISSIONS.format(appName);
+    String result = objectMapper.writeValueAsString(errorDetail);
+    DataBuffer buffer = response.bufferFactory().wrap(result.getBytes(UTF_8));
+    return response.writeWith(Mono.just(buffer));
   }
 }

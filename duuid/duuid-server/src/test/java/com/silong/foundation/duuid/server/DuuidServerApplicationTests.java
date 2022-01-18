@@ -12,7 +12,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 /**
@@ -51,12 +52,15 @@ class DuuidServerApplicationTests {
 
   private String prometheusEngdpoint;
 
+  private String openApiEngdpoint;
+
   private HttpHeaders headers;
 
   @BeforeEach
   void init() {
     idGenEngdpoint = String.format("http://localhost:%d/duuid", port);
-    prometheusEngdpoint = String.format("http://localhost:%d/actuator/prometheus", port);
+    prometheusEngdpoint = String.format("http://localhost:%d/actuator/prometheus", port + 1);
+    openApiEngdpoint = String.format("http://localhost:%d/actuator/openapi/duuid-server", port + 1);
     headers = new HttpHeaders();
     // set `content-type` header
     headers.setContentType(APPLICATION_JSON);
@@ -101,10 +105,15 @@ class DuuidServerApplicationTests {
 
   @Test
   void test3() {
+    String openApi = restTemplate.getForObject(openApiEngdpoint, String.class);
+    assertTrue(openApi.contains("Distributed UUID Generation Service"));
+  }
+
+  @Test
+  void test4() {
     buildHeaders("prometheus");
     HttpEntity<Void> entity = new HttpEntity<>(headers);
-    String metrics =
-        restTemplate.exchange(prometheusEngdpoint, HttpMethod.GET, entity, String.class).getBody();
-    assertFalse(metrics == null || metrics.isEmpty());
+    ResponseEntity<String> exchange = restTemplate.exchange(prometheusEngdpoint, GET, entity, String.class);
+    assertFalse(exchange.getBody() == null || exchange.getBody().isEmpty());
   }
 }
