@@ -26,8 +26,10 @@ import java.io.*;
 import java.util.*;
 
 import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
@@ -58,9 +60,10 @@ class DuuidServerApplicationTests {
   public static final String APPLICATION_PROPERTIES = "application-test.properties";
 
   public static final String OUT_FILE =
-      DuuidServerApplicationTests.class
-          .getClassLoader()
-          .getResource(APPLICATION_PROPERTIES)
+      requireNonNull(
+              DuuidServerApplicationTests.class
+                  .getClassLoader()
+                  .getResource(APPLICATION_PROPERTIES))
           .getFile();
 
   public static final File TEMPLATE_FILE =
@@ -91,6 +94,8 @@ class DuuidServerApplicationTests {
   private String prometheusEngdpoint;
 
   private String openApiEngdpoint;
+
+  private String swaggerUiEndpoint;
 
   private HttpHeaders headers;
 
@@ -129,6 +134,7 @@ class DuuidServerApplicationTests {
     prometheusEngdpoint = String.format("http://localhost:%d/actuator/prometheus", actuatorPort);
     openApiEngdpoint =
         String.format("http://localhost:%d/actuator/openapi/duuid-server", actuatorPort);
+    swaggerUiEndpoint = String.format("http://localhost:%d/actuator/swaggerui", actuatorPort);
     headers = new HttpHeaders();
     // set `content-type` header
     headers.setContentType(APPLICATION_JSON);
@@ -172,12 +178,20 @@ class DuuidServerApplicationTests {
 
   @Test
   void test3() {
-    String openApi = restTemplate.getForObject(openApiEngdpoint, String.class);
-    assertTrue(openApi.contains("Distributed UUID Generation Service"));
+    ResponseEntity<String> response =
+        restTemplate.exchange(openApiEngdpoint, GET, null, String.class);
+    assertEquals(OK, response.getStatusCode());
   }
 
   @Test
   void test4() {
+    ResponseEntity<String> response =
+        restTemplate.exchange(swaggerUiEndpoint, GET, null, String.class);
+    assertEquals(OK, response.getStatusCode());
+  }
+
+  @Test
+  void test5() {
     buildHeaders("prometheus");
     HttpEntity<Void> entity = new HttpEntity<>(headers);
     ResponseEntity<String> responseEntity =
