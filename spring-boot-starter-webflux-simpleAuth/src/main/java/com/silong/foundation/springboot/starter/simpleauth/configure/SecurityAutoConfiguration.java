@@ -5,6 +5,7 @@ import com.silong.foundation.springboot.starter.simpleauth.configure.properties.
 import com.silong.foundation.springboot.starter.simpleauth.security.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -43,6 +44,8 @@ public class SecurityAutoConfiguration {
       ObjectMapper objectMapper,
       SimpleAuthProperties simpleAuthProperties,
       CorsConfigurationSource corsConfigurationSource) {
+    // 提供cors配置确保前端页面可以跨域访问，因为管理端口和业务端口是分离的，不提供cors配置会导致页面无法访问
+    // 例如：swagger-ui页面
     return configure(
             http,
             simpleAuthProperties,
@@ -55,6 +58,7 @@ public class SecurityAutoConfiguration {
   @Bean
   @ConditionalOnProperty(prefix = "simple-auth", value = "work-key")
   @ConditionalOnBean({ObjectMapper.class})
+  @ConditionalOnMissingBean(CorsConfigurationSource.class)
   SecurityWebFilterChain springSecurityFilterChain(
       ServerHttpSecurity http,
       ObjectMapper objectMapper,
