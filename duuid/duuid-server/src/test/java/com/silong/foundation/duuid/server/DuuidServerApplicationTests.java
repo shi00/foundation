@@ -1,8 +1,12 @@
 package com.silong.foundation.duuid.server;
 
+import com.google.common.collect.ImmutableList;
 import com.silong.foundation.crypto.digest.HmacToolkit;
 import com.silong.foundation.duuid.server.model.Duuid;
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
+import io.etcd.jetcd.launcher.EtcdContainer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,19 +21,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
+import static org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
 
 /**
  * 服务集成测试
@@ -43,10 +44,38 @@ import static org.springframework.http.MediaType.TEXT_PLAIN;
     classes = DuuidServerApplication.class)
 @TestPropertySource(
     locations = "classpath:application-test.properties",
-    properties = {"management.server.port=35671"})
+    properties = {
+      // 规避两个随机端口，无法获取第二个随机端口问题，此处指定管理端口
+      "management.server.port=35671",
+    })
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 class DuuidServerApplicationTests {
+
+  /** 测试用镜像 */
+  public static final String QUAY_IO_COREOS_ETCD_V_3_5_0 = "quay.io/coreos/etcd:v3.5.0";
+
+  public static final String APPLICATION_PROPERTIES = "application-test.properties";
+
+  public static final String OUT_FILE =
+      DuuidServerApplicationTests.class
+          .getClassLoader()
+          .getResource(APPLICATION_PROPERTIES)
+          .getFile();
+
+  public static final File TEMPLATE_FILE =
+      new File(OUT_FILE)
+          .getParentFile()
+          .getParentFile()
+          .getParentFile()
+          .toPath()
+          .resolve("src")
+          .resolve("test")
+          .resolve("resources")
+          .resolve(APPLICATION_PROPERTIES)
+          .toFile();
+
+  static EtcdContainer container;
 
   @LocalServerPort private int port;
 
@@ -65,6 +94,35 @@ class DuuidServerApplicationTests {
 
   private HttpHeaders headers;
 
+  /**
+   * 初始化etcd容器，并更新服务配置
+   *
+   * @throws IOException 异常
+   */
+  @BeforeAll
+  static void etcdInit() throws IOException {
+    container =
+        new EtcdContainer(QUAY_IO_COREOS_ETCD_V_3_5_0, randomAlphabetic(10), ImmutableList.of());
+    container.start();
+    Properties applicationProperties = new Properties();
+    try (Reader in = new FileReader(TEMPLATE_FILE)) {
+      applicationProperties.load(in);
+      applicationProperties.setProperty(
+          "duuid.worker-id-provider.etcdv3.server-addresses",
+          container.clientEndpoint().toString());
+    }
+    try (Writer out = new FileWriter(OUT_FILE)) {
+      applicationProperties.store(out, "For Integration Testing");
+    }
+  }
+
+  @AfterAll
+  static void cleanUp() {
+    if (container != null) {
+      container.close();
+    }
+  }
+
   @BeforeEach
   void init() {
     idGenEngdpoint = String.format("http://localhost:%d/duuid", port);
@@ -82,7 +140,7 @@ class DuuidServerApplicationTests {
     long now = System.currentTimeMillis();
     headers.set(IDENTITY, identity);
     headers.set(TIMESTAMP, String.valueOf(now));
-    String random = RandomStringUtils.randomAlphabetic(64);
+    String random = randomAlphabetic(64);
     headers.set(RANDOM, random);
     headers.set(
         SIGNATURE, HmacToolkit.hmacSha256(identity + now + random, properties.getWorkKey()));
@@ -120,17 +178,11 @@ class DuuidServerApplicationTests {
 
   @Test
   void test4() {
-    headers = new HttpHeaders();
     buildHeaders("prometheus");
     HttpEntity<Void> entity = new HttpEntity<>(headers);
-    ResponseEntity<Object> responseEntity =
-        restTemplate.exchange(
-            prometheusEngdpoint,
-            //            "http://localhost:27891/actuator/prometheus",
-            GET,
-            entity,
-            Object.class);
+    ResponseEntity<String> responseEntity =
+        restTemplate.exchange(prometheusEngdpoint, GET, entity, String.class);
     System.out.println(responseEntity.getBody());
-    //    assertFalse(responseEntity.getBody() == null || responseEntity.getBody().isEmpty());
+    assertFalse(responseEntity.getBody() == null || responseEntity.getBody().isEmpty());
   }
 }
