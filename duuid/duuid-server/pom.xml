@@ -185,6 +185,7 @@
                             <portNames>
                                 <portName>server.port</portName>
                                 <portName>management.server.port</portName>
+                                <portName>jmx.port</portName>
                             </portNames>
                         </configuration>
                     </execution>
@@ -195,6 +196,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <fork>true</fork>
+                    <jmxPort>${jmx.port}</jmxPort>
                     <jvmArguments>-Dspring.application.admin.enabled=true</jvmArguments>
                     <layers>
                         <enabled>true</enabled>
