@@ -1,4 +1,4 @@
-package com.silong.foundation.springboot.starter.simpleauth.security;
+package com.silong.foundation.springboot.starter.simpleauth.security.authentication;
 
 import lombok.Getter;
 import lombok.Setter;

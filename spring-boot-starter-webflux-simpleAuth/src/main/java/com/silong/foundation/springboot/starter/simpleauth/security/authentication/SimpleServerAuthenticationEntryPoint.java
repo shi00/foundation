@@ -1,4 +1,4 @@
-package com.silong.foundation.springboot.starter.simpleauth.security;
+package com.silong.foundation.springboot.starter.simpleauth.security.authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.model.ErrorDetail;

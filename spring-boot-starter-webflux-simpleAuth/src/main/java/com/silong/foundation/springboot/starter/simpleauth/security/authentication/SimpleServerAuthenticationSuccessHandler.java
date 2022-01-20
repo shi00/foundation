@@ -1,4 +1,4 @@
-package com.silong.foundation.springboot.starter.simpleauth.security;
+package com.silong.foundation.springboot.starter.simpleauth.security.authentication;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;

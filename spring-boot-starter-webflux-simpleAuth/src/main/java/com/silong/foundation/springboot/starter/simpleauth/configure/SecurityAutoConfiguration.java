@@ -2,7 +2,7 @@ package com.silong.foundation.springboot.starter.simpleauth.configure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
-import com.silong.foundation.springboot.starter.simpleauth.security.*;
+import com.silong.foundation.springboot.starter.simpleauth.security.authentication.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

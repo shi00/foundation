@@ -1,4 +1,4 @@
-package com.silong.foundation.springboot.starter.simpleauth.security;
+package com.silong.foundation.springboot.starter.simpleauth.security.authentication;
 
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
 import org.springframework.http.HttpHeaders;
