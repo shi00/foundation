@@ -1,4 +1,4 @@
-package com.silong.foundation.springboot.starter.simpleauth.security.authentication;
+package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
 import lombok.extern.slf4j.Slf4j;

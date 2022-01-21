@@ -1,4 +1,4 @@
-package com.silong.foundation.springboot.starter.simpleauth.security.authentication;
+package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
 import org.springframework.http.HttpHeaders;
@@ -29,10 +29,9 @@ import static java.util.Collections.singletonList;
  */
 public class SimpleServerAuthenticationConverter implements ServerAuthenticationConverter {
 
-  /** 匿名用户角色 */
-  public static final String ANONYMOUS = "anonymous";
+  private static final Authentication GEUST;
 
-  private final List<SimpleGrantedAuthority> anonymousAuthorities;
+  private static final Authentication DENIED = new SimpleAuthenticationToken(emptyList());
 
   private final Map<String, List<SimpleGrantedAuthority>> cache = new HashMap<>();
 
@@ -40,13 +39,17 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
 
   private final ServerWebExchangeMatcher authServerWebExchangeMatcher;
 
+  static {
+    GEUST = new SimpleAuthenticationToken(singletonList(new SimpleGrantedAuthority("guest")));
+    GEUST.setAuthenticated(true);
+  }
+
   /**
    * 构造方法
    *
    * @param properties 服务配置
    */
   public SimpleServerAuthenticationConverter(SimpleAuthProperties properties) {
-    this.anonymousAuthorities = singletonList(new SimpleGrantedAuthority(ANONYMOUS));
     properties
         .getUserRolesMappings()
         .forEach(
@@ -65,16 +68,16 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
     return noAuthServerWebExchangeMatcher
         .matches(exchange)
         .filter(ServerWebExchangeMatcher.MatchResult::isMatch)
-        .map(matchResult -> getNoNeedAuthentication())
+        .map(matchResult -> GEUST)
         .switchIfEmpty(
             authServerWebExchangeMatcher
                 .matches(exchange)
                 .filter(ServerWebExchangeMatcher.MatchResult::isMatch)
                 .map(matchResult -> getNeedAuthentication(exchange))
-                .switchIfEmpty(Mono.just(new SimpleAuthenticationToken(emptyList()))));
+                .switchIfEmpty(Mono.just(DENIED)));
   }
 
-  private SimpleAuthenticationToken getNeedAuthentication(ServerWebExchange exchange) {
+  private Authentication getNeedAuthentication(ServerWebExchange exchange) {
     HttpHeaders httpHeaders = exchange.getRequest().getHeaders();
     String identity = httpHeaders.getFirst(IDENTITY);
     List<SimpleGrantedAuthority> grantedAuthorities = cache.get(identity);
@@ -87,11 +90,5 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
         httpHeaders.getFirst(TIMESTAMP),
         httpHeaders.getFirst(RANDOM),
         grantedAuthorities);
-  }
-
-  private Authentication getNoNeedAuthentication() {
-    Authentication simpleAuthenticationToken = new SimpleAuthenticationToken(anonymousAuthorities);
-    simpleAuthenticationToken.setAuthenticated(true);
-    return simpleAuthenticationToken;
   }
 }
