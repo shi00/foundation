@@ -46,6 +46,7 @@
         <module>duuid/duuid-server</module>
         <module>common-objects</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
+        <module>plugins/log4j2/logfilter</module>
     </modules>
 
     <properties>
@@ -86,6 +87,7 @@
         <springdoc.version>1.6.4</springdoc.version>
         <springdoc-openapi-maven-plugin.version>1.3</springdoc-openapi-maven-plugin.version>
         <reflections.version>0.10.2</reflections.version>
+        <libphonenumber.version>8.12.41</libphonenumber.version>
         <!--开源组件-->
 
     </properties>
@@ -106,6 +108,14 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!-- Google's common Java library for parsing, formatting, and validating international phone numbers.  -->
+            <dependency>
+                <groupId>com.googlecode.libphonenumber</groupId>
+                <artifactId>libphonenumber</artifactId>
+                <version>${libphonenumber.version}</version>
+            </dependency>
+            <!-- Google's common Java library for parsing, formatting, and validating international phone numbers.  -->
 
             <!-- google 基础库 -->
             <dependency>

@@ -17,6 +17,6 @@ import lombok.experimental.Accessors;
 @Builder
 @Accessors(fluent = true)
 public class Tuple2<T1, T2> {
-  private final T1 t1;
-  private final T2 t2;
+  private T1 t1;
+  private T2 t2;
 }
