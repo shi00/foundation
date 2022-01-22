@@ -3,10 +3,7 @@ package com.silong.foundation.plugins.log4j2;
 import com.silong.foundation.model.Tuple3;
 
 import java.io.Closeable;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,7 +16,7 @@ import java.util.stream.Stream;
  */
 public class ComposeDesensitizer implements Desensitizer, Closeable {
 
-  private static final ThreadLocal<Tuple3<String, Boolean, Class<?>>> TUPLE_3_THREAD_LOCAL =
+  private static final ThreadLocal<Tuple3<String, Boolean, String>> TUPLE_3_THREAD_LOCAL =
       new ThreadLocal<>();
 
   /** 脱敏器列表 */
@@ -39,25 +36,30 @@ public class ComposeDesensitizer implements Desensitizer, Closeable {
 
   @Override
   public String desensitize(String msg) {
-    LinkedList<Tuple3<String, Boolean, Class<?>>> list = null;
+    LinkedList<Tuple3<String, Boolean, String>> list = null;
     do {
       String str = msg;
       list = list == null ? replace(desensitizers.parallelStream(), str) : replace(list, str);
+      if (list.isEmpty()) {
+        break;
+      }
       // 取最长匹配
       msg = list.removeFirst().t1();
     } while (!list.isEmpty());
     return msg;
   }
 
-  private LinkedList<Tuple3<String, Boolean, Class<?>>> replace(
-      LinkedList<Tuple3<String, Boolean, Class<?>>> list, String str) {
+  private LinkedList<Tuple3<String, Boolean, String>> replace(
+      LinkedList<Tuple3<String, Boolean, String>> list, String str) {
     return replace(
         desensitizers.parallelStream()
-            .filter(desensitizer -> list.stream().anyMatch(t -> t.t3() == desensitizer.getClass())),
+            .filter(
+                desensitizer ->
+                    list.stream().anyMatch(t -> Objects.equals(t.t3(), desensitizer.id()))),
         str);
   }
 
-  private LinkedList<Tuple3<String, Boolean, Class<?>>> replace(
+  private LinkedList<Tuple3<String, Boolean, String>> replace(
       Stream<Desensitizer> stream, String str) {
     return stream
         .map(desensitizer -> desensitize(str, desensitizer))
@@ -67,19 +69,19 @@ public class ComposeDesensitizer implements Desensitizer, Closeable {
         .collect(Collectors.toCollection(LinkedList::new));
   }
 
-  private Tuple3<String, Boolean, Class<?>> desensitize(String str, Desensitizer desensitizer) {
+  private Tuple3<String, Boolean, String> desensitize(String str, Desensitizer desensitizer) {
     String ret = desensitizer.desensitize(str);
-    Tuple3<String, Boolean, Class<?>> tuple3 = TUPLE_3_THREAD_LOCAL.get();
+    Tuple3<String, Boolean, String> tuple3 = TUPLE_3_THREAD_LOCAL.get();
     if (tuple3 == null) {
       tuple3 =
-          Tuple3.<String, Boolean, Class<?>>builder()
+          Tuple3.<String, Boolean, String>builder()
               .t1(ret)
               .t2(ret.equals(str))
-              .t3(desensitizer.getClass())
+              .t3(desensitizer.id())
               .build();
       TUPLE_3_THREAD_LOCAL.set(tuple3);
     } else {
-      tuple3.t1(ret).t2(ret.equals(str)).t3(desensitizer.getClass());
+      tuple3.t1(ret).t2(ret.equals(str)).t3(desensitizer.id());
     }
     return tuple3;
   }

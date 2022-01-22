@@ -45,7 +45,7 @@ public enum BuildInDesensitizer implements Desensitizer {
    * At least one lower case English letter, (?=.*?[a-z])
    * At least one digit, (?=.*?[0-9])
    * At least one special character, (?=.*?[#?!@$%^&*-])
-   * Minimum eight in length .{8,} (with the anchors)
+   * minimum six in length and maximum sixteen.{6,16} (with the anchors)
    * </pre>
    */
   PASSWORD("(?=.*?[A-Z])(?=(.*[a-z]){1,})(?=(.*[\\d]){1,})(?=(.*[\\W]){1,})(?!.*\\s).{8,}"),
@@ -71,6 +71,11 @@ public enum BuildInDesensitizer implements Desensitizer {
   @Override
   public String desensitize(String msg) {
     return desensitizer.desensitize(msg);
+  }
+
+  @Override
+  public String id() {
+    return desensitizer.id();
   }
 
   /**

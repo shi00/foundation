@@ -1,7 +1,9 @@
 package com.silong.foundation.plugins.log4j2;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
+import lombok.ToString;
 
 import java.util.regex.Pattern;
 
@@ -15,14 +17,14 @@ import java.util.regex.Pattern;
 @Data
 public class RegexDesensitizer implements Desensitizer {
 
-  /** 默认替换字符串 */
-  private static final String DEFAULT_REPLACE_STR = "******";
-
   /** 正则表达式 */
-  private final Pattern pattern;
+  @EqualsAndHashCode.Exclude @ToString.Exclude private final Pattern pattern;
 
   /** 替换符 */
   private final String replacement;
+
+  /** 正则表达式 */
+  private final String regex;
 
   /**
    * 构造方法
@@ -33,6 +35,7 @@ public class RegexDesensitizer implements Desensitizer {
   public RegexDesensitizer(@NonNull String regex, @NonNull String replacement) {
     this.pattern = Pattern.compile(regex);
     this.replacement = replacement;
+    this.regex = regex;
   }
 
   /**
@@ -47,5 +50,10 @@ public class RegexDesensitizer implements Desensitizer {
   @Override
   public String desensitize(@NonNull String msg) {
     return pattern.matcher(msg).replaceAll(replacement);
+  }
+
+  @Override
+  public String id() {
+    return regex;
   }
 }
