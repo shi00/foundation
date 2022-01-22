@@ -41,14 +41,16 @@ public enum BuildInDesensitizer implements Desensitizer {
    * 密码
    *
    * <pre>
-   * At least one upper case English letter, (?=.*?[A-Z])
-   * At least one lower case English letter, (?=.*?[a-z])
-   * At least one digit, (?=.*?[0-9])
-   * At least one special character, (?=.*?[#?!@$%^&*-])
-   * minimum six in length and maximum sixteen.{6,16} (with the anchors)
+   * (?=.*[0-9]) represents a digit must occur at least once.
+   * (?=.*[a-z]) represents a lower case alphabet must occur at least once.
+   * (?=.*[A-Z]) represents an upper case alphabet that must occur at least once.
+   * (?=.*[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~] represents a special character that must occur at least once.
+   * (?=\\S+$) white spaces don’t allowed in the entire string.
+   * .{8, 20} represents at least 8 characters and at most 20 characters.
    * </pre>
    */
-  PASSWORD("(?=.*?[A-Z])(?=(.*[a-z]){1,})(?=(.*[\\d]){1,})(?=(.*[\\W]){1,})(?!.*\\s).{8,}"),
+  PASSWORD(
+      "(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!\"#\\$%&'\\(\\)\\*\\+,-\\./:;<=>\\?@\\[\\]^_`\\{\\|\\}~])(?=\\S+$).{8,20}"),
 
   /** 加密信息 */
   SECURITY_BASE64("security:(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?"),

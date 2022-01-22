@@ -5,8 +5,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static com.silong.foundation.plugins.log4j2.BuildInDesensitizer.IMEI;
+import static com.silong.foundation.plugins.log4j2.BuildInDesensitizer.PASSWORD;
 import static com.silong.foundation.plugins.log4j2.Desensitizer.DEFAULT_REPLACE_STR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 脱敏器单元测试
@@ -61,14 +63,68 @@ public class DesensitizerTests {
   }
 
   @Test
-  @DisplayName("IMEI-2")
-  void test33() {
-    String imei1 = "443187498504422";
-    String imei2 = "336919698689615";
-    String s1 = RandomStringUtils.randomAlphanumeric(10);
-    String s2 = RandomStringUtils.randomAlphanumeric(100);
-    String s3 = RandomStringUtils.randomAlphanumeric(20);
-    String desensitize = desensitizer.desensitize(s1 + imei1 + s2 + imei2 + s3);
-    assertEquals(s1 + DEFAULT_REPLACE_STR + s2 + DEFAULT_REPLACE_STR + s3, desensitize);
+  @DisplayName("PASSWORD-1")
+  void test5() {
+    String password = RandomIPassword.generatePassword(8);
+    String desensitize = PASSWORD.desensitize(password);
+    assertEquals(DEFAULT_REPLACE_STR, desensitize);
   }
+
+  @Test
+  @DisplayName("PASSWORD-2")
+  void test6() {
+    String password = RandomIPassword.generatePassword(16);
+    String desensitize = PASSWORD.desensitize(password);
+    assertEquals(DEFAULT_REPLACE_STR, desensitize);
+  }
+
+  @Test
+  @DisplayName("PASSWORD-3")
+  void test7() {
+    String password = RandomIPassword.generatePassword(20);
+    String desensitize = PASSWORD.desensitize(password);
+    assertEquals(DEFAULT_REPLACE_STR, desensitize);
+  }
+
+  @Test
+  @DisplayName("PASSWORD-4")
+  void test8() {
+    String password = RandomIPassword.generatePassword(21);
+    String desensitize = PASSWORD.desensitize(password);
+    assertTrue(desensitize.contains(DEFAULT_REPLACE_STR));
+  }
+
+  @Test
+  @DisplayName("PASSWORD-5")
+  void test9() {
+    String password = RandomIPassword.generatePassword(7);
+    String desensitize = PASSWORD.desensitize(password);
+    assertEquals(password, desensitize);
+  }
+
+  @Test
+  @DisplayName("PASSWORD-6")
+  void test10() {
+    String password1 = RandomIPassword.generatePassword(10);
+    String password2 = RandomIPassword.generatePassword(14);
+    String formatter = "%s%s%s%s%s";
+    String s1 = RandomStringUtils.random(10, true, false);
+    String s2 = RandomStringUtils.random(10, true, false);
+    String s3 = RandomStringUtils.random(10, true, false);
+    String desensitize =
+        PASSWORD.desensitize(String.format(formatter, s1, password1, s2, password2, s3));
+    assertTrue(desensitize.contains(DEFAULT_REPLACE_STR));
+  }
+
+  //  @Test
+  //  @DisplayName("IMEI-2")
+  //  void test33() {
+  //    String imei1 = "443187498504422";
+  //    String imei2 = "336919698689615";
+  //    String s1 = RandomStringUtils.randomAlphanumeric(10);
+  //    String s2 = RandomStringUtils.randomAlphanumeric(100);
+  //    String s3 = RandomStringUtils.randomAlphanumeric(20);
+  //    String desensitize = desensitizer.desensitize(s1 + imei1 + s2 + imei2 + s3);
+  //    assertEquals(s1 + DEFAULT_REPLACE_STR + s2 + DEFAULT_REPLACE_STR + s3, desensitize);
+  //  }
 }
