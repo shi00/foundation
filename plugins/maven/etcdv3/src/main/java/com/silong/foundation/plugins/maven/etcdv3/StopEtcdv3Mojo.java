@@ -16,24 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.duuid.server.model;
+package com.silong.foundation.plugins.maven.etcdv3;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
+import io.etcd.jetcd.launcher.EtcdContainer;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
 
 /**
- * duuid结果。
+ * 容器停止
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-13 13:17
+ * @since 2022-01-23 15:17
  */
-@Data
-@NoArgsConstructor
-@Accessors(fluent = true)
-public class Duuid {
-  /** 生成的duuid */
-  @JsonProperty private long id;
+@Mojo(name = "stop", defaultPhase = LifecyclePhase.NONE)
+public class StopEtcdv3Mojo extends AbstractEtcdv3Mojo {
+
+  @Override
+  public void execute() {
+    if (skip) {
+      getLog().info("Etcd server had been skipped...");
+      return;
+    }
+    EtcdContainer etcdContainer = (EtcdContainer) getPluginContext().get(CONTAINER_CONTEXT_KEY);
+    etcdContainer.close();
+    getLog().info("Stopping Etcd server...");
+  }
 }

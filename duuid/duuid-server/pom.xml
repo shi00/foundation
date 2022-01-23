@@ -175,18 +175,18 @@
             </extension>
         </extensions>
         <plugins>
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-source-plugin</artifactId>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>attach-sources</id>-->
-<!--                        <goals>-->
-<!--                            <goal>jar</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -208,6 +208,31 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>com.silong</groupId>
+                <artifactId>etcdv3-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <image>quay.io/coreos/etcd:v3.5.0</image>
+                    <endpoint>etcdv3.endpoint</endpoint>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>pre-integration-test</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>post-integration-test</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
@@ -225,12 +250,12 @@
                     </excludes>
                 </configuration>
                 <executions>
-<!--                    <execution>-->
-<!--                        <id>build-info</id>-->
-<!--                        <goals>-->
-<!--                            <goal>build-info</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
                     <execution>
                         <id>repackage</id>
                         <goals>
@@ -246,6 +271,8 @@
                             <arguments>
                                 <argument>--management.server.port=${management.server.port}</argument>
                                 <argument>--server.port=${server.port}</argument>
+                                <argument>--duuid.worker-id-provider.etcdv3.server-addresses=${etcdv3.endpoint}
+                                </argument>
                             </arguments>
                         </configuration>
                     </execution>
