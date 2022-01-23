@@ -19,6 +19,7 @@
 package com.silong.foundation.duuid.spi;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
@@ -103,6 +104,7 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
   }
 
   @NonNull
+  @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "配置的证书文件路径，无可避免")
   private Client getClient(WorkerInfo info) throws SSLException {
     Map<String, String> extraInfo;
     if (info == null || (extraInfo = info.getExtraInfo()) == null) {
