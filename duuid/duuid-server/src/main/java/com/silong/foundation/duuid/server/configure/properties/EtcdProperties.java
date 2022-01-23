@@ -1,5 +1,6 @@
 package com.silong.foundation.duuid.server.configure.properties;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -21,6 +22,9 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 @Data
 @Validated
 @ConfigurationProperties(prefix = "duuid.worker-id-provider.etcdv3")
+@SuppressFBWarnings(
+    value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+    justification = "只读初始配置")
 public class EtcdProperties {
   /** 是否启用 */
   private boolean enabled;

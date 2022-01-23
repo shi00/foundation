@@ -11,6 +11,7 @@ import com.silong.foundation.duuid.server.model.Duuid;
 import com.silong.foundation.duuid.spi.WorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerInfo;
 import com.silong.foundation.model.ErrorDetail;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -57,6 +58,9 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
   EtcdProperties.class,
   DuuidServerProperties.class
 })
+@SuppressFBWarnings(
+    value = {"EI_EXPOSE_REP2"},
+    justification = "只读初始配置")
 public class RoutesAutoConfiguration {
 
   /** 配置注入 */
