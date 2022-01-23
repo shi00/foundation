@@ -403,6 +403,7 @@
                         <exclude>**/*.iml</exclude>
                         <!-- Runtime log -->
                         <exclude>**/*.log</exclude>
+                        <exclude>**/*.zip</exclude>
                         <!-- Exclude CVS files -->
                         <exclude>**/*.cvs</exclude>
                         <!-- licenses -->
