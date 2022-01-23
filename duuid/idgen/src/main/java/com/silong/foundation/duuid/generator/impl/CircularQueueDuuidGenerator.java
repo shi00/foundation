@@ -1,6 +1,7 @@
 package com.silong.foundation.duuid.generator.impl;
 
 import com.silong.foundation.duuid.generator.DuuidGenerator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.SpmcArrayQueue;
 
@@ -343,6 +344,9 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    *
    * @return id
    */
+  @SuppressFBWarnings(
+      value = "STCAL_INVOKE_ON_STATIC_DATE_FORMAT_INSTANCE",
+      justification = "SDF是在单线程中使用，不存在并发访问，此处无需修改")
   protected long generate() {
     // 如果当前系统时间大于明天0点，则更新时间差，如果时钟回拨导致时间出现偏差则不变更时间差字段
     if (utcTimeProvider.get() >= tomorrowStartTime.getTimeInMillis()) {
@@ -377,8 +381,10 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
    *
    * @return 随机增量
    */
+  @SuppressFBWarnings(
+      value = "PREDICTABLE_RANDOM",
+      justification = "随机数生成器，此处考虑性能，无需使用安全随机，只要保证生成id不连续即可")
   protected long randomIncrement() {
-    // 随机数生成器，此处考虑性能，无需使用安全随机，只要保证生成id不连续即可
     return enableSequenceRandom ? ThreadLocalRandom.current().nextInt(maxRandomIncrement) + 1 : 1;
   }
 
