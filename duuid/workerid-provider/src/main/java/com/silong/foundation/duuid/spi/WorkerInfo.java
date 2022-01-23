@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.duuid.spi;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Builder;
 import lombok.Data;
 
@@ -32,6 +33,9 @@ import java.util.Map;
  */
 @Data
 @Builder
+@SuppressFBWarnings(
+    value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+    justification = "附加信息是只读Map")
 public class WorkerInfo {
   /** worker name */
   private final String name;
