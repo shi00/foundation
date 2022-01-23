@@ -454,6 +454,8 @@
                     <excludes>
                         <exclude>**/zoo/**</exclude>
                         <exclude>**/log4j2.xml</exclude>
+                        <exclude>**/Dockerfile</exclude>
+                        <exclude>**/.dockerignore</exclude>
                         <exclude>**/*.properties</exclude>
                         <!-- Git related files -->
                         <exclude>**/.git/**</exclude>
