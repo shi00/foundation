@@ -11,6 +11,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -18,7 +19,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -72,7 +75,7 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
               .put(KEY, ByteSequence.from(value, UTF_8), PUT_OPTION)
               .get(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
       return putResponse.hasPrevKv() ? putResponse.getPrevKv().getVersion() : 0;
-    } catch (Exception e) {
+    } catch (SSLException | TimeoutException | ExecutionException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
@@ -81,7 +84,7 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
     return str == null || str.isEmpty();
   }
 
-  private Client getClient(WorkerInfo info) throws Exception {
+  private Client getClient(WorkerInfo info) throws SSLException {
     Map<String, String> extraInfo;
     if (info == null || (extraInfo = info.getExtraInfo()) == null) {
       throw new IllegalArgumentException("info and info.extraInfo must not be null.");
