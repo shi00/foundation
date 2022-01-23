@@ -32,8 +32,8 @@ public class AesGCMTests {
     Path dir = new File("target/test-classes").toPath();
     RootKey.export(
         RootKey.DEFAULT_ROOT_KEY_PARTS.stream()
-            .map(s -> dir.resolve(s).toFile().getAbsolutePath())
-            .toArray(String[]::new));
+            .map(s -> dir.resolve(s).toFile())
+            .toArray(File[]::new));
     rootKey = RootKey.initialize();
   }
 

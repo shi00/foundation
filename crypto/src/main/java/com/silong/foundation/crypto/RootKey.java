@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
@@ -140,7 +139,7 @@ public final class RootKey {
    * @param rootKeyPartPaths 根密钥保存位置
    * @throws IOException IO异常
    */
-  public static void export(String... rootKeyPartPaths) throws IOException {
+  public static void export(File... rootKeyPartPaths) throws IOException {
     if (rootKeyPartPaths == null || rootKeyPartPaths.length != DEFAULT_ROOT_KEY_PARTS.size()) {
       throw new IllegalArgumentException(
           String.format("rootKeyPartPaths must be %d.", DEFAULT_ROOT_KEY_PARTS.size()));
@@ -148,8 +147,8 @@ public final class RootKey {
 
     String[] rootKeyParts = generate();
     for (int i = 0; i < rootKeyPartPaths.length; i++) {
-      Path path = Paths.get(rootKeyPartPaths[i]);
-      File parentFile = path.toFile().getParentFile();
+      Path path = rootKeyPartPaths[i].toPath();
+      File parentFile = rootKeyPartPaths[i].getParentFile();
       if (parentFile.mkdirs()) {
         log.info("{} was successfully created.", parentFile.getCanonicalPath());
       }

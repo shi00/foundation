@@ -1,7 +1,7 @@
 package com.silong.foundation.crypto;
 
-import com.silong.foundation.crypto.rsa.RsaKeySize;
 import com.silong.foundation.crypto.rsa.RsaKeyPair;
+import com.silong.foundation.crypto.rsa.RsaKeySize;
 import com.silong.foundation.crypto.rsa.RsaToolkit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -32,13 +32,15 @@ public class RSATests {
     Path dir = new File("target/test-classes").toPath();
     RootKey.export(
         RootKey.DEFAULT_ROOT_KEY_PARTS.stream()
-            .map(s -> dir.resolve(s).toFile().getAbsolutePath())
-            .toArray(String[]::new));
+            .map(s -> dir.resolve(s).toFile())
+            .toArray(File[]::new));
     rootKey = RootKey.initialize();
     RsaKeyPair rsaKeyPair = RsaToolkit.generate(RsaKeySize.BITS_3072);
-    String pubkey = dir.resolve("pubkey").toFile().getCanonicalPath();
-    String prikey = dir.resolve("prikey").toFile().getCanonicalPath();
-    rsaKeyPair.export(prikey, pubkey);
+    File f1 = dir.resolve("pubkey").toFile();
+    String pubkey = f1.getCanonicalPath();
+    File f2 = dir.resolve("prikey").toFile();
+    String prikey = f2.getCanonicalPath();
+    rsaKeyPair.export(f2, f1);
     keyPair = RsaKeyPair.importRsaKeyPair(prikey, pubkey);
   }
 
