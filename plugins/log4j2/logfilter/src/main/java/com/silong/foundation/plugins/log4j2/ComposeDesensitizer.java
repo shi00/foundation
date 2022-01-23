@@ -86,6 +86,7 @@ public class ComposeDesensitizer implements Desensitizer, Closeable {
     return tuple3;
   }
 
+  /** useless */
   @Override
   public void close() {
     TUPLE_3_THREAD_LOCAL.remove();

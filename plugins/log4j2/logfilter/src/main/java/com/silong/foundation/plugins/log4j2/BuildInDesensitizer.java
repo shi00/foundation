@@ -32,7 +32,10 @@ public enum BuildInDesensitizer implements Desensitizer {
   CHINESE_PHONE_NUMBER("1(3\\d|4[5-9]|5[0-35-9]|6[567]|7[0-8]|8\\d|9[0-35-9])\\d{8}"),
 
   /** 国际电话号码 */
-  INTERNATIONAL_PHONE_NUMBER("\\+(?:[0-9] ?){6,14}[0-9]"),
+  INTERNATIONAL_PHONE_NUMBER(
+      "(\\+\\d{1,3}( )?)?((\\(\\d{3}\\))|\\d{3})[- .]?\\d{3}[- .]?\\d{4}"
+          + "|(\\+\\d{1,3}( )?)?(\\d{3}[ ]?){2}\\d{3}"
+          + "|(\\+\\d{1,3}( )?)?(\\d{3}[ ]?)(\\d{2}[ ]?){2}\\d{2}"),
 
   /** IMEI */
   IMEI("\\d{15}(,\\d{15})*"),

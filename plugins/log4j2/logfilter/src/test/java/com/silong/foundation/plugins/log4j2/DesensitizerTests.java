@@ -1,11 +1,11 @@
 package com.silong.foundation.plugins.log4j2;
 
+import com.github.javafaker.Faker;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static com.silong.foundation.plugins.log4j2.BuildInDesensitizer.IMEI;
-import static com.silong.foundation.plugins.log4j2.BuildInDesensitizer.PASSWORD;
+import static com.silong.foundation.plugins.log4j2.BuildInDesensitizer.*;
 import static com.silong.foundation.plugins.log4j2.Desensitizer.DEFAULT_REPLACE_STR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,7 +50,7 @@ public class DesensitizerTests {
     String imei1 = RandomIMEI.generateIMEI();
     String imei2 = RandomIMEI.generateIMEI();
     String desensitize = IMEI.desensitize(imei1 + imei2);
-    assertEquals(DEFAULT_REPLACE_STR + DEFAULT_REPLACE_STR, desensitize);
+    assertTrue(desensitize.contains(DEFAULT_REPLACE_STR));
   }
 
   @Test
@@ -114,6 +114,33 @@ public class DesensitizerTests {
     String desensitize =
         PASSWORD.desensitize(String.format(formatter, s1, password1, s2, password2, s3));
     assertTrue(desensitize.contains(DEFAULT_REPLACE_STR));
+  }
+
+  @Test
+  @DisplayName("PASSWORD-7")
+  void test11() {
+    String password1 = RandomIPassword.generatePassword(10);
+    String password2 = RandomIPassword.generatePassword(14);
+    String desensitize = PASSWORD.desensitize(password2 + password1);
+    assertTrue(desensitize.contains(DEFAULT_REPLACE_STR));
+  }
+
+  @Test
+  @DisplayName("PASSWORD-8")
+  void test12() {
+    String password1 = RandomIPassword.generatePassword(15);
+    String password2 = RandomIPassword.generatePassword(8);
+    String desensitize = PASSWORD.desensitize("d" + password2 + password1 + "a");
+    assertTrue(desensitize.contains(DEFAULT_REPLACE_STR));
+  }
+
+  @Test
+  @DisplayName("PHONENUMBER-1")
+  void test13() {
+    Faker faker = new Faker();
+    String cellPhone = faker.phoneNumber().cellPhone();
+    String desensitize = INTERNATIONAL_PHONE_NUMBER.desensitize(cellPhone);
+    assertEquals(cellPhone, desensitize);
   }
 
   //  @Test

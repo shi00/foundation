@@ -1,9 +1,27 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.silong.foundation.duuid.spi;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.ClientBuilder;
-import io.etcd.jetcd.KV;
 import io.etcd.jetcd.kv.PutResponse;
 import io.etcd.jetcd.options.PutOption;
 import io.grpc.netty.GrpcSslContexts;
@@ -20,11 +38,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * 基于ETCD v3的WorkerId分配器<br>
@@ -67,13 +85,13 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
   @Override
   public long allocate(WorkerInfo info) {
     try (Client client = getClient(info)) {
-      KV kvClient = client.getKVClient();
       SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       String value = String.format("%s---%s", info.getName(), simpleDateFormat.format(new Date()));
       PutResponse putResponse =
-          kvClient
+          client
+              .getKVClient()
               .put(KEY, ByteSequence.from(value, UTF_8), PUT_OPTION)
-              .get(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
+              .get(TIMEOUT.getSeconds(), SECONDS);
       return putResponse.hasPrevKv() ? putResponse.getPrevKv().getVersion() : 0;
     } catch (SSLException | TimeoutException | ExecutionException | InterruptedException e) {
       throw new RuntimeException(e);
@@ -84,6 +102,7 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
     return str == null || str.isEmpty();
   }
 
+  @NonNull
   private Client getClient(WorkerInfo info) throws SSLException {
     Map<String, String> extraInfo;
     if (info == null || (extraInfo = info.getExtraInfo()) == null) {
