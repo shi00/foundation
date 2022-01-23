@@ -402,6 +402,7 @@
                         <exclude>**/.idea/**</exclude>
                         <exclude>**/*.iml</exclude>
                         <exclude>**/*.key</exclude>
+                        <exclude>**/spring.factories</exclude>
                         <!-- Runtime log -->
                         <exclude>**/*.log</exclude>
                         <exclude>**/*.zip</exclude>

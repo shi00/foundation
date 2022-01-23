@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.configure.properties;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -38,6 +39,9 @@ import java.util.Set;
 @Data
 @Validated
 @ConfigurationProperties(prefix = "simple-auth")
+@SuppressFBWarnings(
+    value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+    justification = "只读初始配置")
 public class SimpleAuthProperties {
 
   /** 客户端和服务端可接受的时间差，默认：10000毫秒 */

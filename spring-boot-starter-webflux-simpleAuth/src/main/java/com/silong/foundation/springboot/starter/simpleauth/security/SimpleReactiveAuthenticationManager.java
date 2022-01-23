@@ -19,6 +19,7 @@
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -41,6 +42,9 @@ import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
 public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticationManager {
 
   /** 配置信息 */
+  @SuppressFBWarnings(
+      value = {"EI_EXPOSE_REP2"},
+      justification = "只读初始配置")
   private final SimpleAuthProperties properties;
 
   /**

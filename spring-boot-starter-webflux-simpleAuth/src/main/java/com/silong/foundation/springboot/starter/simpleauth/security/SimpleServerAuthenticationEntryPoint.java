@@ -20,6 +20,7 @@ package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.model.ErrorDetail;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -43,6 +44,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  * @since 2022-01-17 14:16
  */
 @Slf4j
+@SuppressFBWarnings(
+    value = {"EI_EXPOSE_REP2"},
+    justification = "只读初始配置")
 public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticationEntryPoint {
 
   private final String appName;
