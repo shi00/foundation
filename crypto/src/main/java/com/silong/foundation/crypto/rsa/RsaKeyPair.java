@@ -49,7 +49,7 @@ public final class RsaKeyPair {
    * @return RSA公私钥对
    * @throws Exception 异常
    */
-  public static RsaKeyPair importRsaKeyPair(String privateKeyFile, String publicKeyFile)
+  public static RsaKeyPair importRsaKeyPair(File privateKeyFile, File publicKeyFile)
       throws Exception {
     return new RsaKeyPair(importRsaPublicKey(publicKeyFile), importRsaPrivateKey(privateKeyFile));
   }
@@ -61,7 +61,7 @@ public final class RsaKeyPair {
    * @return 公钥
    * @throws Exception 异常
    */
-  public static PublicKey importRsaPublicKey(String publicKeyFile) throws Exception {
+  public static PublicKey importRsaPublicKey(File publicKeyFile) throws Exception {
     byte[] bytes = readRsaKeyFile(publicKeyFile);
     X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytes);
     KeyFactory keyFactory = KeyFactory.getInstance(RsaToolkit.RSA);
@@ -75,16 +75,16 @@ public final class RsaKeyPair {
    * @return 私钥
    * @throws Exception 异常
    */
-  public static PrivateKey importRsaPrivateKey(String privateKeyFile) throws Exception {
+  public static PrivateKey importRsaPrivateKey(File privateKeyFile) throws Exception {
     byte[] bytes = readRsaKeyFile(privateKeyFile);
     PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(bytes);
     KeyFactory keyFactory = KeyFactory.getInstance(RsaToolkit.RSA);
     return keyFactory.generatePrivate(keySpec);
   }
 
-  private static byte[] readRsaKeyFile(String keyFile) throws IOException {
-    if (keyFile == null || keyFile.isEmpty()) {
-      throw new IllegalArgumentException("keyFile must not be null or empty.");
+  private static byte[] readRsaKeyFile(File keyFile) throws IOException {
+    if (keyFile == null) {
+      throw new IllegalArgumentException("keyFile must not be null.");
     }
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(new FileInputStream(keyFile), UTF_8))) {

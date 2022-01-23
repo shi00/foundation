@@ -36,11 +36,9 @@ public class RSATests {
             .toArray(File[]::new));
     rootKey = RootKey.initialize();
     RsaKeyPair rsaKeyPair = RsaToolkit.generate(RsaKeySize.BITS_3072);
-    File f1 = dir.resolve("pubkey").toFile();
-    String pubkey = f1.getCanonicalPath();
-    File f2 = dir.resolve("prikey").toFile();
-    String prikey = f2.getCanonicalPath();
-    rsaKeyPair.export(f2, f1);
+    File pubkey = dir.resolve("pubkey").toFile();
+    File prikey = dir.resolve("prikey").toFile();
+    rsaKeyPair.export(prikey, pubkey);
     keyPair = RsaKeyPair.importRsaKeyPair(prikey, pubkey);
   }
 
