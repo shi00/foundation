@@ -106,19 +106,16 @@ public final class RsaKeyPair {
   /**
    * 导出RSA公钥和私钥到指定目录
    *
-   * @param privateKeyPath 私钥目录
-   * @param publicKeyPath 公钥目录
+   * @param privateKeyFile 私钥目录
+   * @param publicKeyFile 公钥目录
    */
-  public void export(String privateKeyPath, String publicKeyPath) throws IOException {
-    if (privateKeyPath == null || privateKeyPath.isEmpty()) {
-      throw new IllegalArgumentException("privateKeyPath must not be null or empty.");
+  public void export(File privateKeyFile, File publicKeyFile) throws IOException {
+    if (privateKeyFile == null) {
+      throw new IllegalArgumentException("privateKeyFile must not be null.");
     }
-    if (publicKeyPath == null || publicKeyPath.isEmpty()) {
-      throw new IllegalArgumentException("publicKeyPath must not be null or empty.");
+    if (publicKeyFile == null) {
+      throw new IllegalArgumentException("publicKeyFile must not be null.");
     }
-
-    File privateKeyFile = new File(privateKeyPath);
-    File publicKeyFile = new File(publicKeyPath);
     File privateKeyFileParentFile = privateKeyFile.getParentFile();
     File publicKeyFileParentFile = publicKeyFile.getParentFile();
 
