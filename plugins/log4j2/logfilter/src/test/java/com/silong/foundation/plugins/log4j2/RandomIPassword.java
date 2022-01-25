@@ -31,11 +31,10 @@ import org.passay.PasswordGenerator;
  * @since 2022-01-23 03:18
  */
 public interface RandomIPassword {
-
-  CharacterRule digits = new CharacterRule(EnglishCharacterData.Digit);
-  CharacterRule uppercase = new CharacterRule(EnglishCharacterData.UpperCase);
-  CharacterRule lowercase = new CharacterRule(EnglishCharacterData.LowerCase);
-  CharacterRule special =
+  CharacterRule DIGITS = new CharacterRule(EnglishCharacterData.Digit);
+  CharacterRule UPPERCASE = new CharacterRule(EnglishCharacterData.UpperCase);
+  CharacterRule LOWERCASE = new CharacterRule(EnglishCharacterData.LowerCase);
+  CharacterRule SPECIAL =
       new CharacterRule(
           new CharacterData() {
             @Override
@@ -51,6 +50,6 @@ public interface RandomIPassword {
 
   static String generatePassword(int length) {
     PasswordGenerator passwordGenerator = new PasswordGenerator();
-    return passwordGenerator.generatePassword(length, digits, uppercase, lowercase, special);
+    return passwordGenerator.generatePassword(length, DIGITS, UPPERCASE, LOWERCASE, SPECIAL);
   }
 }

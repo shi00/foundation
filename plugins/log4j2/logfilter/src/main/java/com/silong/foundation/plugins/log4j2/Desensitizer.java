@@ -28,7 +28,7 @@ package com.silong.foundation.plugins.log4j2;
 public interface Desensitizer {
 
   /** 默认替换字符串 */
-  String DEFAULT_REPLACE_STR = "******";
+  String DEFAULT_REPLACE_STR = "***";
 
   /**
    * 对msg执行脱敏

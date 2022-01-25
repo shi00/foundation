@@ -19,9 +19,18 @@
 package com.silong.foundation.plugins.log4j2;
 
 import com.github.javafaker.Faker;
+import com.silong.foundation.crypto.RootKey;
+import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomUtils;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 
 import static com.silong.foundation.plugins.log4j2.BuildInDesensitizer.*;
 import static com.silong.foundation.plugins.log4j2.Desensitizer.DEFAULT_REPLACE_STR;
@@ -38,6 +47,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DesensitizerTests {
 
   static Desensitizer desensitizer = BuildInDesensitizer.getInstance();
+
+  static RootKey rootKey;
+
+  String workKey;
+
+  String plaintext;
+
+  @BeforeAll
+  static void init() throws IOException {
+    Path dir = new File("target/test-classes").toPath();
+    RootKey.export(
+        RootKey.DEFAULT_ROOT_KEY_PARTS.stream()
+            .map(s -> dir.resolve(s).toFile())
+            .toArray(File[]::new));
+    rootKey = RootKey.initialize();
+  }
+
+  @BeforeEach
+  void initEatch() {
+    workKey = rootKey.encryptWorkKey(RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE)));
+    plaintext = RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE));
+  }
 
   @Test
   @DisplayName("IMEI-1")
@@ -152,14 +183,65 @@ public class DesensitizerTests {
     assertTrue(desensitize.contains(DEFAULT_REPLACE_STR));
   }
 
-//  @Test
-//  @DisplayName("PHONENUMBER-1")
-//  void test13() {
-//    Faker faker = new Faker();
-//    String cellPhone = faker.phoneNumber().cellPhone();
-//    String desensitize = INTERNATIONAL_PHONE_NUMBER.desensitize(cellPhone);
-//    assertEquals(cellPhone, desensitize);
-//  }
+  @Test
+  @DisplayName("SECURITY-1")
+  void test13() {
+    String encrypt = AesGcmToolkit.encrypt(plaintext, workKey);
+    String desensitize = SECURITY_BASE64.desensitize(encrypt);
+    assertEquals(DEFAULT_REPLACE_STR, desensitize);
+  }
+
+  @Test
+  @DisplayName("SECURITY-2")
+  void test14() {
+    String encrypt1 = AesGcmToolkit.encrypt(plaintext, workKey);
+    plaintext = RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE));
+    String encrypt2 = AesGcmToolkit.encrypt(plaintext, workKey);
+    String desensitize = SECURITY_BASE64.desensitize(encrypt1 + "abc" + encrypt2);
+    assertEquals(DEFAULT_REPLACE_STR + "abc" + DEFAULT_REPLACE_STR, desensitize);
+  }
+
+  @Test
+  @DisplayName("SECURITY-3")
+  void test15() {
+    String encrypt1 = AesGcmToolkit.encrypt(plaintext, workKey);
+    plaintext = RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE));
+    String encrypt2 = AesGcmToolkit.encrypt(plaintext, workKey);
+    String desensitize = SECURITY_BASE64.desensitize(encrypt1 + encrypt2);
+    assertEquals(DEFAULT_REPLACE_STR + DEFAULT_REPLACE_STR, desensitize);
+  }
+
+  @Test
+  @DisplayName("SECURITY-4")
+  void test16() {
+    String encrypt1 = AesGcmToolkit.encrypt(plaintext, workKey);
+    plaintext = RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE));
+    String encrypt2 = AesGcmToolkit.encrypt(plaintext, workKey);
+    String desensitize = SECURITY_BASE64.desensitize("a" + encrypt1 + "b" + encrypt2 + "c");
+    assertEquals("a" + DEFAULT_REPLACE_STR + "b" + DEFAULT_REPLACE_STR + "c", desensitize);
+  }
+
+  @Test
+  @DisplayName("EMAIL")
+  void test17() {
+    Faker faker = new Faker();
+    for (int i = 0; i < 100; i++) {
+      String emailAddress = faker.internet().emailAddress();
+      String desensitize = EMAIL.desensitize(emailAddress);
+      assertEquals(emailAddress, desensitize);
+    }
+  }
+
+  //  @Test
+  //  @DisplayName("CREDITCARD-1")
+  //  void test18() {
+  //    Faker faker = new Faker();
+  //    faker.idNumber().
+  //    String emailAddress1 = faker.internet().emailAddress();
+  //    String emailAddress2 = faker.internet().emailAddress();
+  //    String desensitize = EMAIL.desensitize(emailAddress1 + emailAddress2);
+  //    assertEquals(DEFAULT_REPLACE_STR, desensitize);
+  //  }
 
   //  @Test
   //  @DisplayName("IMEI-2")
