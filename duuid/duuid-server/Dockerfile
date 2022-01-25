@@ -1,20 +1,20 @@
 # 第一阶段使用 layertools 的 extract 命令将应用程序拆分为多个层  本次构建标记为builder
-FROM azul/zulu-openjdk:17.0.1-17.30.15-jre-headless as builder
+FROM azul/zulu-openjdk:17-jre-headless as builder
 
 WORKDIR application
 ARG JAR_FILE
 COPY ${JAR_FILE} app.jar
 RUN java -Djarmode=layertools -jar app.jar extract && rm app.jar
 
-FROM azul/zulu-openjdk:17.0.1-17.30.15-jre-headless
+FROM azul/zulu-openjdk:17-jre-headless
 
 LABEL maintainer="louis2sin@gmail.com"
-LABEL jre="17.0.1"
+LABEL jre="17"
 LABEL service-name="duuid-server"
 
 ENV TZ=Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-ENV JAVA_OPTS="-Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector -Dreactor.netty.http.server.accessLogEnabled=true -Xms128m -Xmx128m"
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && mkdir -p /opt/application/logs
+ENV JAVA_OPTS="-Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector -Dreactor.netty.http.server.accessLogEnabled=true -XX:MinRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0 -XX:+UseZGC -XX:+DisableExplicitGC -XX:ReservedCodeCacheSize=64m -XX:InitialCodeCacheSize=64m -XX:ConcGCThreads=2 -XX:ParallelGCThreads=6 -XX:ZCollectionInterval=120 -XX:ZAllocationSpikeTolerance=5 -XX:ZUncommitDelay=600 -XX:+UnlockDiagnosticVMOptions -XX:-ZProactive -Xlog:safepoint,classhisto*=trace,age*,gc*=info:file=/opt/application/logs/gc-%t.log:time,tid,tags:filecount=5,filesize=50m"
 
 WORKDIR application
 
