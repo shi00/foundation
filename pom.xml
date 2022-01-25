@@ -72,6 +72,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <main.basedir>${project.basedir}</main.basedir>
 
         <!-- 插件 -->
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -453,6 +454,8 @@
                     <consoleOutput>true</consoleOutput>
                     <excludes>
                         <exclude>**/zoo/**</exclude>
+                        <exclude>spotbugs-security-include.xml</exclude>
+                        <exclude>spotbugs-security-exclude.xml</exclude>
                         <exclude>**/log4j2.xml</exclude>
                         <exclude>**/Dockerfile</exclude>
                         <exclude>**/.dockerignore</exclude>
@@ -600,8 +603,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!--                    <includeFilterFile>spotbugs-security-include.xml</includeFilterFile>-->
-                    <!--                    <excludeFilterFile>spotbugs-security-exclude.xml</excludeFilterFile>-->
+                    <includeFilterFile>${main.basedir}/spotbugs-security-include.xml</includeFilterFile>
+                    <excludeFilterFile>${main.basedir}/spotbugs-security-exclude.xml</excludeFilterFile>
                     <failOnError>true</failOnError>
                     <effort>Low</effort>
                     <threshold>Medium</threshold>
