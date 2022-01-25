@@ -3,7 +3,7 @@
 <Configuration monitorInterval="60" name="duuid-server" status="warn" strict="true">
     <Properties>
         <!-- 日志打印根目录 -->
-        <Property name="baseDir">/opt/logs</Property>
+        <Property name="baseDir">/opt/application/logs</Property>
         <Property name="logFile">duuid-server</Property>
         <!-- 日志打印格式 -->
         <Property name="logging.pattern">%d{yyyy-MM-dd HH:mm:ss,SSS}:%4p %t %X{uuid} (%M:%F:%L) - %m%n
