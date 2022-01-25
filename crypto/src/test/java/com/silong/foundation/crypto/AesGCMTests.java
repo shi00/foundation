@@ -21,10 +21,7 @@ package com.silong.foundation.crypto;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,6 +59,7 @@ public class AesGCMTests {
   }
 
   @Test
+  @DisplayName("AESGCM-1")
   void test1() {
     String encrypt = AesGcmToolkit.encrypt(plaintext, workKey);
     String decrypt = AesGcmToolkit.decrypt(encrypt, workKey);
