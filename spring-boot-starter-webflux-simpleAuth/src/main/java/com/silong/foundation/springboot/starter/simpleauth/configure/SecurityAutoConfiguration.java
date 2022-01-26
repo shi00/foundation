@@ -21,9 +21,8 @@ package com.silong.foundation.springboot.starter.simpleauth.configure;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
 import com.silong.foundation.springboot.starter.simpleauth.security.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -51,40 +50,24 @@ import static org.springframework.security.config.web.server.SecurityWebFiltersO
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 public class SecurityAutoConfiguration {
   /** 服务名 */
-  @Value("${spring.application.name:webflux-server}")
   private String appName;
+
+  /** jackson */
+  private ObjectMapper objectMapper;
+
+  /** 配置 */
+  private SimpleAuthProperties simpleAuthProperties;
+
+  /** cors配置 */
+  private CorsConfigurationSource corsConfigurationSource;
 
   @Bean
   @ConditionalOnProperty(prefix = "simple-auth", value = "work-key")
-  @ConditionalOnBean({CorsConfigurationSource.class, ObjectMapper.class})
-  SecurityWebFilterChain springSecurityFilterChain(
-      ServerHttpSecurity http,
-      ObjectMapper objectMapper,
-      SimpleAuthProperties simpleAuthProperties,
-      CorsConfigurationSource corsConfigurationSource) {
-    // 提供cors配置确保前端页面可以跨域访问，因为管理端口和业务端口是分离的，不提供cors配置会导致页面无法访问
-    // 例如：swagger-ui页面
+  SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
     return configure(
             http,
             simpleAuthProperties,
             corsConfigurationSource,
-            new SimpleServerAuthenticationEntryPoint(appName, objectMapper),
-            new SimpleServerAccessDeniedHandler(appName, objectMapper))
-        .build();
-  }
-
-  @Bean
-  @ConditionalOnProperty(prefix = "simple-auth", value = "work-key")
-  @ConditionalOnBean({ObjectMapper.class})
-  @ConditionalOnMissingBean(CorsConfigurationSource.class)
-  SecurityWebFilterChain springSecurityFilterChain(
-      ServerHttpSecurity http,
-      ObjectMapper objectMapper,
-      SimpleAuthProperties simpleAuthProperties) {
-    return configure(
-            http,
-            simpleAuthProperties,
-            null,
             new SimpleServerAuthenticationEntryPoint(appName, objectMapper),
             new SimpleServerAccessDeniedHandler(appName, objectMapper))
         .build();
@@ -155,5 +138,25 @@ public class SecurityAutoConfiguration {
     authenticationWebFilter.setAuthenticationFailureHandler(
         new ServerAuthenticationEntryPointFailureHandler(simpleServerAuthenticationEntryPoint));
     return authenticationWebFilter;
+  }
+
+  @Autowired(required = false)
+  public void setCorsConfigurationSource(CorsConfigurationSource corsConfigurationSource) {
+    this.corsConfigurationSource = corsConfigurationSource;
+  }
+
+  @Autowired
+  public void setSimpleAuthProperties(SimpleAuthProperties simpleAuthProperties) {
+    this.simpleAuthProperties = simpleAuthProperties;
+  }
+
+  @Autowired
+  public void setObjectMapper(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
+
+  @Autowired
+  public void setAppName(@Value("${spring.application.name:webflux-server}") String appName) {
+    this.appName = appName;
   }
 }

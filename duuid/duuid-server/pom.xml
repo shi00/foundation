@@ -82,6 +82,10 @@
                     <plugin>
                         <groupId>org.springframework.experimental</groupId>
                         <artifactId>spring-aot-maven-plugin</artifactId>
+                        <configuration>
+                            <removeYamlSupport>true</removeYamlSupport>
+                            <removeSpelSupport>true</removeSpelSupport>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>test-generate</id>
