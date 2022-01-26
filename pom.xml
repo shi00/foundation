@@ -102,7 +102,7 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>2.6.2</spring-boot.version>
+        <spring-boot.version>2.6.3</spring-boot.version>
         <guava.version>31.0.1-jre</guava.version>
         <passay.version>1.6.1</passay.version>
         <zxcvbn.version>1.5.2</zxcvbn.version>
@@ -121,7 +121,7 @@
         <maven.version>3.8.4</maven.version>
         <plexus-utils.version>3.4.1</plexus-utils.version>
         <plexus-archiver.version>4.2.7</plexus-archiver.version>
-        <spring-native.version>0.11.1</spring-native.version>
+        <spring-native.version>0.11.2</spring-native.version>
         <!--开源组件-->
 
     </properties>
@@ -447,7 +447,7 @@
                 <plugin>
                     <groupId>org.springframework.experimental</groupId>
                     <artifactId>spring-aot-maven-plugin</artifactId>
-                    <version>${spring-native.version}}</version>
+                    <version>${spring-native.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
