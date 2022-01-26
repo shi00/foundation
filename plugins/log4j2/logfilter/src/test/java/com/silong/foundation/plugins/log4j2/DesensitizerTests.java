@@ -73,9 +73,11 @@ public class DesensitizerTests {
   @Test
   @DisplayName("IMEI-1")
   void test1() {
-    String imei = RandomIMEI.generateIMEI();
-    String desensitize = IMEI.desensitize(imei);
-    assertEquals(DEFAULT_REPLACE_STR, desensitize);
+    for (int i = 0; i < 100; i++) {
+      String imei = RandomIMEI.generateIMEI();
+      String desensitize = IMEI.desensitize(imei);
+      assertEquals(DEFAULT_REPLACE_STR, desensitize);
+    }
   }
 
   @Test
@@ -243,15 +245,17 @@ public class DesensitizerTests {
   //    assertEquals(DEFAULT_REPLACE_STR, desensitize);
   //  }
 
-  //  @Test
-  //  @DisplayName("IMEI-2")
-  //  void test33() {
-  //    String imei1 = "443187498504422";
-  //    String imei2 = "336919698689615";
-  //    String s1 = RandomStringUtils.randomAlphanumeric(10);
-  //    String s2 = RandomStringUtils.randomAlphanumeric(100);
-  //    String s3 = RandomStringUtils.randomAlphanumeric(20);
-  //    String desensitize = desensitizer.desensitize(s1 + imei1 + s2 + imei2 + s3);
-  //    assertEquals(s1 + DEFAULT_REPLACE_STR + s2 + DEFAULT_REPLACE_STR + s3, desensitize);
-  //  }
+  @Test
+  @DisplayName("COMPOSE-1")
+  void test33() {
+    Faker faker = new Faker();
+    String imei = RandomIMEI.generateIMEI();
+    String email = faker.internet().emailAddress();
+    String password = RandomIPassword.generatePassword(20);
+    String encrypt = AesGcmToolkit.encrypt(plaintext, workKey);
+    String s2 = RandomStringUtils.randomAlphanumeric(100);
+    String s3 = RandomStringUtils.randomAlphanumeric(20);
+    String desensitize = desensitizer.desensitize(encrypt + imei + s2 + email + s3 + password);
+    assertTrue(desensitize.contains(DEFAULT_REPLACE_STR));
+  }
 }
