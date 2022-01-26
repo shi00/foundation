@@ -29,7 +29,6 @@
     <name>duuid-server</name>
     <description>Duuid Generator Server built on webflux.</description>
     <properties>
-        <java.version>1.8</java.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
@@ -110,9 +109,9 @@
                                 <env>
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
                                 </env>
-                                <buildpacks>
-                                    <buildpack>gcr.io/paketo-buildpacks/java-native-image:7.1.0</buildpack>
-                                </buildpacks>
+<!--                                <buildpacks>-->
+<!--                                    <buildpack>gcr.io/paketo-buildpacks/java-native-image:7.6.0</buildpack>-->
+<!--                                </buildpacks>-->
                             </image>
                         </configuration>
                     </plugin>
