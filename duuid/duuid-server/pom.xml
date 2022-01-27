@@ -109,9 +109,6 @@
                                 <env>
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
                                 </env>
-<!--                                <buildpacks>-->
-<!--                                    <buildpack>gcr.io/paketo-buildpacks/java-native-image:7.6.0</buildpack>-->
-<!--                                </buildpacks>-->
                             </image>
                         </configuration>
                     </plugin>
