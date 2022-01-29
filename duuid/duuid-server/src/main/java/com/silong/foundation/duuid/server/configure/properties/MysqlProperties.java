@@ -18,26 +18,39 @@
  */
 package com.silong.foundation.duuid.server.configure.properties;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.NotEmpty;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
- * 服务配置
+ * 基于mysql的workerId分配器配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-03 11:31
+ * @since 2022-01-11 22:42
  */
 @Data
 @Validated
-@ConfigurationProperties(prefix = "duuid.server")
-public class DuuidServerProperties {
-  /** 服务端点路径，默认：/duuid */
-  @NotEmpty private String servicePath = "/duuid";
+@ConfigurationProperties(prefix = "duuid.worker-id-provider.mysql")
+@SuppressFBWarnings(
+    value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
+    justification = "只读初始配置")
+public class MysqlProperties {
+  /** 是否启用 */
+  private boolean enabled;
 
-  /** 工作密钥 */
-  @NotEmpty private String workKey;
+  /** jdbc url */
+  private String jdbcUrl = EMPTY;
+
+  /** jdbc驱动 */
+  private String jdbcDriver = EMPTY;
+
+  /** 用户名 */
+  private String userName = EMPTY;
+
+  /** 密码 */
+  private String password = EMPTY;
 }

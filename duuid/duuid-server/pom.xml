@@ -217,6 +217,16 @@
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>
+            <artifactId>mysql-workerid-provider</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.silong</groupId>
+            <artifactId>crypto</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.silong</groupId>
             <artifactId>id-generator</artifactId>
             <version>1.0.0</version>
         </dependency>

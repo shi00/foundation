@@ -37,11 +37,12 @@ import static java.sql.Statement.RETURN_GENERATED_KEYS;
 @Slf4j
 public class MysqlWorkerIdAllocator implements WorkerIdAllocator {
 
+  /** 插入SQL */
   private static final String INSERT_SQL =
       "INSERT INTO WORKER_ID_ALLOCATOR ( HOST_NAME ) VALUES ( ? )";
 
-  /** 建表脚本 */
-  public static final String CREATE_TABLE_SQL =
+  /** 建表SQL */
+  private static final String CREATE_TABLE_SQL =
       "CREATE TABLE IF NOT EXISTS WORKER_ID_ALLOCATOR"
           + "(ID        BIGINT       NOT NULL AUTO_INCREMENT COMMENT 'auto increment WORKER_ID',"
           + "HOST_NAME  VARCHAR(128) NOT NULL COMMENT 'host name',"

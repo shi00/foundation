@@ -19,11 +19,13 @@
 package com.silong.foundation.duuid.server.configure;
 
 import com.google.common.collect.ImmutableMap;
+import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.duuid.generator.DuuidGenerator;
 import com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator;
 import com.silong.foundation.duuid.server.configure.properties.DuuidGeneratorProperties;
 import com.silong.foundation.duuid.server.configure.properties.DuuidServerProperties;
 import com.silong.foundation.duuid.server.configure.properties.EtcdProperties;
+import com.silong.foundation.duuid.server.configure.properties.MysqlProperties;
 import com.silong.foundation.duuid.server.handlers.IdGeneratorHandler;
 import com.silong.foundation.duuid.server.model.Duuid;
 import com.silong.foundation.duuid.spi.WorkerIdAllocator;
@@ -49,12 +51,14 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
 import static com.silong.foundation.constants.HttpStatusCode.*;
 import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.SYSTEM_CLOCK_PROVIDER;
 import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
+import static com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator.*;
 import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
@@ -74,6 +78,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 @EnableConfigurationProperties({
   DuuidGeneratorProperties.class,
   EtcdProperties.class,
+  MysqlProperties.class,
   DuuidServerProperties.class
 })
 @SuppressFBWarnings(
@@ -85,6 +90,8 @@ public class RoutesAutoConfiguration {
   private DuuidGeneratorProperties generatorProperties;
 
   private EtcdProperties etcdProperties;
+
+  private MysqlProperties mysqlProperties;
 
   private DuuidServerProperties serverProperties;
 
@@ -108,6 +115,38 @@ public class RoutesAutoConfiguration {
 
   @Bean
   WorkerInfo registerWorkerInfo() {
+    WorkerInfo workerInfo =
+        etcdProperties.isEnabled()
+            ? buildEtcdWorkerInfo()
+            : mysqlProperties.isEnabled() ? buildMysqlWorkerInfo() : null;
+    if (workerInfo == null) {
+      throw new IllegalStateException("There is no valid WorkerInfo.");
+    }
+    return workerInfo;
+  }
+
+  private WorkerInfo buildMysqlWorkerInfo() {
+    return WorkerInfo.builder()
+        .name(SystemUtils.getHostName())
+        .extraInfo(
+            Map.of(
+                JDBC_DRIVER,
+                mysqlProperties.getJdbcDriver(),
+                HOST_NAME,
+                SystemUtils.getHostName(),
+                JDBC_URL,
+                mysqlProperties.getJdbcUrl(),
+                USER,
+                mysqlProperties.getUserName(),
+                PASSWORD,
+                StringUtils.isEmpty(mysqlProperties.getPassword())
+                    ? mysqlProperties.getPassword()
+                    : AesGcmToolkit.decrypt(
+                        mysqlProperties.getPassword(), serverProperties.getWorkKey())))
+        .build();
+  }
+
+  private WorkerInfo buildEtcdWorkerInfo() {
     return WorkerInfo.builder()
         .name(SystemUtils.getHostName())
         .extraInfo(
@@ -123,7 +162,10 @@ public class RoutesAutoConfiguration {
                 ETCDV3_USER,
                 etcdProperties.getUserName(),
                 ETCDV3_PASSWORD,
-                etcdProperties.getPassword()))
+                StringUtils.isEmpty(etcdProperties.getPassword())
+                    ? etcdProperties.getPassword()
+                    : AesGcmToolkit.decrypt(
+                        etcdProperties.getPassword(), serverProperties.getWorkKey())))
         .build();
   }
 
@@ -191,6 +233,11 @@ public class RoutesAutoConfiguration {
   @Autowired
   public void setGeneratorProperties(DuuidGeneratorProperties generatorProperties) {
     this.generatorProperties = generatorProperties;
+  }
+
+  @Autowired
+  public void setMysqlProperties(MysqlProperties mysqlProperties) {
+    this.mysqlProperties = mysqlProperties;
   }
 
   @Autowired
