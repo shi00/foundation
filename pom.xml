@@ -59,6 +59,7 @@
         <module>duuid/idgen</module>
         <module>duuid/workerid-provider</module>
         <module>duuid/etcdv3-workerid-provider</module>
+        <module>duuid/mysql-workerid-provider</module>
         <module>duuid/duuid-server</module>
         <module>common-objects</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
@@ -99,10 +100,13 @@
         <maven-plugin-api.version>3.8.4</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.6.4</maven-plugin-annotations.version>
         <maven-plugin-plugin.version>3.6.4</maven-plugin-plugin.version>
+        <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
+        <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
         <spring-boot.version>2.6.3</spring-boot.version>
+        <spring-cloud.version>2021.0.0</spring-cloud.version>
         <guava.version>31.0.1-jre</guava.version>
         <passay.version>1.6.1</passay.version>
         <zxcvbn.version>1.5.2</zxcvbn.version>
@@ -121,6 +125,7 @@
         <plexus-utils.version>3.4.1</plexus-utils.version>
         <plexus-archiver.version>4.2.7</plexus-archiver.version>
         <spring-native.version>0.11.2</spring-native.version>
+        <hutool.version>5.7.20</hutool.version>
         <!--开源组件-->
 
     </properties>
@@ -131,6 +136,13 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -283,6 +295,14 @@
             </dependency>
             <!-- apache -->
 
+            <!-- Hutool -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-db</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <!-- Hutool -->
+
             <!-- maven 插件开发-->
             <dependency>
                 <groupId>org.apache.maven.plugin-testing</groupId>
@@ -431,6 +451,11 @@
                     <version>${findbugs-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean-plugin.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>${jacoco-maven-plugin.version}</version>
@@ -439,6 +464,11 @@
                     <groupId>org.springframework.experimental</groupId>
                     <artifactId>spring-aot-maven-plugin</artifactId>
                     <version>${spring-native.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -467,6 +497,7 @@
                         <exclude>**/Dockerfile</exclude>
                         <exclude>**/.dockerignore</exclude>
                         <exclude>**/*.properties</exclude>
+                        <exclude>**/*.sql</exclude>
                         <!-- Git related files -->
                         <exclude>**/.git/**</exclude>
                         <exclude>**/.mvn/**</exclude>
