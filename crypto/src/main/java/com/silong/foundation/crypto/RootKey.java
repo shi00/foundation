@@ -168,7 +168,7 @@ public final class RootKey {
       if (parentFile.mkdirs()) {
         log.info("{} was successfully created.", parentFile.getCanonicalPath());
       }
-      Files.writeString(path, rootKeyParts[i], CREATE, WRITE, TRUNCATE_EXISTING);
+      Files.writeString(path, rootKeyParts[i], UTF_8, CREATE, WRITE, TRUNCATE_EXISTING);
     }
   }
 
