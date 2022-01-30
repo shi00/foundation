@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.duuid.server;
 
+import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,12 +80,14 @@ class DuuidServerApplicationMysqlTests extends AbstractIT {
           .resolve(APPLICATION_PROPERTIES)
           .toFile();
 
+  private static final String PASSWORD = "Test@1234";
+
   @Container
   private static final MySQLContainer MYSQL_CONTAINER =
       new MySQLContainer(MYSQL_8_0_28)
           .withDatabaseName("test_db")
           .withUsername("root")
-          .withPassword("Test@1234");
+          .withPassword(PASSWORD);
 
   /**
    * 初始化etcd容器，并更新服务配置
@@ -97,6 +100,9 @@ class DuuidServerApplicationMysqlTests extends AbstractIT {
     Properties applicationProperties = new Properties();
     try (Reader in = new FileReader(TEMPLATE_FILE)) {
       applicationProperties.load(in);
+      applicationProperties.setProperty("simple-auth.work-key", workKey);
+      applicationProperties.setProperty(
+          "duuid.worker-id-provider.mysql.password", AesGcmToolkit.encrypt(PASSWORD, workKey));
       applicationProperties.setProperty(
           "duuid.worker-id-provider.mysql.jdbc-url", MYSQL_CONTAINER.getJdbcUrl());
     }

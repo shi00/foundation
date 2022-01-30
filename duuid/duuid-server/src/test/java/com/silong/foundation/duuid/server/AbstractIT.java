@@ -1,8 +1,12 @@
 package com.silong.foundation.duuid.server;
 
+import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.digest.HmacToolkit;
 import com.silong.foundation.duuid.server.model.Duuid;
 import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +17,9 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -35,6 +42,9 @@ import static org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtil
  */
 abstract class AbstractIT {
 
+  /** 工作密钥 */
+  static String workKey;
+
   @LocalServerPort private int port;
 
   @Value("${management.server.port}")
@@ -53,6 +63,17 @@ abstract class AbstractIT {
   private String swaggerUiEndpoint;
 
   private HttpHeaders headers;
+
+  @BeforeAll
+  static void initRootKey() throws IOException {
+    Path dir = new File("target/test-classes").toPath();
+    RootKey.export(
+        RootKey.DEFAULT_ROOT_KEY_PARTS.stream()
+            .map(s -> dir.resolve(s).toFile())
+            .toArray(File[]::new));
+    RootKey rootKey = RootKey.initialize();
+    workKey = rootKey.encryptWorkKey(RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE)));
+  }
 
   @BeforeEach
   void init() {

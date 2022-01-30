@@ -93,6 +93,7 @@ class DuuidServerApplicationEtcdTests extends AbstractIT {
     Properties applicationProperties = new Properties();
     try (Reader in = new FileReader(TEMPLATE_FILE)) {
       applicationProperties.load(in);
+      applicationProperties.setProperty("simple-auth.work-key", workKey);
       applicationProperties.setProperty(
           "duuid.worker-id-provider.etcdv3.server-addresses",
           container.clientEndpoint().toString());
