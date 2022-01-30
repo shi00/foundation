@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.duuid.server.configure;
 
-import com.google.common.collect.ImmutableMap;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.duuid.generator.DuuidGenerator;
 import com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator;
@@ -150,7 +149,7 @@ public class RoutesAutoConfiguration {
     return WorkerInfo.builder()
         .name(SystemUtils.getHostName())
         .extraInfo(
-            ImmutableMap.of(
+            Map.of(
                 ETCDV3_ENDPOINTS,
                 String.join(",", etcdProperties.getServerAddresses()),
                 ETCDV3_TRUST_CERT_COLLECTION_FILE,
