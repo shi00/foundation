@@ -23,9 +23,6 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -48,7 +45,7 @@ public class EtcdProperties {
   private boolean enabled;
 
   /** 服务器地址 */
-  @NotEmpty @Valid private List<@NotBlank String> serverAddresses;
+  private List<String> serverAddresses;
 
   /**
    * Trusted certificates for verifying the remote endpoint's certificate. The file should contain
