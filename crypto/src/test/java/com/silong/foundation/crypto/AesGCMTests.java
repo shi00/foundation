@@ -63,6 +63,6 @@ public class AesGCMTests {
   void test1() {
     String encrypt = AesGcmToolkit.encrypt(plaintext, workKey);
     String decrypt = AesGcmToolkit.decrypt(encrypt, workKey);
-    Assertions.assertEquals(decrypt, plaintext);
+    Assertions.assertEquals(plaintext, decrypt);
   }
 }
