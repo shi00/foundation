@@ -21,11 +21,17 @@ package com.silong.foundation.crypto;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * 单元测试
@@ -38,7 +44,7 @@ public class AesGCMTests {
 
   static RootKey rootKey;
 
-  String workKey;
+  static String workKey;
 
   String plaintext;
 
@@ -50,12 +56,12 @@ public class AesGCMTests {
             .map(s -> dir.resolve(s).toFile())
             .toArray(File[]::new));
     rootKey = RootKey.initialize();
+    workKey = rootKey.encryptWorkKey(RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE)));
   }
 
   @BeforeEach
   void initEatch() {
     plaintext = RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE));
-    workKey = rootKey.encryptWorkKey(RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE)));
   }
 
   @Test
@@ -63,6 +69,19 @@ public class AesGCMTests {
   void test1() {
     String encrypt = AesGcmToolkit.encrypt(plaintext, workKey);
     String decrypt = AesGcmToolkit.decrypt(encrypt, workKey);
-    Assertions.assertEquals(plaintext, decrypt);
+    assertEquals(plaintext, decrypt);
+  }
+
+  @Test
+  @DisplayName("AESGCM-2")
+  void test2() {
+    for (int i = 0; i < 100000; i++) {
+      String encrypt1 = AesGcmToolkit.encrypt(plaintext, workKey);
+      String encrypt2 = AesGcmToolkit.encrypt(plaintext, workKey);
+      assertNotEquals(encrypt1, encrypt2);
+      String decrypt1 = AesGcmToolkit.decrypt(encrypt1, workKey);
+      String decrypt2 = AesGcmToolkit.decrypt(encrypt2, workKey);
+      assertEquals(decrypt1, decrypt2);
+    }
   }
 }
