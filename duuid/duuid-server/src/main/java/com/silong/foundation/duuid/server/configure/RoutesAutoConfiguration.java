@@ -27,6 +27,8 @@ import com.silong.foundation.duuid.server.configure.properties.EtcdProperties;
 import com.silong.foundation.duuid.server.configure.properties.MysqlProperties;
 import com.silong.foundation.duuid.server.handlers.IdGeneratorHandler;
 import com.silong.foundation.duuid.server.model.Duuid;
+import com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator;
+import com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerInfo;
 import com.silong.foundation.model.ErrorDetail;
@@ -95,57 +97,29 @@ public class RoutesAutoConfiguration {
   private DuuidServerProperties serverProperties;
 
   @Bean
-  WorkerIdAllocator registerWorkerIdAllocator() {
-    ServiceLoader<WorkerIdAllocator> workerIdAllocators =
-        ServiceLoader.load(WorkerIdAllocator.class);
-    return StreamSupport.stream(
-            spliteratorUnknownSize(workerIdAllocators.iterator(), ORDERED), false)
-        .filter(
-            allocator ->
-                StringUtils.isEmpty(generatorProperties.getWorkerIdAllocatorFqdn())
-                    || allocator
-                        .getClass()
-                        .getName()
-                        .equals(generatorProperties.getWorkerIdAllocatorFqdn()))
-        .findFirst()
-        .orElseThrow(
-            () -> new RuntimeException("No WorkerIdAllocator implementation could be found."));
+  @ConditionalOnProperty(
+      prefix = "duuid.worker-id-provider.etcdv3",
+      value = "enabled",
+      havingValue = "true")
+  WorkerIdAllocator registerEtcdV3WorkerIdAllocator() {
+    return load(Etcdv3WorkerIdAllocator.class.getName());
   }
 
   @Bean
-  WorkerInfo registerWorkerInfo() {
-    WorkerInfo workerInfo =
-        etcdProperties.isEnabled()
-            ? buildEtcdWorkerInfo()
-            : mysqlProperties.isEnabled() ? buildMysqlWorkerInfo() : null;
-    if (workerInfo == null) {
-      throw new IllegalStateException("There is no valid WorkerInfo.");
-    }
-    return workerInfo;
+  @ConditionalOnProperty(
+      prefix = "duuid.worker-id-provider.mysql",
+      value = "enabled",
+      havingValue = "true")
+  WorkerIdAllocator registerMysqlWorkerIdAllocator() {
+    return load(MysqlWorkerIdAllocator.class.getName());
   }
 
-  private WorkerInfo buildMysqlWorkerInfo() {
-    return WorkerInfo.builder()
-        .name(SystemUtils.getHostName())
-        .extraInfo(
-            Map.of(
-                JDBC_DRIVER,
-                mysqlProperties.getJdbcDriver(),
-                HOST_NAME,
-                SystemUtils.getHostName(),
-                JDBC_URL,
-                mysqlProperties.getJdbcUrl(),
-                USER,
-                mysqlProperties.getUserName(),
-                PASSWORD,
-                StringUtils.isEmpty(mysqlProperties.getPassword())
-                    ? mysqlProperties.getPassword()
-                    : AesGcmToolkit.decrypt(
-                        mysqlProperties.getPassword(), serverProperties.getWorkKey())))
-        .build();
-  }
-
-  private WorkerInfo buildEtcdWorkerInfo() {
+  @Bean
+  @ConditionalOnProperty(
+      prefix = "duuid.worker-id-provider.etcdv3",
+      value = "enabled",
+      havingValue = "true")
+  WorkerInfo registerEtcdV3WorkerInfo() {
     return WorkerInfo.builder()
         .name(SystemUtils.getHostName())
         .extraInfo(
@@ -168,11 +142,33 @@ public class RoutesAutoConfiguration {
         .build();
   }
 
-  @Bean(destroyMethod = "close")
+  @Bean
   @ConditionalOnProperty(
-      prefix = "duuid.worker-id-provider.etcdv3",
+      prefix = "duuid.worker-id-provider.mysql",
       value = "enabled",
       havingValue = "true")
+  WorkerInfo registerMysqlWorkerInfo() {
+    return WorkerInfo.builder()
+        .name(SystemUtils.getHostName())
+        .extraInfo(
+            Map.of(
+                JDBC_DRIVER,
+                mysqlProperties.getJdbcDriver(),
+                HOST_NAME,
+                SystemUtils.getHostName(),
+                JDBC_URL,
+                mysqlProperties.getJdbcUrl(),
+                USER,
+                mysqlProperties.getUserName(),
+                PASSWORD,
+                StringUtils.isEmpty(mysqlProperties.getPassword())
+                    ? mysqlProperties.getPassword()
+                    : AesGcmToolkit.decrypt(
+                        mysqlProperties.getPassword(), serverProperties.getWorkKey())))
+        .build();
+  }
+
+  @Bean(destroyMethod = "close")
   DuuidGenerator registerIdGenerator(WorkerIdAllocator allocator, WorkerInfo workerInfo) {
     return new CircularQueueDuuidGenerator(
         generatorProperties.getWorkerIdBits(),
@@ -227,6 +223,16 @@ public class RoutesAutoConfiguration {
                   })))
   RouterFunction<ServerResponse> routes(IdGeneratorHandler handler) {
     return RouterFunctions.route(POST(serverProperties.getServicePath()).and(accept(ALL)), handler);
+  }
+
+  private WorkerIdAllocator load(String fqdn) {
+    return StreamSupport.stream(
+            spliteratorUnknownSize(ServiceLoader.load(WorkerIdAllocator.class).iterator(), ORDERED),
+            false)
+        .filter(allocator -> allocator.getClass().getName().equals(fqdn))
+        .findAny()
+        .orElseThrow(
+            () -> new RuntimeException("No WorkerIdAllocator implementation could be found."));
   }
 
   @Autowired

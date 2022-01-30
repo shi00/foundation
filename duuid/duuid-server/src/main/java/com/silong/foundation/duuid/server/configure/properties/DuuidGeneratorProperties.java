@@ -58,7 +58,4 @@ public class DuuidGeneratorProperties {
 
   /** 是否开启生成id随机增长，避免出现连续id */
   private boolean enableSequenceRandom;
-
-  /** 启用的workerId分配器权限定名 */
-  private String workerIdAllocatorFqdn;
 }
