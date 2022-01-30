@@ -42,9 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  */
 public class AesGCMTests {
 
-  static RootKey rootKey;
-
-  static String workKey;
+  private static String workKey;
 
   String plaintext;
 
@@ -55,7 +53,7 @@ public class AesGCMTests {
         RootKey.DEFAULT_ROOT_KEY_PARTS.stream()
             .map(s -> dir.resolve(s).toFile())
             .toArray(File[]::new));
-    rootKey = RootKey.initialize();
+    RootKey rootKey = RootKey.initialize();
     workKey = rootKey.encryptWorkKey(RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE)));
   }
 
