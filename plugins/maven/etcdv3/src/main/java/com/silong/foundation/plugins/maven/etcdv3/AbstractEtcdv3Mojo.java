@@ -39,21 +39,21 @@ public abstract class AbstractEtcdv3Mojo extends AbstractMojo {
 
   /** etcd镜像 */
   @Parameter(property = "etcd.server.image", required = true)
-  public String image;
+  protected String image;
 
   /** etcd容器名 */
   @Parameter(property = "etcd.server.node")
-  public String nodeName;
+  protected String nodeName;
 
   /** 是否忽略执行 */
   @Parameter(property = "etcd.server.skip", defaultValue = "false")
-  public boolean skip;
+  protected boolean skip;
 
   /** 访问端点 */
   @Parameter(property = "etcd.server.endpoint", required = true)
-  public String endpoint;
+  protected String endpoint;
 
   /** @since 1.2 */
   @Parameter(readonly = true, defaultValue = "${project}")
-  public MavenProject project;
+  protected MavenProject project;
 }
