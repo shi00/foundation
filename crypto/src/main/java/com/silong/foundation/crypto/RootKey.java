@@ -43,7 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
@@ -59,8 +58,7 @@ public final class RootKey {
 
   /** 默认根密钥保存路径 */
   public static final List<String> DEFAULT_ROOT_KEY_PARTS =
-      unmodifiableList(
-          Arrays.asList("zoo/tiger", "zoo/north/penguin", "zoo/south/skunk", "zoo/west/peacock"));
+      List.of("zoo/tiger", "zoo/north/penguin", "zoo/south/skunk", "zoo/west/peacock");
 
   /** 是否启用缓存 */
   public static final boolean ENABLED_CACHE =
