@@ -164,6 +164,9 @@
                                         <argument>--duuid.worker-id-provider.etcdv3.server-addresses=${etcdv3.endpoint}
                                         </argument>
                                     </arguments>
+                                    <profiles>
+                                        <profile>etcd</profile>
+                                    </profiles>
                                 </configuration>
                             </execution>
                             <execution>
@@ -357,6 +360,20 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!-- This is where the exclusion occurs -->
+                        <exclude>**/application*.properties</exclude>
+                        <exclude>**/zoo/*</exclude>
+                        <exclude>**/zoo/north/*</exclude>
+                        <exclude>**/zoo/south/*</exclude>
+                        <exclude>**/zoo/west/*</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
