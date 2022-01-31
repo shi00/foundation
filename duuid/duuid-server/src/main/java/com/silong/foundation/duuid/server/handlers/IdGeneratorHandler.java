@@ -20,7 +20,9 @@ package com.silong.foundation.duuid.server.handlers;
 
 import com.silong.foundation.duuid.generator.DuuidGenerator;
 import com.silong.foundation.duuid.server.model.Duuid;
-import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -49,15 +51,37 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
   /** id生成器 */
   private final DuuidGenerator duuidGenerator;
 
+  /** 请求总量计数器 */
+  private final Counter totalRequests;
+
+  /** 请求成功总量计数器 */
+  private final Counter totalSucceededRequests;
+
+  /** 请求失败总量计数器 */
+  private final Counter totalFailedRequests;
+
+  /** 方法耗时 */
+  private final Timer timer;
+
   /**
    * 构造方法
    *
    * @param serviceName 服务名
    * @param duuidGenerator id生成器
+   * @param meterRegistry prometheus
    */
-  public IdGeneratorHandler(@NonNull String serviceName, @NonNull DuuidGenerator duuidGenerator) {
+  public IdGeneratorHandler(
+      @NonNull String serviceName,
+      @NonNull DuuidGenerator duuidGenerator,
+      @NonNull MeterRegistry meterRegistry) {
     this.serviceName = serviceName;
     this.duuidGenerator = duuidGenerator;
+    this.totalRequests = meterRegistry.counter("requests_total", "interface", "nextId");
+    this.totalSucceededRequests =
+        meterRegistry.counter("requests_succeeded_total", "interface", "nextId");
+    this.totalFailedRequests =
+        meterRegistry.counter("requests_failed_total", "interface", "nextId");
+    this.timer = meterRegistry.timer("time-consuming", "interface", "nextId");
   }
 
   /**
@@ -67,17 +91,22 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
    * @return 响应
    */
   @Override
-  @Timed(value = "nextId.time", description = "Time taken to return duuid.")
   public Mono<ServerResponse> handle(ServerRequest request) {
-    return ServerResponse.ok()
-        .contentType(APPLICATION_JSON)
-        .body(BodyInserters.fromValue(new Duuid(duuidGenerator.nextId())))
-        .onErrorResume(
-            t -> {
-              log.error("Failed to generate id.", t);
-              return ServerResponse.status(INTERNAL_SERVER_ERROR)
-                  .contentType(APPLICATION_JSON)
-                  .body(BodyInserters.fromValue(SERVICE_INTERNAL_ERROR.format(serviceName)));
-            });
+    return timer.record(
+        () ->
+            ServerResponse.ok()
+                .contentType(APPLICATION_JSON)
+                .body(BodyInserters.fromValue(new Duuid(duuidGenerator.nextId())))
+                .doOnNext(serverResponse -> totalRequests.increment())
+                .doOnSuccess(serverResponse -> totalSucceededRequests.increment())
+                .onErrorResume(
+                    t -> {
+                      log.error("Failed to generate id.", t);
+                      totalFailedRequests.increment();
+                      return ServerResponse.status(INTERNAL_SERVER_ERROR)
+                          .contentType(APPLICATION_JSON)
+                          .body(
+                              BodyInserters.fromValue(SERVICE_INTERNAL_ERROR.format(serviceName)));
+                    }));
   }
 }

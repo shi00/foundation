@@ -40,4 +40,7 @@ public class DuuidServerProperties {
 
   /** 工作密钥 */
   @NotEmpty private String workKey;
+
+  /** 服务部署数据中心 */
+  @NotEmpty private String dataCenter;
 }

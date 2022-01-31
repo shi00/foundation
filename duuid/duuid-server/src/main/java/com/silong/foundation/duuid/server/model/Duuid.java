@@ -33,6 +33,7 @@ import lombok.experimental.Accessors;
  */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 @Accessors(fluent = true)
 public class Duuid {
   /** 生成的duuid */
