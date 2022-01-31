@@ -185,7 +185,7 @@ public class RoutesAutoConfiguration {
 
   @Bean
   IdGeneratorHandler registerHandler(
-      @Value("spring.application.name") String applicationName,
+      @Value("${spring.application.name}") String applicationName,
       DuuidGenerator duuidGenerator,
       MeterRegistry meterRegistry) {
     return new IdGeneratorHandler(applicationName, duuidGenerator, meterRegistry);
