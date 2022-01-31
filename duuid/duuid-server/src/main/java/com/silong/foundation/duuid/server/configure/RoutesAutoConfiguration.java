@@ -33,6 +33,7 @@ import com.silong.foundation.duuid.spi.WorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerInfo;
 import com.silong.foundation.model.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -184,8 +185,10 @@ public class RoutesAutoConfiguration {
 
   @Bean
   IdGeneratorHandler registerHandler(
-      @Value("spring.application.name") String applicationName, DuuidGenerator duuidGenerator) {
-    return new IdGeneratorHandler(applicationName, duuidGenerator);
+      @Value("spring.application.name") String applicationName,
+      DuuidGenerator duuidGenerator,
+      MeterRegistry meterRegistry) {
+    return new IdGeneratorHandler(applicationName, duuidGenerator, meterRegistry);
   }
 
   @Bean
