@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.plugins.log4j2;
+package com.silong.foundation.plugins.log4j2.desensitization;
 
 import java.util.Arrays;
 

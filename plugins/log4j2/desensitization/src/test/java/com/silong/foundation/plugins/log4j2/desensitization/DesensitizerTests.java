@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.plugins.log4j2;
+package com.silong.foundation.plugins.log4j2.desensitization;
 
 import com.github.javafaker.Faker;
 import com.silong.foundation.crypto.RootKey;
@@ -32,8 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import static com.silong.foundation.plugins.log4j2.BuildInDesensitizer.*;
-import static com.silong.foundation.plugins.log4j2.Desensitizer.DEFAULT_REPLACE_STR;
+import static com.silong.foundation.plugins.log4j2.desensitization.BuildInDesensitizer.*;
+import static com.silong.foundation.plugins.log4j2.desensitization.Desensitizer.DEFAULT_REPLACE_STR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

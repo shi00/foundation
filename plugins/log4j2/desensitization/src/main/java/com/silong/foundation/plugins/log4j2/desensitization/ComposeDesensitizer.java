@@ -16,9 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.plugins.log4j2;
+package com.silong.foundation.plugins.log4j2.desensitization;
 
 import com.silong.foundation.model.Tuple3;
+import com.silong.foundation.plugins.log4j2.desensitization.Desensitizer;
 
 import java.io.Closeable;
 import java.util.*;

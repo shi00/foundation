@@ -26,7 +26,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <description>Desensitize log information to avoid information leakage.</description>
-    <artifactId>logfilter</artifactId>
+    <artifactId>desensitization-log4j2</artifactId>
     <version>1.0.0</version>
 
     <properties>
