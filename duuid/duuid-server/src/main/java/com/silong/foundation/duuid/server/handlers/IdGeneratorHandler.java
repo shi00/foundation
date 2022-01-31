@@ -43,8 +43,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @Slf4j
 public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
 
-  private static final ThreadLocal<Duuid> DUUID_THREAD_LOCAL = ThreadLocal.withInitial(Duuid::new);
-
   /** 服务名 */
   private final String serviceName;
 
@@ -73,7 +71,7 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
   public Mono<ServerResponse> handle(ServerRequest request) {
     return ServerResponse.ok()
         .contentType(APPLICATION_JSON)
-        .body(BodyInserters.fromValue(DUUID_THREAD_LOCAL.get().id(duuidGenerator.nextId())))
+        .body(BodyInserters.fromValue(new Duuid(duuidGenerator.nextId())))
         .onErrorResume(
             t -> {
               log.error("Failed to generate id.", t);
