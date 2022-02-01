@@ -43,12 +43,20 @@ public class PrometheusAutoConfiguration {
   @Bean
   MeterRegistryCustomizer<MeterRegistry> metricsCommonTags(
       @Value("${spring.application.name}") String applicationName,
+      @Value("${duuid.server.region}") String region,
       @Value("${duuid.server.data-center}") String dataCenter) {
     return registry ->
         registry
             .config()
             .commonTags(
-                "service", applicationName, "host", getHostName(), "data-center", dataCenter)
+                "service",
+                applicationName,
+                "host",
+                getHostName(),
+                "region",
+                region,
+                "data-center",
+                dataCenter)
             .meterFilter(
                 new MeterFilter() {
                   @Override
@@ -57,15 +65,22 @@ public class PrometheusAutoConfiguration {
                     return id.getType() == Meter.Type.TIMER
                         ? DistributionStatisticConfig.builder()
                             .percentilesHistogram(true)
-                            .percentiles(0.50, 0.90, 0.95, 0.99)
+                            .percentiles(0.50, 0.75, 0.90, 0.95, 0.99)
                             .serviceLevelObjectives(
-                                Duration.ofMillis(50).toNanos(),
-                                Duration.ofMillis(100).toNanos(),
-                                Duration.ofMillis(200).toNanos(),
-                                Duration.ofSeconds(1).toNanos(),
-                                Duration.ofSeconds(5).toNanos())
+                                Duration.ofMillis(1).toNanos(),
+                                Duration.ofMillis(2).toNanos(),
+                                Duration.ofMillis(3).toNanos(),
+                                Duration.ofMillis(4).toNanos(),
+                                Duration.ofMillis(5).toNanos(),
+                                Duration.ofMillis(6).toNanos(),
+                                Duration.ofMillis(7).toNanos(),
+                                Duration.ofMillis(8).toNanos(),
+                                Duration.ofMillis(9).toNanos(),
+                                Duration.ofMillis(10).toNanos(),
+                                Duration.ofMillis(15).toNanos(),
+                                Duration.ofMillis(20).toNanos())
                             .minimumExpectedValue(Duration.ofMillis(1).toNanos())
-                            .maximumExpectedValue(Duration.ofSeconds(5).toNanos())
+                            .maximumExpectedValue(Duration.ofMillis(20).toNanos())
                             .build()
                             .merge(config)
                         : config;

@@ -81,7 +81,7 @@ public class IdGeneratorHandler implements HandlerFunction<ServerResponse> {
         meterRegistry.counter("requests_succeeded_total", "interface", "nextId");
     this.totalFailedRequests =
         meterRegistry.counter("requests_failed_total", "interface", "nextId");
-    this.timer = meterRegistry.timer("time-consuming", "interface", "nextId");
+    this.timer = meterRegistry.timer("requests_duration", "interface", "nextId");
   }
 
   /**

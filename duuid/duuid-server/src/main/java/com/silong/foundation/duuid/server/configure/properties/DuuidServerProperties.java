@@ -41,6 +41,9 @@ public class DuuidServerProperties {
   /** 工作密钥 */
   @NotEmpty private String workKey;
 
+  /** 服务部署区域 */
+  @NotEmpty private String region = "default-region";
+
   /** 服务部署数据中心 */
-  @NotEmpty private String dataCenter;
+  @NotEmpty private String dataCenter = "default-dc";
 }
