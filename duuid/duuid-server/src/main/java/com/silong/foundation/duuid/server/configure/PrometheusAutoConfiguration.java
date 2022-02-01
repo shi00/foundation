@@ -39,8 +39,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(PrometheusProperties.class)
 public class PrometheusAutoConfiguration {
+  /**
+   * 定制MeterRegistry
+   *
+   * @param applicationName 应用名
+   * @param prometheusProperties 普罗配置
+   * @return 定制器
+   */
   @Bean
-  MeterRegistryCustomizer<MeterRegistry> metricsCommonTags(
+  MeterRegistryCustomizer<MeterRegistry> customMeterRegistry(
       @Value("${spring.application.name}") String applicationName,
       PrometheusProperties prometheusProperties) {
     return registry ->
