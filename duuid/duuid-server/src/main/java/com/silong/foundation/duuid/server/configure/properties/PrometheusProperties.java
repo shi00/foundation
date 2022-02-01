@@ -24,20 +24,34 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotEmpty;
 
+import static org.apache.commons.lang3.SystemUtils.getHostName;
+
 /**
- * 服务配置
+ * 普罗米修斯配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-03 11:31
+ * @since 2022-02-01 11:16
  */
 @Data
 @Validated
-@ConfigurationProperties(prefix = "duuid.server")
-public class DuuidServerProperties {
-  /** 服务端点路径，默认：/duuid */
-  @NotEmpty private String servicePath = "/duuid";
+@ConfigurationProperties(prefix = "duuid.server.prometheus")
+public class PrometheusProperties {
+  /** 定制百分位 */
+  @NotEmpty private double[] percentiles;
 
-  /** 工作密钥 */
-  @NotEmpty private String workKey;
+  /** slo定制，单位：纳秒 */
+  @NotEmpty private double[] slo;
+
+  /** 服务部署区域 */
+  @NotEmpty private String region = "default-region";
+
+  /** 服务部署数据中心 */
+  @NotEmpty private String dataCenter = "default-dc";
+
+  /** 云服务提供商 */
+  @NotEmpty private String cloudProvider = "default";
+
+  /** 主机名 */
+  @NotEmpty private String host = getHostName();
 }

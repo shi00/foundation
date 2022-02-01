@@ -18,18 +18,16 @@
  */
 package com.silong.foundation.duuid.server.configure;
 
+import com.silong.foundation.duuid.server.configure.properties.PrometheusProperties;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.time.Duration;
-
-import static org.apache.commons.lang3.SystemUtils.getHostName;
 
 /**
  * prometheus 自动装配
@@ -39,24 +37,26 @@ import static org.apache.commons.lang3.SystemUtils.getHostName;
  * @since 2022-01-15 14:52
  */
 @Configuration
+@EnableConfigurationProperties(PrometheusProperties.class)
 public class PrometheusAutoConfiguration {
   @Bean
   MeterRegistryCustomizer<MeterRegistry> metricsCommonTags(
       @Value("${spring.application.name}") String applicationName,
-      @Value("${duuid.server.region}") String region,
-      @Value("${duuid.server.data-center}") String dataCenter) {
+      PrometheusProperties prometheusProperties) {
     return registry ->
         registry
             .config()
             .commonTags(
                 "service",
                 applicationName,
+                "cloud-provider",
+                prometheusProperties.getCloudProvider(),
                 "host",
-                getHostName(),
+                prometheusProperties.getHost(),
                 "region",
-                region,
+                prometheusProperties.getRegion(),
                 "data-center",
-                dataCenter)
+                prometheusProperties.getDataCenter())
             .meterFilter(
                 new MeterFilter() {
                   @Override
@@ -65,22 +65,12 @@ public class PrometheusAutoConfiguration {
                     return id.getType() == Meter.Type.TIMER
                         ? DistributionStatisticConfig.builder()
                             .percentilesHistogram(true)
-                            .percentiles(0.50, 0.75, 0.90, 0.95, 0.99)
-                            .serviceLevelObjectives(
-                                Duration.ofMillis(1).toNanos(),
-                                Duration.ofMillis(2).toNanos(),
-                                Duration.ofMillis(3).toNanos(),
-                                Duration.ofMillis(4).toNanos(),
-                                Duration.ofMillis(5).toNanos(),
-                                Duration.ofMillis(6).toNanos(),
-                                Duration.ofMillis(7).toNanos(),
-                                Duration.ofMillis(8).toNanos(),
-                                Duration.ofMillis(9).toNanos(),
-                                Duration.ofMillis(10).toNanos(),
-                                Duration.ofMillis(15).toNanos(),
-                                Duration.ofMillis(20).toNanos())
-                            .minimumExpectedValue(Duration.ofMillis(1).toNanos())
-                            .maximumExpectedValue(Duration.ofMillis(20).toNanos())
+                            .percentiles(prometheusProperties.getPercentiles())
+                            .serviceLevelObjectives(prometheusProperties.getSlo())
+                            .minimumExpectedValue(prometheusProperties.getSlo()[0])
+                            .maximumExpectedValue(
+                                prometheusProperties
+                                    .getSlo()[prometheusProperties.getSlo().length - 1])
                             .build()
                             .merge(config)
                         : config;
