@@ -82,6 +82,9 @@ public final class WebClients {
           ApplicationProtocolNames.HTTP_1_1,
           ApplicationProtocolNames.HTTP_2);
 
+  /** The number of bytes in a megabyte. */
+  private static final int ONE_MB = 1024 * 1024;
+
   /**
    * 根据配置创建webclient
    *
@@ -161,6 +164,7 @@ public final class WebClients {
         .codecs(
             configurer -> {
               ClientDefaultCodecs clientDefaultCodecs = configurer.defaultCodecs();
+              clientDefaultCodecs.maxInMemorySize(ONE_MB);
               clientDefaultCodecs.jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper));
               clientDefaultCodecs.jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper));
             })
