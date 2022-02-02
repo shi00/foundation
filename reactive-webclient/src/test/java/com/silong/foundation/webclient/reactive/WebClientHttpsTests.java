@@ -19,13 +19,9 @@
 package com.silong.foundation.webclient.reactive;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.javafaker.Faker;
+import com.silong.foundation.webclient.reactive.WebClientHttpTests.Employee;
+import com.silong.foundation.webclient.reactive.WebClientHttpTests.Result;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import okhttp3.Protocol;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -44,6 +40,8 @@ import reactor.test.StepVerifier;
 import java.io.IOException;
 import java.util.List;
 
+import static com.silong.foundation.webclient.reactive.WebClientHttpTests.FAKER;
+import static com.silong.foundation.webclient.reactive.WebClientHttpTests.MAPPER;
 import static org.springframework.util.SocketUtils.*;
 
 /**
@@ -53,39 +51,15 @@ import static org.springframework.util.SocketUtils.*;
  * @version 1.0.0
  * @since 2022-02-02 13:41
  */
-public class WebClientTests {
-
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  private static class Result {
-    private String code;
-    private String msg;
-  }
-
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  private static class Employee {
-    private String name;
-    private int age;
-    private int salary;
-    private int level;
-    private String company;
-    private String gender;
-  }
-
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
-  private static final Faker FAKER = new Faker();
+public class WebClientHttpsTests {
 
   private MockWebServer mockWebServer;
 
   @BeforeEach
   void setup() throws IOException {
     mockWebServer = new MockWebServer();
+    mockWebServer.requestClientAuth();
+    mockWebServer.setProtocolNegotiationEnabled(true);
     mockWebServer.setProtocols(List.of(Protocol.HTTP_1_1, Protocol.HTTP_2));
     mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
   }
@@ -98,7 +72,7 @@ public class WebClientTests {
   @Test
   @DisplayName("http-GET")
   void test1() throws IOException {
-    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
+    String baseUrl = String.format("https://localhost:%s", mockWebServer.getPort());
     Result expected = Result.builder().code("0").msg("test-result").build();
     mockWebServer.enqueue(
         new MockResponse()
@@ -170,6 +144,81 @@ public class WebClientTests {
                 resp -> Mono.just(new Exception("error")))
             .bodyToMono(Result.class);
     StepVerifier.create(resultMono).expectNext(expected).verifyComplete();
+  }
+
+  @Test
+  @DisplayName("http-PUT")
+  void test4() {
+    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(HttpStatus.OK.value())
+            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
+
+    Mono<Void> voidMono =
+        WebClients.create(webClientConfig, MAPPER)
+            .put()
+            .uri("/test/{param}", "a")
+            .body(BodyInserters.fromValue(randomEmployee()))
+            .accept(MediaType.APPLICATION_JSON)
+            .retrieve()
+            .onStatus(
+                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                resp -> Mono.just(new Exception("error")))
+            .bodyToMono(Void.class);
+    StepVerifier.create(voidMono).expectNext().verifyComplete();
+  }
+
+  @Test
+  @DisplayName("http-HEAD")
+  void test5() {
+    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(HttpStatus.OK.value())
+            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
+
+    Mono<Void> voidMono =
+        WebClients.create(webClientConfig, MAPPER)
+            .head()
+            .uri("/test/{id}", "1")
+            .accept(MediaType.APPLICATION_JSON)
+            .retrieve()
+            .onStatus(
+                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                resp -> Mono.just(new Exception("error")))
+            .bodyToMono(Void.class);
+    StepVerifier.create(voidMono).expectNext().verifyComplete();
+  }
+
+  @Test
+  @DisplayName("http-PATCH")
+  void test6() throws JsonProcessingException {
+    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
+    Employee employee = randomEmployee();
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setBody(MAPPER.writeValueAsString(employee))
+            .setResponseCode(HttpStatus.OK.value())
+            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
+
+    Mono<Employee> employeeMono =
+        WebClients.create(webClientConfig, MAPPER)
+            .patch()
+            .uri("/test/{id}", "1")
+            .accept(MediaType.APPLICATION_JSON)
+            .retrieve()
+            .onStatus(
+                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                resp -> Mono.just(new Exception("error")))
+            .bodyToMono(Employee.class);
+    StepVerifier.create(employeeMono).expectNext(employee).verifyComplete();
   }
 
   private Employee randomEmployee() {

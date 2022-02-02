@@ -40,6 +40,9 @@ public class WebClientConfig {
   /** 打印请求响应配置category */
   public static final String NETTY_CLIENT_CATEGORY = "reactor.netty.http.client.HttpClient";
 
+  /** The number of bytes in a megabyte. */
+  public static final int DEFAULT_ONE_MB = 1024 * 1024;
+
   /** 基础url */
   @NotEmpty private String baseUrl;
 
@@ -66,4 +69,7 @@ public class WebClientConfig {
    * 默认：true
    */
   private boolean fastOpenConnectEnabled = true;
+
+  /** codec内存缓存上限 */
+  @Positive private int codecMaxBufferSize = DEFAULT_ONE_MB;
 }
