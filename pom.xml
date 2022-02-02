@@ -55,6 +55,7 @@
     </licenses>
 
     <modules>
+        <module>reactive-webclient</module>
         <module>crypto</module>
         <module>duuid/idgen</module>
         <module>duuid/workerid-provider</module>
