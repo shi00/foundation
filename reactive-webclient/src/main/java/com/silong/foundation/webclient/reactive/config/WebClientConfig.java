@@ -49,8 +49,8 @@ public class WebClientConfig {
   /** 连接超时时长，单位：毫秒，默认：10000毫秒 */
   @Positive private long connectTimeout = Duration.ofSeconds(10).toMillis();
 
-  /** 读超时时长，单位：毫秒，默认：3000毫秒 */
-  @Positive private long readTimeout = Duration.ofSeconds(3).toMillis();
+  /** 读超时时长，单位：毫秒，默认：6000毫秒 */
+  @Positive private long readTimeout = Duration.ofSeconds(6).toMillis();
 
   /** 写超时时长，单位：毫秒，默认：3000毫秒 */
   @Positive private long writeTimeout = Duration.ofSeconds(3).toMillis();

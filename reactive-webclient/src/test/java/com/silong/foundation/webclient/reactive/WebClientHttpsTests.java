@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.silong.foundation.webclient.reactive.WebClientHttpTests.Employee;
 import com.silong.foundation.webclient.reactive.WebClientHttpTests.Result;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
+import com.silong.foundation.webclient.reactive.config.WebClientSslConfig;
 import okhttp3.Protocol;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -37,7 +38,14 @@ import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.List;
 
 import static com.silong.foundation.webclient.reactive.WebClientHttpTests.FAKER;
@@ -53,15 +61,41 @@ import static org.springframework.util.SocketUtils.*;
  */
 public class WebClientHttpsTests {
 
+  private static final String PASSWORD = "Test@123";
+
+  private static final WebClientSslConfig CLIENT_SSL_CONFIG =
+      new WebClientSslConfig()
+          .trustAll(true)
+          .keyStoreType("jks")
+          .keyStorePassword(PASSWORD)
+          .keyStorePath("client.jks");
+
+  private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
   private MockWebServer mockWebServer;
 
   @BeforeEach
-  void setup() throws IOException {
+  void setup() throws Exception {
     mockWebServer = new MockWebServer();
     mockWebServer.requestClientAuth();
     mockWebServer.setProtocolNegotiationEnabled(true);
     mockWebServer.setProtocols(List.of(Protocol.HTTP_1_1, Protocol.HTTP_2));
     mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
+
+    try (InputStream in = WebClientHttpsTests.class.getResourceAsStream("server.jks")) {
+      KeyStore serverKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+      char[] serverKeyStorePassword = PASSWORD.toCharArray();
+      serverKeyStore.load(in, serverKeyStorePassword);
+      String kmfAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+      KeyManagerFactory kmf = KeyManagerFactory.getInstance(kmfAlgorithm);
+      kmf.init(serverKeyStore, serverKeyStorePassword);
+      TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(kmfAlgorithm);
+      trustManagerFactory.init(serverKeyStore);
+      SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+      sslContext.init(kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), SECURE_RANDOM);
+      SSLSocketFactory sf = sslContext.getSocketFactory();
+      mockWebServer.useHttps(sf, false);
+    }
   }
 
   @AfterEach
@@ -70,7 +104,7 @@ public class WebClientHttpsTests {
   }
 
   @Test
-  @DisplayName("http-GET")
+  @DisplayName("https-GET")
   void test1() throws IOException {
     String baseUrl = String.format("https://localhost:%s", mockWebServer.getPort());
     Result expected = Result.builder().code("0").msg("test-result").build();
@@ -83,7 +117,7 @@ public class WebClientHttpsTests {
     WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
 
     Mono<Result> resultMono =
-        WebClients.create(webClientConfig, MAPPER)
+        WebClients.create(webClientConfig, CLIENT_SSL_CONFIG, MAPPER)
             .get()
             .uri("/test/{param}", "a")
             .accept(MediaType.APPLICATION_JSON)

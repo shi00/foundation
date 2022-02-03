@@ -187,19 +187,20 @@ public final class WebClients {
             .doOnError(
                 (request, throwable) ->
                     log.error(
-                        "{} {} {} {}",
+                        "WebClient request: {} {} {} {}",
                         request.requestId(),
-                        request.version(),
                         request.method(),
                         request.uri(),
+                        request.version(),
                         throwable),
                 (response, throwable) ->
                     log.error(
-                        "{} {} {} {}",
+                        "WebClient response: {} {} {} {} {}",
                         response.requestId(),
+                        response.method(),
+                        response.uri(),
                         response.version(),
                         response.status(),
-                        response.uri(),
                         throwable))
             .doOnConnected(
                 conn ->
