@@ -19,8 +19,8 @@
 package com.silong.foundation.webclient.reactive;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.silong.foundation.webclient.reactive.WebClientHttpTests.Employee;
-import com.silong.foundation.webclient.reactive.WebClientHttpTests.Result;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.javafaker.Faker;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
 import com.silong.foundation.webclient.reactive.config.WebClientSslConfig;
 import okhttp3.Protocol;
@@ -40,7 +40,6 @@ import reactor.test.StepVerifier;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,8 +47,6 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.List;
 
-import static com.silong.foundation.webclient.reactive.WebClientHttpTests.FAKER;
-import static com.silong.foundation.webclient.reactive.WebClientHttpTests.MAPPER;
 import static org.springframework.util.SocketUtils.*;
 
 /**
@@ -61,14 +58,33 @@ import static org.springframework.util.SocketUtils.*;
  */
 public class WebClientHttpsTests {
 
-  private static final String PASSWORD = "Test@123";
+  static final ObjectMapper MAPPER = new ObjectMapper();
+
+  static final Faker FAKER = new Faker();
+
+  private static final String PASSWORD = "password";
+
+  private static final String CLIENT_KEYSTORE_PATH = "src/test/resources/clientkeystore.p12";
+
+  private static final String CLIENT_TRUST_KEYSTORE_PATH =
+      "src/test/resources/clienttruststore.jks";
+
+  private static final WebClientSslConfig CLIENT_SSL_CONFIG_TREUST_ALL =
+      new WebClientSslConfig()
+          .trustAll(true)
+          .keyStoreType("PKCS12")
+          .keyStorePassword(PASSWORD)
+          .keyStorePath(CLIENT_KEYSTORE_PATH);
 
   private static final WebClientSslConfig CLIENT_SSL_CONFIG =
       new WebClientSslConfig()
-          .trustAll(true)
-          .keyStoreType("jks")
+          .trustAll(false)
+          .trustStoreType("JKS")
+          .trustStorePassword(PASSWORD)
+          .trustStorePath(CLIENT_TRUST_KEYSTORE_PATH)
+          .keyStoreType("PKCS12")
           .keyStorePassword(PASSWORD)
-          .keyStorePath("client.jks");
+          .keyStorePath(CLIENT_KEYSTORE_PATH);
 
   private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -80,22 +96,27 @@ public class WebClientHttpsTests {
     mockWebServer.requestClientAuth();
     mockWebServer.setProtocolNegotiationEnabled(true);
     mockWebServer.setProtocols(List.of(Protocol.HTTP_1_1, Protocol.HTTP_2));
+    mockWebServer.useHttps(buildTestSslContext().getSocketFactory(), false);
     mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
+  }
 
-    try (InputStream in = WebClientHttpsTests.class.getResourceAsStream("server.jks")) {
-      KeyStore serverKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-      char[] serverKeyStorePassword = PASSWORD.toCharArray();
+  private SSLContext buildTestSslContext() throws Exception {
+    // Load self-signed certificate
+    char[] serverKeyStorePassword = PASSWORD.toCharArray();
+    KeyStore serverKeyStore = KeyStore.getInstance("PKCS12");
+    try (InputStream in = WebClientHttpsTests.class.getResourceAsStream("serverkeystore.p12")) {
       serverKeyStore.load(in, serverKeyStorePassword);
-      String kmfAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
-      KeyManagerFactory kmf = KeyManagerFactory.getInstance(kmfAlgorithm);
-      kmf.init(serverKeyStore, serverKeyStorePassword);
-      TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(kmfAlgorithm);
-      trustManagerFactory.init(serverKeyStore);
-      SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-      sslContext.init(kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), SECURE_RANDOM);
-      SSLSocketFactory sf = sslContext.getSocketFactory();
-      mockWebServer.useHttps(sf, false);
     }
+
+    String kmfAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+    KeyManagerFactory kmf = KeyManagerFactory.getInstance(kmfAlgorithm);
+    kmf.init(serverKeyStore, serverKeyStorePassword);
+
+    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(kmfAlgorithm);
+    trustManagerFactory.init(serverKeyStore);
+    SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
+    sslContext.init(kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), SECURE_RANDOM);
+    return sslContext;
   }
 
   @AfterEach

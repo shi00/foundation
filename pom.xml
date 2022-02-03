@@ -301,7 +301,7 @@
             <!-- Hutool -->
             <dependency>
                 <groupId>cn.hutool</groupId>
-                <artifactId>hutool-db</artifactId>
+                <artifactId>hutool-jwt</artifactId>
                 <version>${hutool.version}</version>
             </dependency>
             <!-- Hutool -->
