@@ -40,8 +40,8 @@ public class WebClientConfig {
   /** 打印请求响应配置category */
   public static final String NETTY_CLIENT_CATEGORY = "reactor.netty.http.client.HttpClient";
 
-  /** The number of bytes in a megabyte. */
-  public static final int DEFAULT_ONE_MB = 1024 * 1024;
+  /** The number of bytes in 8kb. */
+  public static final int DEFAULT_ONE_MB = 1024 * 8;
 
   /** 基础url */
   @NotEmpty private String baseUrl;
@@ -58,6 +58,9 @@ public class WebClientConfig {
   /** 响应超时时长，单位：毫秒，默认：3000毫秒 */
   @Positive private long responseTimeout = Duration.ofSeconds(3).toMillis();
 
+  /** codec内存缓存上限 */
+  @Positive private int codecMaxBufferSize = DEFAULT_ONE_MB;
+
   /** 是否开启GZip压缩，默认：false */
   private boolean compressionEnabled = false;
 
@@ -70,6 +73,20 @@ public class WebClientConfig {
    */
   private boolean fastOpenConnectEnabled = true;
 
-  /** codec内存缓存上限 */
-  @Positive private int codecMaxBufferSize = DEFAULT_ONE_MB;
+  /**
+   * 构造方法
+   *
+   * @param config 配置信息
+   */
+  public WebClientConfig(WebClientConfig config) {
+    this.baseUrl = config.baseUrl;
+    this.codecMaxBufferSize = config.codecMaxBufferSize;
+    this.connectTimeout = config.connectTimeout;
+    this.readTimeout = config.readTimeout;
+    this.responseTimeout = config.responseTimeout;
+    this.compressionEnabled = config.compressionEnabled;
+    this.keepAliveEnabled = config.keepAliveEnabled;
+    this.writeTimeout = config.writeTimeout;
+    this.fastOpenConnectEnabled = config.fastOpenConnectEnabled;
+  }
 }

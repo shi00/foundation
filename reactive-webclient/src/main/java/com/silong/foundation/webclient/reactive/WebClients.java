@@ -57,6 +57,7 @@ import java.util.Collection;
 import java.util.Locale;
 
 import static com.silong.foundation.webclient.reactive.config.WebClientConfig.NETTY_CLIENT_CATEGORY;
+import static com.silong.foundation.webclient.reactive.config.WebClientSslConfig.DEFAULT_APN;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static io.netty.channel.ChannelOption.TCP_FASTOPEN_CONNECT;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -73,14 +74,6 @@ import static reactor.netty.transport.logging.AdvancedByteBufFormat.TEXTUAL;
  */
 @Slf4j(topic = NETTY_CLIENT_CATEGORY)
 public final class WebClients {
-
-  private static final ApplicationProtocolConfig DEFAULT_APN =
-      new ApplicationProtocolConfig(
-          ApplicationProtocolConfig.Protocol.ALPN,
-          ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
-          ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-          ApplicationProtocolNames.HTTP_1_1,
-          ApplicationProtocolNames.HTTP_2);
 
   /**
    * 根据配置创建webclient
