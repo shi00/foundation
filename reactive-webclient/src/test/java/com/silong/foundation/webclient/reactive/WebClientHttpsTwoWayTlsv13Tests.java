@@ -109,37 +109,37 @@ public class WebClientHttpsTwoWayTlsv13Tests extends BaseTests {
   }
 
   @Test
-  @DisplayName("https-TwoWay-GET")
+  @DisplayName("https-TLSv1.3-TwoWay-GET")
   void test1() throws IOException {
     getTest();
   }
 
   @Test
-  @DisplayName("https-TwoWay-DELETE")
+  @DisplayName("https-TLSv1.3-TwoWay-DELETE")
   void test2() {
     deleteTest();
   }
 
   @Test
-  @DisplayName("https-TwoWay-POST")
+  @DisplayName("https-TLSv1.3-TwoWay-POST")
   void test3() {
     postTest();
   }
 
   @Test
-  @DisplayName("https-TwoWay-PUT")
+  @DisplayName("https-TLSv1.3-TwoWay-PUT")
   void test4() {
     putTest();
   }
 
   @Test
-  @DisplayName("https-TwoWay-HEAD")
+  @DisplayName("https-TLSv1.3-TwoWay-HEAD")
   void test5() {
     headTest();
   }
 
   @Test
-  @DisplayName("https-TwoWay-PATCH")
+  @DisplayName("https-TLSv1.3-TwoWay-PATCH")
   void test6() {
     patchTest();
   }

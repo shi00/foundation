@@ -23,11 +23,14 @@ import com.silong.foundation.webclient.reactive.config.WebClientSslConfig;
 import okhttp3.Protocol;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -90,5 +93,42 @@ public class WebClientHttpsTwoWayTlsv12Tests extends WebClientHttpsTwoWayTlsv13T
     sslContext.init(
         kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
     return sslContext;
+  }
+
+
+  @Test
+  @DisplayName("https-TLSv1.2-TwoWay-GET")
+  void test1() throws IOException {
+    getTest();
+  }
+
+  @Test
+  @DisplayName("https-TLSv1.2-TwoWay-DELETE")
+  void test2() {
+    deleteTest();
+  }
+
+  @Test
+  @DisplayName("https-TLSv1.2-TwoWay-POST")
+  void test3() {
+    postTest();
+  }
+
+  @Test
+  @DisplayName("https-TLSv1.2-TwoWay-PUT")
+  void test4() {
+    putTest();
+  }
+
+  @Test
+  @DisplayName("https-TLSv1.2-TwoWay-HEAD")
+  void test5() {
+    headTest();
+  }
+
+  @Test
+  @DisplayName("https-TLSv1.2-TwoWay-PATCH")
+  void test6() {
+    patchTest();
   }
 }
