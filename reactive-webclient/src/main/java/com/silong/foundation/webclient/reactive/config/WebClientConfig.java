@@ -47,16 +47,16 @@ public class WebClientConfig {
   @NotEmpty private String baseUrl;
 
   /** 连接超时时长，单位：毫秒，默认：10000毫秒 */
-  @Positive private long connectTimeout = Duration.ofSeconds(10).toMillis();
+  @Positive private long connectTimeoutMillis = Duration.ofSeconds(10).toMillis();
 
   /** 读超时时长，单位：毫秒，默认：6000毫秒 */
-  @Positive private long readTimeout = Duration.ofSeconds(6).toMillis();
+  @Positive private long readTimeoutMillis = Duration.ofSeconds(6).toMillis();
 
   /** 写超时时长，单位：毫秒，默认：3000毫秒 */
-  @Positive private long writeTimeout = Duration.ofSeconds(3).toMillis();
+  @Positive private long writeTimeoutMillis = Duration.ofSeconds(3).toMillis();
 
   /** 响应超时时长，单位：毫秒，默认：3000毫秒 */
-  @Positive private long responseTimeout = Duration.ofSeconds(3).toMillis();
+  @Positive private long responseTimeoutMillis = Duration.ofSeconds(3).toMillis();
 
   /** codec内存缓存上限 */
   @Positive private int codecMaxBufferSize = DEFAULT_ONE_MB;
@@ -81,12 +81,12 @@ public class WebClientConfig {
   public WebClientConfig(WebClientConfig config) {
     this.baseUrl = config.baseUrl;
     this.codecMaxBufferSize = config.codecMaxBufferSize;
-    this.connectTimeout = config.connectTimeout;
-    this.readTimeout = config.readTimeout;
-    this.responseTimeout = config.responseTimeout;
+    this.connectTimeoutMillis = config.connectTimeoutMillis;
+    this.readTimeoutMillis = config.readTimeoutMillis;
+    this.responseTimeoutMillis = config.responseTimeoutMillis;
     this.compressionEnabled = config.compressionEnabled;
     this.keepAliveEnabled = config.keepAliveEnabled;
-    this.writeTimeout = config.writeTimeout;
+    this.writeTimeoutMillis = config.writeTimeoutMillis;
     this.fastOpenConnectEnabled = config.fastOpenConnectEnabled;
   }
 }

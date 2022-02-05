@@ -174,9 +174,9 @@ public final class WebClients {
             .baseUrl(webClientConfig.baseUrl())
             .keepAlive(webClientConfig.keepAliveEnabled())
             .compress(webClientConfig.compressionEnabled())
-            .option(CONNECT_TIMEOUT_MILLIS, (int) webClientConfig.connectTimeout())
+            .option(CONNECT_TIMEOUT_MILLIS, (int) webClientConfig.connectTimeoutMillis())
             .option(TCP_FASTOPEN_CONNECT, webClientConfig.fastOpenConnectEnabled())
-            .responseTimeout(Duration.ofMillis(webClientConfig.responseTimeout()))
+            .responseTimeout(Duration.ofMillis(webClientConfig.responseTimeoutMillis()))
             .doOnError(
                 (request, throwable) ->
                     log.error(
@@ -198,9 +198,11 @@ public final class WebClients {
             .doOnConnected(
                 conn ->
                     conn.addHandlerLast(
-                            new ReadTimeoutHandler(webClientConfig.readTimeout(), MILLISECONDS))
+                            new ReadTimeoutHandler(
+                                webClientConfig.readTimeoutMillis(), MILLISECONDS))
                         .addHandlerLast(
-                            new WriteTimeoutHandler(webClientConfig.writeTimeout(), MILLISECONDS)))
+                            new WriteTimeoutHandler(
+                                webClientConfig.writeTimeoutMillis(), MILLISECONDS)))
             // 开启日志打印
             .wiretap(NETTY_CLIENT_CATEGORY, LogLevel.DEBUG, TEXTUAL, UTF_8);
 
@@ -214,7 +216,7 @@ public final class WebClients {
                         .type(proxyConfig.type())
                         .host(proxyConfig.host())
                         .port(proxyConfig.port())
-                        .connectTimeoutMillis(webClientConfig.connectTimeout());
+                        .connectTimeoutMillis(webClientConfig.connectTimeoutMillis());
                 String password = proxyConfig.password();
                 String userName = proxyConfig.userName();
                 if (hasLength(password) && hasLength(userName)) {
@@ -232,7 +234,10 @@ public final class WebClients {
     if (webClientSslConfig != null && httpsEnabled) {
       httpClient =
           httpClient.secure(
-              sslContextSpec -> sslContextSpec.sslContext(buildSslContext(webClientSslConfig)));
+              sslContextSpec ->
+                  sslContextSpec
+                      .sslContext(buildSslContext(webClientSslConfig))
+                      .handshakeTimeoutMillis(webClientSslConfig.handshakeTimeoutMillis()));
       log.info("WebClient enable https with {}", webClientSslConfig);
     }
     return httpClient;

@@ -143,6 +143,9 @@ public class WebClientSslConfig {
   /** truststore 类型 */
   private String trustStoreType;
 
+  /** 握手超时，单位：毫秒，默认值：5000 */
+  private long handshakeTimeoutMillis = 5000;
+
   /** truststore 密码 */
   @ToString.Exclude private String trustStorePassword;
 
@@ -166,5 +169,6 @@ public class WebClientSslConfig {
     this.startTls = config.startTls;
     this.ocsp = config.ocsp;
     this.protocols = config.protocols;
+    this.handshakeTimeoutMillis = config.handshakeTimeoutMillis;
   }
 }
