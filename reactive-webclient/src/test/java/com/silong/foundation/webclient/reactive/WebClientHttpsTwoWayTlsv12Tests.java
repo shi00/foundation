@@ -23,15 +23,11 @@ import com.silong.foundation.webclient.reactive.config.WebClientSslConfig;
 import okhttp3.Protocol;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -46,24 +42,12 @@ import static org.springframework.util.SocketUtils.*;
  * @version 1.0.0
  * @since 2022-02-02 13:41
  */
-public class WebClientHttpsTwoWayTlsv13Tests extends BaseTests {
-
-  static final String PASSWORD = "password";
-
-  static final String SERVER_KEYSTORE_PATH =
-      new File("src/test/resources/certs/mockwebserver.p12").getAbsolutePath();
-
-  static final String SERVER_TRUST_KEYSTORE_PATH =
-      new File("src/test/resources/certs/mockwebserver-trust.p12").getAbsolutePath();
-
-  static final String CLIENT_KEYSTORE_PATH = "src/test/resources/certs/client.p12";
-
-  static final String CLIENT_TRUST_KEYSTORE_PATH = "src/test/resources/certs/client-trust.p12";
+public class WebClientHttpsTwoWayTlsv12Tests extends WebClientHttpsTwoWayTlsv13Tests {
 
   private static final WebClientSslConfig CLIENT_SSL_CONFIG_TWO_WAY =
       new WebClientSslConfig()
           .trustAll(false)
-          .protocols(new String[] {TLSV_1_3})
+          .protocols(new String[] {TLSV_1_2})
           .keyStoreType(PKCS_12)
           .keyStorePath(CLIENT_KEYSTORE_PATH)
           .keyStorePassword(PASSWORD)
@@ -102,45 +86,9 @@ public class WebClientHttpsTwoWayTlsv13Tests extends BaseTests {
     TrustManagerFactory trustManagerFactory =
         TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     trustManagerFactory.init(trustServerKeyStore);
-    SSLContext sslContext = SSLContext.getInstance(TLSV_1_3);
+    SSLContext sslContext = SSLContext.getInstance(TLSV_1_2);
     sslContext.init(
         kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
     return sslContext;
-  }
-
-  @Test
-  @DisplayName("https-TwoWay-GET")
-  void test1() throws IOException {
-    getTest();
-  }
-
-  @Test
-  @DisplayName("https-TwoWay-DELETE")
-  void test2() {
-    deleteTest();
-  }
-
-  @Test
-  @DisplayName("https-TwoWay-POST")
-  void test3() {
-    postTest();
-  }
-
-  @Test
-  @DisplayName("https-TwoWay-PUT")
-  void test4() {
-    putTest();
-  }
-
-  @Test
-  @DisplayName("https-TwoWay-HEAD")
-  void test5() {
-    headTest();
-  }
-
-  @Test
-  @DisplayName("https-TwoWay-PATCH")
-  void test6() {
-    patchTest();
   }
 }
