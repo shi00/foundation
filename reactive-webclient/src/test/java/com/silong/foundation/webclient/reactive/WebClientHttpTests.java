@@ -19,19 +19,11 @@
 package com.silong.foundation.webclient.reactive;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.javafaker.Faker;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import okhttp3.Protocol;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.apache.commons.lang3.RandomUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -53,54 +45,20 @@ import static org.springframework.util.SocketUtils.*;
  * @version 1.0.0
  * @since 2022-02-02 13:41
  */
-public class WebClientHttpTests {
+public class WebClientHttpTests extends BaseTests {
 
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  static class Result {
-    private String code;
-    private String msg;
-  }
-
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  static class Employee {
-    private String name;
-    private int age;
-    private int salary;
-    private int level;
-    private String company;
-    private String gender;
-  }
-
-   static final ObjectMapper MAPPER = new ObjectMapper();
-
-   static final Faker FAKER = new Faker();
-
-  private MockWebServer mockWebServer;
-
-  @BeforeEach
-  void setup() throws IOException {
+  @BeforeAll
+  static void setup() throws IOException {
     mockWebServer = new MockWebServer();
     mockWebServer.setProtocolNegotiationEnabled(true);
-    mockWebServer.toProxyAddress();
     mockWebServer.setProtocols(List.of(Protocol.HTTP_1_1, Protocol.HTTP_2));
     mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
-  }
-
-  @AfterEach
-  void tearDown() throws IOException {
-    mockWebServer.shutdown();
+    baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
   }
 
   @Test
   @DisplayName("http-GET")
   void test1() throws IOException {
-    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
     Result expected = Result.builder().code("0").msg("test-result").build();
     mockWebServer.enqueue(
         new MockResponse()
@@ -126,7 +84,6 @@ public class WebClientHttpTests {
   @Test
   @DisplayName("http-DELETE")
   void test2() {
-    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(HttpStatus.OK.value())
@@ -150,7 +107,6 @@ public class WebClientHttpTests {
   @Test
   @DisplayName("http-POST")
   void test3() throws JsonProcessingException {
-    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
     Result expected = Result.builder().code("0").msg("successful").build();
     mockWebServer.enqueue(
         new MockResponse()
@@ -177,7 +133,6 @@ public class WebClientHttpTests {
   @Test
   @DisplayName("http-PUT")
   void test4() {
-    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(HttpStatus.OK.value())
@@ -202,7 +157,6 @@ public class WebClientHttpTests {
   @Test
   @DisplayName("http-HEAD")
   void test5() {
-    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(HttpStatus.OK.value())
@@ -226,7 +180,6 @@ public class WebClientHttpTests {
   @Test
   @DisplayName("http-PATCH")
   void test6() throws JsonProcessingException {
-    String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
     Employee employee = randomEmployee();
     mockWebServer.enqueue(
         new MockResponse()
@@ -247,16 +200,5 @@ public class WebClientHttpTests {
                 resp -> Mono.just(new Exception("error")))
             .bodyToMono(Employee.class);
     StepVerifier.create(employeeMono).expectNext(employee).verifyComplete();
-  }
-
-  private Employee randomEmployee() {
-    return Employee.builder()
-        .level(RandomUtils.nextInt(0, 100))
-        .salary(RandomUtils.nextInt(0, 100))
-        .age(RandomUtils.nextInt(0, 100))
-        .gender(RandomUtils.nextInt(0, 1000) % 2 == 1 ? "male" : "female")
-        .name(FAKER.name().username())
-        .company(FAKER.company().name())
-        .build();
   }
 }
