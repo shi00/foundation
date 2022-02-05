@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
 import com.silong.foundation.webclient.reactive.config.WebClientProxyConfig;
 import com.silong.foundation.webclient.reactive.config.WebClientSslConfig;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -73,6 +74,9 @@ import static reactor.netty.transport.logging.AdvancedByteBufFormat.TEXTUAL;
  * @since 2022-02-01 12:33
  */
 @Slf4j(topic = NETTY_CLIENT_CATEGORY)
+@SuppressFBWarnings(
+    value = {"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"},
+    justification = "配置密钥需要指定密钥文件位置")
 public final class WebClients {
 
   /**

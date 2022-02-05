@@ -506,6 +506,7 @@
                         <exclude>**/.dockerignore</exclude>
                         <exclude>**/*.properties</exclude>
                         <exclude>**/*.sql</exclude>
+                        <exclude>**/*.bat</exclude>
                         <!-- Git related files -->
                         <exclude>**/.git/**</exclude>
                         <exclude>**/.mvn/**</exclude>
