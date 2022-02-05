@@ -44,33 +44,26 @@ import static org.springframework.util.SocketUtils.*;
  * @version 1.0.0
  * @since 2022-02-02 13:41
  */
-public class WebClientHttpsTlsv12Tests extends BaseTests {
+public class WebClientHttpsTwoWayTlsv13Tests extends BaseTests {
 
   static final String PASSWORD = "password";
 
-  static final String CLIENT_KEYSTORE_PATH = "src/test/resources/tlsv12/client-keystore.jks";
+  static final String SERVER_KEYSTORE_PATH = "tlsv13/mockwebserver.p12";
 
-  static final String CLIENT_TRUST_KEYSTORE_PATH =
-      "src/test/resources/tlsv12/client-truststore.jks";
+  static final String CLIENT_TRUST_KEYSTORE_PATH = "src/test/resources/tlsv13/client-trust.jks";
 
-  static final WebClientSslConfig CLIENT_SSL_CONFIG_TREUST_ALL =
-      new WebClientSslConfig()
-          .trustAll(true)
-          .keyStoreType("jks")
-          .keyStorePassword(PASSWORD)
-          .keyStorePath(CLIENT_KEYSTORE_PATH);
+  static final String CLIENT_KEYSTORE_PATH = "src/test/resources/tlsv13/client.p12";
 
-  static final WebClientSslConfig CLIENT_SSL_CONFIG =
+  static final WebClientSslConfig CLIENT_SSL_CONFIG_ONE_WAY =
       new WebClientSslConfig()
           .trustAll(false)
-          .protocols(List.of("TLSv1.2").toArray(String[]::new))
-          .ciphers(List.of("TLS_AES_128_GCM_SHA256"))
-          .trustStoreType("jks")
-          .trustStorePassword(PASSWORD)
-          .trustStorePath(CLIENT_TRUST_KEYSTORE_PATH)
-          .keyStoreType("jks")
+          .protocols(new String[] {TLSV_1_3})
+          .keyStoreType(PKCS_12)
+          .keyStorePath(CLIENT_KEYSTORE_PATH)
           .keyStorePassword(PASSWORD)
-          .keyStorePath(CLIENT_KEYSTORE_PATH);
+          .trustStoreType(PKCS_12)
+          .trustStorePassword(PASSWORD)
+          .trustStorePath(CLIENT_TRUST_KEYSTORE_PATH);
 
   @BeforeAll
   static void setup() throws Exception {
@@ -82,37 +75,33 @@ public class WebClientHttpsTlsv12Tests extends BaseTests {
     mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
     baseUrl = String.format("https://localhost:%s", mockWebServer.getPort());
     webClient =
-        WebClients.create(new WebClientConfig().baseUrl(baseUrl), CLIENT_SSL_CONFIG, MAPPER);
+        WebClients.create(
+            new WebClientConfig().baseUrl(baseUrl), CLIENT_SSL_CONFIG_ONE_WAY, MAPPER);
   }
 
   private static SSLContext buildTestSslContext() throws Exception {
     // Load self-signed certificate
     char[] serverKeyStorePassword = PASSWORD.toCharArray();
-    KeyStore serverKeyStore = KeyStore.getInstance("jks");
+    KeyStore serverKeyStore = KeyStore.getInstance(PKCS_12);
     try (InputStream in =
-        WebClientHttpsTlsv12Tests.class.getResourceAsStream("tlsv12/server-keystore.jks")) {
+        WebClientHttpsTwoWayTlsv13Tests.class.getResourceAsStream(SERVER_KEYSTORE_PATH)) {
       serverKeyStore.load(in, serverKeyStorePassword);
     }
 
     KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     kmf.init(serverKeyStore, serverKeyStorePassword);
 
-    KeyStore trustStore = KeyStore.getInstance("jks");
-    try (InputStream in =
-        WebClientHttpsTlsv12Tests.class.getResourceAsStream("tlsv12/server-truststore.jks")) {
-      trustStore.load(in, serverKeyStorePassword);
-    }
     TrustManagerFactory trustManagerFactory =
         TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    trustManagerFactory.init(trustStore);
-    SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+    trustManagerFactory.init(serverKeyStore);
+    SSLContext sslContext = SSLContext.getInstance(TLSV_1_3);
     sslContext.init(
         kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
     return sslContext;
   }
 
   @Test
-  @DisplayName("https-TwoWay-GET")
+  @DisplayName("https-OneWay-GET")
   void test1() throws IOException {
     getTest();
   }

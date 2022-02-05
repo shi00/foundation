@@ -63,6 +63,10 @@ public abstract class BaseTests {
     private String msg;
   }
 
+  static final String TLSV_1_3 = "TLSv1.3";
+
+  static final String PKCS_12 = "PKCS12";
+
   static final ObjectMapper MAPPER = new ObjectMapper();
 
   static final Faker FAKER = new Faker();
