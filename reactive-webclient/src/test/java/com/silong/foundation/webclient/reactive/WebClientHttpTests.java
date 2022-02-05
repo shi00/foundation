@@ -18,20 +18,11 @@
  */
 package com.silong.foundation.webclient.reactive;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.silong.foundation.webclient.reactive.config.WebClientConfig;
 import okhttp3.Protocol;
-import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.BodyInserters;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import java.io.IOException;
 import java.util.List;
@@ -59,146 +50,36 @@ public class WebClientHttpTests extends BaseTests {
   @Test
   @DisplayName("http-GET")
   void test1() throws IOException {
-    Result expected = Result.builder().code("0").msg("test-result").build();
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(HttpStatus.OK.value())
-            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .setBody(MAPPER.writeValueAsString(expected)));
-
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
-    Mono<Result> resultMono =
-        WebClients.create(webClientConfig, MAPPER)
-            .get()
-            .uri("/test/{param}", "a")
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .onStatus(
-                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
-                resp -> Mono.just(new Exception("error")))
-            .bodyToMono(Result.class);
-    StepVerifier.create(resultMono).expectNext(expected).verifyComplete();
+    getTest();
   }
 
   @Test
   @DisplayName("http-DELETE")
   void test2() {
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(HttpStatus.OK.value())
-            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
-
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
-    Mono<Void> voidMono =
-        WebClients.create(webClientConfig, MAPPER)
-            .delete()
-            .uri("/test/{id}", "1")
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .onStatus(
-                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
-                resp -> Mono.just(new Exception("error")))
-            .bodyToMono(Void.class);
-    StepVerifier.create(voidMono).expectNext().verifyComplete();
+    deleteTest();
   }
 
   @Test
   @DisplayName("http-POST")
-  void test3() throws JsonProcessingException {
-    Result expected = Result.builder().code("0").msg("successful").build();
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(HttpStatus.OK.value())
-            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .setBody(MAPPER.writeValueAsString(expected)));
-
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
-    Mono<Result> resultMono =
-        WebClients.create(webClientConfig, MAPPER)
-            .post()
-            .uri("/test/{param}", "a")
-            .body(BodyInserters.fromValue(randomEmployee()))
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .onStatus(
-                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
-                resp -> Mono.just(new Exception("error")))
-            .bodyToMono(Result.class);
-    StepVerifier.create(resultMono).expectNext(expected).verifyComplete();
+  void test3() {
+    postTest();
   }
 
   @Test
   @DisplayName("http-PUT")
   void test4() {
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(HttpStatus.OK.value())
-            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
-
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
-    Mono<Void> voidMono =
-        WebClients.create(webClientConfig, MAPPER)
-            .put()
-            .uri("/test/{param}", "a")
-            .body(BodyInserters.fromValue(randomEmployee()))
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .onStatus(
-                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
-                resp -> Mono.just(new Exception("error")))
-            .bodyToMono(Void.class);
-    StepVerifier.create(voidMono).expectNext().verifyComplete();
+    putTest();
   }
 
   @Test
   @DisplayName("http-HEAD")
   void test5() {
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(HttpStatus.OK.value())
-            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
-
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
-    Mono<Void> voidMono =
-        WebClients.create(webClientConfig, MAPPER)
-            .head()
-            .uri("/test/{id}", "1")
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .onStatus(
-                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
-                resp -> Mono.just(new Exception("error")))
-            .bodyToMono(Void.class);
-    StepVerifier.create(voidMono).expectNext().verifyComplete();
+    headTest();
   }
 
   @Test
   @DisplayName("http-PATCH")
-  void test6() throws JsonProcessingException {
-    Employee employee = randomEmployee();
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setBody(MAPPER.writeValueAsString(employee))
-            .setResponseCode(HttpStatus.OK.value())
-            .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
-
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
-    Mono<Employee> employeeMono =
-        WebClients.create(webClientConfig, MAPPER)
-            .patch()
-            .uri("/test/{id}", "1")
-            .accept(MediaType.APPLICATION_JSON)
-            .retrieve()
-            .onStatus(
-                httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
-                resp -> Mono.just(new Exception("error")))
-            .bodyToMono(Employee.class);
-    StepVerifier.create(employeeMono).expectNext(employee).verifyComplete();
+  void test6() {
+    patchTest();
   }
 }
