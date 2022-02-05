@@ -235,7 +235,6 @@ public final class WebClients {
               sslContextSpec -> sslContextSpec.sslContext(buildSslContext(webClientSslConfig)));
       log.info("WebClient enable https with {}", webClientSslConfig);
     }
-
     return httpClient;
   }
 
@@ -277,39 +276,6 @@ public final class WebClients {
     keyManagerFactory.init(
         keyStore, hasLength(keyStorePassword) ? keyStorePassword.toCharArray() : null);
     return keyManagerFactory;
-  }
-
-  private static KeyStore loadKeyStore(
-      final String keystoreProvider,
-      final String keystoreType,
-      final String keystorePath,
-      final String keystorePassword)
-      throws Exception {
-    KeyStore ks =
-        hasLength(keystoreProvider)
-            ? KeyStore.getInstance(keystoreType, keystoreProvider)
-            : KeyStore.getInstance(keystoreType);
-    try (InputStream in = toUrl(keystorePath).openStream()) {
-      ks.load(in, hasLength(keystorePassword) ? keystorePassword.toCharArray() : null);
-    }
-    return ks;
-  }
-
-  private static URL toUrl(final String storePath) throws Exception {
-    try {
-      return new URL(storePath);
-    } catch (MalformedURLException e) {
-      File file = new File(storePath);
-      if (file.exists() && file.isFile()) {
-        return file.toURI().toURL();
-      } else {
-        URL url = WebClients.class.getResource(storePath);
-        if (url != null) {
-          return url;
-        }
-      }
-    }
-    throw new Exception("Failed to find a store at " + storePath);
   }
 
   private static TrustManagerFactory buildTrustManagerFactory(WebClientSslConfig webClientSslConfig)
@@ -357,6 +323,39 @@ public final class WebClients {
       }
       return trustMgrFactory;
     }
+  }
+
+  private static KeyStore loadKeyStore(
+      final String keystoreProvider,
+      final String keystoreType,
+      final String keystorePath,
+      final String keystorePassword)
+      throws Exception {
+    KeyStore ks =
+        hasLength(keystoreProvider)
+            ? KeyStore.getInstance(keystoreType, keystoreProvider)
+            : KeyStore.getInstance(keystoreType);
+    try (InputStream in = toUrl(keystorePath).openStream()) {
+      ks.load(in, hasLength(keystorePassword) ? keystorePassword.toCharArray() : null);
+    }
+    return ks;
+  }
+
+  private static URL toUrl(final String storePath) throws Exception {
+    try {
+      return new URL(storePath);
+    } catch (MalformedURLException e) {
+      File file = new File(storePath);
+      if (file.exists() && file.isFile()) {
+        return file.toURI().toURL();
+      } else {
+        URL url = WebClients.class.getResource(storePath);
+        if (url != null) {
+          return url;
+        }
+      }
+    }
+    throw new Exception("Failed to find a store at " + storePath);
   }
 
   private static boolean enableCrl(boolean ocsp, String crlPath) {
