@@ -40,8 +40,8 @@ public class WebClientConfig {
   /** 打印请求响应配置category */
   public static final String NETTY_CLIENT_CATEGORY = "reactor.netty.http.client.HttpClient";
 
-  /** The number of bytes in 8kb. */
-  public static final int DEFAULT_ONE_MB = 1024 * 8;
+  /** The number of bytes in 1MB. */
+  public static final int DEFAULT_ONE_MB = 1024 * 1024;
 
   /** 基础url */
   @NotEmpty private String baseUrl;
