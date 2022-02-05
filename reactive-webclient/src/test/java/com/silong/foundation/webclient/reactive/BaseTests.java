@@ -3,7 +3,6 @@ package com.silong.foundation.webclient.reactive;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
-import com.silong.foundation.webclient.reactive.config.WebClientConfig;
 import lombok.*;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -89,10 +88,8 @@ public abstract class BaseTests {
             .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .setBody(MAPPER.writeValueAsString(expected)));
 
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
     Mono<Result> resultMono =
-        WebClients.create(webClientConfig, MAPPER)
+        webClient
             .get()
             .uri("/test/{param}", "a")
             .accept(MediaType.APPLICATION_JSON)
@@ -110,10 +107,8 @@ public abstract class BaseTests {
             .setResponseCode(HttpStatus.OK.value())
             .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
     Mono<Void> voidMono =
-        WebClients.create(webClientConfig, MAPPER)
+        webClient
             .delete()
             .uri("/test/{id}", "1")
             .accept(MediaType.APPLICATION_JSON)
@@ -134,10 +129,8 @@ public abstract class BaseTests {
             .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .setBody(MAPPER.writeValueAsString(expected)));
 
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
     Mono<Result> resultMono =
-        WebClients.create(webClientConfig, MAPPER)
+        webClient
             .post()
             .uri("/test/{param}", "a")
             .body(BodyInserters.fromValue(randomEmployee()))
@@ -159,10 +152,8 @@ public abstract class BaseTests {
             .setResponseCode(HttpStatus.OK.value())
             .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
     Mono<Employee> employeeMono =
-        WebClients.create(webClientConfig, MAPPER)
+        webClient
             .patch()
             .uri("/test/{id}", "1")
             .accept(MediaType.APPLICATION_JSON)
@@ -180,10 +171,8 @@ public abstract class BaseTests {
             .setResponseCode(HttpStatus.OK.value())
             .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
     Mono<Void> voidMono =
-        WebClients.create(webClientConfig, MAPPER)
+        webClient
             .head()
             .uri("/test/{id}", "1")
             .accept(MediaType.APPLICATION_JSON)
@@ -201,10 +190,8 @@ public abstract class BaseTests {
             .setResponseCode(HttpStatus.OK.value())
             .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-    WebClientConfig webClientConfig = new WebClientConfig().baseUrl(baseUrl);
-
     Mono<Void> voidMono =
-        WebClients.create(webClientConfig, MAPPER)
+        webClient
             .put()
             .uri("/test/{param}", "a")
             .body(BodyInserters.fromValue(randomEmployee()))
