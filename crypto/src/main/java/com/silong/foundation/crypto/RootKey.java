@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Base64;
@@ -70,6 +71,10 @@ public final class RootKey {
 
   /** 根密钥 */
   private final SecretKey key;
+
+  static {
+    Security.setProperty("crypto.policy", "unlimited");
+  }
 
   /**
    * 构造方法
