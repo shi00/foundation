@@ -80,6 +80,9 @@ public class WebClientSslConfig {
   /** 是否信任所有证书，默认：true */
   private boolean trustAll = true;
 
+  /** 握手超时，单位：毫秒，默认值：5000 */
+  private long handshakeTimeoutMillis = 5000;
+
   /**
    * 是否启用ocsp，默认：false
    *
@@ -130,9 +133,6 @@ public class WebClientSslConfig {
 
   /** truststore 类型 */
   private String trustStoreType;
-
-  /** 握手超时，单位：毫秒，默认值：5000 */
-  private long handshakeTimeoutMillis = 5000;
 
   /** truststore 密码 */
   @ToString.Exclude private String trustStorePassword;
