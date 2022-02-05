@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -48,13 +50,17 @@ public class WebClientHttpsTwoWayTlsv13Tests extends BaseTests {
 
   static final String PASSWORD = "password";
 
-  static final String SERVER_KEYSTORE_PATH = "tlsv13/mockwebserver.p12";
+  static final String SERVER_KEYSTORE_PATH =
+      new File("src/test/resources/tlsv13/mockwebserver.p12").getAbsolutePath();
 
-  static final String CLIENT_TRUST_KEYSTORE_PATH = "src/test/resources/tlsv13/client-trust.jks";
+  static final String SERVER_TRUST_KEYSTORE_PATH =
+      new File("src/test/resources/tlsv13/mockwebserver-trust.p12").getAbsolutePath();
 
   static final String CLIENT_KEYSTORE_PATH = "src/test/resources/tlsv13/client.p12";
 
-  static final WebClientSslConfig CLIENT_SSL_CONFIG_ONE_WAY =
+  static final String CLIENT_TRUST_KEYSTORE_PATH = "src/test/resources/tlsv13/client-trust.p12";
+
+  static final WebClientSslConfig CLIENT_SSL_CONFIG_TWO_WAY =
       new WebClientSslConfig()
           .trustAll(false)
           .protocols(new String[] {TLSV_1_3})
@@ -70,30 +76,32 @@ public class WebClientHttpsTwoWayTlsv13Tests extends BaseTests {
     mockWebServer = new MockWebServer();
     mockWebServer.requestClientAuth();
     mockWebServer.setProtocolNegotiationEnabled(true);
-    mockWebServer.setProtocols(List.of(Protocol.HTTP_1_1, Protocol.HTTP_2));
+    mockWebServer.setProtocols(List.of(Protocol.HTTP_2, Protocol.HTTP_1_1));
     mockWebServer.useHttps(buildTestSslContext().getSocketFactory(), false);
     mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
     baseUrl = String.format("https://localhost:%s", mockWebServer.getPort());
     webClient =
         WebClients.create(
-            new WebClientConfig().baseUrl(baseUrl), CLIENT_SSL_CONFIG_ONE_WAY, MAPPER);
+            new WebClientConfig().baseUrl(baseUrl), CLIENT_SSL_CONFIG_TWO_WAY, MAPPER);
   }
 
   private static SSLContext buildTestSslContext() throws Exception {
-    // Load self-signed certificate
-    char[] serverKeyStorePassword = PASSWORD.toCharArray();
+    char[] passwordArray = PASSWORD.toCharArray();
     KeyStore serverKeyStore = KeyStore.getInstance(PKCS_12);
-    try (InputStream in =
-        WebClientHttpsTwoWayTlsv13Tests.class.getResourceAsStream(SERVER_KEYSTORE_PATH)) {
-      serverKeyStore.load(in, serverKeyStorePassword);
+    try (InputStream in = new FileInputStream(SERVER_KEYSTORE_PATH)) {
+      serverKeyStore.load(in, passwordArray);
     }
 
     KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    kmf.init(serverKeyStore, serverKeyStorePassword);
+    kmf.init(serverKeyStore, passwordArray);
 
+    KeyStore trustServerKeyStore = KeyStore.getInstance(PKCS_12);
+    try (InputStream in = new FileInputStream(SERVER_TRUST_KEYSTORE_PATH)) {
+      trustServerKeyStore.load(in, passwordArray);
+    }
     TrustManagerFactory trustManagerFactory =
         TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    trustManagerFactory.init(serverKeyStore);
+    trustManagerFactory.init(trustServerKeyStore);
     SSLContext sslContext = SSLContext.getInstance(TLSV_1_3);
     sslContext.init(
         kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());

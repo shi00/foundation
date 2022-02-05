@@ -17,6 +17,8 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.io.IOException;
+import java.security.KeyStore;
+import java.security.Security;
 
 /**
  * 测试基类
@@ -26,6 +28,10 @@ import java.io.IOException;
  * @since 2022-02-03 15:01
  */
 public abstract class BaseTests {
+
+  static {
+    Security.setProperty("crypto.policy", "unlimited");
+  }
 
   /**
    * 测试对象
@@ -65,7 +71,7 @@ public abstract class BaseTests {
 
   static final String TLSV_1_3 = "TLSv1.3";
 
-  static final String PKCS_12 = "PKCS12";
+  static final String PKCS_12 = KeyStore.getDefaultType();
 
   static final ObjectMapper MAPPER = new ObjectMapper();
 
