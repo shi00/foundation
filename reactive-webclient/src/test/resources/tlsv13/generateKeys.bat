@@ -1,3 +1,5 @@
+del *.p12 *.cer
+
 keytool -genkey -v -alias mockwebserver -keyalg RSA -keystore mockwebserver.p12 -storetype PKCS12 -validity 36500 -keysize 2048 -storepass password -dname "CN=localhost,OU=DEV,O=Silong,L=Shenzhen,ST=Guangdong,C=CN"
 
 keytool -genkey -v -alias client -keyalg RSA -keystore client.p12 -storetype PKCS12 -validity 36500 -keysize 2048 -storepass password -dname "CN=localhost,OU=DEV,O=Silong,L=Shenzhen,ST=Guangdong,C=CN"
