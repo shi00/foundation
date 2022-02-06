@@ -207,6 +207,7 @@ public final class WebClients {
                         .addHandlerLast(
                             new WriteTimeoutHandler(
                                 webClientConfig.writeTimeoutMillis(), MILLISECONDS)))
+            .disableRetry(webClientConfig.disableRetryOnce())
             // 开启日志打印
             .wiretap(NETTY_CLIENT_CATEGORY, LogLevel.DEBUG, TEXTUAL, UTF_8);
 

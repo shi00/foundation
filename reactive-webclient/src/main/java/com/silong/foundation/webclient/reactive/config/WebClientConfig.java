@@ -73,6 +73,9 @@ public class WebClientConfig {
    */
   private boolean fastOpenConnectEnabled = true;
 
+  /** 是否关闭失败重试一次，默认：false */
+  private boolean disableRetryOnce = false;
+
   /**
    * 构造方法
    *
@@ -80,6 +83,7 @@ public class WebClientConfig {
    */
   public WebClientConfig(WebClientConfig config) {
     this.baseUrl = config.baseUrl;
+    this.disableRetryOnce = config.disableRetryOnce;
     this.codecMaxBufferSize = config.codecMaxBufferSize;
     this.connectTimeoutMillis = config.connectTimeoutMillis;
     this.readTimeoutMillis = config.readTimeoutMillis;
