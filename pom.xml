@@ -507,6 +507,7 @@
                         <exclude>**/*.properties</exclude>
                         <exclude>**/*.sql</exclude>
                         <exclude>**/*.bat</exclude>
+                        <exclude>**/*.cer</exclude>
                         <!-- Git related files -->
                         <exclude>**/.git/**</exclude>
                         <exclude>**/.mvn/**</exclude>
