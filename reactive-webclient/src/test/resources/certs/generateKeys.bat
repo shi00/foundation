@@ -20,6 +20,22 @@ SET KEYSIZE=2048
 :: 生成客户端证书时CN随意
 SET HOST_NAME=localhost
 
+:: 生成随机密码
+setlocal enabledelayedexpansion
+set "alp=a A b B c C d D E e f F g G h H I I j J k K l L m M n N p P q Q r R s S t T u U v V w W x X y Y z Z 0 1 2 3 4 5 6 7 8 9"
+set "cnt=0"
+for %%a in (%alp%) do (
+    set "rn.!cnt!=%%a"
+    set /a "cnt+=1"
+)
+
+set "pssw="
+ for /l %%a in (1,1,13) do (
+    set /a "rand=!random! %% cnt"
+    for %%b in (!rand!) do set "pssw=!pssw!!rn.%%b!"
+)
+set PASSWORD=!pssw!
+echo Your random password is: %PASSWORD%
 @echo on
 
 ::生成服务端证书

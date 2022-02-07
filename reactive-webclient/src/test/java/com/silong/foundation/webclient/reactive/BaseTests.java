@@ -91,6 +91,8 @@ public abstract class BaseTests {
 
   static final String TLSV_1_2 = "TLSv1.2";
 
+  static final String PASSWORD = "Dybr1JVSX7Lxm";
+
   static final String PKCS_12 = KeyStore.getDefaultType();
 
   static final ObjectMapper MAPPER = new ObjectMapper();

@@ -48,8 +48,6 @@ import static org.springframework.util.SocketUtils.*;
  */
 public class WebClientHttpsOneWayTlsv13Tests extends BaseTests {
 
-  static final String PASSWORD = "password";
-
   static final String SERVER_KEYSTORE_PATH =
       new File("src/test/resources/certs/mockwebserver.p12").getAbsolutePath();
 
