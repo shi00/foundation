@@ -49,14 +49,14 @@ public class WebClientConfig {
   /** 连接超时时长，单位：毫秒，默认：10000毫秒 */
   @Positive private long connectTimeoutMillis = Duration.ofSeconds(10).toMillis();
 
-  /** 读超时时长，单位：毫秒，默认：6000毫秒 */
-  @Positive private long readTimeoutMillis = Duration.ofSeconds(6).toMillis();
+  /** 读超时时长，单位：毫秒，默认：10000毫秒 */
+  @Positive private long readTimeoutMillis = Duration.ofSeconds(10).toMillis();
 
-  /** 写超时时长，单位：毫秒，默认：3000毫秒 */
-  @Positive private long writeTimeoutMillis = Duration.ofSeconds(3).toMillis();
+  /** 写超时时长，单位：毫秒，默认：10000毫秒 */
+  @Positive private long writeTimeoutMillis = Duration.ofSeconds(10).toMillis();
 
-  /** 响应超时时长，单位：毫秒，默认：3000毫秒 */
-  @Positive private long responseTimeoutMillis = Duration.ofSeconds(3).toMillis();
+  /** 响应超时时长，单位：毫秒，默认：15000毫秒 */
+  @Positive private long responseTimeoutMillis = Duration.ofSeconds(15).toMillis();
 
   /** codec内存缓存上限 */
   @Positive private int codecMaxBufferSize = DEFAULT_ONE_MB;
