@@ -80,7 +80,7 @@ public class WebClientHttpsTwoWayTlsv13Tests extends BaseTests {
     baseUrl = String.format("https://localhost:%s", mockWebServer.getPort());
     webClient =
         WebClients.create(
-            new WebClientConfig().baseUrl(baseUrl), CLIENT_SSL_CONFIG_TWO_WAY, MAPPER);
+            new WebClientConfig(), CLIENT_SSL_CONFIG_TWO_WAY, MAPPER);
   }
 
   private static SSLContext buildTestSslContext() throws Exception {

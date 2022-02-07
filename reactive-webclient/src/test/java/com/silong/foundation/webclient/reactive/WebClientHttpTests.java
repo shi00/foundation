@@ -46,7 +46,7 @@ public class WebClientHttpTests extends BaseTests {
     mockWebServer.setProtocols(List.of(Protocol.HTTP_1_1, Protocol.HTTP_2));
     mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
     baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
-    webClient = WebClients.create(new WebClientConfig().baseUrl(baseUrl), MAPPER);
+    webClient = WebClients.create(new WebClientConfig(), MAPPER);
   }
 
   @Test

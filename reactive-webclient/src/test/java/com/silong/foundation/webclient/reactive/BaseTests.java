@@ -123,7 +123,7 @@ public abstract class BaseTests {
     Mono<Result> resultMono =
         webClient
             .get()
-            .uri("/test/{param}", "a")
+            .uri(baseUrl + "/test/{param}", "a")
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .onStatus(
@@ -142,7 +142,7 @@ public abstract class BaseTests {
     Mono<Void> voidMono =
         webClient
             .delete()
-            .uri("/test/{id}", "1")
+            .uri(baseUrl + "/test/{id}", "1")
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .onStatus(
@@ -164,7 +164,7 @@ public abstract class BaseTests {
     Mono<Result> resultMono =
         webClient
             .post()
-            .uri("/test/{param}", "a")
+            .uri(baseUrl + "/test/{param}", "a")
             .body(BodyInserters.fromValue(randomEmployee()))
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
@@ -187,7 +187,7 @@ public abstract class BaseTests {
     Mono<Employee> employeeMono =
         webClient
             .patch()
-            .uri("/test/{id}", "1")
+            .uri(baseUrl + "/test/{id}", "1")
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .onStatus(
@@ -206,7 +206,7 @@ public abstract class BaseTests {
     Mono<Void> voidMono =
         webClient
             .head()
-            .uri("/test/{id}", "1")
+            .uri(baseUrl + "/test/{id}", "1")
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .onStatus(
@@ -225,7 +225,7 @@ public abstract class BaseTests {
     Mono<Void> voidMono =
         webClient
             .put()
-            .uri("/test/{param}", "a")
+            .uri(baseUrl + "/test/{param}", "a")
             .body(BodyInserters.fromValue(randomEmployee()))
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()

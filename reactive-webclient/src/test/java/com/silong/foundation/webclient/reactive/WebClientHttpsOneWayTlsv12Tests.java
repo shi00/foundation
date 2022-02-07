@@ -61,7 +61,7 @@ public class WebClientHttpsOneWayTlsv12Tests extends WebClientHttpsTwoWayTlsv13T
     baseUrl = String.format("https://localhost:%s", mockWebServer.getPort());
     webClient =
         WebClients.create(
-            new WebClientConfig().baseUrl(baseUrl), CLIENT_SSL_CONFIG_ONE_WAY, MAPPER);
+            new WebClientConfig(), CLIENT_SSL_CONFIG_ONE_WAY, MAPPER);
   }
 
   private static SSLContext buildTestSslContext() throws Exception {

@@ -48,17 +48,13 @@ public class WebClientProxyConfig {
   private String userName;
 
   /** 代理用户密码 */
-  @ToString.Exclude
-  private String password;
+  @ToString.Exclude private String password;
 
   /** 不使用代理的主机模式 */
   private String nonProxyHostsPattern;
 
   /** 代理类型，默认：http */
   private ProxyProvider.Proxy type = HTTP;
-
-  /** 是否启用代理，默认：false */
-  private boolean enabled = false;
 
   /**
    * 构造方法
@@ -72,6 +68,5 @@ public class WebClientProxyConfig {
     this.password = proxyConfig.password;
     this.nonProxyHostsPattern = proxyConfig.nonProxyHostsPattern;
     this.type = proxyConfig.type;
-    this.enabled = proxyConfig.enabled;
   }
 }

@@ -20,6 +20,7 @@ package com.silong.foundation.webclient.reactive;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
+import com.silong.foundation.webclient.reactive.config.WebClientConnectionPoolConfig;
 import com.silong.foundation.webclient.reactive.config.WebClientProxyConfig;
 import com.silong.foundation.webclient.reactive.config.WebClientSslConfig;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -42,6 +43,7 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 import reactor.netty.transport.ProxyProvider.Builder;
 
 import javax.net.ssl.CertPathTrustManagerParameters;
@@ -55,12 +57,12 @@ import java.security.KeyStore;
 import java.security.cert.*;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.silong.foundation.webclient.reactive.config.WebClientConfig.NETTY_CLIENT_CATEGORY;
+import static com.silong.foundation.webclient.reactive.config.WebClientConnectionPoolConfig.DEFAULT_CONFIG;
 import static com.silong.foundation.webclient.reactive.config.WebClientSslConfig.DEFAULT_APN;
-import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
-import static io.netty.channel.ChannelOption.TCP_FASTOPEN_CONNECT;
+import static io.netty.channel.ChannelOption.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.springframework.util.StringUtils.hasLength;
@@ -79,6 +81,8 @@ import static reactor.netty.transport.logging.AdvancedByteBufFormat.TEXTUAL;
     justification = "配置密钥需要指定密钥文件位置")
 public final class WebClients {
 
+  private static final AtomicInteger NAME_COUNT = new AtomicInteger(0);
+
   /**
    * 根据配置创建webclient
    *
@@ -86,7 +90,7 @@ public final class WebClients {
    * @return webclient
    */
   public static WebClient create(WebClientConfig webClientConfig) {
-    return create(webClientConfig, null, null, new ObjectMapper());
+    return create(webClientConfig, DEFAULT_CONFIG, null, null, new ObjectMapper());
   }
 
   /**
@@ -97,7 +101,7 @@ public final class WebClients {
    * @return webclient
    */
   public static WebClient create(WebClientConfig webClientConfig, ObjectMapper objectMapper) {
-    return create(webClientConfig, null, null, objectMapper);
+    return create(webClientConfig, DEFAULT_CONFIG, null, null, objectMapper);
   }
 
   /**
@@ -112,7 +116,7 @@ public final class WebClients {
       WebClientConfig webClientConfig,
       WebClientSslConfig webClientSslConfig,
       ObjectMapper objectMapper) {
-    return create(webClientConfig, webClientSslConfig, null, objectMapper);
+    return create(webClientConfig, DEFAULT_CONFIG, webClientSslConfig, null, objectMapper);
   }
 
   /**
@@ -127,13 +131,14 @@ public final class WebClients {
       WebClientConfig webClientConfig,
       WebClientProxyConfig proxyConfig,
       ObjectMapper objectMapper) {
-    return create(webClientConfig, null, proxyConfig, objectMapper);
+    return create(webClientConfig, DEFAULT_CONFIG, null, proxyConfig, objectMapper);
   }
 
   /**
    * 根据配置创建webclient
    *
    * @param webClientConfig 基础配置
+   * @param poolConfig 连接池配置
    * @param proxyConfig 代理配置
    * @param webClientSslConfig ssl配置
    * @param objectMapper jackson
@@ -141,13 +146,14 @@ public final class WebClients {
    */
   public static WebClient create(
       @NonNull WebClientConfig webClientConfig,
+      @NonNull WebClientConnectionPoolConfig poolConfig,
       @Nullable WebClientSslConfig webClientSslConfig,
       @Nullable WebClientProxyConfig proxyConfig,
       @NonNull ObjectMapper objectMapper) {
     return WebClient.builder()
         .clientConnector(
             new ReactorClientHttpConnector(
-                buildHttpClient(webClientConfig, webClientSslConfig, proxyConfig)))
+                buildHttpClient(webClientConfig, poolConfig, webClientSslConfig, proxyConfig)))
         .exchangeStrategies(
             buildExchangeStrategies(webClientConfig.codecMaxBufferSize(), objectMapper))
         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -169,17 +175,19 @@ public final class WebClients {
 
   private static HttpClient buildHttpClient(
       WebClientConfig webClientConfig,
+      WebClientConnectionPoolConfig poolConfig,
       WebClientSslConfig webClientSslConfig,
       WebClientProxyConfig proxyConfig) {
-    boolean httpsEnabled = httpsEnabled(webClientConfig.baseUrl());
     HttpClient httpClient =
-        HttpClient.create()
-            .protocol(httpsEnabled ? HttpProtocol.H2 : HttpProtocol.H2C, HttpProtocol.HTTP11)
-            .baseUrl(webClientConfig.baseUrl())
+        HttpClient.create(buildConnectionProvider(poolConfig))
+            .protocol(
+                webClientSslConfig != null ? HttpProtocol.H2 : HttpProtocol.H2C,
+                HttpProtocol.HTTP11)
             .keepAlive(webClientConfig.keepAliveEnabled())
             .compress(webClientConfig.compressionEnabled())
             .option(CONNECT_TIMEOUT_MILLIS, (int) webClientConfig.connectTimeoutMillis())
             .option(TCP_FASTOPEN_CONNECT, webClientConfig.fastOpenConnectEnabled())
+            .option(TCP_NODELAY, true)
             .responseTimeout(Duration.ofMillis(webClientConfig.responseTimeoutMillis()))
             .doOnError(
                 (request, throwable) ->
@@ -212,7 +220,7 @@ public final class WebClients {
             .wiretap(NETTY_CLIENT_CATEGORY, LogLevel.DEBUG, TEXTUAL, UTF_8);
 
     // 如果开启代理则配置代理
-    if (proxyConfig != null && proxyConfig.enabled()) {
+    if (proxyConfig != null) {
       httpClient =
           httpClient.proxy(
               typeSpec -> {
@@ -236,7 +244,7 @@ public final class WebClients {
     }
 
     // 如果开启ssl则配置
-    if (webClientSslConfig != null && httpsEnabled) {
+    if (webClientSslConfig != null) {
       httpClient =
           httpClient.secure(
               sslContextSpec ->
@@ -263,6 +271,20 @@ public final class WebClients {
         .ciphers(webClientSslConfig.ciphers(), SupportedCipherSuiteFilter.INSTANCE)
         .keyManager(buildKeyManagerFactory(webClientSslConfig))
         .trustManager(buildTrustManagerFactory(webClientSslConfig))
+        .build();
+  }
+
+  private static ConnectionProvider buildConnectionProvider(
+      WebClientConnectionPoolConfig poolConfig) {
+    return ConnectionProvider.builder(
+            WebClients.class.getSimpleName() + NAME_COUNT.getAndIncrement())
+        .lifo()
+        .maxConnections(poolConfig.maxConnections())
+        .maxLifeTime(Duration.ofMillis(poolConfig.maxLifeTimeMillis()))
+        .maxIdleTime(Duration.ofMillis(poolConfig.maxIdleTimeMillis()))
+        .evictInBackground(Duration.ofSeconds(poolConfig.evictionInterval()))
+        .pendingAcquireMaxCount(poolConfig.pendingAcquireMaxCount())
+        .pendingAcquireTimeout(Duration.ofSeconds(poolConfig.pendingAcquireTimeout()))
         .build();
   }
 
@@ -377,9 +399,5 @@ public final class WebClients {
     try (InputStream is = toUrl(crlPath).openStream()) {
       return CertificateFactory.getInstance("X.509").generateCRLs(is);
     }
-  }
-
-  private static boolean httpsEnabled(String url) {
-    return url.toLowerCase(Locale.ROOT).startsWith("https");
   }
 }

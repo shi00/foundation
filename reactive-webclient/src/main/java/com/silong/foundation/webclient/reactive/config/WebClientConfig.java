@@ -22,7 +22,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;
 import java.time.Duration;
 
@@ -37,14 +36,15 @@ import java.time.Duration;
 @NoArgsConstructor
 @Accessors(fluent = true)
 public class WebClientConfig {
+
+  /** 默认配置 */
+  public static final WebClientConfig DEFAULT_CONFIG = new WebClientConfig();
+
   /** 打印请求响应配置category */
   public static final String NETTY_CLIENT_CATEGORY = "reactor.netty.http.client.HttpClient";
 
   /** The number of bytes in 1MB. */
   public static final int DEFAULT_ONE_MB = 1024 * 1024;
-
-  /** 基础url */
-  @NotEmpty private String baseUrl;
 
   /** 连接超时时长，单位：毫秒，默认：10000毫秒 */
   @Positive private long connectTimeoutMillis = Duration.ofSeconds(10).toMillis();
@@ -61,8 +61,8 @@ public class WebClientConfig {
   /** codec内存缓存上限 */
   @Positive private int codecMaxBufferSize = DEFAULT_ONE_MB;
 
-  /** 是否开启GZip压缩，默认：false */
-  private boolean compressionEnabled = false;
+  /** 是否开启GZip压缩，默认：true */
+  private boolean compressionEnabled = true;
 
   /** 是否可开启keepAlive，默认：true */
   private boolean keepAliveEnabled = true;
@@ -82,7 +82,6 @@ public class WebClientConfig {
    * @param config 配置信息
    */
   public WebClientConfig(WebClientConfig config) {
-    this.baseUrl = config.baseUrl;
     this.disableRetryOnce = config.disableRetryOnce;
     this.codecMaxBufferSize = config.codecMaxBufferSize;
     this.connectTimeoutMillis = config.connectTimeoutMillis;
