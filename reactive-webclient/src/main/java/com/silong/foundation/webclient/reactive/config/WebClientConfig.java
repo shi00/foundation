@@ -22,9 +22,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 
 /**
  * web client配置
@@ -62,6 +68,20 @@ public class WebClientConfig {
   /** codec内存缓存上限 */
   @Positive private int codecMaxBufferSize = DEFAULT_ONE_MB;
 
+  /** 默认请求头，默认：["Content-Type":"application/json"] */
+  @NotNull
+  private Map<String, String> defaultRequestHeaders =
+      Map.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+
+  /** 请求过滤器列表，默认：empty */
+  @NotNull private List<ExchangeFilterFunction> exchangeFilterFunctions = List.of();
+
+  /**
+   * 客户端访问时的基础url，例如：https://localhost:8881/test<br>
+   * 配置基础url后，后续使用Webclient时只需指定相对路径即可。
+   */
+  private String baseUrl;
+
   /** 是否开启GZip压缩，默认：true */
   private boolean compressionEnabled = true;
 
@@ -81,12 +101,6 @@ public class WebClientConfig {
   private boolean disableRetryOnce = false;
 
   /**
-   * 客户端访问时的基础url，例如：https://localhost:8881/test<br>
-   * 配置基础url后，后续使用Webclient时只需指定相对路径即可。
-   */
-  private String baseUrl;
-
-  /**
    * 构造方法
    *
    * @param config 配置信息
@@ -103,5 +117,7 @@ public class WebClientConfig {
     this.tcpFastOpenConnectEnabled = config.tcpFastOpenConnectEnabled;
     this.baseUrl = config.baseUrl;
     this.tcpNoDelayEnabled = config.tcpNoDelayEnabled;
+    this.defaultRequestHeaders = config.defaultRequestHeaders;
+    this.exchangeFilterFunctions = config.exchangeFilterFunctions;
   }
 }

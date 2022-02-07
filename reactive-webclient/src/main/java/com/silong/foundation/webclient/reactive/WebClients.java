@@ -32,8 +32,6 @@ import io.netty.handler.timeout.WriteTimeoutHandler;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.ClientCodecConfigurer.ClientDefaultCodecs;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
@@ -44,6 +42,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.HttpProtocol;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
+import reactor.netty.transport.ProxyProvider;
 import reactor.netty.transport.ProxyProvider.Builder;
 
 import javax.net.ssl.CertPathTrustManagerParameters;
@@ -58,6 +57,7 @@ import java.security.cert.*;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static com.silong.foundation.webclient.reactive.config.WebClientConfig.NETTY_CLIENT_CATEGORY;
 import static com.silong.foundation.webclient.reactive.config.WebClientConnectionPoolConfig.DEFAULT_CONFIG;
@@ -156,7 +156,9 @@ public final class WebClients {
                 buildHttpClient(webClientConfig, poolConfig, webClientSslConfig, proxyConfig)))
         .exchangeStrategies(
             buildExchangeStrategies(webClientConfig.codecMaxBufferSize(), objectMapper))
-        .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+        .filters(filters -> filters.addAll(webClientConfig.exchangeFilterFunctions()))
+        .defaultHeaders(
+            httpHeaders -> webClientConfig.defaultRequestHeaders().forEach(httpHeaders::add))
         .build();
   }
 
@@ -227,25 +229,7 @@ public final class WebClients {
 
     // 如果开启代理则配置代理
     if (proxyConfig != null) {
-      httpClient =
-          httpClient.proxy(
-              typeSpec -> {
-                Builder builder =
-                    typeSpec
-                        .type(proxyConfig.type())
-                        .host(proxyConfig.host())
-                        .port(proxyConfig.port())
-                        .connectTimeoutMillis(webClientConfig.connectTimeoutMillis());
-                String password = proxyConfig.password();
-                String userName = proxyConfig.userName();
-                if (hasLength(password) && hasLength(userName)) {
-                  builder.username(userName).password(userNameParam -> password);
-                }
-                String nonProxyHostsPattern = proxyConfig.nonProxyHostsPattern();
-                if (hasLength(nonProxyHostsPattern)) {
-                  builder.nonProxyHosts(nonProxyHostsPattern);
-                }
-              });
+      httpClient = httpClient.proxy(buildProxy(proxyConfig));
       log.info("WebClient enable proxy with {}", proxyConfig);
     }
 
@@ -280,10 +264,28 @@ public final class WebClients {
         .build();
   }
 
+  private static Consumer<ProxyProvider.TypeSpec> buildProxy(WebClientProxyConfig proxyConfig) {
+    return typeSpec -> {
+      Builder builder =
+          typeSpec.type(proxyConfig.type()).host(proxyConfig.host()).port(proxyConfig.port());
+      String password = proxyConfig.password();
+      String userName = proxyConfig.userName();
+      if (hasLength(password) && hasLength(userName)) {
+        builder.username(userName).password(userNameParam -> password);
+      }
+      String nonProxyHostsPattern = proxyConfig.nonProxyHostsPattern();
+      if (hasLength(nonProxyHostsPattern)) {
+        builder.nonProxyHosts(nonProxyHostsPattern);
+      }
+    };
+  }
+
   private static ConnectionProvider buildConnectionProvider(
       WebClientConnectionPoolConfig poolConfig) {
     return ConnectionProvider.builder(
-            WebClients.class.getSimpleName() + NAME_COUNT.getAndIncrement())
+            String.format(
+                "%sConnectionPool%d",
+                WebClients.class.getSimpleName(), NAME_COUNT.getAndIncrement()))
         .lifo()
         .maxConnections(poolConfig.maxConnections())
         .maxLifeTime(Duration.ofMillis(poolConfig.maxLifeTimeMillis()))
