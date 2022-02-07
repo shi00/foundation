@@ -25,8 +25,6 @@ import lombok.experimental.Accessors;
 import javax.validation.constraints.Positive;
 import java.time.Duration;
 
-import static reactor.netty.resources.ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS;
-
 /**
  * 连接池配置
  *
@@ -63,4 +61,18 @@ public class WebClientConnectionPoolConfig {
    * 配置-1表示无上限
    */
   private int pendingAcquireMaxCount = 32;
+
+  /**
+   * 构造方法
+   *
+   * @param config 配置信息
+   */
+  public WebClientConnectionPoolConfig(WebClientConnectionPoolConfig config) {
+    this.evictionInterval = config.evictionInterval;
+    this.pendingAcquireMaxCount = config.pendingAcquireMaxCount;
+    this.maxConnections = config.maxConnections;
+    this.maxIdleTimeMillis = config.maxIdleTimeMillis;
+    this.maxLifeTimeMillis = config.maxLifeTimeMillis;
+    this.pendingAcquireTimeout = config.pendingAcquireTimeout;
+  }
 }

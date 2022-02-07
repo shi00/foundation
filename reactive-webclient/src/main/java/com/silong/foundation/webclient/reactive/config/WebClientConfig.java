@@ -71,10 +71,19 @@ public class WebClientConfig {
    * Client-side TCP FastOpen. Sending data with the initial TCP handshake.<br>
    * 默认：true
    */
-  private boolean fastOpenConnectEnabled = true;
+  private boolean tcpFastOpenConnectEnabled = true;
+
+  /** 是否开启TCP_NODELAY，默认：true */
+  private boolean tcpNoDelayEnabled = true;
 
   /** 是否关闭失败重试一次，默认：false */
   private boolean disableRetryOnce = false;
+
+  /**
+   * 客户端访问时的基础url，例如：https://localhost:8881/test<br>
+   * 配置基础url后，后续使用Webclient时只需指定相对路径即可。
+   */
+  private String baseUrl;
 
   /**
    * 构造方法
@@ -90,6 +99,8 @@ public class WebClientConfig {
     this.compressionEnabled = config.compressionEnabled;
     this.keepAliveEnabled = config.keepAliveEnabled;
     this.writeTimeoutMillis = config.writeTimeoutMillis;
-    this.fastOpenConnectEnabled = config.fastOpenConnectEnabled;
+    this.tcpFastOpenConnectEnabled = config.tcpFastOpenConnectEnabled;
+    this.baseUrl = config.baseUrl;
+    this.tcpNoDelayEnabled = config.tcpNoDelayEnabled;
   }
 }

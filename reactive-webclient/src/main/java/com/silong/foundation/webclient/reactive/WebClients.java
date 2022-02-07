@@ -186,8 +186,8 @@ public final class WebClients {
             .keepAlive(webClientConfig.keepAliveEnabled())
             .compress(webClientConfig.compressionEnabled())
             .option(CONNECT_TIMEOUT_MILLIS, (int) webClientConfig.connectTimeoutMillis())
-            .option(TCP_FASTOPEN_CONNECT, webClientConfig.fastOpenConnectEnabled())
-            .option(TCP_NODELAY, true)
+            .option(TCP_FASTOPEN_CONNECT, webClientConfig.tcpFastOpenConnectEnabled())
+            .option(TCP_NODELAY, webClientConfig.tcpNoDelayEnabled())
             .responseTimeout(Duration.ofMillis(webClientConfig.responseTimeoutMillis()))
             .doOnError(
                 (request, throwable) ->
@@ -218,6 +218,12 @@ public final class WebClients {
             .disableRetry(webClientConfig.disableRetryOnce())
             // 开启日志打印
             .wiretap(NETTY_CLIENT_CATEGORY, LogLevel.DEBUG, TEXTUAL, UTF_8);
+
+    // 配置客户端基础url
+    String baseUrl = webClientConfig.baseUrl();
+    if (hasLength(baseUrl)) {
+      httpClient = httpClient.baseUrl(baseUrl);
+    }
 
     // 如果开启代理则配置代理
     if (proxyConfig != null) {
