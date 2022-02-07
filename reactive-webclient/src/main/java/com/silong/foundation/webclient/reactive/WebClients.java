@@ -87,6 +87,34 @@ public final class WebClients {
    * 根据配置创建webclient
    *
    * @param webClientConfig 基础配置
+   * @param webClientConnectionPoolConfig 连接池配置
+   * @param objectMapper jackson
+   * @return webclient
+   */
+  public static WebClient create(
+      WebClientConfig webClientConfig,
+      WebClientConnectionPoolConfig webClientConnectionPoolConfig,
+      ObjectMapper objectMapper) {
+    return create(webClientConfig, webClientConnectionPoolConfig, null, null, objectMapper);
+  }
+
+  /**
+   * 根据配置创建webclient
+   *
+   * @param webClientConfig 基础配置
+   * @param webClientConnectionPoolConfig 连接池配置
+   * @return webclient
+   */
+  public static WebClient create(
+      WebClientConfig webClientConfig,
+      WebClientConnectionPoolConfig webClientConnectionPoolConfig) {
+    return create(webClientConfig, webClientConnectionPoolConfig, null, null, new ObjectMapper());
+  }
+
+  /**
+   * 根据配置创建webclient
+   *
+   * @param webClientConfig 基础配置
    * @return webclient
    */
   public static WebClient create(WebClientConfig webClientConfig) {
