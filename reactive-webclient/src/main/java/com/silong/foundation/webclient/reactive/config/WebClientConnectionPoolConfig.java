@@ -20,6 +20,7 @@ package com.silong.foundation.webclient.reactive.config;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.experimental.Accessors;
 
 import javax.validation.constraints.Positive;
@@ -67,7 +68,7 @@ public class WebClientConnectionPoolConfig {
    *
    * @param config 配置信息
    */
-  public WebClientConnectionPoolConfig(WebClientConnectionPoolConfig config) {
+  public WebClientConnectionPoolConfig(@NonNull WebClientConnectionPoolConfig config) {
     this.evictionInterval = config.evictionInterval;
     this.pendingAcquireMaxCount = config.pendingAcquireMaxCount;
     this.maxConnections = config.maxConnections;

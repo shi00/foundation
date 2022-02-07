@@ -22,6 +22,7 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 
@@ -142,7 +143,7 @@ public class WebClientSslConfig {
    *
    * @param config 配置
    */
-  public WebClientSslConfig(WebClientSslConfig config) {
+  public WebClientSslConfig(@NonNull WebClientSslConfig config) {
     this.trustStorePath = config.trustStorePath;
     this.trustStoreType = config.trustStoreType;
     this.trustStoreProvider = config.trustStoreProvider;

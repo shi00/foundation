@@ -20,6 +20,7 @@ package com.silong.foundation.webclient.reactive.config;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.experimental.Accessors;
 
 import javax.validation.constraints.Positive;
@@ -90,7 +91,7 @@ public class WebClientConfig {
    *
    * @param config 配置信息
    */
-  public WebClientConfig(WebClientConfig config) {
+  public WebClientConfig(@NonNull WebClientConfig config) {
     this.disableRetryOnce = config.disableRetryOnce;
     this.codecMaxBufferSize = config.codecMaxBufferSize;
     this.connectTimeoutMillis = config.connectTimeoutMillis;
