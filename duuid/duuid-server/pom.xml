@@ -108,6 +108,8 @@
                                 <builder>paketobuildpacks/builder:tiny</builder>
                                 <env>
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
+                                    <!--                                    <HTTPS_PROXY>http://127.0.0.1:8080</HTTPS_PROXY>-->
+                                    <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>--verbose</BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                 </env>
                             </image>
                         </configuration>
