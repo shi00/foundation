@@ -19,7 +19,7 @@
 package com.silong.foundation.springboot.starter.simpleauth.configure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
+import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
 import com.silong.foundation.springboot.starter.simpleauth.security.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.springboot.starter.simpleauth.configure.properties;
+package com.silong.foundation.springboot.starter.simpleauth.configure.config;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Data;

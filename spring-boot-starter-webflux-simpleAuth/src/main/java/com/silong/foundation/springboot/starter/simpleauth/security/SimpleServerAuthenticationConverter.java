@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
-import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
+import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
