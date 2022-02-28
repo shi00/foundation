@@ -68,6 +68,7 @@
         <module>plugins/log4j2/desensitization</module>
         <module>plugins/maven/etcdv3</module>
         <module>plugins/maven/mysql</module>
+        <module>utilities/random-password</module>
     </modules>
 
     <properties>
