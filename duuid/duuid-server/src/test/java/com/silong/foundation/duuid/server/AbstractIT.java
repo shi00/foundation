@@ -21,7 +21,7 @@ package com.silong.foundation.duuid.server;
 import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.digest.HmacToolkit;
 import com.silong.foundation.duuid.server.model.Duuid;
-import com.silong.foundation.springboot.starter.simpleauth.configure.properties.SimpleAuthProperties;
+import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.BeforeAll;

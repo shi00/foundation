@@ -16,37 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.plugins.log4j2.desensitization;
-
-import org.apache.commons.lang3.RandomUtils;
-import org.junit.jupiter.api.Test;
-
-import java.util.Base64;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+package com.silong.foundation.plugins.log4j2.desensitization.process;
 
 /**
- * 脱敏器单元测试
+ * 敏感信息识别接口
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-22 22:11
+ * @since 2022-02-28 14:28
  */
-public class DesensitizerTests {
+public interface SensitiveRecognizer {
+  /**
+   * 对文本中包含的敏感信息进行替换
+   *
+   * @param text 文本
+   * @return 敏感信息替换后的文本
+   */
+  String replace(String text);
 
-  private static String email =
-      "security:(?:[A-Za-z0-9+\\/]{4})*(?:[A-Za-z0-9+\\/]{4}|[A-Za-z0-9+\\/]{3}=|[A-Za-z0-9+\\/]{2}={2})";
-
-  @Test
-  public void test() {
-    Matcher matcher =
-        Pattern.compile(email)
-            .matcher(
-                "2131231security:"
-                    + Base64.getEncoder().encodeToString(RandomUtils.nextBytes(10))
-                    + "jdhsakj1231");
-    System.out.println(matcher.find());
-    String group = matcher.group(0);
-    System.out.println(group);
+  /**
+   * 获取用于替换敏感信息的掩码
+   *
+   * @return 掩码
+   */
+  default String getMasker() {
+    return "******";
   }
 }

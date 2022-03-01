@@ -16,62 +16,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.plugins.log4j2.desensitization;
-
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NonNull;
-import lombok.ToString;
+package com.silong.foundation.plugins.log4j2.desensitization.process;
 
 import java.util.regex.Pattern;
 
 /**
- * 正则表达式脱敏
+ * 基于正则表达式的敏感信息识别器
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-21 22:03
+ * @since 2022-02-28 14:43
  */
-@Data
-public class RegexDesensitizer implements Desensitizer {
+public class RegexSensitiveRecognizer implements SensitiveRecognizer {
 
   /** 正则表达式 */
-  @EqualsAndHashCode.Exclude @ToString.Exclude private final Pattern pattern;
+  protected String regex;
 
-  /** 替换符 */
-  private final String replacement;
-
-  /** 正则表达式 */
-  private final String regex;
+  /** 表达式编译后模式 */
+  protected Pattern pattern;
 
   /**
    * 构造方法
    *
    * @param regex 正则表达式
-   * @param replacement 敏感信息替换字符串
    */
-  public RegexDesensitizer(@NonNull String regex, @NonNull String replacement) {
-    this.pattern = Pattern.compile(regex);
-    this.replacement = replacement;
+  public RegexSensitiveRecognizer(String regex) {
+    if (regex == null || regex.isEmpty()) {
+      throw new IllegalArgumentException("regex must not be null or empty.");
+    }
     this.regex = regex;
-  }
-
-  /**
-   * 构造方法
-   *
-   * @param regex 正则表达式
-   */
-  public RegexDesensitizer(String regex) {
-    this(regex, DEFAULT_REPLACE_STR);
+    this.pattern = Pattern.compile(regex);
   }
 
   @Override
-  public String desensitize(@NonNull String msg) {
-    return pattern.matcher(msg).replaceAll(replacement);
+  public String replace(String text) {
+    if (text == null || text.isEmpty()) {
+      throw new IllegalArgumentException("text must not be null or empty.");
+    }
+    return pattern.matcher(text).replaceAll(getMasker());
   }
 
-  @Override
-  public String id() {
+  public String regex() {
     return regex;
+  }
+
+  public Pattern pattern() {
+    return pattern;
   }
 }

@@ -16,37 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.plugins.log4j2.desensitization;
-
-import org.apache.commons.lang3.RandomUtils;
-import org.junit.jupiter.api.Test;
-
-import java.util.Base64;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+package com.silong.foundation.springboot.starter.okhttp3;
 
 /**
- * 脱敏器单元测试
+ * 常量
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-22 22:11
+ * @since 2022-02-13 11:20
  */
-public class DesensitizerTests {
+public interface Constants {
+  /** 代理鉴权信息 */
+  String PROXY_AUTHORIZATION = "Proxy-Authorization";
+  /** 网络拦截器Qualifier */
+  String NETWORK_INTERCEPTORS = "network-interceptors";
+  /** 普通拦截器Qualifier */
+  String NORMAL_INTERCEPTORS = "normal-interceptors";
+  /** TLSv1.2 */
+  String TLS_12 = "TLSv1.2";
+  /** TLSv1.3 */
+  String TLS_13 = "TLSv1.3";
+  /**
+   * The HTTP {@code Content-Type} header field name.
+   * @see <a href="https://tools.ietf.org/html/rfc7231#section-3.1.1.5">Section 3.1.1.5 of RFC 7231</a>
+   */
+  String CONTENT_TYPE = "Content-Type";
 
-  private static String email =
-      "security:(?:[A-Za-z0-9+\\/]{4})*(?:[A-Za-z0-9+\\/]{4}|[A-Za-z0-9+\\/]{3}=|[A-Za-z0-9+\\/]{2}={2})";
-
-  @Test
-  public void test() {
-    Matcher matcher =
-        Pattern.compile(email)
-            .matcher(
-                "2131231security:"
-                    + Base64.getEncoder().encodeToString(RandomUtils.nextBytes(10))
-                    + "jdhsakj1231");
-    System.out.println(matcher.find());
-    String group = matcher.group(0);
-    System.out.println(group);
-  }
+  /**
+   * A String equivalent of {@link MediaType#APPLICATION_JSON}.
+   * @see #APPLICATION_JSON_UTF8_VALUE
+   */
+  String APPLICATION_JSON_VALUE = "application/json";
 }

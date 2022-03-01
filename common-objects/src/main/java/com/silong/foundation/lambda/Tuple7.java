@@ -16,34 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.plugins.log4j2.desensitization;
+package com.silong.foundation.lambda;
+
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
- * 日志脱敏接口
+ * 七元组
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-21 21:56
+ * @since 2022-01-03 20:20
+ * @param <T1> 七元组类型
+ * @param <T2> 七元组类型
+ * @param <T3> 七元组类型
+ * @param <T4> 七元组类型
+ * @param <T5> 七元组类型
+ * @param <T6> 七元组类型
+ * @param <T7> 七元组类型
  */
-public interface Desensitizer {
-
-  /** 默认替换字符串 */
-  String DEFAULT_REPLACE_STR = "***";
-
-  /**
-   * 对msg执行脱敏
-   *
-   * @param msg 日志消息
-   * @return 脱敏结果
-   */
-  String desensitize(String msg);
-
-  /**
-   * 脱敏器实例唯一id
-   *
-   * @return 唯一id
-   */
-  default String id() {
-    return getClass().getSimpleName();
-  }
+@Data
+@Builder
+@Accessors(fluent = true)
+public class Tuple7<T1, T2, T3, T4, T5, T6, T7> {
+  private T1 t1;
+  private T2 t2;
+  private T3 t3;
+  private T4 t4;
+  private T5 t5;
+  private T6 t6;
+  private T7 t7;
 }

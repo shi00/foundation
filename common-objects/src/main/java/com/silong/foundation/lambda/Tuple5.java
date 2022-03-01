@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.model;
+package com.silong.foundation.lambda;
 
 import lombok.Builder;
 import lombok.Data;

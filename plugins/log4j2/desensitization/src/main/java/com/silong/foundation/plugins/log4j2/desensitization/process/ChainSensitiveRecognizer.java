@@ -16,35 +16,39 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.model;
+package com.silong.foundation.plugins.log4j2.desensitization.process;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.experimental.Accessors;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * 七元组
+ * 链式敏感信息识别器，可以组合多个识别器按顺序进行敏感信息识别
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-03 20:20
- * @param <T1> 七元组类型
- * @param <T2> 七元组类型
- * @param <T3> 七元组类型
- * @param <T4> 七元组类型
- * @param <T5> 七元组类型
- * @param <T6> 七元组类型
- * @param <T7> 七元组类型
+ * @since 2022-03-01 08:01
  */
-@Data
-@Builder
-@Accessors(fluent = true)
-public class Tuple7<T1, T2, T3, T4, T5, T6, T7> {
-  private T1 t1;
-  private T2 t2;
-  private T3 t3;
-  private T4 t4;
-  private T5 t5;
-  private T6 t6;
-  private T7 t7;
+public class ChainSensitiveRecognizer implements SensitiveRecognizer {
+
+  private final List<SensitiveRecognizer> recognizers;
+
+  /**
+   * 构造方法
+   *
+   * @param recognizers 识别器列表
+   */
+  public ChainSensitiveRecognizer(SensitiveRecognizer... recognizers) {
+    this.recognizers =
+        Arrays.stream(Objects.requireNonNull(recognizers, "recognizers must not be null."))
+            .toList();
+  }
+
+  @Override
+  public String replace(String text) {
+    for (SensitiveRecognizer recognizer : recognizers) {
+      text = recognizer.replace(text);
+    }
+    return text;
+  }
 }

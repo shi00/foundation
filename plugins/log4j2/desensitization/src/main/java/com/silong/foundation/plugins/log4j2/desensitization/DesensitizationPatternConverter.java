@@ -18,11 +18,15 @@
  */
 package com.silong.foundation.plugins.log4j2.desensitization;
 
+import com.silong.foundation.plugins.log4j2.desensitization.process.DefaultSensitiveRecognizer;
+import com.silong.foundation.plugins.log4j2.desensitization.process.SensitiveRecognizer;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.pattern.ConverterKeys;
 import org.apache.logging.log4j.core.pattern.LogEventPatternConverter;
 import org.apache.logging.log4j.core.pattern.PatternConverter;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * 日志内容脱敏过滤器
@@ -32,18 +36,31 @@ import org.apache.logging.log4j.core.pattern.PatternConverter;
  * @since 2022-01-21 20:35
  */
 @Plugin(name = "DesensitizationPatternConverter", category = PatternConverter.CATEGORY)
-@ConverterKeys({"dm", "dsm"})
+@ConverterKeys({"dsm"})
 public class DesensitizationPatternConverter extends LogEventPatternConverter {
 
-  private static final ComposeDesensitizer DESENSITIZER = BuildInDesensitizer.getInstance();
+  /** 敏感信息识别器实现类 */
+  private static final String DESENSITIVE_RECOGNIZER_CLASS_NAME =
+      System.getProperty("log4j2.desensitization", DefaultSensitiveRecognizer.class.getName());
 
-  /** 是否开启日志脱敏 */
-  private static final boolean ENABLED =
-      Boolean.parseBoolean(System.getProperty("log.desensitization", "true"));
+  private final SensitiveRecognizer recognizer;
 
-  /** 构造方法 */
+  /** 默认构造方法 */
   protected DesensitizationPatternConverter() {
-    super("dm", "dsm");
+    super("dsm", "dsm");
+    try {
+      this.recognizer =
+          (SensitiveRecognizer)
+              Class.forName(DESENSITIVE_RECOGNIZER_CLASS_NAME)
+                  .getDeclaredConstructor()
+                  .newInstance();
+    } catch (ClassNotFoundException
+        | IllegalAccessException
+        | NoSuchMethodException
+        | InstantiationException
+        | InvocationTargetException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -53,13 +70,12 @@ public class DesensitizationPatternConverter extends LogEventPatternConverter {
    * @param options 参数列表
    * @return 日志脱敏转换器
    */
-  public static DesensitizationPatternConverter newInstance(String[] options) {
+  public static DesensitizationPatternConverter newInstance(final String[] options) {
     return new DesensitizationPatternConverter();
   }
 
   @Override
   public void format(LogEvent event, StringBuilder toAppendTo) {
-    String logMessage = event.getMessage().getFormattedMessage();
-    toAppendTo.append(ENABLED ? DESENSITIZER.desensitize(logMessage) : logMessage);
+    toAppendTo.append(recognizer.replace(event.getMessage().getFormattedMessage()));
   }
 }
