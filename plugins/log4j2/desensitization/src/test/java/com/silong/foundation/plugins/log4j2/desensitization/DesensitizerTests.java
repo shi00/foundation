@@ -21,9 +21,12 @@ package com.silong.foundation.plugins.log4j2.desensitization;
 import com.github.javafaker.Faker;
 import com.silong.foundation.plugins.log4j2.desensitization.process.DefaultSensitiveRecognizer;
 import com.silong.foundation.plugins.log4j2.desensitization.process.SensitiveRecognizer;
+import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.Base64;
 
 /**
  * 脱敏器单元测试
@@ -38,11 +41,61 @@ public class DesensitizerTests {
 
   private static final Faker FAKER = new Faker();
 
+  private static String randomEmail() {
+    return FAKER.internet().emailAddress();
+  }
+
   @Test
-  @DisplayName("email")
+  @DisplayName("email1")
   public void test1() {
-    String emailAddress = FAKER.internet().emailAddress();
-    String replace = RECOGNIZER.replace(emailAddress);
+    for (int i = 0; i < 100; i++) {
+      String emailAddress = randomEmail();
+      String replace = RECOGNIZER.replace(emailAddress);
+      Assertions.assertEquals(RECOGNIZER.getMasker(), replace);
+    }
+  }
+
+  @Test
+  @DisplayName("security")
+  public void test2() {
+    for (int i = 0; i < 100; i++) {
+      String security =
+          String.format(
+              "security:%s", Base64.getEncoder().encodeToString(RandomUtils.nextBytes(10)));
+      String replace = RECOGNIZER.replace(security);
+      Assertions.assertEquals(RECOGNIZER.getMasker(), replace);
+    }
+  }
+
+  @Test
+  @DisplayName("mastercard")
+  public void test3() {
+    String mastercard = "5492762180507229";
+    String replace = RECOGNIZER.replace(mastercard);
+    Assertions.assertEquals(RECOGNIZER.getMasker(), replace);
+  }
+
+  @Test
+  @DisplayName("visa")
+  public void test4() {
+    String visa = "4039913282265546";
+    String replace = RECOGNIZER.replace(visa);
+    Assertions.assertEquals(RECOGNIZER.getMasker(), replace);
+  }
+
+  @Test
+  @DisplayName("discover")
+  public void test5() {
+    String discover = "6011564819668756";
+    String replace = RECOGNIZER.replace(discover);
+    Assertions.assertEquals(RECOGNIZER.getMasker(), replace);
+  }
+
+  @Test
+  @DisplayName("american express")
+  public void test6() {
+    String ae = "342357932923916";
+    String replace = RECOGNIZER.replace(ae);
     Assertions.assertEquals(RECOGNIZER.getMasker(), replace);
   }
 }
