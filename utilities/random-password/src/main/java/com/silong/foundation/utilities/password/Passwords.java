@@ -93,7 +93,6 @@ public final class Passwords implements Closeable {
   private static final ThreadLocal<PasswordValidator> PASSWORD_VALIDATOR_THREAD_LOCAL =
           ThreadLocal.withInitial(()->new PasswordValidator(CHARACTER_RULES));
 
-
   /** 密码强度枚举 */
   public enum Strength {
     /** 弱 */
@@ -109,10 +108,10 @@ public final class Passwords implements Closeable {
   }
 
   /** 密码校验结果 */
-  public record Result(boolean isValid, Strength strength) {}
+  public record Result(boolean isValid, String msg, Strength strength) {
+  }
 
   /**
-   *
    *
    * <pre>
    * 按预定规则生成随机密码，生成密码长度可指定。
@@ -142,22 +141,20 @@ public final class Passwords implements Closeable {
    * @return 校验结果
    */
   public static Result validate(String password) {
-    if (password == null || password.isEmpty()) {
-      throw new IllegalArgumentException("password must not be null or empty.");
-    }
-    int passwordLength = password.length();
-    if (passwordLength < MIN_LENGTH || MAX_LENGTH < passwordLength) {
-      throw new IllegalArgumentException(
+    int passwordLength;
+    if (password == null || password.isEmpty()||(passwordLength = password.length()) < MIN_LENGTH || MAX_LENGTH < passwordLength) {
+      return new Result(false,
               String.format(
-                      "passwordLength must be greater than or equal to %d and less than or equal to %d",
-                      MIN_LENGTH, MAX_LENGTH));
+                      "The length of password must be greater than or equal to %d and less than or equal to %d",
+                      MIN_LENGTH, MAX_LENGTH),null);
     }
-    RuleResult result = PASSWORD_VALIDATOR_THREAD_LOCAL.get().validate(new PasswordData(password));
-    return new Result(result.isValid(), estimate(password));
+    PasswordValidator validator = PASSWORD_VALIDATOR_THREAD_LOCAL.get();
+    RuleResult result = validator.validate(new PasswordData(password));
+    boolean valid = result.isValid();
+    return new Result(valid, valid ? "Successful" : validator.getMessages(result).get(0),estimate(password));
   }
 
-  private static Strength estimate(String password)
-  {
+  private static Strength estimate(String password) {
     int score = ESTIMATOR.measure(password).getScore();
     return switch (score) {
       case 0 -> Strength.WEAK;
@@ -165,7 +162,7 @@ public final class Passwords implements Closeable {
       case 2 -> Strength.GOOD;
       case 3 -> Strength.STRONG;
       case 4 -> Strength.VERY_STRONG;
-      default -> throw new IllegalStateException(String.format("Unknow socre:%d",score));
+      default -> throw new IllegalStateException(String.format("Unknown score: %d.",score));
     };
   }
 
