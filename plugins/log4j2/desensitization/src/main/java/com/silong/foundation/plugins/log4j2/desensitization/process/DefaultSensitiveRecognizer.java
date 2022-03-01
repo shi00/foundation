@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class DefaultSensitiveRecognizer implements SensitiveRecognizer {
 
   /** 默认正则表达式配置文件路径 */
-  public static final String REGEX_PATH = "default-sensitive-regexs.properties";
+  public static final String REGEX_PATH = "default-sensitive-regex-list.properties";
 
   private final List<SensitiveRecognizer> regexSensitiveRecognizers;
 
@@ -99,7 +99,7 @@ public class DefaultSensitiveRecognizer implements SensitiveRecognizer {
       // 获取最长匹配结果作为其他识别器输入
       list.sort(Comparator.comparingInt(t -> t.replacedText.length()));
       text = list.removeFirst().replacedText;
-      recognizers = list.stream().map(Tuple::recognizer).collect(Collectors.toList());
+      recognizers = list.stream().map(Tuple::recognizer).toList();
     }
     return result;
   }

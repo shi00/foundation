@@ -18,12 +18,12 @@
  */
 package com.silong.foundation.plugins.log4j2.desensitization;
 
-import org.apache.commons.lang3.RandomUtils;
+import com.github.javafaker.Faker;
+import com.silong.foundation.plugins.log4j2.desensitization.process.DefaultSensitiveRecognizer;
+import com.silong.foundation.plugins.log4j2.desensitization.process.SensitiveRecognizer;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Base64;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * 脱敏器单元测试
@@ -34,19 +34,15 @@ import java.util.regex.Pattern;
  */
 public class DesensitizerTests {
 
-  private static String email =
-      "security:(?:[A-Za-z0-9+\\/]{4})*(?:[A-Za-z0-9+\\/]{4}|[A-Za-z0-9+\\/]{3}=|[A-Za-z0-9+\\/]{2}={2})";
+  private static final SensitiveRecognizer RECOGNIZER = new DefaultSensitiveRecognizer();
+
+  private static final Faker FAKER = new Faker();
 
   @Test
-  public void test() {
-    Matcher matcher =
-        Pattern.compile(email)
-            .matcher(
-                "2131231security:"
-                    + Base64.getEncoder().encodeToString(RandomUtils.nextBytes(10))
-                    + "jdhsakj1231");
-    System.out.println(matcher.find());
-    String group = matcher.group(0);
-    System.out.println(group);
+  @DisplayName("email")
+  public void test1() {
+    String emailAddress = FAKER.internet().emailAddress();
+    String replace = RECOGNIZER.replace(emailAddress);
+    Assertions.assertEquals(RECOGNIZER.getMasker(), replace);
   }
 }
