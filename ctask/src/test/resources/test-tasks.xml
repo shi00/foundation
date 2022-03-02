@@ -2,8 +2,9 @@
 <tasks xmlns="http://silong.com/tasks">
     <task type="test" implementation="java.applet.Applet">
         <step type="s1" order="1" implementation="java.awt.ActiveEvent"/>
+        <step type="s1" order="1" implementation="java.nio.BufferMismatch"/>
     </task>
-    <task type="test" implementation="java.beans.BeanInfo">
+    <task type="test1" implementation="java.beans.BeanInfo">
         <step type="s2" order="1" implementation="java.nio.Bits"/>
     </task>
 </tasks>

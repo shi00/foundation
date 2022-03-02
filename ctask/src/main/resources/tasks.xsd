@@ -38,6 +38,10 @@
                             </xs:simpleType>
                         </xs:attribute>
                     </xs:complexType>
+                    <xs:unique name="StepTypeKey">
+                        <xs:selector xpath="tns:step"/>
+                        <xs:field xpath="@type"/>
+                    </xs:unique>
                 </xs:element>
             </xs:sequence>
         </xs:complexType>
