@@ -10,8 +10,9 @@
                         <xs:sequence>
                             <xs:element name="step" maxOccurs="unbounded">
                                 <xs:complexType>
-                                    <xs:attribute name="type" type="xs:string" use="required"/>
+                                    <!-- <步骤执行顺序> -->
                                     <xs:attribute name="order" type="xs:positiveInteger" use="required"/>
+                                    <!-- <步骤在任务执行过程中所占权重，用于计算任务进度，取值：[0.0,1.0]> -->
                                     <xs:attribute name="weight">
                                         <xs:simpleType>
                                             <xs:restriction base="xs:double">
@@ -20,34 +21,38 @@
                                             </xs:restriction>
                                         </xs:simpleType>
                                     </xs:attribute>
+                                    <!-- <步骤是否支持并行执行，也就是在order相同时并行执行> -->
                                     <xs:attribute name="parallel" type="xs:boolean" default="false"/>
+                                    <!-- <步骤实现类，全限定名> -->
                                     <xs:attribute name="implementation" type="xs:string" use="required"/>
+                                    <!-- <步骤描述> -->
                                     <xs:attribute name="description" type="xs:string"/>
+                                    <!-- <步骤执行超时时间，单位：毫秒。默认：30000ms> -->
+                                    <xs:attribute name="timeout" type="xs:int" default="30000"/>
+                                    <!-- <步骤重试次数，一般一个步骤会执行一个耗时操作，执行一个命令或下发一个请求，如果下发失败则会重试，例如：执行一个耗时操作，下发命令后，需要通过轮询来查询执行结果> -->
+                                    <xs:attribute name="retryTimes" type="xs:int" default="3"/>
+                                    <!-- <步骤重试时间间隔，单位：毫秒。默认：10000ms> -->
+                                    <xs:attribute name="retryInterval" type="xs:int" default="10000"/>
+                                    <!-- <步骤查询次数，一般一个步骤会执行一个耗时操作，执行一个命令或下发一个请求，下发成功后通过轮询获取执行结果> -->
+                                    <xs:attribute name="queryTimes" type="xs:int" default="50"/>
+                                    <!-- <步骤查询结果时间间隔，单位：毫秒。默认：10000ms> -->
+                                    <xs:attribute name="queryInterval" type="xs:int" default="10000"/>
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>
+                        <!-- <任务描述> -->
                         <xs:attribute name="description" type="xs:string"/>
-                        <xs:attribute name="type" type="xs:string" use="required"/>
+                        <!-- <任务实现类，类全限定名> -->
                         <xs:attribute name="implementation" type="xs:string" use="required"/>
-                        <xs:attribute name="totalProgress" default="100">
-                            <xs:simpleType>
-                                <xs:restriction base="xs:int">
-                                    <xs:minInclusive value="0"/>
-                                    <xs:maxInclusive value="100"/>
-                                </xs:restriction>
-                            </xs:simpleType>
-                        </xs:attribute>
+                        <!-- <任务执行超时时间，单位：毫秒。默认：300000ms> -->
+                        <xs:attribute name="timeout" type="xs:int" default="300000"/>
                     </xs:complexType>
-                    <xs:unique name="StepTypeKey">
-                        <xs:selector xpath="tns:step"/>
-                        <xs:field xpath="@type"/>
-                    </xs:unique>
                 </xs:element>
             </xs:sequence>
         </xs:complexType>
-        <xs:unique name="TaskTypeKey">
+        <xs:unique name="TaskImplementationKey">
             <xs:selector xpath="tns:task"/>
-            <xs:field xpath="@type"/>
+            <xs:field xpath="@implementation"/>
         </xs:unique>
     </xs:element>
 
