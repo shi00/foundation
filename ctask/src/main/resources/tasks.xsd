@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+<xs:schema xmlns:tns="http://silong.com/tasks" elementFormDefault="qualified" version="1.0"
+           targetNamespace="http://silong.com/tasks" xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
     <xs:element name="tasks">
         <xs:complexType>
@@ -9,7 +10,7 @@
                         <xs:sequence>
                             <xs:element name="step" maxOccurs="unbounded">
                                 <xs:complexType>
-                                    <xs:attribute name="name" type="xs:string" use="required"/>
+                                    <xs:attribute name="type" type="xs:string" use="required"/>
                                     <xs:attribute name="order" type="xs:positiveInteger" use="required"/>
                                     <xs:attribute name="weight">
                                         <xs:simpleType>
@@ -25,13 +26,13 @@
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>
-                        <xs:attribute name="name" type="xs:string" use="required"/>
-                        <xs:attribute name="implementation" type="xs:string" use="required"/>
                         <xs:attribute name="description" type="xs:string"/>
+                        <xs:attribute name="type" type="xs:string" use="required"/>
+                        <xs:attribute name="implementation" type="xs:string" use="required"/>
                         <xs:attribute name="totalProgress" default="100">
                             <xs:simpleType>
                                 <xs:restriction base="xs:int">
-                                    <xs:minInclusive value="100"/>
+                                    <xs:minInclusive value="0"/>
                                     <xs:maxInclusive value="100"/>
                                 </xs:restriction>
                             </xs:simpleType>
@@ -40,6 +41,10 @@
                 </xs:element>
             </xs:sequence>
         </xs:complexType>
+        <xs:unique name="TaskTypeKey">
+            <xs:selector xpath="tns:task"/>
+            <xs:field xpath="@type"/>
+        </xs:unique>
     </xs:element>
 
 </xs:schema>

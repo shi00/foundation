@@ -510,7 +510,7 @@
                         <exclude>**/zoo/**</exclude>
                         <exclude>spotbugs-security-include.xml</exclude>
                         <exclude>spotbugs-security-exclude.xml</exclude>
-                        <exclude>**/log4j2.xml</exclude>
+                        <exclude>**/*.xml</exclude>
                         <exclude>**/Dockerfile</exclude>
                         <exclude>**/.dockerignore</exclude>
                         <exclude>**/*.properties</exclude>
@@ -617,7 +617,6 @@
                     <excludeRoots>
                         <excludeRoot>target/generated-sources</excludeRoot>
                         <excludeRoot>target/generated-test-sources</excludeRoot>
-                        <excludeRoot>target/generated-runtime-sources</excludeRoot>
                     </excludeRoots>
                     <rulesets>
                         <ruleset>rulesets/java/ali-comment.xml</ruleset>

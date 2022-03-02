@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tasks xmlns="http://silong.com/tasks">
+    <task type="test" implementation="java.applet.Applet">
+        <step type="s1" order="1" implementation="java.awt.ActiveEvent"/>
+    </task>
+    <task type="test" implementation="java.beans.BeanInfo">
+        <step type="s2" order="1" implementation="java.nio.Bits"/>
+    </task>
+</tasks>
