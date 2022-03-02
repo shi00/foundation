@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+
+    <xs:element name="tasks">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="task" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="step" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:attribute name="name" type="xs:string" use="required"/>
+                                    <xs:attribute name="order" type="xs:positiveInteger" use="required"/>
+                                    <xs:attribute name="weight">
+                                        <xs:simpleType>
+                                            <xs:restriction base="xs:double">
+                                                <xs:minInclusive value="0"/>
+                                                <xs:maxInclusive value="1"/>
+                                            </xs:restriction>
+                                        </xs:simpleType>
+                                    </xs:attribute>
+                                    <xs:attribute name="parallel" type="xs:boolean" default="false"/>
+                                    <xs:attribute name="implementation" type="xs:string" use="required"/>
+                                    <xs:attribute name="description" type="xs:string"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="name" type="xs:string" use="required"/>
+                        <xs:attribute name="implementation" type="xs:string" use="required"/>
+                        <xs:attribute name="description" type="xs:string"/>
+                        <xs:attribute name="totalProgress" default="100">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:int">
+                                    <xs:minInclusive value="100"/>
+                                    <xs:maxInclusive value="100"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
