@@ -19,14 +19,14 @@
 package com.silong.foundation.ctask;
 
 /**
- * 复杂任务接口，定义任务通用操作
+ * 复杂任务步骤接口，定义任务通用操作
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-03-02 18:07
  * @param <T> 任务上下文类型
  */
-public interface ComplexTask<T> {
+public interface ComplexTaskStep<T> {
 
   /**
    * 获取任务上下文
@@ -41,34 +41,12 @@ public interface ComplexTask<T> {
   /** 任务取消 */
   void cancel();
 
-  /** 任务暂停 */
+    /** 任务暂停 */
   void pause();
 
-  /** 任务暂停恢复 */
+    /** 任务暂停恢复 */
   void resume();
 
-  /** 任务重建 */
+    /** 任务重建 */
   void rebuild();
-
-  /**
-   * 获取任务描述
-   *
-   * @return 任务描述
-   */
-  String getDescription();
-
-  /**
-   * 任务进度最大值，默认：100。<br>
-   * 表示任务执行完毕时进度为100%
-   *
-   * @return 最大进度值
-   */
-  int getMaxProgress();
-
-  /**
-   * 获取任务执行超时时长，单位：毫秒
-   *
-   * @return 超时时长
-   */
-  int getTimeout();
 }
