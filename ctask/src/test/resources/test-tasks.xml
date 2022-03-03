@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tasks xmlns="http://silong.com/tasks">
-    <task type="test" implementation="java.applet.Applet">
-        <step type="s1" order="1" implementation="java.awt.ActiveEvent"/>
-        <step type="s1" order="1" implementation="java.nio.BufferMismatch"/>
-    </task>
-    <task type="test1" implementation="java.beans.BeanInfo">
-        <step type="s2" order="1" implementation="java.nio.Bits"/>
+<tasks xmlns="complex-task-list.xsd">
+    <task implementation="java.nio.BufferMismatch">
+        <step order="1" implementation="java.beans.BeanInfo" weight="0.1"/>
     </task>
 </tasks>

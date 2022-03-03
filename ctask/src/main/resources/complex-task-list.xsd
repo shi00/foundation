@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xs:schema xmlns:tns="http://silong.com/tasks" elementFormDefault="qualified" version="1.0"
            targetNamespace="http://silong.com/tasks" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-
-    <xs:element name="tasks">
+    <xs:element name="ComplexTaskConfigList">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="task" maxOccurs="unbounded">
+                <xs:element name="ComplexTaskConfig" maxOccurs="unbounded">
                     <xs:complexType>
                         <xs:sequence>
                             <xs:element name="step" maxOccurs="unbounded">
@@ -46,12 +45,21 @@
                         <xs:attribute name="implementation" type="xs:string" use="required"/>
                         <!-- <任务执行超时时间，单位：毫秒。默认：300000ms> -->
                         <xs:attribute name="timeout" type="xs:int" default="300000"/>
+                        <!-- <任务执行完成时的进度值，即：100%> -->
+                        <xs:attribute name="totalProgress" default="100">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:int">
+                                    <xs:minInclusive value="0"/>
+                                    <xs:maxInclusive value="100"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
         </xs:complexType>
         <xs:unique name="TaskImplementationKey">
-            <xs:selector xpath="tns:task"/>
+            <xs:selector xpath="tns:ComplexTaskConfig"/>
             <xs:field xpath="@implementation"/>
         </xs:unique>
     </xs:element>

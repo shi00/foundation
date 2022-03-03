@@ -102,7 +102,7 @@
                 <configuration>
                     <packageName>com.silong.foundation.ctask.xsd2java</packageName>
                     <sources>
-                        <source>src/main/resources/tasks.xsd</source>
+                        <source>src/main/resources/complex-task-list.xsd</source>
                     </sources>
                 </configuration>
             </plugin>
