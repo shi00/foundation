@@ -29,24 +29,31 @@ package com.silong.foundation.ctask;
 public interface ComplexTaskStep<T> {
 
   /**
-   * 获取任务上下文
+   * 获取步骤执行上下文
    *
    * @return 上下文
    */
   T getContext();
 
-  /** 任务启动 */
-  void start();
+  /**
+   * 执行步骤
+   *
+   * @param context 上下文
+   */
+  void run(T context) throws Exception;
 
-  /** 任务取消 */
-  void cancel();
+  /** 步骤取消执行 */
+  void cancel() throws Exception;
 
-    /** 任务暂停 */
-  void pause();
+  /**
+   * 步骤回滚<br>
+   * 如果任务执行过程中的某步执行失败后，需要整个任务执行回滚操作，每个已执行成功的步骤都需要执行回滚
+   */
+  void rollback() throws Exception;
 
-    /** 任务暂停恢复 */
-  void resume();
+  /** 步骤暂停 */
+  void pause() throws Exception;
 
-    /** 任务重建 */
-  void rebuild();
+  /** 步骤暂停恢复 */
+  void resume() throws Exception;
 }

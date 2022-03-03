@@ -28,27 +28,20 @@ package com.silong.foundation.ctask;
  */
 public interface ComplexTask<T> {
 
-  /**
-   * 获取任务上下文
-   *
-   * @return 上下文
-   */
-  T getContext();
-
   /** 任务启动 */
-  void start();
+  void start() throws Exception;
 
   /** 任务取消 */
-  void cancel();
+  void cancel() throws Exception;
 
   /** 任务暂停 */
-  void pause();
+  void pause() throws Exception;
 
   /** 任务暂停恢复 */
-  void resume();
+  void resume() throws Exception;
 
   /** 任务重建 */
-  void rebuild();
+  void rebuild() throws Exception;
 
   /**
    * 获取任务描述
@@ -71,4 +64,11 @@ public interface ComplexTask<T> {
    * @return 超时时长
    */
   int getTimeout();
+
+  /**
+   * 获取任务上下文
+   *
+   * @return 上下文
+   */
+  T getContext();
 }
