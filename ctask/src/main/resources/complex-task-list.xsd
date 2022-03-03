@@ -31,11 +31,11 @@
                                     <!-- <步骤重试次数，一般一个步骤会执行一个耗时操作，执行一个命令或下发一个请求，如果下发失败则会重试，例如：执行一个耗时操作，下发命令后，需要通过轮询来查询执行结果> -->
                                     <xs:attribute name="retryTimes" type="xs:int" default="3"/>
                                     <!-- <步骤重试时间间隔，单位：毫秒。默认：10000ms> -->
-                                    <xs:attribute name="retryInterval" type="xs:int" default="10000"/>
+                                    <xs:attribute name="retryIntervalMs" type="xs:int" default="10000"/>
                                     <!-- <步骤查询次数，一般一个步骤会执行一个耗时操作，执行一个命令或下发一个请求，下发成功后通过轮询获取执行结果> -->
                                     <xs:attribute name="queryTimes" type="xs:int" default="50"/>
                                     <!-- <步骤查询结果时间间隔，单位：毫秒。默认：10000ms> -->
-                                    <xs:attribute name="queryInterval" type="xs:int" default="10000"/>
+                                    <xs:attribute name="queryIntervalMs" type="xs:int" default="10000"/>
                                 </xs:complexType>
                             </xs:element>
                         </xs:sequence>
