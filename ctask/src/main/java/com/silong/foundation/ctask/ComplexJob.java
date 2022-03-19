@@ -18,42 +18,60 @@
  */
 package com.silong.foundation.ctask;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+
+import java.io.Serializable;
+
 /**
- * 复杂任务步骤接口，定义任务通用操作
+ * 复杂工作任务接口
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-03-02 18:07
  * @param <T> 任务上下文类型
  */
-public interface ComplexTaskStep<T> {
+public interface ComplexJob<T extends Serializable> {
 
   /**
-   * 获取步骤执行上下文
+   * 获取工作上下文
    *
-   * @return 上下文
+   * @return 任务上下文
    */
+  @NonNull
   T getContext();
 
   /**
-   * 执行步骤
+   * 启动工作
    *
-   * @param context 上下文
+   * @throws Exception 异常
    */
-  void run(T context) throws Exception;
+  void start() throws Exception;
 
-  /** 步骤取消执行 */
+  /**
+   * 工作取消
+   *
+   * @throws Exception 异常
+   */
   void cancel() throws Exception;
 
   /**
-   * 步骤回滚<br>
-   * 如果任务执行过程中的某步执行失败后，需要整个任务执行回滚操作，每个已执行成功的步骤都需要执行回滚
+   * 工作暂停
+   *
+   * @throws Exception 异常
    */
-  void rollback() throws Exception;
-
-  /** 步骤暂停 */
   void pause() throws Exception;
 
-  /** 步骤暂停恢复 */
+  /**
+   * 暂停工作恢复
+   *
+   * @throws Exception 异常
+   */
   void resume() throws Exception;
+
+  /**
+   * 重建工作
+   *
+   * @throws Exception 异常
+   */
+  void rebuild() throws Exception;
 }
