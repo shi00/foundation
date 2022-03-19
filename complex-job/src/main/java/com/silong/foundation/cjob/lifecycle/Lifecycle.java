@@ -16,62 +16,42 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.ctask;
-
-import edu.umd.cs.findbugs.annotations.NonNull;
-
-import java.io.Serializable;
+package com.silong.foundation.cjob.lifecycle;
 
 /**
- * 复杂工作任务接口
+ * 生命周期接口
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-03-02 18:07
- * @param <T> 任务上下文类型
+ * @since 2022-03-19 15:42
  */
-public interface ComplexJob<T extends Serializable> {
+public interface Lifecycle {
 
   /**
-   * 获取工作上下文
-   *
-   * @return 任务上下文
-   */
-  @NonNull
-  T getContext();
-
-  /**
-   * 启动工作
+   * 启动
    *
    * @throws Exception 异常
    */
   void start() throws Exception;
 
   /**
-   * 工作取消
+   * 取消
    *
    * @throws Exception 异常
    */
   void cancel() throws Exception;
 
   /**
-   * 工作暂停
+   * 暂停
    *
    * @throws Exception 异常
    */
   void pause() throws Exception;
 
   /**
-   * 暂停工作恢复
+   * 恢复
    *
    * @throws Exception 异常
    */
   void resume() throws Exception;
-
-  /**
-   * 重建工作
-   *
-   * @throws Exception 异常
-   */
-  void rebuild() throws Exception;
 }

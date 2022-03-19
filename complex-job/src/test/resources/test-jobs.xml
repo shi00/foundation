@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tasks xmlns="complex-task-list.xsd">
+<tasks xmlns="complex-job-list.xsd">
     <task implementation="java.nio.BufferMismatch">
         <step order="1" implementation="java.beans.BeanInfo" weight="0.1"/>
     </task>

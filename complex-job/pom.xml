@@ -25,10 +25,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>The complex task execution framework supports tasks such as pause, resume, cancel, rebuild, etc., and
-        supports real-time update of task progress.
+    <description>The complex job execution framework supports jobs such as pause, resume, cancel, rebuild, etc., and
+        supports real-time update of job progress.
     </description>
-    <artifactId>complex-task</artifactId>
+    <artifactId>complex-job</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -58,8 +58,8 @@
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -109,9 +109,9 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <packageName>com.silong.foundation.ctask.xsd2java</packageName>
+                    <packageName>com.silong.foundation.cjob.xsd2java</packageName>
                     <sources>
-                        <source>src/main/resources/complex-task-list.xsd</source>
+                        <source>src/main/resources/complex-job-list.xsd</source>
                     </sources>
                 </configuration>
             </plugin>

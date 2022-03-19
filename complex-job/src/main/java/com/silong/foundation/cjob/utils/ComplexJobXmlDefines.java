@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.ctask.utils;
+package com.silong.foundation.cjob.utils;
 
-import com.silong.foundation.ctask.xsd2java.ComplexTaskConfigList;
-import com.silong.foundation.ctask.xsd2java.ComplexTaskConfigList.ComplexTaskConfig;
+import com.silong.foundation.cjob.xsd2java.ComplexJobConfigList;
+import com.silong.foundation.cjob.xsd2java.ComplexJobConfigList.ComplexJobConfig;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.xml.bind.JAXBContext;
@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 任务配置工具
+ * xml配置解析工具
  *
  * @author louis sin
  * @version 1.0.0
@@ -41,42 +41,42 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressFBWarnings(
     value = {"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"},
     justification = "加载配置任务配置文件")
-public class ComplexTaskDefines {
+public class ComplexJobXmlDefines {
 
-  private static final ComplexTaskDefines INSTANCE = new ComplexTaskDefines();
+  private static final ComplexJobXmlDefines INSTANCE = new ComplexJobXmlDefines();
 
-  private static final Map<String, ComplexTaskConfigList> COMPLEX_TASK_CONFIG_LIST_MAP =
+  private static final Map<String, ComplexJobConfigList> COMPLEX_JOB_CONFIG_LIST_MAP =
       new ConcurrentHashMap<>();
 
   /** 私有构造，通过静态方法初始化 */
-  private ComplexTaskDefines() {}
+  private ComplexJobXmlDefines() {}
 
   /**
-   * 根据任务实现类权限定名查找任务定义
+   * 根据工作实现类权限定名查找工作定义
    *
-   * @param taskImplFqdn 任务实现类权限定名
-   * @return 任务定义
+   * @param jobImplFqdn 工作实现类权限定名
+   * @return 工作定义
    */
-  public ComplexTaskConfig find(String taskImplFqdn) {
-    if (taskImplFqdn == null || taskImplFqdn.isEmpty()) {
-      throw new IllegalArgumentException("taskImplFqdn must not be null or empty.");
+  public ComplexJobConfig find(String jobImplFqdn) {
+    if (jobImplFqdn == null || jobImplFqdn.isEmpty()) {
+      throw new IllegalArgumentException("jobImplFqdn must not be null or empty.");
     }
-    return COMPLEX_TASK_CONFIG_LIST_MAP.values().stream()
-        .flatMap(complexTaskConfigList -> complexTaskConfigList.getComplexTaskConfig().stream())
-        .filter(complexTaskConfig -> complexTaskConfig.getImplementation().equals(taskImplFqdn))
+    return COMPLEX_JOB_CONFIG_LIST_MAP.values().stream()
+        .flatMap(complexJobConfigList -> complexJobConfigList.getComplexJobConfig().stream())
+        .filter(complexJobConfig -> complexJobConfig.getImplementation().equals(jobImplFqdn))
         .findAny()
         .orElseThrow(
             () ->
                 new IllegalStateException(
                     String.format(
-                        "Failed to find %s from the list of tasks definition.", taskImplFqdn)));
+                        "Failed to find %s from the list of jobs definition.", jobImplFqdn)));
   }
 
   private static URL toUrl(final String path) throws Exception {
     try {
       return new URL(path);
     } catch (MalformedURLException e) {
-      URL url = ComplexTaskDefines.class.getResource(path);
+      URL url = ComplexJobXmlDefines.class.getResource(path);
       if (url != null) {
         return url;
       }
@@ -89,22 +89,22 @@ public class ComplexTaskDefines {
   }
 
   /**
-   * 加载任务定义配置文件
+   * 加载job定义配置文件
    *
    * @param path 配置文件路径
    * @return 任务配置
    */
-  public static ComplexTaskDefines loadTaskDefineXml(String path) {
+  public static ComplexJobXmlDefines loadJobDefineXml(String path) {
     if (path == null || path.isEmpty()) {
       throw new IllegalArgumentException("path must not be null or empty.");
     }
-    COMPLEX_TASK_CONFIG_LIST_MAP.computeIfAbsent(
+    COMPLEX_JOB_CONFIG_LIST_MAP.computeIfAbsent(
         path,
         key -> {
           try (InputStream inputStream = toUrl(key).openStream()) {
-            JAXBContext jaxbContext = JAXBContext.newInstance(ComplexTaskConfigList.class);
+            JAXBContext jaxbContext = JAXBContext.newInstance(ComplexJobConfigList.class);
             Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-            return (ComplexTaskConfigList) jaxbUnmarshaller.unmarshal(inputStream);
+            return (ComplexJobConfigList) jaxbUnmarshaller.unmarshal(inputStream);
           } catch (Exception e) {
             throw new IllegalStateException(e);
           }
