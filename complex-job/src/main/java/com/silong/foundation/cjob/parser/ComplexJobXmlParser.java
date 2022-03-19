@@ -16,10 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.utils;
+package com.silong.foundation.cjob.parser;
 
 import com.silong.foundation.cjob.xsd2java.ComplexJobConfigList;
 import com.silong.foundation.cjob.xsd2java.ComplexJobConfigList.ComplexJobConfig;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.xml.bind.JAXBContext;
@@ -32,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * xml配置解析工具
+ * job配置解析器
  *
  * @author louis sin
  * @version 1.0.0
@@ -40,16 +41,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @SuppressFBWarnings(
     value = {"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"},
-    justification = "加载配置任务配置文件")
-public class ComplexJobXmlDefines {
+    justification = "解析job配置文件")
+public class ComplexJobXmlParser {
 
-  private static final ComplexJobXmlDefines INSTANCE = new ComplexJobXmlDefines();
+  private static final ComplexJobXmlParser INSTANCE = new ComplexJobXmlParser();
 
   private static final Map<String, ComplexJobConfigList> COMPLEX_JOB_CONFIG_LIST_MAP =
       new ConcurrentHashMap<>();
 
   /** 私有构造，通过静态方法初始化 */
-  private ComplexJobXmlDefines() {}
+  private ComplexJobXmlParser() {}
 
   /**
    * 根据工作实现类权限定名查找工作定义
@@ -57,6 +58,7 @@ public class ComplexJobXmlDefines {
    * @param jobImplFqdn 工作实现类权限定名
    * @return 工作定义
    */
+  @NonNull
   public ComplexJobConfig find(String jobImplFqdn) {
     if (jobImplFqdn == null || jobImplFqdn.isEmpty()) {
       throw new IllegalArgumentException("jobImplFqdn must not be null or empty.");
@@ -76,7 +78,7 @@ public class ComplexJobXmlDefines {
     try {
       return new URL(path);
     } catch (MalformedURLException e) {
-      URL url = ComplexJobXmlDefines.class.getResource(path);
+      URL url = ComplexJobXmlParser.class.getResource(path);
       if (url != null) {
         return url;
       }
@@ -94,7 +96,7 @@ public class ComplexJobXmlDefines {
    * @param path 配置文件路径
    * @return 任务配置
    */
-  public static ComplexJobXmlDefines loadJobDefineXml(String path) {
+  public static ComplexJobXmlParser loadJobDefineXml(String path) {
     if (path == null || path.isEmpty()) {
       throw new IllegalArgumentException("path must not be null or empty.");
     }

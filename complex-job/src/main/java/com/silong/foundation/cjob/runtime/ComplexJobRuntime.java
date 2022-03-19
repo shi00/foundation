@@ -16,41 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.lifecycle;
+package com.silong.foundation.cjob.runtime;
 
 /**
- * 生命周期接口
+ * job任务运行时
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-03-19 15:42
+ * @since 2022-03-19 16:29
  */
-public interface Lifecycle {
-  /**
-   * 启动
-   *
-   * @throws Exception 异常
-   */
-  void start() throws Exception;
-
-  /**
-   * 取消
-   *
-   * @throws Exception 异常
-   */
-  void cancel() throws Exception;
-
-  /**
-   * 暂停
-   *
-   * @throws Exception 异常
-   */
-  void pause() throws Exception;
-
-  /**
-   * 恢复
-   *
-   * @throws Exception 异常
-   */
-  void resume() throws Exception;
+public class ComplexJobRuntime {
+  /** 线程池核心数量 */
+  private static final int THREAD_CORE_SIZE =
+      Integer.parseInt(
+          System.getProperty(
+              "complex.job.scheduler.thread.count",
+              String.valueOf(Runtime.getRuntime().availableProcessors())));
 }
