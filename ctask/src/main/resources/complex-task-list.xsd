@@ -27,9 +27,15 @@
                                                     </xs:simpleType>
                                                 </xs:attribute>
                                                 <!-- <步骤实现类，全限定名> -->
-                                                <xs:attribute name="implementation" type="xs:string" use="required"/>
+                                                <xs:attribute name="implementation" use="required">
+                                                    <xs:simpleType>
+                                                        <xs:restriction base="xs:string">
+                                                            <xs:maxLength value="255"/>
+                                                        </xs:restriction>
+                                                    </xs:simpleType>
+                                                </xs:attribute>
                                                 <!-- <步骤描述> -->
-                                                <xs:attribute name="description" type="xs:string">
+                                                <xs:attribute name="description">
                                                     <xs:simpleType>
                                                         <xs:restriction base="xs:string">
                                                             <xs:maxLength value="255"/>
@@ -61,9 +67,15 @@
                                         </xs:simpleType>
                                     </xs:attribute>
                                     <!-- <任务实现类，全限定名> -->
-                                    <xs:attribute name="implementation" type="xs:string" use="required"/>
+                                    <xs:attribute name="implementation" use="required">
+                                        <xs:simpleType>
+                                            <xs:restriction base="xs:string">
+                                                <xs:maxLength value="255"/>
+                                            </xs:restriction>
+                                        </xs:simpleType>
+                                    </xs:attribute>
                                     <!-- <任务描述> -->
-                                    <xs:attribute name="description" type="xs:string">
+                                    <xs:attribute name="description">
                                         <xs:simpleType>
                                             <xs:restriction base="xs:string">
                                                 <xs:maxLength value="255"/>
@@ -102,7 +114,7 @@
                             </xs:element>
                         </xs:sequence>
                         <!-- <工作描述> -->
-                        <xs:attribute name="description" type="xs:string">
+                        <xs:attribute name="description">
                             <xs:simpleType>
                                 <xs:restriction base="xs:string">
                                     <xs:maxLength value="255"/>
@@ -110,7 +122,13 @@
                             </xs:simpleType>
                         </xs:attribute>
                         <!-- <工作实现类，类全限定名> -->
-                        <xs:attribute name="implementation" type="xs:string" use="required"/>
+                        <xs:attribute name="implementation" use="required">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:maxLength value="255"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
                         <!-- <工作执行超时时间，单位：毫秒。如果取值为0，则表示无超时。默认：300000ms> -->
                         <xs:attribute name="timeout" default="300000">
                             <xs:simpleType>
