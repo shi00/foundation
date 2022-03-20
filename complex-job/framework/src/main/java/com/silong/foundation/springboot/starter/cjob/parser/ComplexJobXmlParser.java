@@ -16,10 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.parser;
+package com.silong.foundation.springboot.starter.cjob.parser;
 
-import com.silong.foundation.cjob.xsd2java.ComplexJobConfigList;
-import com.silong.foundation.cjob.xsd2java.ComplexJobConfigList.ComplexJobConfig;
+import com.silong.foundation.springboot.starter.cjob.xsd2java.ComplexJobConfigList;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -59,7 +58,7 @@ public class ComplexJobXmlParser {
    * @return 工作定义
    */
   @NonNull
-  public ComplexJobConfig find(String jobImplFqdn) {
+  public ComplexJobConfigList.ComplexJobConfig find(String jobImplFqdn) {
     if (jobImplFqdn == null || jobImplFqdn.isEmpty()) {
       throw new IllegalArgumentException("jobImplFqdn must not be null or empty.");
     }
@@ -96,7 +95,7 @@ public class ComplexJobXmlParser {
    * @param path 配置文件路径
    * @return 任务配置
    */
-  public static ComplexJobXmlParser loadJobDefineXml(String path) {
+  public static ComplexJobXmlParser loadJobXml(String path) {
     if (path == null || path.isEmpty()) {
       throw new IllegalArgumentException("path must not be null or empty.");
     }

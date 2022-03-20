@@ -58,7 +58,7 @@
         <module>reactive-webclient</module>
 <!--        <module>okhttp3-webclient</module>-->
         <module>crypto</module>
-        <module>complex-job</module>
+        <module>complex-job/framework</module>
         <module>duuid/idgen</module>
         <module>duuid/workerid-provider</module>
         <module>duuid/etcdv3-workerid-provider</module>

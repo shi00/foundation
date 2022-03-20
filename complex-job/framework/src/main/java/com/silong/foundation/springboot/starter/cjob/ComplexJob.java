@@ -16,20 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.runtime;
+package com.silong.foundation.springboot.starter.cjob;
+
+import com.silong.foundation.springboot.starter.cjob.lifecycle.Lifecycle;
+import edu.umd.cs.findbugs.annotations.NonNull;
+
+import java.io.Serializable;
 
 /**
- * job任务运行时
+ * job接口
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-03-19 16:29
+ * @since 2022-03-02 18:07
+ * @param <T> 任务上下文类型
  */
-public class ComplexJobRuntime {
-  /** 线程池核心数量 */
-  private static final int THREAD_CORE_SIZE =
-      Integer.parseInt(
-          System.getProperty(
-              "complex.job.scheduler.thread.count",
-              String.valueOf(Runtime.getRuntime().availableProcessors())));
+public interface ComplexJob<T extends Serializable> extends Lifecycle {
+
+  /**
+   * 获取job上下文
+   *
+   * @return job上下文
+   */
+  @NonNull
+  T getContext();
+
+  /**
+   * 重建job
+   *
+   * @throws Exception 异常
+   */
+  void rebuild() throws Exception;
 }
