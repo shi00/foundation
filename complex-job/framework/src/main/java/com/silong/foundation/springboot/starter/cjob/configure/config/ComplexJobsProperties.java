@@ -51,15 +51,68 @@ public class ComplexJobsProperties {
   public static final String COMPLEX_JOBS_CLUSTER = "complex-jobs-cluster";
 
   /** 脑裂保护策略名 */
-  public static final String PROBABILISTIC_SPLIT_BRAIN_PROTECTION =
-      "probabilistic-split-brain-protection";
+  public static final String COMPLEX_JOBS_PROBABILISTIC_SPLIT_BRAIN_PROTECTION =
+      "complex-jobs-probabilistic-split-brain-protection";
 
-  /** ping错误检测配置 */
+  /** 基于Phi Accrual Failure Detector的脑裂保护配置 */
+  @Data
+  public static class ProbabilisticSplitBrainProtectionConfig {
+
+    /**
+     * minimum count of members in the cluster not to be considered it split.Its default value is 2.
+     */
+    private int minimumClusterSize = 2;
+
+    /**
+     * Threshold for suspicion (φ) level. A low threshold is prone to generate many wrong suspicions
+     * but ensures a quick detection in the event of a real crash. Conversely, a high threshold
+     * generates fewer mistakes but needs more time to detect actual crashes. Its default value is
+     * 10.
+     */
+    private int suspicionThreshold = 10;
+
+    /**
+     * Number of samples to use for calculation of mean and standard deviation of inter-arrival
+     * times. Its default value is 200.
+     */
+    private int maxSampleSize = 200;
+
+    /**
+     * Minimum standard deviation (in milliseconds) to use for the normal distribution used when
+     * calculating phi. Too low standard deviation might result in too much sensitivity for sudden,
+     * but normal, deviations in heartbeat inter arrival times. Its default value is 100
+     * milliseconds.
+     */
+    private int minStdDeviationMillis = 100;
+
+    /**
+     * Bootstrap the stats with heartbeats that corresponds to this duration in milliseconds, with a
+     * rather high standard deviation (since environment is unknown in the beginning). Its default
+     * value is 5000 milliseconds.
+     */
+    private int heartbeatIntervalMillis = 5000;
+
+    /**
+     * Duration in milliseconds corresponding to the number of potentially lost/delayed heartbeats
+     * that are accepted before considering it to be an anomaly. This margin is important to be able
+     * to survive sudden, occasional, pauses in heartbeat arrivals, due to for example garbage
+     * collection or network drops. The value must be in the [heartbeat interval , maximum no
+     * heartbeat interval] range, otherwise Hazelcast does not start. Its default value is 60000
+     * milliseconds
+     */
+    private int acceptableHeartbeatPauseMillis = 60000;
+  }
+
+  /**
+   * ping错误检测配置 <img width="640" height="480"
+   * src="https://github.com/shi00/foundation/blob/main/images/Hazelcast%20Icmp%20Failure%20Detector%20Configuration.PNG"
+   * alt=""/>
+   */
   @Data
   public static class IcmpFailureDetectorConfig {
 
-    /** 是否开启icmp错误检测，默认：false */
-    private boolean enabled;
+    /** 是否开启icmp错误检测，默认：true */
+    private boolean enabled = true;
 
     /**
      * Specifies whether the parallel ping detector is enabled; works separately from the other
@@ -69,9 +122,9 @@ public class ComplexJobsProperties {
 
     /**
      * Number of milliseconds until a ping attempt is considered failed if there was no reply. Its
-     * default value is 100 milliseconds.
+     * default value is 1000 milliseconds.
      */
-    @Positive private int timeoutMilliseconds = 100;
+    @Positive private int timeoutMilliseconds = 1000;
 
     /** Maximum number of hops the packets should go through. Its default value is 0. */
     @Min(0)
@@ -125,6 +178,11 @@ public class ComplexJobsProperties {
     /** 如果监听端口被占用，是否自增端口，默认：true */
     private boolean portAutoIncrementEnable = true;
   }
+
+  /** 集群ProbabilisticSplitBrainProtection配置 */
+  @Valid @NestedConfigurationProperty
+  private ProbabilisticSplitBrainProtectionConfig probabilisticSplitBrainProtectionConfig =
+      new ProbabilisticSplitBrainProtectionConfig();
 
   /** 集群icmp错误探测配置 */
   @Valid @NestedConfigurationProperty

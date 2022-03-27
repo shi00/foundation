@@ -1,8 +1,10 @@
 package com.silong.foundation.springboot.starter.cjob.configure;
 
 import com.hazelcast.config.*;
+import com.hazelcast.config.IcmpFailureDetectorConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties;
-import com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties.ExecutorsConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -11,8 +13,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.UUID;
 
-import static com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties.COMPLEX_JOBS_CLUSTER;
-import static com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties.COMPLEX_JOBS_EXECUTORS;
+import static com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties.*;
 
 /**
  * 自动装配
@@ -31,6 +32,9 @@ public class ComplexJobsExecutorsAutoConfiguration {
 
   private ComplexJobsProperties.IcmpFailureDetectorConfig icmpFailureDetectorConfig;
 
+  private ComplexJobsProperties.ProbabilisticSplitBrainProtectionConfig
+      probabilisticSplitBrainProtectionConfig;
+
   /**
    * 如果当前spring上下文中没有hazelcast配置，则注入配置
    *
@@ -42,6 +46,32 @@ public class ComplexJobsExecutorsAutoConfiguration {
     return new Config()
         .setClusterName(COMPLEX_JOBS_CLUSTER)
         .setInstanceName(UUID.randomUUID().toString());
+  }
+
+  /**
+   * 集群脑裂保护
+   *
+   * @param config hazelcast配置
+   * @return 脑裂保护配置
+   */
+  @Bean
+  SplitBrainProtectionConfig complexJobsProbabilisticSplitBrainProtectionConfig(Config config) {
+    SplitBrainProtectionConfig splitBrainProtectionConfig =
+        SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder(
+                COMPLEX_JOBS_PROBABILISTIC_SPLIT_BRAIN_PROTECTION,
+                probabilisticSplitBrainProtectionConfig.getMinimumClusterSize())
+            .withMinStdDeviationMillis(
+                probabilisticSplitBrainProtectionConfig.getMinStdDeviationMillis())
+            .withAcceptableHeartbeatPauseMillis(
+                probabilisticSplitBrainProtectionConfig.getAcceptableHeartbeatPauseMillis())
+            .withHeartbeatIntervalMillis(
+                probabilisticSplitBrainProtectionConfig.getHeartbeatIntervalMillis())
+            .withMaxSampleSize(probabilisticSplitBrainProtectionConfig.getMaxSampleSize())
+            .withSuspicionThreshold(probabilisticSplitBrainProtectionConfig.getSuspicionThreshold())
+            .build();
+    splitBrainProtectionConfig.setProtectOn(SplitBrainProtectionOn.READ_WRITE);
+    config.addSplitBrainProtectionConfig(splitBrainProtectionConfig);
+    return splitBrainProtectionConfig;
   }
 
   /**
@@ -71,10 +101,10 @@ public class ComplexJobsExecutorsAutoConfiguration {
   }
 
   @Bean
-  DurableExecutorConfig complexJobsExecutors(Config config) {
+  DurableExecutorConfig complexJobsExecutorsConfig(Config config) {
     DurableExecutorConfig durableExecutorConfig =
         new DurableExecutorConfig()
-            .setSplitBrainProtectionName("")
+            .setSplitBrainProtectionName(COMPLEX_JOBS_PROBABILISTIC_SPLIT_BRAIN_PROTECTION)
             .setName(COMPLEX_JOBS_EXECUTORS)
             .setDurability(executorsConfig.getDurability())
             .setCapacity(executorsConfig.getCapacity())
@@ -89,5 +119,7 @@ public class ComplexJobsExecutorsAutoConfiguration {
     this.executorsConfig = properties.getExecutors();
     this.networkConfig = properties.getNetwork();
     this.icmpFailureDetectorConfig = properties.getIcmpFailureDetector();
+    this.probabilisticSplitBrainProtectionConfig =
+        properties.getProbabilisticSplitBrainProtectionConfig();
   }
 }
