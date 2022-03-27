@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.silong.foundation.springboot.starter.cjob.configure.ComplexJobFrameworkAutoConfiguration
+  com.silong.foundation.springboot.starter.cjob.configure.ComplexJobsExecutorsAutoConfiguration,\
+  com.silong.foundation.springboot.starter.cjob.configure.ComplexJobsFrameworkAutoConfiguration

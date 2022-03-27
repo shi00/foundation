@@ -21,41 +21,45 @@ package com.silong.foundation.springboot.starter.cjob.configure;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobFrameworkProperties;
+import com.hazelcast.durableexecutor.DurableExecutorService;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import static com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties.COMPLEX_JOBS_EXECUTORS;
+
 /**
- * 任务自动配置
+ * 自动配置
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-01-17 13:50
  */
 @Configuration
-@EnableConfigurationProperties(ComplexJobFrameworkProperties.class)
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-public class ComplexJobFrameworkAutoConfiguration {
+@AutoConfigureAfter(ComplexJobsExecutorsAutoConfiguration.class)
+public class ComplexJobsFrameworkAutoConfiguration {
 
   /**
-   * 如果当前spring上下文中没有hazelcast配置注入，则注入配置
+   * Hazelcast实例
    *
-   * @return hazelcast配置
+   * @param config 配置
+   * @return Hazelcast实例
    */
-  @Bean
+  @Bean(destroyMethod = "shutdown")
   @ConditionalOnMissingBean
-  Config hazelcastConfig() {
-    return new Config().setInstanceName("complex-jobs-cluster");
+  HazelcastInstance complexJobsHazelcast(Config config) {
+    return Hazelcast.newHazelcastInstance(config);
   }
 
-
-
-  @Bean
-  @ConditionalOnMissingBean
-  HazelcastInstance hazelcastInstance(Config config) {
-    return Hazelcast.newHazelcastInstance(config);
+  /**
+   * 分布式线程池
+   *
+   * @param instance hazelcast实例
+   * @return 分布式线程池
+   */
+  @Bean(name = COMPLEX_JOBS_EXECUTORS, destroyMethod = "shutdown")
+  DurableExecutorService complexJobsExecutors(HazelcastInstance instance) {
+    return instance.getDurableExecutorService(COMPLEX_JOBS_EXECUTORS);
   }
 }

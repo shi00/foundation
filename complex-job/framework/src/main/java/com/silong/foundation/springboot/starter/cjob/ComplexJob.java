@@ -29,7 +29,7 @@ import java.io.Serializable;
  * @author louis sin
  * @version 1.0.0
  * @since 2022-03-02 18:07
- * @param <T> 任务上下文类型
+ * @param <T> job上下文类型
  */
 public interface ComplexJob<T extends Serializable> extends Lifecycle {
 
@@ -46,5 +46,6 @@ public interface ComplexJob<T extends Serializable> extends Lifecycle {
    *
    * @throws Exception 异常
    */
-  void rebuild() throws Exception;
+  @NonNull
+  ComplexJob<T> rebuild() throws Exception;
 }
