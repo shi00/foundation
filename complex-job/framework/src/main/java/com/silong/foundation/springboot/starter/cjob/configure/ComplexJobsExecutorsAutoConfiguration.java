@@ -23,7 +23,6 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.*;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -41,7 +40,6 @@ import static com.silong.foundation.springboot.starter.cjob.configure.config.Com
  * @version 1.0.0
  * @since 2022-03-20 17:02
  */
-@Slf4j
 @Configuration
 @EnableConfigurationProperties(ComplexJobsProperties.class)
 public class ComplexJobsExecutorsAutoConfiguration {
