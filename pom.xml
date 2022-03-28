@@ -59,6 +59,7 @@
 <!--        <module>okhttp3-webclient</module>-->
         <module>crypto</module>
         <module>complex-job/framework</module>
+        <module>complex-job/hazelcast-database-discovery-spi</module>
         <module>duuid/idgen</module>
         <module>duuid/workerid-provider</module>
         <module>duuid/etcdv3-workerid-provider</module>

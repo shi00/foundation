@@ -44,6 +44,7 @@ public interface ComplexJob<T extends Serializable> extends Lifecycle {
   /**
    * 重建job
    *
+   * @return 重建的任务
    * @throws Exception 异常
    */
   @NonNull
