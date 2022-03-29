@@ -20,7 +20,6 @@ package com.silong.foundation.plugins.maven.etcdv3.tests;
 
 import com.silong.foundation.plugins.maven.etcdv3.StartEtcdv3Mojo;
 import com.silong.foundation.plugins.maven.etcdv3.StopEtcdv3Mojo;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
@@ -87,7 +86,6 @@ public class TestEtcdv3MojoTest extends AbstractMojoTestCase {
     }
   }
 
-  @NonNull
   private Client getClient(String endpoint) {
     return Client.builder()
         .endpoints(endpoint)
