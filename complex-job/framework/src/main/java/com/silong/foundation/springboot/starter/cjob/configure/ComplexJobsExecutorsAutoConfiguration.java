@@ -18,11 +18,19 @@
  */
 package com.silong.foundation.springboot.starter.cjob.configure;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -54,6 +62,43 @@ public class ComplexJobsExecutorsAutoConfiguration {
   private ComplexJobsProperties.ProbabilisticSplitBrainProtectionConfig
       probabilisticSplitBrainProtectionConfig;
 
+  /** 集群成员增减监听器 */
+  @Slf4j
+  public static class HazelcastCusterMembersListener implements MembershipListener {
+
+    @Override
+    public void memberAdded(MembershipEvent membershipEvent) {
+      log.info("{}", membershipEvent);
+    }
+
+    @Override
+    public void memberRemoved(MembershipEvent membershipEvent) {
+      log.info("{}", membershipEvent);
+    }
+  }
+
+  /**
+   * 节点生命周期监听器
+   */@Slf4j
+  public static class NodeLifecycleListener implements LifecycleListener, HazelcastInstanceAware{
+
+     private HazelcastInstance hazelcastInstance;
+
+    @Override
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+      this.hazelcastInstance=hazelcastInstance;
+    }
+
+    @Override
+    public void stateChanged(LifecycleEvent event) {
+      Member localMember = hazelcastInstance.getCluster().getLocalMember();
+      switch (event.getState())
+      {
+        case STARTING -> ;
+      }
+    }
+  }
+
   /**
    * 如果当前spring上下文中没有hazelcast配置，则注入配置
    *
@@ -63,6 +108,7 @@ public class ComplexJobsExecutorsAutoConfiguration {
   @ConditionalOnMissingBean
   Config complexJobsClusterConfig() {
     return new Config()
+        .addListenerConfig(new ListenerConfig(new HazelcastCusterMembersListener()))
         .setClusterName(COMPLEX_JOBS_CLUSTER)
         .setInstanceName(String.format("%s:%s", SystemUtils.getHostName(), UUID.randomUUID()));
   }

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.hazelcast;
+package com.silong.foundation.cjob.hazelcast.discovery.database;
 
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
@@ -45,7 +45,7 @@ public class DatabaseDiscoveryStrategyFactory implements DiscoveryStrategyFactor
   @Override
   public DiscoveryStrategy newDiscoveryStrategy(
       DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
-    return new DatabaseDiscoveryStrategy(logger, properties);
+    return new DatabaseDiscoveryStrategy(discoveryNode.getPrivateAddress(), logger, properties);
   }
 
   @Override

@@ -16,8 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.hazelcast;
+package com.silong.foundation.cjob.hazelcast.discovery.database;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -32,8 +33,20 @@ import java.util.Map;
  * @since 2022-03-27 21:18
  */
 public class DatabaseDiscoveryStrategy extends AbstractDiscoveryStrategy {
-  public DatabaseDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+  /** 节点地址 */
+  private final Address localNodeAddress;
+
+  /**
+   * 构造方法
+   *
+   * @param address 节点地址
+   * @param logger 日志打印
+   * @param properties 属性
+   */
+  public DatabaseDiscoveryStrategy(
+      Address address, ILogger logger, Map<String, Comparable> properties) {
     super(logger, properties);
+    this.localNodeAddress = address;
   }
 
   @Override
