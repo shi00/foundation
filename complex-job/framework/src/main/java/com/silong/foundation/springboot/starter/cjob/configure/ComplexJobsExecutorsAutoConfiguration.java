@@ -23,6 +23,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.*;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.silong.foundation.springboot.starter.cjob.configure.config.ComplexJobsProperties;
+import org.apache.commons.lang3.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -63,7 +64,7 @@ public class ComplexJobsExecutorsAutoConfiguration {
   Config complexJobsClusterConfig() {
     return new Config()
         .setClusterName(COMPLEX_JOBS_CLUSTER)
-        .setInstanceName(UUID.randomUUID().toString());
+        .setInstanceName(String.format("%s:%s", SystemUtils.getHostName(), UUID.randomUUID()));
   }
 
   /**
