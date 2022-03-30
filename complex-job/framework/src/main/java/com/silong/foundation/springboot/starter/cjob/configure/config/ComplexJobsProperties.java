@@ -140,9 +140,9 @@ public class ComplexJobsProperties {
 
     /**
      * Specifies whether the cluster member fails to start if it is unable to action an ICMP ping
-     * command when ICMP is enabled.Its default value is true.
+     * command when ICMP is enabled.Its default value is false.
      */
-    private boolean failFastOnStartup = true;
+    private boolean failFastOnStartup = false;
 
     /**
      * Maximum number of ping attempts before the member/node gets suspected by the detector. Its
