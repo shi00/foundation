@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.hazelcast.discovery.database;
+package com.silong.foundation.cjob.hazelcast.discovery.mysql;
 
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
@@ -25,32 +25,38 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.spi.discovery.DiscoveryStrategyFactory.DiscoveryStrategyLevel.CUSTOM;
+import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
 
 /**
- * Configuration class of the Hazelcast Discovery Plugin for Database.
+ * Configuration class of the Hazelcast Discovery Plugin for Mysql.
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-03-27 20:55
  */
-public class DatabaseDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+public class MysqlDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+
+  private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS =
+      List.of(DRIVER_CLASS, JDBC_URL, PASSWORD, USER_NAME);
+
   @Override
   public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
-    return DatabaseDiscoveryStrategy.class;
+    return MysqlDiscoveryStrategy.class;
   }
 
   @Override
   public DiscoveryStrategy newDiscoveryStrategy(
       DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
-    return new DatabaseDiscoveryStrategy(discoveryNode.getPrivateAddress(), logger, properties);
+    return new MysqlDiscoveryStrategy(discoveryNode.getPrivateAddress(), logger, properties);
   }
 
   @Override
   public Collection<PropertyDefinition> getConfigurationProperties() {
-    return null;
+    return PROPERTY_DEFINITIONS;
   }
 
   @Override

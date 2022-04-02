@@ -25,22 +25,18 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>hazelcast-database-one</artifactId>
+    <artifactId>hazelcast-mysql-discovery</artifactId>
     <version>1.0.0</version>
-    <name>Database Discovery Plugin for Hazelcast</name>
-    <description>Database Service Discovery for Hazelcast Discovery SPI</description>
+    <name>Mysql Discovery Plugin for Hazelcast</name>
+    <description>Mysql Service Discovery for Hazelcast Discovery SPI</description>
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <mysql.database>test-db</mysql.database>
+        <mysql.user>root</mysql.user>
+        <mysql.password>Test@12345</mysql.password>
+        <mysql.jdbc-driver>com.mysql.cj.jdbc.Driver</mysql.jdbc-driver>
     </properties>
-
-    <licenses>
-        <license>
-            <name>The Hazelcast Community License</name>
-            <url>http://hazelcast.com/hazelcast-community-license</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
 
     <build>
         <plugins>
@@ -72,6 +68,131 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.silong</groupId>
+                <artifactId>mysql-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <image>mysql:8.0.28</image>
+                    <database>${mysql.database}</database>
+                    <jdbcUrl>jdbc-url</jdbcUrl>
+                    <userName>${mysql.user}</userName>
+                    <password>${mysql.password}</password>
+                    <jdbcDriver>${mysql.jdbc-driver}</jdbcDriver>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>pre-jooq-complie</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>post-jooq-compile</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>sql-maven-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>mysql</groupId>
+                        <artifactId>mysql-connector-java</artifactId>
+                        <version>8.0.28</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <!-- 定义数据库连接参数 -->
+                    <driver>${mysql.jdbc-driver}</driver>
+                    <url>${jdbc-url}</url>
+                    <username>${mysql.user}</username>
+                    <password>${mysql.password}</password>
+                    <!-- 指定要执行的sql脚本 'sql'文件夹为脚本所在文件夹下的子文件夹 -->
+                    <srcFiles>
+                        <srcFile>${project.basedir}/src/main/resources/hazelcast-cluster-nodes.sql</srcFile>
+                    </srcFiles>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>discovery-nodes-create-table</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <executions>
+                    <execution>
+                        <id>jooq-codegen</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <jdbc>
+                        <driver>${mysql.jdbc-driver}</driver>
+                        <url>${jdbc-url}</url>
+                        <user>${mysql.user}</user>
+                        <password>${mysql.password}</password>
+                    </jdbc>
+
+                    <!-- Log at WARN level by default -->
+                    <logging>INFO</logging>
+                    <generator>
+                        <name>org.jooq.codegen.JavaGenerator</name>
+                        <generate>
+                            <!-- Never generate deprecated code -->
+                            <deprecated>false</deprecated>
+                        </generate>
+                        <database>
+                            <!-- The database type. The format here is:
+                                 org.jooq.meta.[database].[database]Database -->
+                            <name>org.jooq.meta.mysql.MySQLDatabase</name>
+
+                            <!-- The database schema (or in the absence of schema support, in your RDBMS this
+                                 can be the owner, user, database name) to be generated -->
+                            <!-- 数据库名 -->
+                            <inputSchema>${mysql.database}</inputSchema>
+
+                            <!-- All elements that are generated from your schema
+                                 (A Java regular expression. Use the pipe to separate several expressions)
+                                 Watch out for case-sensitivity. Depending on your database, this might be important! -->
+                            <!-- 包含哪些表 -->
+                            <includes>.*</includes>
+
+                            <!-- All elements that are excluded from your schema
+                                 (A Java regular expression. Use the pipe to separate several expressions).
+                                 Excludes match before includes, i.e. excludes have a higher priority -->
+                            <!-- 排除哪些表，这里支持正则表达式 ，多个条件可以用 | 连接符连接-->
+                            <!-- 例如：TEST | OTHERS 生成代码时就不会把叫做TEST和OTHERS的表包括进去了-->
+                            <!--                            <excludes></excludes>-->
+                        </database>
+
+                        <target>
+                            <!-- The destination package of your generated classes (within the destination directory) -->
+                            <!-- 生成的代码存放的包名 -->
+                            <packageName>com.silong.foundation.cjob.hazelcast.discovery.mysql.model</packageName>
+
+                            <!-- The destination directory of your generated classes. Using Maven directory layout here -->
+                            <!-- 存放的路径 -->
+                            <directory>${project.basedir}/target/generated-sources</directory>
+                        </target>
+                    </generator>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -84,6 +205,28 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-meta</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -109,6 +109,7 @@
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <sql-maven-plugin.version>1.5</sql-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
@@ -134,6 +135,7 @@
         <maven.version>3.8.4</maven.version>
         <plexus-utils.version>3.4.1</plexus-utils.version>
         <plexus-archiver.version>4.2.7</plexus-archiver.version>
+        <jooq.version>3.14.15</jooq.version>
         <!--开源组件-->
 
     </properties>
@@ -437,6 +439,11 @@
                     <version>${springdoc-openapi-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.jooq</groupId>
+                    <artifactId>jooq-codegen-maven</artifactId>
+                    <version>${jooq.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build-helper-maven-plugin.version}</version>
@@ -472,6 +479,11 @@
                     <groupId>org.springframework.experimental</groupId>
                     <artifactId>spring-aot-maven-plugin</artifactId>
                     <version>${spring-native.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>sql-maven-plugin</artifactId>
+                    <version>${sql-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

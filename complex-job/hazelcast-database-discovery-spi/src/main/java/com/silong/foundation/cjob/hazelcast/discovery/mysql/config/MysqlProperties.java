@@ -16,25 +16,38 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.hazelcast.discovery.database.config;
+package com.silong.foundation.cjob.hazelcast.discovery.mysql.config;
 
-import lombok.Data;
+import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.config.properties.SimplePropertyDefinition;
+import com.hazelcast.core.TypeConverter;
+
+import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
- * 数据库配置
+ * Mysql配置
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-03-30 21:09
  */
-@Data
-public class DatabaseProperties {
+public final class MysqlProperties {
+
   /** 数据库访问用户名 */
-  private String userName;
+  public static final PropertyDefinition USER_NAME = property("user-name", STRING);
+
   /** 数据库访问密码 */
-  private String password;
-  /** jdbc驱动 */
-  private String driverClass;
-  /** 数据库访问url */
-  private String jdbcUrl;
+  public static final PropertyDefinition PASSWORD = property("password", STRING);
+
+  /** jdbc类全限定名 */
+  public static final PropertyDefinition DRIVER_CLASS = property("driver-class", STRING);
+
+  /** jdbc url */
+  public static final PropertyDefinition JDBC_URL = property("jdbc-url", STRING);
+
+  private static PropertyDefinition property(String key, TypeConverter typeConverter) {
+    return new SimplePropertyDefinition(key, true, typeConverter);
+  }
+
+  private MysqlProperties() {}
 }

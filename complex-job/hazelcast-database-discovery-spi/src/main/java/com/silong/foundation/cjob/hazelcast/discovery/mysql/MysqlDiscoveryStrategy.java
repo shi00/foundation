@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.cjob.hazelcast.discovery.database;
+package com.silong.foundation.cjob.hazelcast.discovery.mysql;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.logging.ILogger;
@@ -26,13 +26,13 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import java.util.Map;
 
 /**
- * 数据库节点发现策略
+ * Mysql节点发现策略
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-03-27 21:18
  */
-public class DatabaseDiscoveryStrategy extends AbstractDiscoveryStrategy {
+public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   /** 节点地址 */
   private final Address localNodeAddress;
 
@@ -43,7 +43,7 @@ public class DatabaseDiscoveryStrategy extends AbstractDiscoveryStrategy {
    * @param logger 日志打印
    * @param properties 属性
    */
-  public DatabaseDiscoveryStrategy(
+  public MysqlDiscoveryStrategy(
       Address address, ILogger logger, Map<String, Comparable> properties) {
     super(logger, properties);
     this.localNodeAddress = address;
