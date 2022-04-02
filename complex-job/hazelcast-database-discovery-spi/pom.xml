@@ -34,6 +34,7 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
         <mysql.database>test-db</mysql.database>
         <mysql.user>root</mysql.user>
+        <mysql.version>8.0.28</mysql.version>
         <mysql.password>Test@12345</mysql.password>
         <mysql.jdbc-driver>com.mysql.cj.jdbc.Driver</mysql.jdbc-driver>
     </properties>
@@ -73,7 +74,7 @@
                 <artifactId>mysql-maven-plugin</artifactId>
                 <version>1.0.0</version>
                 <configuration>
-                    <image>mysql:8.0.28</image>
+                    <image>mysql:${mysql.version}</image>
                     <database>${mysql.database}</database>
                     <jdbcUrl>jdbc-url</jdbcUrl>
                     <userName>${mysql.user}</userName>
@@ -104,7 +105,7 @@
                     <dependency>
                         <groupId>mysql</groupId>
                         <artifactId>mysql-connector-java</artifactId>
-                        <version>8.0.28</version>
+                        <version>${mysql.version}</version>
                     </dependency>
                 </dependencies>
                 <configuration>
