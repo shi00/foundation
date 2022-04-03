@@ -24,9 +24,7 @@ import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties;
 import lombok.SneakyThrows;
-import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,12 +33,9 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
-import static org.testcontainers.shaded.com.fasterxml.jackson.databind.jsonFormatVisitors.JsonValueFormat.HOST_NAME;
-import static org.testcontainers.shaded.com.google.common.base.StandardSystemProperty.USER_NAME;
 
 /**
  * 单元测试
