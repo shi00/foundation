@@ -91,7 +91,7 @@
                     </execution>
                     <execution>
                         <id>post-jooq-compile</id>
-                        <phase>pre-integration-test</phase>
+                        <phase>process-sources</phase>
                         <goals>
                             <goal>stop</goal>
                         </goals>
