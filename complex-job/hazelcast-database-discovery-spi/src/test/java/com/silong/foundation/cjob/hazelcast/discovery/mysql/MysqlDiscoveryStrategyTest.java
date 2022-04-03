@@ -25,12 +25,10 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -59,9 +57,9 @@ public class MysqlDiscoveryStrategyTest {
 
   public static Map<String, Comparable> PROPERTIES;
 
-  private static final DiscoveryNode LOCAL_NODE = getSimpleDiscoveryNode();
+  private final MysqlDiscoveryStrategyFactory strategyFactory = new MysqlDiscoveryStrategyFactory();
 
-  MysqlDiscoveryStrategyFactory strategyFactory = new MysqlDiscoveryStrategyFactory();
+  private DiscoveryNode localNode;
 
   @BeforeAll
   static void init() {
@@ -69,7 +67,9 @@ public class MysqlDiscoveryStrategyTest {
     PROPERTIES =
         Map.of(
             CLUSTER_NAME.key(),
-            "cluster-test1",
+            RandomStringUtils.randomAscii(10),
+            HOST_NAME.key(),
+            RandomStringUtils.randomAscii(10),
             DRIVER_CLASS.key(),
             "com.mysql.cj.jdbc.Driver",
             INSTANCE_NAME.key(),
@@ -89,10 +89,15 @@ public class MysqlDiscoveryStrategyTest {
     MYSQL.stop();
   }
 
+  @BeforeEach
+  void initNodes() {
+    localNode = getSimpleDiscoveryNode();
+  }
+
   @Test
   void test1() {
     DiscoveryStrategy discoveryStrategy =
-        strategyFactory.newDiscoveryStrategy(LOCAL_NODE, LOGGER, PROPERTIES);
+        strategyFactory.newDiscoveryStrategy(localNode, LOGGER, PROPERTIES);
     discoveryStrategy.start();
     Iterable<DiscoveryNode> discoveryNodes = discoveryStrategy.discoverNodes();
     discoveryStrategy.destroy();
