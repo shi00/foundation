@@ -36,7 +36,6 @@ import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.model.Tables.HAZELCAST_CLUSTER_NODES;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.jooq.impl.DSL.abs;
 import static org.jooq.impl.DSL.localDateTimeDiff;
 
 /**
@@ -142,20 +142,23 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   private void insertOrUpdateNode() {
     try (Connection connection = dataSource.getConnection()) {
       DSL.using(connection)
-          .insertInto(
-              HAZELCAST_CLUSTER_NODES,
-              HAZELCAST_CLUSTER_NODES.HOST_NAME,
-              HAZELCAST_CLUSTER_NODES.CLUSTER_NAME,
-              HAZELCAST_CLUSTER_NODES.INSTANCE_NAME,
-              HAZELCAST_CLUSTER_NODES.IP_ADDRESS,
-              HAZELCAST_CLUSTER_NODES.PORT)
-          .values(hostName, clusterName, instanceName, ipAddress, port)
-          .onDuplicateKeyUpdate()
-          .set(HAZELCAST_CLUSTER_NODES.CLUSTER_NAME, clusterName)
-          .set(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME, instanceName)
-          .set(HAZELCAST_CLUSTER_NODES.IP_ADDRESS, ipAddress)
-          .set(HAZELCAST_CLUSTER_NODES.PORT, port)
-          .execute();
+          .transaction(
+              ctx ->
+                  DSL.using(ctx)
+                      .insertInto(
+                          HAZELCAST_CLUSTER_NODES,
+                          HAZELCAST_CLUSTER_NODES.HOST_NAME,
+                          HAZELCAST_CLUSTER_NODES.CLUSTER_NAME,
+                          HAZELCAST_CLUSTER_NODES.INSTANCE_NAME,
+                          HAZELCAST_CLUSTER_NODES.IP_ADDRESS,
+                          HAZELCAST_CLUSTER_NODES.PORT)
+                      .values(hostName, clusterName, instanceName, ipAddress, port)
+                      .onDuplicateKeyUpdate()
+                      .set(HAZELCAST_CLUSTER_NODES.CLUSTER_NAME, clusterName)
+                      .set(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME, instanceName)
+                      .set(HAZELCAST_CLUSTER_NODES.IP_ADDRESS, ipAddress)
+                      .set(HAZELCAST_CLUSTER_NODES.PORT, port)
+                      .execute());
     } catch (SQLException e) {
       log.error(
           "Failed to insert or update node([{}:{}] {}:{}) to mysql.",
@@ -183,9 +186,8 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
                   .CLUSTER_NAME
                   .eq(clusterName)
                   .and(
-                      DSL.abs(
-                              localDateTimeDiff(
-                                  DSL.currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
+                      abs(localDateTimeDiff(
+                              DSL.currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
                           .lessOrEqual(
                               DayToSecond.valueOf(
                                   Duration.ofMinutes(
