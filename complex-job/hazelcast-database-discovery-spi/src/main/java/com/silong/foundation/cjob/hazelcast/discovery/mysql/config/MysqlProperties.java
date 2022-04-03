@@ -23,7 +23,9 @@ import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
 import org.apache.commons.lang3.StringUtils;
 
-import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
+import java.time.Duration;
+
+import static com.hazelcast.config.properties.PropertyTypeConverter.LONG;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
@@ -67,13 +69,13 @@ public final class MysqlProperties {
           throw new ValidationException("driver-class must not be null.");
       });
 
-  /** 数据库名称 */
-  public static final PropertyDefinition DATABASE =
-      new SimplePropertyDefinition("database", false, STRING, value->{
-          if (value instanceof String database && StringUtils.isNotEmpty(database)){
+  /** 主机名称 */
+  public static final PropertyDefinition HOST_NAME =
+      new SimplePropertyDefinition("host-name", true, STRING, value->{
+          if (value instanceof String hostName && StringUtils.isNotEmpty(hostName)){
               return;
           }
-          throw new ValidationException("database must not be null.");
+          throw new ValidationException("host-name must not be null.");
       });
 
   /** jdbc url */
@@ -100,8 +102,8 @@ public final class MysqlProperties {
 
   /** 节点心跳超时时间，单位：分钟 */
   public static final PropertyDefinition HEART_BEAT_TIMEOUT =
-      new SimplePropertyDefinition("heart-beat-timeout", true, INTEGER, value->{
-          if (value instanceof Number timeout && timeout.intValue()>0){
+      new SimplePropertyDefinition("heart-beat-timeout", true, LONG, value->{
+          if (value instanceof Number timeout && timeout.longValue()>0){
               return;
           }
           throw new ValidationException("heart-beat-timeout must not be null.");

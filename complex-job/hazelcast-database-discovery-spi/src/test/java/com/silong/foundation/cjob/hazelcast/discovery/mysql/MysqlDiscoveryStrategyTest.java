@@ -75,7 +75,7 @@ public class MysqlDiscoveryStrategyTest {
             INSTANCE_NAME.key(),
             "inst1",
             HEART_BEAT_TIMEOUT.key(),
-            1,
+            1000,
             JDBC_URL.key(),
             MYSQL.getJdbcUrl(),
             PASSWORD.key(),

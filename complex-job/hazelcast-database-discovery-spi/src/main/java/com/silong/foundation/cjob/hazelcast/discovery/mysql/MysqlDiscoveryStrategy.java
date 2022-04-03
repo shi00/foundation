@@ -77,9 +77,6 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   /** 实例名 */
   private final String instanceName;
 
-  /** 数据库名称 */
-  private final String database;
-
   /** 线程池 */
   private ScheduledExecutorService scheduledExecutorService;
 
@@ -98,10 +95,9 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     super(logger, properties);
     this.ipAddress = address.getHost();
     this.port = address.getPort();
-    this.hostName = SystemUtils.getHostName();
+    this.hostName = getOrDefault(HOST_NAME, SystemUtils.getHostName());
     this.clusterName = getOrNull(CLUSTER_NAME);
     this.instanceName = getOrDefault(INSTANCE_NAME, EMPTY);
-    this.database = getOrNull(DATABASE);
   }
 
   private HikariDataSource initializeDataSource() {
@@ -154,10 +150,7 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
                           HAZELCAST_CLUSTER_NODES.PORT)
                       .values(hostName, clusterName, instanceName, ipAddress, port)
                       .onDuplicateKeyUpdate()
-                      .set(HAZELCAST_CLUSTER_NODES.CLUSTER_NAME, clusterName)
-                      .set(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME, instanceName)
-                      .set(HAZELCAST_CLUSTER_NODES.IP_ADDRESS, ipAddress)
-                      .set(HAZELCAST_CLUSTER_NODES.PORT, port)
+                      .set(HAZELCAST_CLUSTER_NODES.UPDATED_TIME, DSL.currentLocalDateTime())
                       .execute());
     } catch (SQLException e) {
       log.error(
