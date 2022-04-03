@@ -25,14 +25,17 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.net.InetAddress;
+import java.util.List;
 import java.util.Map;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
@@ -50,13 +53,35 @@ public class MysqlDiscoveryStrategyTest {
 
   @ClassRule
   public static final MySQLContainer<?> MYSQL =
-      new MySQLContainer<>(DockerImageName.parse("mysql:8.0.28"));
+      new MySQLContainer<>(DockerImageName.parse("mysql:8.0.28"))
+          .withReuse(true)
+          .withInitScript("hazelcast-cluster-nodes.sql");
+
+  public static Map<String, Comparable> PROPERTIES;
 
   private static final DiscoveryNode LOCAL_NODE = getSimpleDiscoveryNode();
+
+  MysqlDiscoveryStrategyFactory strategyFactory = new MysqlDiscoveryStrategyFactory();
 
   @BeforeAll
   static void init() {
     MYSQL.start();
+    PROPERTIES =
+        Map.of(
+            CLUSTER_NAME.key(),
+            "cluster-test1",
+            DRIVER_CLASS.key(),
+            "com.mysql.cj.jdbc.Driver",
+            INSTANCE_NAME.key(),
+            "inst1",
+            HEART_BEAT_TIMEOUT.key(),
+            1,
+            JDBC_URL.key(),
+            MYSQL.getJdbcUrl(),
+            PASSWORD.key(),
+            MYSQL.getPassword(),
+            USER_NAME.key(),
+            MYSQL.getUsername());
   }
 
   @AfterAll
@@ -66,30 +91,17 @@ public class MysqlDiscoveryStrategyTest {
 
   @Test
   void test1() {
-    Map<String, Comparable> PROPERTIES =
-        Map.of(
-            CLUSTER_NAME.key(),
-            "cluster",
-            DRIVER_CLASS.key(),
-            "com.mysql.cj.jdbc.Driver",
-            INSTANCE_NAME.key(),
-            "inst1",
-            JDBC_URL.key(),
-            MYSQL.getJdbcUrl(),
-            PASSWORD.key(),
-            MYSQL.getPassword(),
-            USER_NAME.key(),
-            MYSQL.getUsername());
-    MysqlDiscoveryStrategyFactory strategyFactory = new MysqlDiscoveryStrategyFactory();
     DiscoveryStrategy discoveryStrategy =
         strategyFactory.newDiscoveryStrategy(LOCAL_NODE, LOGGER, PROPERTIES);
     discoveryStrategy.start();
     Iterable<DiscoveryNode> discoveryNodes = discoveryStrategy.discoverNodes();
     discoveryStrategy.destroy();
+    Assertions.assertEquals(discoveryNodes, List.of());
   }
 
   @SneakyThrows
   private static SimpleDiscoveryNode getSimpleDiscoveryNode() {
-    return new SimpleDiscoveryNode(new Address(InetAddress.getLocalHost(), 9999));
+    return new SimpleDiscoveryNode(
+        new Address(InetAddress.getLocalHost(), RandomUtils.nextInt(1025, 65536)));
   }
 }
