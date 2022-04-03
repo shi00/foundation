@@ -25,12 +25,14 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
+import org.jooq.Record2;
 import org.jooq.impl.DSL;
 import org.jooq.types.DayToSecond;
 
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -58,9 +60,6 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   /** 节点地址 */
   private final String ipAddress;
 
-  /** ip类型 */
-  private final int ipType;
-
   /** 节点监听端口 */
   private final int port;
 
@@ -80,7 +79,10 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   private ScheduledExecutorService scheduledExecutorService;
 
   /** 数据源 */
-  private final HikariDataSource dataSource;
+  private HikariDataSource dataSource;
+
+  /** 是否初始化 */
+  private boolean initialized;
 
   /**
    * 构造方法
@@ -94,12 +96,10 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     super(logger, properties);
     this.ipAddress = address.getHost();
     this.port = address.getPort();
-    this.ipType = address.isIPv4() ? 0 : 1;
     this.hostName = SystemUtils.getHostName();
     this.clusterName = getOrNull(CLUSTER_NAME);
     this.instanceName = getOrDefault(INSTANCE_NAME, EMPTY);
     this.database = getOrNull(DATABASE);
-    this.dataSource = initializeDataSource();
   }
 
   private HikariDataSource initializeDataSource() {
@@ -128,7 +128,15 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
   @Override
   public Iterable<DiscoveryNode> discoverNodes() {
-    return selectActiveNodes();
+    try {
+      return selectActiveNodes();
+    } finally {
+      if (!initialized) {
+        scheduledExecutorService.scheduleAtFixedRate(
+            this::insertOrUpdateNode, 0, 1, TimeUnit.MINUTES);
+        initialized = true;
+      }
+    }
   }
 
   private void insertOrUpdateNode() {
@@ -140,14 +148,12 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
               HAZELCAST_CLUSTER_NODES.CLUSTER_NAME,
               HAZELCAST_CLUSTER_NODES.INSTANCE_NAME,
               HAZELCAST_CLUSTER_NODES.IP_ADDRESS,
-              HAZELCAST_CLUSTER_NODES.IP_TYPE,
               HAZELCAST_CLUSTER_NODES.PORT)
-          .values(hostName, clusterName, instanceName, ipAddress, ipType, port)
+          .values(hostName, clusterName, instanceName, ipAddress, port)
           .onDuplicateKeyUpdate()
           .set(HAZELCAST_CLUSTER_NODES.CLUSTER_NAME, clusterName)
           .set(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME, instanceName)
           .set(HAZELCAST_CLUSTER_NODES.IP_ADDRESS, ipAddress)
-          .set(HAZELCAST_CLUSTER_NODES.IP_TYPE, ipType)
           .set(HAZELCAST_CLUSTER_NODES.PORT, port)
           .execute();
     } catch (SQLException e) {
@@ -170,7 +176,8 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     try (Connection connection = dataSource.getConnection()) {
       return DSL
           .using(connection)
-          .selectFrom(HAZELCAST_CLUSTER_NODES)
+          .select(HAZELCAST_CLUSTER_NODES.IP_ADDRESS, HAZELCAST_CLUSTER_NODES.PORT)
+          .from(HAZELCAST_CLUSTER_NODES)
           .where(
               HAZELCAST_CLUSTER_NODES
                   .CLUSTER_NAME
@@ -178,7 +185,7 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
                   .and(
                       DSL.abs(
                               localDateTimeDiff(
-                                  LocalDateTime.now(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
+                                  DSL.currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
                           .lessOrEqual(
                               DayToSecond.valueOf(
                                   Duration.ofMinutes(
@@ -186,10 +193,7 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
                                           HEART_BEAT_TIMEOUT,
                                           DEFAULT_HEART_BEAT_TIMEOUT_MINUTES))))))
           .stream()
-          .map(
-              record ->
-                  (DiscoveryNode)
-                      new SimpleDiscoveryNode(new Address(new InetSocketAddress(ipAddress, port))))
+          .map(this::buildDiscoveryNode)
           .toList();
     } catch (SQLException e) {
       log.error(
@@ -201,11 +205,17 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     }
   }
 
+  @SneakyThrows
+  private DiscoveryNode buildDiscoveryNode(Record2<String, Integer> record2) {
+    return new SimpleDiscoveryNode(
+        new Address(InetAddress.getByName(record2.value1()), record2.value2()));
+  }
+
   @Override
   public void start() {
-    scheduledExecutorService =
+    this.dataSource = initializeDataSource();
+    this.scheduledExecutorService =
         new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "Hazelcast-Node-Heartbeat-Mysql"));
-    scheduledExecutorService.scheduleAtFixedRate(this::insertOrUpdateNode, 1, 1, TimeUnit.MINUTES);
   }
 
   @Override
