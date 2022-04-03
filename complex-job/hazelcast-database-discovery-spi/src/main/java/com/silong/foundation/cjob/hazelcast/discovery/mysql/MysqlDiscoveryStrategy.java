@@ -40,10 +40,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.model.Tables.HAZELCAST_CLUSTER_NODES;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.jooq.impl.DSL.abs;
 import static org.jooq.impl.DSL.localDateTimeDiff;
@@ -57,6 +58,10 @@ import static org.jooq.impl.DSL.localDateTimeDiff;
  */
 @Slf4j
 public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
+
+  /** 是否初始化 */
+  private final AtomicBoolean initialized = new AtomicBoolean(false);
+
   /** 节点地址 */
   private final String ipAddress;
 
@@ -80,9 +85,6 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
   /** 数据源 */
   private HikariDataSource dataSource;
-
-  /** 是否初始化 */
-  private boolean initialized;
 
   /**
    * 构造方法
@@ -131,10 +133,8 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     try {
       return selectActiveNodes();
     } finally {
-      if (!initialized) {
-        scheduledExecutorService.scheduleAtFixedRate(
-            this::insertOrUpdateNode, 0, 1, TimeUnit.MINUTES);
-        initialized = true;
+      if (initialized.compareAndSet(false, true)) {
+        scheduledExecutorService.scheduleAtFixedRate(this::insertOrUpdateNode, 0, 1, MINUTES);
       }
     }
   }
