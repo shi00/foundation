@@ -159,6 +159,7 @@
                             <deprecated>false</deprecated>
                         </generate>
                         <database>
+
                             <!-- The database type. The format here is:
                                  org.jooq.meta.[database].[database]Database -->
                             <name>org.jooq.meta.mysql.MySQLDatabase</name>
@@ -167,6 +168,7 @@
                                  can be the owner, user, database name) to be generated -->
                             <!-- 数据库名 -->
                             <inputSchema>${mysql.database}</inputSchema>
+                            <outputSchemaToDefault>true</outputSchemaToDefault>
 
                             <!-- All elements that are generated from your schema
                                  (A Java regular expression. Use the pipe to separate several expressions)
@@ -216,6 +218,10 @@
                     <artifactId>protobuf-java</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jooq</groupId>
