@@ -164,7 +164,7 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
           }
         },
         0,
-        1,
+        3,
         SECONDS);
   }
 
