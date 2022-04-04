@@ -28,13 +28,18 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
 
@@ -55,33 +60,33 @@ public class MysqlDiscoveryStrategyTest {
           .withReuse(true)
           .withInitScript("hazelcast-cluster-nodes.sql");
 
-  public static Map<String, Comparable> PROPERTIES;
+  public static Map<String, Comparable> properties;
+  ;
 
   private final MysqlDiscoveryStrategyFactory strategyFactory = new MysqlDiscoveryStrategyFactory();
-
-  private DiscoveryNode localNode;
 
   @BeforeAll
   static void init() {
     MYSQL.start();
-    PROPERTIES =
-        Map.of(
-            CLUSTER_NAME.key(),
-            RandomStringUtils.randomAscii(10),
-            HOST_NAME.key(),
-            RandomStringUtils.randomAscii(10),
-            DRIVER_CLASS.key(),
-            "com.mysql.cj.jdbc.Driver",
-            INSTANCE_NAME.key(),
-            "inst1",
-            HEART_BEAT_TIMEOUT.key(),
-            1000,
-            JDBC_URL.key(),
-            MYSQL.getJdbcUrl(),
-            PASSWORD.key(),
-            MYSQL.getPassword(),
-            USER_NAME.key(),
-            MYSQL.getUsername());
+    properties =
+        new HashMap<>(
+            Map.of(
+                CLUSTER_NAME.key(),
+                "cluster1",
+                HOST_NAME.key(),
+                RandomStringUtils.randomAscii(10),
+                DRIVER_CLASS.key(),
+                "com.mysql.cj.jdbc.Driver",
+                INSTANCE_NAME.key(),
+                "inst1",
+                HEART_BEAT_TIMEOUT_MINUTES.key(),
+                1000,
+                JDBC_URL.key(),
+                MYSQL.getJdbcUrl(),
+                PASSWORD.key(),
+                MYSQL.getPassword(),
+                USER_NAME.key(),
+                MYSQL.getUsername()));
   }
 
   @AfterAll
@@ -89,19 +94,24 @@ public class MysqlDiscoveryStrategyTest {
     MYSQL.stop();
   }
 
-  @BeforeEach
-  void initNodes() {
-    localNode = getSimpleDiscoveryNode();
-  }
-
   @Test
   void test1() {
     DiscoveryStrategy discoveryStrategy =
-        strategyFactory.newDiscoveryStrategy(localNode, LOGGER, PROPERTIES);
+        strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties);
     discoveryStrategy.start();
     Iterable<DiscoveryNode> discoveryNodes = discoveryStrategy.discoverNodes();
     discoveryStrategy.destroy();
     Assertions.assertEquals(discoveryNodes, List.of());
+  }
+
+  @Test
+  void test2() {
+    DiscoveryStrategy discoveryStrategy =
+        strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties);
+    discoveryStrategy.start();
+    Iterable<DiscoveryNode> discoveryNodes = discoveryStrategy.discoverNodes();
+    discoveryStrategy.destroy();
+    Assertions.assertEquals(1, StreamSupport.stream(discoveryNodes.spliterator(), false).count());
   }
 
   @SneakyThrows

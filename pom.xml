@@ -56,7 +56,7 @@
 
     <modules>
         <module>reactive-webclient</module>
-<!--        <module>okhttp3-webclient</module>-->
+        <!--        <module>okhttp3-webclient</module>-->
         <module>crypto</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>
@@ -135,6 +135,7 @@
         <maven.version>3.8.4</maven.version>
         <plexus-utils.version>3.4.1</plexus-utils.version>
         <plexus-archiver.version>4.2.7</plexus-archiver.version>
+        <cron-utils.version>9.1.6</cron-utils.version>
         <jooq.version>3.14.15</jooq.version>
         <!--开源组件-->
 
@@ -250,6 +251,14 @@
                 <version>${jmh.version}</version>
             </dependency>
             <!-- jmh性能测试 -->
+
+            <!-- cron工具 -->
+            <dependency>
+                <groupId>com.cronutils</groupId>
+                <artifactId>cron-utils</artifactId>
+                <version>${cron-utils.version}</version>
+            </dependency>
+            <!-- cron工具 -->
 
             <!-- xml解析api -->
             <dependency>

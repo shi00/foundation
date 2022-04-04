@@ -41,7 +41,14 @@ import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlP
 public class MysqlDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
   private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS =
-      List.of(HEART_BEAT_TIMEOUT, DRIVER_CLASS, JDBC_URL, PASSWORD, USER_NAME, HOST_NAME);
+      List.of(
+          HEART_BEAT_TIMEOUT_MINUTES,
+          HEART_BEAT_INTERVAL_SECONDS,
+          DRIVER_CLASS,
+          JDBC_URL,
+          PASSWORD,
+          USER_NAME,
+          HOST_NAME);
 
   @Override
   public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {

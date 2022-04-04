@@ -23,9 +23,7 @@ import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
 import org.apache.commons.lang3.StringUtils;
 
-import java.time.Duration;
-
-import static com.hazelcast.config.properties.PropertyTypeConverter.LONG;
+import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
@@ -35,15 +33,20 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
  * @version 1.0.0
  * @since 2022-03-30 21:09
  */
-public final class MysqlProperties {
+public interface MysqlProperties {
+
+    /**
+     * 默认心跳超时30秒
+     */
+    int DEFAULT_HEART_BEAT_interval_SECONDS = 30;
 
     /**
      * 默认心跳超时10分钟
      */
-    public static final int DEFAULT_HEART_BEAT_TIMEOUT_MINUTES = 10;
+    int DEFAULT_HEART_BEAT_TIMEOUT_MINUTES = 10;
 
   /** 数据库访问用户名 */
-  public static final PropertyDefinition USER_NAME =
+  PropertyDefinition USER_NAME =
       new SimplePropertyDefinition("user-name", false, STRING, value->{
         if (value instanceof String user && StringUtils.isNotEmpty(user)){
           return;
@@ -52,7 +55,7 @@ public final class MysqlProperties {
       });
 
   /** 数据库访问密码 */
-  public static final PropertyDefinition PASSWORD =
+  PropertyDefinition PASSWORD =
       new SimplePropertyDefinition("password", false, STRING, value->{
         if (value instanceof String pwd && StringUtils.isNotEmpty(pwd)){
           return;
@@ -61,7 +64,7 @@ public final class MysqlProperties {
       });
 
   /** jdbc类全限定名 */
-  public static final PropertyDefinition DRIVER_CLASS =
+  PropertyDefinition DRIVER_CLASS =
       new SimplePropertyDefinition("driver-class", false, STRING, value->{
           if (value instanceof String driverClass && StringUtils.isNotEmpty(driverClass)){
               return;
@@ -70,7 +73,7 @@ public final class MysqlProperties {
       });
 
   /** 主机名称 */
-  public static final PropertyDefinition HOST_NAME =
+  PropertyDefinition HOST_NAME =
       new SimplePropertyDefinition("host-name", true, STRING, value->{
           if (value instanceof String hostName && StringUtils.isNotEmpty(hostName)){
               return;
@@ -79,7 +82,7 @@ public final class MysqlProperties {
       });
 
   /** jdbc url */
-  public static final PropertyDefinition JDBC_URL =
+  PropertyDefinition JDBC_URL =
       new SimplePropertyDefinition("jdbc-url", false, STRING, value->{
           if (value instanceof String jdbcUrl && StringUtils.isNotEmpty(jdbcUrl)){
               return;
@@ -88,7 +91,7 @@ public final class MysqlProperties {
       });
 
   /** 集群名 */
-  public static final PropertyDefinition CLUSTER_NAME =
+  PropertyDefinition CLUSTER_NAME =
       new SimplePropertyDefinition("cluster", false, STRING, value->{
           if (value instanceof String cluster && StringUtils.isNotEmpty(cluster)){
               return;
@@ -97,18 +100,25 @@ public final class MysqlProperties {
       });
 
   /** 实例名 */
-  public static final PropertyDefinition INSTANCE_NAME =
+  PropertyDefinition INSTANCE_NAME =
       new SimplePropertyDefinition("instance", true, STRING);
 
   /** 节点心跳超时时间，单位：分钟 */
-  public static final PropertyDefinition HEART_BEAT_TIMEOUT =
-      new SimplePropertyDefinition("heart-beat-timeout", true, LONG, value->{
+  PropertyDefinition HEART_BEAT_TIMEOUT_MINUTES =
+      new SimplePropertyDefinition("heart-beat-timeout", true, INTEGER, value->{
           if (value instanceof Number timeout && timeout.longValue()>0){
               return;
           }
           throw new ValidationException("heart-beat-timeout must not be null.");
       });
 
+    /** 节点心跳间隔时间，单位：秒 */
+    PropertyDefinition HEART_BEAT_INTERVAL_SECONDS =
+            new SimplePropertyDefinition("heart-beat-interval", true, INTEGER, value->{
+                if (value instanceof Number interval && interval.longValue()>0){
+                    return;
+                }
+                throw new ValidationException("heart-beat-interval must not be null.");
+            });
 
-  private MysqlProperties() {}
 }

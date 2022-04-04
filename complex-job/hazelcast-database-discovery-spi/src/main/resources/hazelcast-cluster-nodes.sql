@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `hazelcast_cluster_nodes`
     `port`          INT         NOT NULL, /* 节点监听端口 */
     `created_time`  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP, /* 节点记录创建时间 */
     `updated_time`  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, /* 节点记录更新时间 */
-    PRIMARY KEY (`host_name`),
-    INDEX HAZELCAST_CLUSTER_NODES_UPDATEDTIME_IDX (`updated_time`)
+    PRIMARY KEY (`host_name`, `ip_address`, `port`),
+    INDEX HAZELCAST_CLUSTER_NODES_IDX (`cluster_name`, `instance_name`)
 ) ENGINE = INNODB
   DEFAULT CHARSET = UTF8MB4;
