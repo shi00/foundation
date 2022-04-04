@@ -98,9 +98,10 @@ public final class MysqlHelper implements Closeable {
   /**
    * 删除所有节点心跳超时超过指定时长的节点记录
    *
-   * @param timeoutThreshold 超时阈值
+   * @param timeoutThresholdHours 超时阈值
    */
-  public void deleteInactiveNodes(Duration timeoutThreshold) {
+  public void deleteInactiveNodes(int timeoutThresholdHours) {
+    Duration timeoutThreshold = Duration.ofHours(timeoutThresholdHours);
     try (Connection connection = dataSource.getConnection()) {
       DSL.using(connection)
           .transaction(

@@ -18,13 +18,17 @@
  */
 package com.silong.foundation.cjob.hazelcast.discovery.mysql.config;
 
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
-import org.apache.commons.lang3.StringUtils;
 
-import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
-import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
+import java.time.Duration;
+
+import static com.cronutils.model.CronType.QUARTZ;
+import static com.hazelcast.config.properties.PropertyTypeConverter.*;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
  * Mysql配置
@@ -45,10 +49,43 @@ public interface MysqlProperties {
      */
     int DEFAULT_HEART_BEAT_TIMEOUT_MINUTES = 10;
 
+    /**
+     * 默认开启去激活节点删除
+     */
+    boolean DEFAULT_ENABLE_INACTIVE_NODES_CLEANUP = true;
+
+    /**
+     * 默认去激活节点记录超时时间
+     */
+    int DEFAULT_INACTIVE_NODES_TIMEOUT_THRESHOLD_HOURS = (int) Duration.ofDays(7).toHours();
+
+    /**
+     * 每月最后一天凌晨2点开启清理去激活节点记录
+     */
+    String DEFAULT_CLEANUP_INACTIVE_NODES_CRON = "0 0 2 L 1/1 ? *";
+
+  /** 是否开启去激活节点记录清楚 */
+  PropertyDefinition ENABLE_INACTIVE_NODES_CLEANUP =
+            new SimplePropertyDefinition("enable-inactive-nodes-cleanup", true, BOOLEAN);
+
+  /** 是否开启去激活节点记录清楚 */
+  PropertyDefinition INACTIVE_NODES_CLEANUP_CRON =
+            new SimplePropertyDefinition("inactive-nodes-cleanup-cron", true, STRING, value->{
+                if (value instanceof String cronExp){
+                    try {
+                        new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ)).parse(cronExp);
+                    } catch (IllegalArgumentException e) {
+                        throw new ValidationException(e);
+                    }
+                    return;
+                }
+                throw new ValidationException("inactive-nodes-cleanup-cron is invalid.");
+            });
+
   /** 数据库访问用户名 */
   PropertyDefinition USER_NAME =
       new SimplePropertyDefinition("user-name", false, STRING, value->{
-        if (value instanceof String user && StringUtils.isNotEmpty(user)){
+        if (value instanceof String user && isNotEmpty(user)){
           return;
         }
         throw new ValidationException("user-name must not be null.");
@@ -57,7 +94,7 @@ public interface MysqlProperties {
   /** 数据库访问密码 */
   PropertyDefinition PASSWORD =
       new SimplePropertyDefinition("password", false, STRING, value->{
-        if (value instanceof String pwd && StringUtils.isNotEmpty(pwd)){
+        if (value instanceof String pwd && isNotEmpty(pwd)){
           return;
         }
         throw new ValidationException("password must not be null.");
@@ -66,7 +103,7 @@ public interface MysqlProperties {
   /** jdbc类全限定名 */
   PropertyDefinition DRIVER_CLASS =
       new SimplePropertyDefinition("driver-class", false, STRING, value->{
-          if (value instanceof String driverClass && StringUtils.isNotEmpty(driverClass)){
+          if (value instanceof String driverClass && isNotEmpty(driverClass)){
               return;
           }
           throw new ValidationException("driver-class must not be null.");
@@ -75,7 +112,7 @@ public interface MysqlProperties {
   /** 主机名称 */
   PropertyDefinition HOST_NAME =
       new SimplePropertyDefinition("host-name", true, STRING, value->{
-          if (value instanceof String hostName && StringUtils.isNotEmpty(hostName)){
+          if (value instanceof String hostName && isNotEmpty(hostName)){
               return;
           }
           throw new ValidationException("host-name must not be null.");
@@ -84,7 +121,7 @@ public interface MysqlProperties {
   /** jdbc url */
   PropertyDefinition JDBC_URL =
       new SimplePropertyDefinition("jdbc-url", false, STRING, value->{
-          if (value instanceof String jdbcUrl && StringUtils.isNotEmpty(jdbcUrl)){
+          if (value instanceof String jdbcUrl && isNotEmpty(jdbcUrl)){
               return;
           }
           throw new ValidationException("jdbc-url must not be null.");
@@ -93,7 +130,7 @@ public interface MysqlProperties {
   /** 集群名 */
   PropertyDefinition CLUSTER_NAME =
       new SimplePropertyDefinition("cluster", false, STRING, value->{
-          if (value instanceof String cluster && StringUtils.isNotEmpty(cluster)){
+          if (value instanceof String cluster && isNotEmpty(cluster)){
               return;
           }
           throw new ValidationException("cluster must not be null.");
@@ -106,7 +143,7 @@ public interface MysqlProperties {
   /** 节点心跳超时时间，单位：分钟 */
   PropertyDefinition HEART_BEAT_TIMEOUT_MINUTES =
       new SimplePropertyDefinition("heart-beat-timeout", true, INTEGER, value->{
-          if (value instanceof Number timeout && timeout.longValue()>0){
+          if (value instanceof Number timeout && timeout.intValue()>0){
               return;
           }
           throw new ValidationException("heart-beat-timeout must not be null.");
@@ -115,10 +152,18 @@ public interface MysqlProperties {
     /** 节点心跳间隔时间，单位：秒 */
     PropertyDefinition HEART_BEAT_INTERVAL_SECONDS =
             new SimplePropertyDefinition("heart-beat-interval", true, INTEGER, value->{
-                if (value instanceof Number interval && interval.longValue()>0){
+                if (value instanceof Number interval && interval.intValue()>0){
                     return;
                 }
                 throw new ValidationException("heart-beat-interval must not be null.");
             });
 
+    /** 清理去激活节点超时时间阈值，单位：小时 */
+    PropertyDefinition INACTIVE_NODES_TIMEOUT_THRESHOLD_HOURS =
+            new SimplePropertyDefinition("inactive-nodes-timeout-threshold-hours", true, INTEGER, value->{
+                if (value instanceof Number threshold && threshold.intValue()>0){
+                    return;
+                }
+                throw new ValidationException("inactive-nodes-timeout-threshold-hours must not be null.");
+            });
 }

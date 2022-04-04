@@ -18,6 +18,11 @@
  */
 package com.silong.foundation.cjob.hazelcast.discovery.mysql;
 
+import com.cronutils.model.Cron;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.model.time.ExecutionTime;
+import com.cronutils.parser.CronParser;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
@@ -27,11 +32,15 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.cronutils.model.CronType.QUARTZ;
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -71,10 +80,13 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   private final String instanceName;
 
   /** 线程池 */
-  private ScheduledExecutorService scheduledExecutorService;
+  private final ScheduledExecutorService scheduledExecutorService;
 
   /** 数据库工具 */
   @Getter private MysqlHelper dbHelper;
+
+  /** 下次执行时间 */
+  private ZonedDateTime nextExecutionTime;
 
   /**
    * 构造方法
@@ -95,6 +107,8 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
         getOrDefault(HEART_BEAT_TIMEOUT_MINUTES, DEFAULT_HEART_BEAT_TIMEOUT_MINUTES);
     this.heartbeatInterval =
         getOrDefault(HEART_BEAT_INTERVAL_SECONDS, DEFAULT_HEART_BEAT_interval_SECONDS);
+    this.scheduledExecutorService =
+        new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "Hazelcast-Node-Heartbeat-Mysql"));
   }
 
   @Override
@@ -120,8 +134,39 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
             getOrNull(JDBC_URL),
             getOrNull(USER_NAME),
             getOrNull(PASSWORD));
-    this.scheduledExecutorService =
-        new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "Hazelcast-Node-Heartbeat-Mysql"));
+
+    if (getOrDefault(ENABLE_INACTIVE_NODES_CLEANUP, DEFAULT_ENABLE_INACTIVE_NODES_CLEANUP)) {
+      initCleanupTask();
+    }
+  }
+
+  private void initCleanupTask() {
+    String cronExp = getOrDefault(INACTIVE_NODES_CLEANUP_CRON, DEFAULT_CLEANUP_INACTIVE_NODES_CRON);
+    int threshold =
+        getOrDefault(
+            INACTIVE_NODES_TIMEOUT_THRESHOLD_HOURS, DEFAULT_INACTIVE_NODES_TIMEOUT_THRESHOLD_HOURS);
+
+    CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
+    CronParser parser = new CronParser(cronDefinition);
+    Cron quartzCron = parser.parse(cronExp);
+    ExecutionTime executionTime = ExecutionTime.forCron(quartzCron);
+    nextExecutionTime =
+        executionTime
+            .lastExecution(ZonedDateTime.now(ZoneId.systemDefault()))
+            .orElseThrow(IllegalStateException::new);
+
+    scheduledExecutorService.scheduleAtFixedRate(
+        () -> {
+          ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+          if (ChronoUnit.SECONDS.between(now, nextExecutionTime) >= 0) {
+            dbHelper.deleteInactiveNodes(threshold);
+            nextExecutionTime =
+                executionTime.lastExecution(now).orElseThrow(IllegalStateException::new);
+          }
+        },
+        0,
+        1,
+        SECONDS);
   }
 
   @Override
