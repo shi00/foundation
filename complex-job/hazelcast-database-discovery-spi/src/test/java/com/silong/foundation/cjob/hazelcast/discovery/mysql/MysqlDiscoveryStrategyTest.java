@@ -29,7 +29,10 @@ import lombok.SneakyThrows;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -40,6 +43,7 @@ import java.util.Map;
 import java.util.stream.StreamSupport;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 单元测试
@@ -82,7 +86,7 @@ public class MysqlDiscoveryStrategyTest {
                 INSTANCE_NAME.key(),
                 "inst1",
                 HEART_BEAT_TIMEOUT_MINUTES.key(),
-                1000,
+                60,
                 JDBC_URL.key(),
                 MYSQL.getJdbcUrl(),
                 PASSWORD.key(),
@@ -108,17 +112,25 @@ public class MysqlDiscoveryStrategyTest {
     discoveryStrategy.start();
     Iterable<DiscoveryNode> discoveryNodes = discoveryStrategy.discoverNodes();
     discoveryStrategy.destroy();
-    Assertions.assertEquals(discoveryNodes, List.of());
+    assertEquals(discoveryNodes, List.of());
   }
 
   @Test
   void test2() {
-    DiscoveryStrategy discoveryStrategy =
+    DiscoveryStrategy discoveryStrategy1 =
         strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties);
-    discoveryStrategy.start();
-    Iterable<DiscoveryNode> discoveryNodes = discoveryStrategy.discoverNodes();
-    discoveryStrategy.destroy();
-    Assertions.assertEquals(1, StreamSupport.stream(discoveryNodes.spliterator(), false).count());
+    discoveryStrategy1.start();
+    Iterable<DiscoveryNode> discoveryNodes1 = discoveryStrategy1.discoverNodes();
+    assertEquals(List.of(), discoveryNodes1);
+
+    DiscoveryStrategy discoveryStrategy2 =
+        strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties);
+    discoveryStrategy2.start();
+    Iterable<DiscoveryNode> discoveryNodes2 = discoveryStrategy2.discoverNodes();
+
+    assertEquals(1, StreamSupport.stream(discoveryNodes2.spliterator(), false).count());
+    discoveryStrategy1.destroy();
+    discoveryStrategy2.destroy();
   }
 
   @SneakyThrows

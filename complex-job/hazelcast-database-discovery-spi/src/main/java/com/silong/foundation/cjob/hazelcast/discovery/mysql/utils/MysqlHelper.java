@@ -32,12 +32,10 @@ import org.jooq.types.DayToSecond;
 import java.io.Closeable;
 import java.net.InetAddress;
 import java.sql.Connection;
-import java.time.Duration;
 import java.util.List;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.model.Tables.HAZELCAST_CLUSTER_NODES;
-import static org.jooq.impl.DSL.abs;
-import static org.jooq.impl.DSL.localDateTimeDiff;
+import static org.jooq.impl.DSL.*;
 
 /**
  * 数据库工具类
@@ -101,7 +99,6 @@ public final class MysqlHelper implements Closeable {
    * @param timeoutThresholdHours 超时阈值
    */
   public void deleteInactiveNodes(int timeoutThresholdHours) {
-    Duration timeoutThreshold = Duration.ofHours(timeoutThresholdHours);
     try (Connection connection = dataSource.getConnection()) {
       DSL.using(connection)
           .transaction(
@@ -110,12 +107,11 @@ public final class MysqlHelper implements Closeable {
                       .deleteFrom(HAZELCAST_CLUSTER_NODES)
                       .where(
                           abs(localDateTimeDiff(
-                                  DSL.currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
-                              .greaterOrEqual(DayToSecond.valueOf(timeoutThreshold)))
+                                  currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
+                              .greaterOrEqual(new DayToSecond(0, timeoutThresholdHours)))
                       .execute());
     } catch (Exception e) {
-      log.error(
-          "Failed to delete all nodes wiht timeoutThreshold:{}s.", timeoutThreshold.toSeconds(), e);
+      log.error("Failed to delete all nodes wiht timeoutThreshold:{}h.", timeoutThresholdHours, e);
     }
   }
 
@@ -144,7 +140,7 @@ public final class MysqlHelper implements Closeable {
                           HAZELCAST_CLUSTER_NODES.PORT)
                       .values(hostName, clusterName, instanceName, ipAddress, port)
                       .onDuplicateKeyUpdate()
-                      .set(HAZELCAST_CLUSTER_NODES.UPDATED_TIME, DSL.currentLocalDateTime())
+                      .set(HAZELCAST_CLUSTER_NODES.UPDATED_TIME, currentLocalDateTime())
                       .execute());
     } catch (Exception e) {
       log.error(
@@ -179,8 +175,8 @@ public final class MysqlHelper implements Closeable {
                   .and(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME.eq(instanceName))
                   .and(
                       abs(localDateTimeDiff(
-                              DSL.currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
-                          .lessOrEqual(DayToSecond.valueOf(Duration.ofMinutes(heartbeatTimeout)))))
+                              currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
+                          .lessOrEqual(new DayToSecond(0, 0, heartbeatTimeout))))
           .orderBy(HAZELCAST_CLUSTER_NODES.UPDATED_TIME.desc())
           .stream()
           .map(this::buildDiscoveryNode)
