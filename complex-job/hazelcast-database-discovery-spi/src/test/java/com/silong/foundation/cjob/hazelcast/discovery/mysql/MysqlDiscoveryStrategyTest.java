@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.cjob.hazelcast.discovery.mysql;
 
+import com.github.javafaker.Faker;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
@@ -26,7 +27,6 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.silong.foundation.cjob.hazelcast.discovery.mysql.utils.MysqlHelper;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterAll;
@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,9 +65,11 @@ public class MysqlDiscoveryStrategyTest {
 
   private final MysqlDiscoveryStrategyFactory strategyFactory = new MysqlDiscoveryStrategyFactory();
 
+  private static final Faker FAKER = new Faker();
+
   private final MysqlHelper dbHelper =
       ((MysqlDiscoveryStrategy)
-              strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties))
+              strategyFactory.newDiscoveryStrategy(randomSimpleDiscoveryNode(), LOGGER, properties))
           .getDbHelper();
 
   @BeforeAll
@@ -80,7 +81,7 @@ public class MysqlDiscoveryStrategyTest {
                 CLUSTER_NAME.key(),
                 "cluster1",
                 HOST_NAME.key(),
-                RandomStringUtils.randomAscii(10),
+                FAKER.name().username(),
                 DRIVER_CLASS.key(),
                 "com.mysql.cj.jdbc.Driver",
                 INSTANCE_NAME.key(),
@@ -108,7 +109,7 @@ public class MysqlDiscoveryStrategyTest {
   @Test
   void test1() {
     DiscoveryStrategy discoveryStrategy =
-        strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties);
+        strategyFactory.newDiscoveryStrategy(randomSimpleDiscoveryNode(), LOGGER, properties);
     discoveryStrategy.start();
     Iterable<DiscoveryNode> discoveryNodes = discoveryStrategy.discoverNodes();
     discoveryStrategy.destroy();
@@ -118,13 +119,13 @@ public class MysqlDiscoveryStrategyTest {
   @Test
   void test2() {
     DiscoveryStrategy discoveryStrategy1 =
-        strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties);
+        strategyFactory.newDiscoveryStrategy(randomSimpleDiscoveryNode(), LOGGER, properties);
     discoveryStrategy1.start();
     Iterable<DiscoveryNode> discoveryNodes1 = discoveryStrategy1.discoverNodes();
     assertEquals(List.of(), discoveryNodes1);
 
     DiscoveryStrategy discoveryStrategy2 =
-        strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties);
+        strategyFactory.newDiscoveryStrategy(randomSimpleDiscoveryNode(), LOGGER, properties);
     discoveryStrategy2.start();
     Iterable<DiscoveryNode> discoveryNodes2 = discoveryStrategy2.discoverNodes();
 
@@ -134,8 +135,12 @@ public class MysqlDiscoveryStrategyTest {
   }
 
   @SneakyThrows
-  private static SimpleDiscoveryNode getSimpleDiscoveryNode() {
+  private SimpleDiscoveryNode randomSimpleDiscoveryNode() {
     return new SimpleDiscoveryNode(
-        new Address(InetAddress.getLocalHost(), RandomUtils.nextInt(1025, 65536)));
+        new Address(
+            RandomUtils.nextBoolean()
+                ? FAKER.internet().ipV4Address()
+                : FAKER.internet().ipV6Address(),
+            RandomUtils.nextInt(0, 65536)));
   }
 }

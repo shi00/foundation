@@ -120,7 +120,8 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   @Override
   public Iterable<DiscoveryNode> discoverNodes() {
     try {
-      return dbHelper.selectActiveNodes(clusterName, instanceName, heartbeatTimeout);
+      return dbHelper.selectActiveNodes(
+          hostName, ipAddress, port, clusterName, instanceName, heartbeatTimeout);
     } finally {
       if (initialized.compareAndSet(false, true)) {
         scheduledExecutorService.scheduleAtFixedRate(

@@ -156,13 +156,21 @@ public final class MysqlHelper implements Closeable {
   /**
    * 查询所有活着的节点信息
    *
+   * @param hostName 主机名
+   * @param ipAddress ip地址
+   * @param port 端口
    * @param clusterName 集群名
    * @param instanceName 实例名
    * @param heartbeatTimeout 心跳超时时长
    * @return 活着节点列表
    */
   public List<DiscoveryNode> selectActiveNodes(
-      String clusterName, String instanceName, int heartbeatTimeout) {
+      String hostName,
+      String ipAddress,
+      int port,
+      String clusterName,
+      String instanceName,
+      int heartbeatTimeout) {
     try (Connection connection = dataSource.getConnection()) {
       return DSL
           .using(connection)
@@ -173,6 +181,9 @@ public final class MysqlHelper implements Closeable {
                   .CLUSTER_NAME
                   .eq(clusterName)
                   .and(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME.eq(instanceName))
+                  .and(HAZELCAST_CLUSTER_NODES.HOST_NAME.notEqual(hostName))
+                  .and(HAZELCAST_CLUSTER_NODES.IP_ADDRESS.notEqual(ipAddress))
+                  .and(HAZELCAST_CLUSTER_NODES.PORT.notEqual(port))
                   .and(
                       abs(localDateTimeDiff(
                               currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
