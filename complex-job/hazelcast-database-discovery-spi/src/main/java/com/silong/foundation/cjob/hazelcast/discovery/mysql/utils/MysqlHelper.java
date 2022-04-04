@@ -35,7 +35,8 @@ import java.sql.Connection;
 import java.util.List;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.model.Tables.HAZELCAST_CLUSTER_NODES;
-import static org.jooq.impl.DSL.*;
+import static org.jooq.impl.DSL.currentLocalDateTime;
+import static org.jooq.impl.DSL.localDateTimeDiff;
 
 /**
  * 数据库工具类
@@ -106,8 +107,8 @@ public final class MysqlHelper implements Closeable {
                   DSL.using(ctx)
                       .deleteFrom(HAZELCAST_CLUSTER_NODES)
                       .where(
-                          abs(localDateTimeDiff(
-                                  currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
+                          localDateTimeDiff(
+                                  HAZELCAST_CLUSTER_NODES.UPDATED_TIME, currentLocalDateTime())
                               .greaterOrEqual(new DayToSecond(0, timeoutThresholdHours)))
                       .execute());
     } catch (Exception e) {
@@ -185,8 +186,8 @@ public final class MysqlHelper implements Closeable {
                   .eq(clusterName)
                   .and(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME.eq(instanceName))
                   .and(
-                      abs(localDateTimeDiff(
-                              HAZELCAST_CLUSTER_NODES.UPDATED_TIME, currentLocalDateTime()))
+                      localDateTimeDiff(
+                              HAZELCAST_CLUSTER_NODES.UPDATED_TIME, currentLocalDateTime())
                           .lessOrEqual(new DayToSecond(0, 0, heartbeatTimeout))))
           .orderBy(HAZELCAST_CLUSTER_NODES.UPDATED_TIME.desc())
           .stream()
