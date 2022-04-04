@@ -25,6 +25,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.DatePart;
 import org.jooq.Record3;
 import org.jooq.impl.DSL;
 import org.jooq.types.DayToSecond;
@@ -35,8 +36,9 @@ import java.sql.Connection;
 import java.util.List;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.model.Tables.HAZELCAST_CLUSTER_NODES;
-import static org.jooq.impl.DSL.currentLocalDateTime;
-import static org.jooq.impl.DSL.localDateTimeDiff;
+import static org.jooq.DatePart.HOUR;
+import static org.jooq.DatePart.MINUTE;
+import static org.jooq.impl.DSL.*;
 
 /**
  * 数据库工具类
@@ -107,9 +109,8 @@ public final class MysqlHelper implements Closeable {
                   DSL.using(ctx)
                       .deleteFrom(HAZELCAST_CLUSTER_NODES)
                       .where(
-                          localDateTimeDiff(
-                                  currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME)
-                              .greaterOrEqual(new DayToSecond(0, timeoutThresholdHours)))
+                          localDateTimeSub(currentLocalDateTime(), timeoutThresholdHours, HOUR)
+                              .greaterThan(HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
                       .execute());
     } catch (Exception e) {
       log.error("Failed to delete all nodes wiht timeoutThreshold:{}h.", timeoutThresholdHours, e);
@@ -186,9 +187,8 @@ public final class MysqlHelper implements Closeable {
                   .eq(clusterName)
                   .and(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME.eq(instanceName))
                   .and(
-                      localDateTimeDiff(
-                              currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME)
-                          .lessOrEqual(new DayToSecond(0, 0, heartbeatTimeout))))
+                      localDateTimeSub(currentLocalDateTime(), heartbeatTimeout, MINUTE)
+                          .lessOrEqual(HAZELCAST_CLUSTER_NODES.UPDATED_TIME)))
           .orderBy(HAZELCAST_CLUSTER_NODES.UPDATED_TIME.desc())
           .stream()
           .filter(record3 -> !isLocalNode(hostName, ipAddress, port, record3))
