@@ -149,11 +149,10 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     CronParser parser = new CronParser(cronDefinition);
     Cron quartzCron = parser.parse(cronExp);
     ExecutionTime executionTime = ExecutionTime.forCron(quartzCron);
-    nextExecutionTime =
-        getNextExecutionTime(executionTime, ZonedDateTime.now(ZoneId.systemDefault()));
+    nextExecutionTime = getNextExecutionTime(executionTime, now());
     scheduledExecutorService.scheduleAtFixedRate(
         () -> {
-          ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+          ZonedDateTime now = now();
           if (ChronoUnit.SECONDS.between(nextExecutionTime, now) >= 0) {
             dbHelper.deleteInactiveNodes(threshold);
             nextExecutionTime = getNextExecutionTime(executionTime, now);
@@ -162,6 +161,10 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
         0,
         3,
         SECONDS);
+  }
+
+  private ZonedDateTime now() {
+    return ZonedDateTime.now(ZoneId.systemDefault());
   }
 
   private ZonedDateTime getNextExecutionTime(ExecutionTime executionTime, ZonedDateTime now) {
