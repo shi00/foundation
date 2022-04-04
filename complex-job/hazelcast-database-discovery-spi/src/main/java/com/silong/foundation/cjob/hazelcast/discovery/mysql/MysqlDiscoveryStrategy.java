@@ -83,7 +83,7 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   private final ScheduledExecutorService scheduledExecutorService;
 
   /** 数据库工具 */
-  @Getter private MysqlHelper dbHelper;
+  @Getter private final MysqlHelper dbHelper;
 
   /** 下次执行时间 */
   private ZonedDateTime nextExecutionTime;
@@ -107,6 +107,12 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
         getOrDefault(HEART_BEAT_TIMEOUT_MINUTES, DEFAULT_HEART_BEAT_TIMEOUT_MINUTES);
     this.heartbeatInterval =
         getOrDefault(HEART_BEAT_INTERVAL_SECONDS, DEFAULT_HEART_BEAT_interval_SECONDS);
+    this.dbHelper =
+        new MysqlHelper(
+            getOrNull(DRIVER_CLASS),
+            getOrNull(JDBC_URL),
+            getOrNull(USER_NAME),
+            getOrNull(PASSWORD));
     this.scheduledExecutorService =
         new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "Hazelcast-Node-Heartbeat-Mysql"));
   }
@@ -128,13 +134,6 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
   @Override
   public void start() {
-    this.dbHelper =
-        new MysqlHelper(
-            getOrNull(DRIVER_CLASS),
-            getOrNull(JDBC_URL),
-            getOrNull(USER_NAME),
-            getOrNull(PASSWORD));
-
     if (getOrDefault(ENABLE_INACTIVE_NODES_CLEANUP, DEFAULT_ENABLE_INACTIVE_NODES_CLEANUP)) {
       initCleanupTask();
     }

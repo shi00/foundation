@@ -24,14 +24,12 @@ import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.silong.foundation.cjob.hazelcast.discovery.mysql.utils.MysqlHelper;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -61,9 +59,13 @@ public class MysqlDiscoveryStrategyTest {
           .withInitScript("hazelcast-cluster-nodes.sql");
 
   public static Map<String, Comparable> properties;
-  ;
 
   private final MysqlDiscoveryStrategyFactory strategyFactory = new MysqlDiscoveryStrategyFactory();
+
+  private final MysqlHelper dbHelper =
+      ((MysqlDiscoveryStrategy)
+              strategyFactory.newDiscoveryStrategy(getSimpleDiscoveryNode(), LOGGER, properties))
+          .getDbHelper();
 
   @BeforeAll
   static void init() {
@@ -92,6 +94,11 @@ public class MysqlDiscoveryStrategyTest {
   @AfterAll
   static void cleanup() {
     MYSQL.stop();
+  }
+
+  @BeforeEach
+  void truncateTable() {
+    dbHelper.deleteAll();
   }
 
   @Test
