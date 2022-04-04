@@ -43,6 +43,7 @@ import java.util.stream.StreamSupport;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 单元测试
@@ -117,21 +118,34 @@ public class MysqlDiscoveryStrategyTest {
   }
 
   @Test
-  void test2() {
+  void test2() throws InterruptedException {
+    SimpleDiscoveryNode discoveryNode1 = randomSimpleDiscoveryNode();
     DiscoveryStrategy discoveryStrategy1 =
-        strategyFactory.newDiscoveryStrategy(randomSimpleDiscoveryNode(), LOGGER, properties);
+        strategyFactory.newDiscoveryStrategy(discoveryNode1, LOGGER, properties);
     discoveryStrategy1.start();
     Iterable<DiscoveryNode> discoveryNodes1 = discoveryStrategy1.discoverNodes();
     assertEquals(List.of(), discoveryNodes1);
 
+    Thread.sleep(1000);
+
+    SimpleDiscoveryNode discoveryNode2 = randomSimpleDiscoveryNode();
     DiscoveryStrategy discoveryStrategy2 =
-        strategyFactory.newDiscoveryStrategy(randomSimpleDiscoveryNode(), LOGGER, properties);
+        strategyFactory.newDiscoveryStrategy(discoveryNode2, LOGGER, properties);
     discoveryStrategy2.start();
     Iterable<DiscoveryNode> discoveryNodes2 = discoveryStrategy2.discoverNodes();
 
-    assertEquals(1, StreamSupport.stream(discoveryNodes2.spliterator(), false).count());
+    assertTrue(
+        compare(
+            discoveryNode1,
+            StreamSupport.stream(discoveryNodes2.spliterator(), false).findFirst().get()));
     discoveryStrategy1.destroy();
     discoveryStrategy2.destroy();
+  }
+
+  private boolean compare(DiscoveryNode node1, DiscoveryNode node2) {
+    return node2.getPublicAddress().equals(node1.getPublicAddress())
+        && node1.getProperties().equals(node2.getProperties())
+        && node2.getPrivateAddress().equals(node1.getPrivateAddress());
   }
 
   @SneakyThrows
