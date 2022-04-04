@@ -186,11 +186,11 @@ public final class MysqlHelper implements Closeable {
                   .and(HAZELCAST_CLUSTER_NODES.PORT.notEqual(port))
                   .and(
                       abs(localDateTimeDiff(
-                              currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
+                              HAZELCAST_CLUSTER_NODES.UPDATED_TIME, currentLocalDateTime()))
                           .lessOrEqual(new DayToSecond(0, 0, heartbeatTimeout))))
           .orderBy(HAZELCAST_CLUSTER_NODES.UPDATED_TIME.desc())
           .stream()
-          .map(this::buildDiscoveryNode)
+          .map(this::map2Node)
           .toList();
     } catch (Exception e) {
       log.error(
@@ -203,7 +203,7 @@ public final class MysqlHelper implements Closeable {
   }
 
   @SneakyThrows
-  private DiscoveryNode buildDiscoveryNode(Record2<String, Integer> record2) {
+  private DiscoveryNode map2Node(Record2<String, Integer> record2) {
     return new SimpleDiscoveryNode(
         new Address(InetAddress.getByName(record2.value1()), record2.value2()));
   }
