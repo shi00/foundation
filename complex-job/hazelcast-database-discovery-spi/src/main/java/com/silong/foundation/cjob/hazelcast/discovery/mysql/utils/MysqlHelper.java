@@ -25,7 +25,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.jooq.Record2;
+import org.jooq.Record3;
 import org.jooq.impl.DSL;
 import org.jooq.types.DayToSecond;
 
@@ -174,22 +174,23 @@ public final class MysqlHelper implements Closeable {
     try (Connection connection = dataSource.getConnection()) {
       return DSL
           .using(connection)
-          .select(HAZELCAST_CLUSTER_NODES.IP_ADDRESS, HAZELCAST_CLUSTER_NODES.PORT)
+          .select(
+              HAZELCAST_CLUSTER_NODES.IP_ADDRESS,
+              HAZELCAST_CLUSTER_NODES.PORT,
+              HAZELCAST_CLUSTER_NODES.HOST_NAME)
           .from(HAZELCAST_CLUSTER_NODES)
           .where(
               HAZELCAST_CLUSTER_NODES
                   .CLUSTER_NAME
                   .eq(clusterName)
                   .and(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME.eq(instanceName))
-                  .and(HAZELCAST_CLUSTER_NODES.HOST_NAME.notEqual(hostName))
-                  .and(HAZELCAST_CLUSTER_NODES.IP_ADDRESS.notEqual(ipAddress))
-                  .and(HAZELCAST_CLUSTER_NODES.PORT.notEqual(port))
                   .and(
                       abs(localDateTimeDiff(
                               HAZELCAST_CLUSTER_NODES.UPDATED_TIME, currentLocalDateTime()))
                           .lessOrEqual(new DayToSecond(0, 0, heartbeatTimeout))))
           .orderBy(HAZELCAST_CLUSTER_NODES.UPDATED_TIME.desc())
           .stream()
+          .filter(record3 -> !isLocalNode(hostName, ipAddress, port, record3))
           .map(this::map2Node)
           .toList();
     } catch (Exception e) {
@@ -202,10 +203,17 @@ public final class MysqlHelper implements Closeable {
     }
   }
 
+  private boolean isLocalNode(
+      String hostName, String ipAddress, int port, Record3<String, Integer, String> record3) {
+    return record3.value1().equals(ipAddress)
+        && record3.value2().equals(port)
+        && record3.value3().equals(hostName);
+  }
+
   @SneakyThrows
-  private DiscoveryNode map2Node(Record2<String, Integer> record2) {
+  private DiscoveryNode map2Node(Record3<String, Integer, String> record3) {
     return new SimpleDiscoveryNode(
-        new Address(InetAddress.getByName(record2.value1()), record2.value2()));
+        new Address(InetAddress.getByName(record3.value1()), record3.value2()));
   }
 
   @Override
