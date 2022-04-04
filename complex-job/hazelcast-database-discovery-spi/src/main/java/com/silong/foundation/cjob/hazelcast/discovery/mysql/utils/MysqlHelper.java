@@ -108,7 +108,7 @@ public final class MysqlHelper implements Closeable {
                       .deleteFrom(HAZELCAST_CLUSTER_NODES)
                       .where(
                           localDateTimeDiff(
-                                  HAZELCAST_CLUSTER_NODES.UPDATED_TIME, currentLocalDateTime())
+                                  currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME)
                               .greaterOrEqual(new DayToSecond(0, timeoutThresholdHours)))
                       .execute());
     } catch (Exception e) {
@@ -187,7 +187,7 @@ public final class MysqlHelper implements Closeable {
                   .and(HAZELCAST_CLUSTER_NODES.INSTANCE_NAME.eq(instanceName))
                   .and(
                       localDateTimeDiff(
-                              HAZELCAST_CLUSTER_NODES.UPDATED_TIME, currentLocalDateTime())
+                              currentLocalDateTime(), HAZELCAST_CLUSTER_NODES.UPDATED_TIME)
                           .lessOrEqual(new DayToSecond(0, 0, heartbeatTimeout))))
           .orderBy(HAZELCAST_CLUSTER_NODES.UPDATED_TIME.desc())
           .stream()
