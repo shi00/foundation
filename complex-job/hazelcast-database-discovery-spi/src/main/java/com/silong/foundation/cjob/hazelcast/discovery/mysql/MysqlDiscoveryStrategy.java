@@ -154,7 +154,7 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     scheduledExecutorService.scheduleAtFixedRate(
         () -> {
           ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
-          if (ChronoUnit.SECONDS.between(now, nextExecutionTime) >= 0) {
+          if (ChronoUnit.SECONDS.between(nextExecutionTime, now) >= 0) {
             dbHelper.deleteInactiveNodes(threshold);
             nextExecutionTime = getNextExecutionTime(executionTime, now);
           }
