@@ -150,22 +150,22 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     Cron quartzCron = parser.parse(cronExp);
     ExecutionTime executionTime = ExecutionTime.forCron(quartzCron);
     nextExecutionTime =
-        executionTime
-            .lastExecution(ZonedDateTime.now(ZoneId.systemDefault()))
-            .orElseThrow(IllegalStateException::new);
-
+        getNextExecutionTime(executionTime, ZonedDateTime.now(ZoneId.systemDefault()));
     scheduledExecutorService.scheduleAtFixedRate(
         () -> {
           ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
           if (ChronoUnit.SECONDS.between(now, nextExecutionTime) >= 0) {
             dbHelper.deleteInactiveNodes(threshold);
-            nextExecutionTime =
-                executionTime.lastExecution(now).orElseThrow(IllegalStateException::new);
+            nextExecutionTime = getNextExecutionTime(executionTime, now);
           }
         },
         0,
         3,
         SECONDS);
+  }
+
+  private ZonedDateTime getNextExecutionTime(ExecutionTime executionTime, ZonedDateTime now) {
+    return executionTime.nextExecution(now).orElseThrow(IllegalStateException::new);
   }
 
   @Override
