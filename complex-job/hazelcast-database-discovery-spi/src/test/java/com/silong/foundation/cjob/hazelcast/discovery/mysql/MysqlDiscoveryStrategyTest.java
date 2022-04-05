@@ -77,24 +77,23 @@ public class MysqlDiscoveryStrategyTest {
   static void init() {
     MYSQL.start();
     properties =
-        new HashMap<>(
-            Map.of(
-                CLUSTER_NAME.key(),
-                "cluster1",
-                HOST_NAME.key(),
-                FAKER.name().username(),
-                DRIVER_CLASS.key(),
-                "com.mysql.cj.jdbc.Driver",
-                INSTANCE_NAME.key(),
-                "inst1",
-                HEART_BEAT_TIMEOUT_MINUTES.key(),
-                60,
-                JDBC_URL.key(),
-                MYSQL.getJdbcUrl(),
-                PASSWORD.key(),
-                MYSQL.getPassword(),
-                USER_NAME.key(),
-                MYSQL.getUsername()));
+        Map.of(
+            CLUSTER_NAME.key(),
+            "cluster1",
+            HOST_NAME.key(),
+            FAKER.name().username(),
+            DRIVER_CLASS.key(),
+            "com.mysql.cj.jdbc.Driver",
+            INSTANCE_NAME.key(),
+            "inst1",
+            HEART_BEAT_TIMEOUT_MINUTES.key(),
+            60,
+            JDBC_URL.key(),
+            MYSQL.getJdbcUrl(),
+            PASSWORD.key(),
+            MYSQL.getPassword(),
+            USER_NAME.key(),
+            MYSQL.getUsername());
   }
 
   @AfterAll
@@ -134,12 +133,76 @@ public class MysqlDiscoveryStrategyTest {
     discoveryStrategy2.start();
     Iterable<DiscoveryNode> discoveryNodes2 = discoveryStrategy2.discoverNodes();
 
+    assertEquals(1, StreamSupport.stream(discoveryNodes2.spliterator(), false).count());
     assertTrue(
         compare(
             discoveryNode1,
             StreamSupport.stream(discoveryNodes2.spliterator(), false).findFirst().get()));
     discoveryStrategy1.destroy();
     discoveryStrategy2.destroy();
+  }
+
+  @Test
+  void test3() throws InterruptedException {
+    SimpleDiscoveryNode discoveryNode1 = randomSimpleDiscoveryNode();
+    DiscoveryStrategy discoveryStrategy1 =
+        strategyFactory.newDiscoveryStrategy(discoveryNode1, LOGGER, properties);
+    discoveryStrategy1.start();
+    Iterable<DiscoveryNode> discoveryNodes1 = discoveryStrategy1.discoverNodes();
+
+    SimpleDiscoveryNode discoveryNode2 = randomSimpleDiscoveryNode();
+    DiscoveryStrategy discoveryStrategy2 =
+        strategyFactory.newDiscoveryStrategy(discoveryNode2, LOGGER, properties);
+    discoveryStrategy2.start();
+    Iterable<DiscoveryNode> discoveryNodes2 = discoveryStrategy2.discoverNodes();
+
+    Thread.sleep(1000);
+
+    SimpleDiscoveryNode discoveryNode3 = randomSimpleDiscoveryNode();
+    DiscoveryStrategy discoveryStrategy3 =
+        strategyFactory.newDiscoveryStrategy(discoveryNode3, LOGGER, properties);
+    discoveryStrategy3.start();
+    Iterable<DiscoveryNode> discoveryNodes3 = discoveryStrategy3.discoverNodes();
+
+    assertEquals(2, StreamSupport.stream(discoveryNodes3.spliterator(), false).count());
+
+    for (DiscoveryNode discoveryNode : discoveryNodes3) {
+      assertTrue(compare(discoveryNode1, discoveryNode) || compare(discoveryNode2, discoveryNode));
+    }
+
+    discoveryStrategy1.destroy();
+    discoveryStrategy2.destroy();
+    discoveryStrategy3.destroy();
+  }
+
+  @Test
+  void test4() throws InterruptedException {
+    SimpleDiscoveryNode discoveryNode1 = randomSimpleDiscoveryNode();
+    DiscoveryStrategy discoveryStrategy1 =
+        strategyFactory.newDiscoveryStrategy(discoveryNode1, LOGGER, properties);
+    discoveryStrategy1.start();
+    Iterable<DiscoveryNode> discoveryNodes1 = discoveryStrategy1.discoverNodes();
+
+    SimpleDiscoveryNode discoveryNode2 = randomSimpleDiscoveryNode();
+    DiscoveryStrategy discoveryStrategy2 =
+        strategyFactory.newDiscoveryStrategy(discoveryNode2, LOGGER, properties);
+    discoveryStrategy2.start();
+    Iterable<DiscoveryNode> discoveryNodes2 = discoveryStrategy2.discoverNodes();
+
+    SimpleDiscoveryNode discoveryNode3 = randomSimpleDiscoveryNode();
+    DiscoveryStrategy discoveryStrategy3 =
+        strategyFactory.newDiscoveryStrategy(discoveryNode3, LOGGER, properties);
+    discoveryStrategy3.start();
+    Iterable<DiscoveryNode> discoveryNodes3 = discoveryStrategy3.discoverNodes();
+
+    discoveryStrategy1.destroy();
+    discoveryStrategy2.destroy();
+    discoveryStrategy3.destroy();
+
+    Thread.sleep(2000);
+
+    dbHelper.deleteInactiveNodes(1);
+    assertTrue(dbHelper.hasRecords());
   }
 
   private boolean compare(DiscoveryNode node1, DiscoveryNode node2) {

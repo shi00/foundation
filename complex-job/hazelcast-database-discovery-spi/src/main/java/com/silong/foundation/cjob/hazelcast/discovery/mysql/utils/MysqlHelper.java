@@ -25,10 +25,8 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.jooq.DatePart;
 import org.jooq.Record3;
 import org.jooq.impl.DSL;
-import org.jooq.types.DayToSecond;
 
 import java.io.Closeable;
 import java.net.InetAddress;
@@ -36,9 +34,10 @@ import java.sql.Connection;
 import java.util.List;
 
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.model.Tables.HAZELCAST_CLUSTER_NODES;
-import static org.jooq.DatePart.HOUR;
 import static org.jooq.DatePart.MINUTE;
-import static org.jooq.impl.DSL.*;
+import static org.jooq.DatePart.SECOND;
+import static org.jooq.impl.DSL.currentLocalDateTime;
+import static org.jooq.impl.DSL.localDateTimeSub;
 
 /**
  * 数据库工具类
@@ -99,9 +98,9 @@ public final class MysqlHelper implements Closeable {
   /**
    * 删除所有节点心跳超时超过指定时长的节点记录
    *
-   * @param timeoutThresholdHours 超时阈值
+   * @param timeoutThresholdSeconds 超时阈值，单位：秒
    */
-  public void deleteInactiveNodes(int timeoutThresholdHours) {
+  public void deleteInactiveNodes(int timeoutThresholdSeconds) {
     try (Connection connection = dataSource.getConnection()) {
       DSL.using(connection)
           .transaction(
@@ -109,11 +108,24 @@ public final class MysqlHelper implements Closeable {
                   DSL.using(ctx)
                       .deleteFrom(HAZELCAST_CLUSTER_NODES)
                       .where(
-                          localDateTimeSub(currentLocalDateTime(), timeoutThresholdHours, HOUR)
+                          localDateTimeSub(currentLocalDateTime(), timeoutThresholdSeconds, SECOND)
                               .greaterThan(HAZELCAST_CLUSTER_NODES.UPDATED_TIME))
                       .execute());
     } catch (Exception e) {
-      log.error("Failed to delete all nodes wiht timeoutThreshold:{}h.", timeoutThresholdHours, e);
+      log.error(
+          "Failed to delete all nodes wiht timeoutThreshold:{}s.", timeoutThresholdSeconds, e);
+    }
+  }
+
+  /**
+   * 是否存在记录
+   *
+   * @return true or false
+   */
+  @SneakyThrows
+  public boolean hasRecords() {
+    try (Connection connection = dataSource.getConnection()) {
+      return DSL.using(connection).selectFrom(HAZELCAST_CLUSTER_NODES).stream().findAny().isEmpty();
     }
   }
 
