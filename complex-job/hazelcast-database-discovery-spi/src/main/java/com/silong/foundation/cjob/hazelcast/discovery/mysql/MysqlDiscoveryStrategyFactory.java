@@ -43,8 +43,6 @@ public class MysqlDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
   private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS =
       List.of(
           INACTIVE_NODES_TIMEOUT_THRESHOLD_HOURS,
-          ENABLE_INACTIVE_NODES_CLEANUP,
-          INACTIVE_NODES_CLEANUP_CRON,
           HEART_BEAT_TIMEOUT_MINUTES,
           HEART_BEAT_INTERVAL_SECONDS,
           CLUSTER_NAME,

@@ -18,11 +18,6 @@
  */
 package com.silong.foundation.cjob.hazelcast.discovery.mysql;
 
-import com.cronutils.model.Cron;
-import com.cronutils.model.definition.CronDefinition;
-import com.cronutils.model.definition.CronDefinitionBuilder;
-import com.cronutils.model.time.ExecutionTime;
-import com.cronutils.parser.CronParser;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
@@ -32,15 +27,12 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.cronutils.model.CronType.QUARTZ;
 import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -106,7 +98,7 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
     this.heartbeatTimeout =
         getOrDefault(HEART_BEAT_TIMEOUT_MINUTES, DEFAULT_HEART_BEAT_TIMEOUT_MINUTES);
     this.heartbeatInterval =
-        getOrDefault(HEART_BEAT_INTERVAL_SECONDS, DEFAULT_HEART_BEAT_interval_SECONDS);
+        getOrDefault(HEART_BEAT_INTERVAL_SECONDS, DEFAULT_HEART_BEAT_INTERVAL_SECONDS);
     this.dbHelper =
         new MysqlHelper(
             getOrNull(DRIVER_CLASS),
@@ -131,45 +123,6 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
             SECONDS);
       }
     }
-  }
-
-  @Override
-  public void start() {
-    if (getOrDefault(ENABLE_INACTIVE_NODES_CLEANUP, DEFAULT_ENABLE_INACTIVE_NODES_CLEANUP)) {
-      initCleanupTask();
-    }
-  }
-
-  private void initCleanupTask() {
-    String cronExp = getOrDefault(INACTIVE_NODES_CLEANUP_CRON, DEFAULT_CLEANUP_INACTIVE_NODES_CRON);
-    int threshold =
-        getOrDefault(
-            INACTIVE_NODES_TIMEOUT_THRESHOLD_HOURS, DEFAULT_INACTIVE_NODES_TIMEOUT_THRESHOLD_HOURS);
-
-    CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
-    CronParser parser = new CronParser(cronDefinition);
-    Cron quartzCron = parser.parse(cronExp);
-    ExecutionTime executionTime = ExecutionTime.forCron(quartzCron);
-    nextExecutionTime = getNextExecutionTime(executionTime, now());
-    scheduledExecutorService.scheduleAtFixedRate(
-        () -> {
-          ZonedDateTime now = now();
-          if (ChronoUnit.SECONDS.between(nextExecutionTime, now) >= 0) {
-            dbHelper.deleteInactiveNodes(threshold);
-            nextExecutionTime = getNextExecutionTime(executionTime, now);
-          }
-        },
-        0,
-        3,
-        SECONDS);
-  }
-
-  private ZonedDateTime now() {
-    return ZonedDateTime.now(ZoneId.systemDefault());
-  }
-
-  private ZonedDateTime getNextExecutionTime(ExecutionTime executionTime, ZonedDateTime now) {
-    return executionTime.nextExecution(now).orElseThrow(IllegalStateException::new);
   }
 
   @Override

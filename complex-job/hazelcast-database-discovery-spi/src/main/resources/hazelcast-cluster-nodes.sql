@@ -11,3 +11,13 @@ CREATE TABLE IF NOT EXISTS `hazelcast_cluster_nodes`
     INDEX HAZELCAST_CLUSTER_NODES_IDX (`cluster_name`, `instance_name`)
 ) ENGINE = INNODB
   DEFAULT CHARSET = UTF8MB4;
+
+CREATE EVENT IF NOT EXISTS CLEANUP_INACTIVE_HAZELCAST_CLUSTER_NODES_EVENT
+    ON SCHEDULE EVERY 1 MONTH
+        STARTS '2022-01-01 00:02:00'
+    ON COMPLETION PRESERVE ENABLE
+    COMMENT '每月定时清理集群节点表中的去激活节点记录'
+    DO
+    DELETE
+    FROM `hazelcast_cluster_nodes`
+    WHERE DATE_ADD(CURRENT_TIMESTAMP(), interval -(7) day) > `hazelcast_cluster_nodes`.`updated_time`;

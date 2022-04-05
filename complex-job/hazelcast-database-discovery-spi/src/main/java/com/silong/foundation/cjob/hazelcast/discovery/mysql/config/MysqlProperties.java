@@ -18,16 +18,14 @@
  */
 package com.silong.foundation.cjob.hazelcast.discovery.mysql.config;
 
-import com.cronutils.model.definition.CronDefinitionBuilder;
-import com.cronutils.parser.CronParser;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
 
 import java.time.Duration;
 
-import static com.cronutils.model.CronType.QUARTZ;
-import static com.hazelcast.config.properties.PropertyTypeConverter.*;
+import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
+import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
@@ -42,7 +40,7 @@ public interface MysqlProperties {
     /**
      * 默认心跳超时30秒
      */
-    int DEFAULT_HEART_BEAT_interval_SECONDS = 30;
+    int DEFAULT_HEART_BEAT_INTERVAL_SECONDS = 30;
 
     /**
      * 默认心跳超时10分钟
@@ -63,24 +61,6 @@ public interface MysqlProperties {
      * 每月最后一天凌晨2点开启清理去激活节点记录
      */
     String DEFAULT_CLEANUP_INACTIVE_NODES_CRON = "0 0 2 L 1/1 ? *";
-
-  /** 是否开启去激活节点记录清楚 */
-  PropertyDefinition ENABLE_INACTIVE_NODES_CLEANUP =
-            new SimplePropertyDefinition("enable-inactive-nodes-cleanup", true, BOOLEAN);
-
-  /** 是否开启去激活节点记录清楚 */
-  PropertyDefinition INACTIVE_NODES_CLEANUP_CRON =
-            new SimplePropertyDefinition("inactive-nodes-cleanup-cron", true, STRING, value->{
-                if (value instanceof String cronExp){
-                    try {
-                        new CronParser(CronDefinitionBuilder.instanceDefinitionFor(QUARTZ)).parse(cronExp);
-                    } catch (IllegalArgumentException e) {
-                        throw new ValidationException(e);
-                    }
-                    return;
-                }
-                throw new ValidationException("inactive-nodes-cleanup-cron is invalid.");
-            });
 
   /** 数据库访问用户名 */
   PropertyDefinition USER_NAME =
