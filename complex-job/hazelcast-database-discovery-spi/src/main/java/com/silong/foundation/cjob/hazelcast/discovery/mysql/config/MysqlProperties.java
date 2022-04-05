@@ -22,8 +22,6 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
 
-import java.time.Duration;
-
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -46,21 +44,6 @@ public interface MysqlProperties {
      * 默认心跳超时10分钟
      */
     int DEFAULT_HEART_BEAT_TIMEOUT_MINUTES = 10;
-
-    /**
-     * 默认开启去激活节点删除
-     */
-    boolean DEFAULT_ENABLE_INACTIVE_NODES_CLEANUP = true;
-
-    /**
-     * 默认去激活节点记录超时时间
-     */
-    int DEFAULT_INACTIVE_NODES_TIMEOUT_THRESHOLD_HOURS = (int) Duration.ofDays(7).toHours();
-
-    /**
-     * 每月最后一天凌晨2点开启清理去激活节点记录
-     */
-    String DEFAULT_CLEANUP_INACTIVE_NODES_CRON = "0 0 2 L 1/1 ? *";
 
   /** 数据库访问用户名 */
   PropertyDefinition USER_NAME =
