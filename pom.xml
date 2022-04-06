@@ -57,6 +57,8 @@
     <modules>
         <module>reactive-webclient</module>
         <!--        <module>okhttp3-webclient</module>-->
+        <module>distributed-task/scheduler</module>
+        <module>distributed-task/discovery</module>
         <module>crypto</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>
@@ -110,6 +112,7 @@
         <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <sql-maven-plugin.version>1.5</sql-maven-plugin.version>
+        <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
@@ -137,6 +140,8 @@
         <plexus-archiver.version>4.2.7</plexus-archiver.version>
         <cron-utils.version>9.1.6</cron-utils.version>
         <jooq.version>3.14.15</jooq.version>
+        <jgroups.version>5.2.2.Final</jgroups.version>
+        <protobuf-java.version>3.20.0</protobuf-java.version>
         <!--开源组件-->
 
     </properties>
@@ -188,6 +193,14 @@
                 <version>${guava.version}</version>
             </dependency>
             <!-- google 基础库 -->
+
+            <!-- protobuf -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf-java.version}</version>
+            </dependency>
+            <!-- protobuf -->
 
             <!-- 基于规则生成随机高强度密码 -->
             <dependency>
@@ -259,6 +272,14 @@
                 <version>${cron-utils.version}</version>
             </dependency>
             <!-- cron工具 -->
+
+            <!-- 集群通信组件 -->
+            <dependency>
+                <groupId>org.jgroups</groupId>
+                <artifactId>jgroups</artifactId>
+                <version>${jgroups.version}</version>
+            </dependency>
+            <!-- 集群通信组件 -->
 
             <!-- xml解析api -->
             <dependency>
@@ -438,6 +459,11 @@
                     <version>${maven-source-plugin.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>com.github.os72</groupId>
+                    <artifactId>protoc-jar-maven-plugin</artifactId>
+                    <version>${protoc-jar-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>com.spotify</groupId>
                     <artifactId>dockerfile-maven-plugin</artifactId>
                     <version>${dockerfile-maven-plugin.version}</version>
@@ -537,6 +563,7 @@
                         <exclude>**/.dockerignore</exclude>
                         <exclude>**/*.properties</exclude>
                         <exclude>**/*.sql</exclude>
+                        <exclude>**/*.proto</exclude>
                         <exclude>**/*.bat</exclude>
                         <exclude>**/*.cer</exclude>
                         <exclude>**/*.xsd</exclude>
