@@ -20,8 +20,8 @@ package com.silong.foundation.dts.scheduler.cluster;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.jgroups.Address;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -34,12 +34,27 @@ import java.util.Map;
 public interface ClusterNode {
 
   /**
-   * 节点通信地址
+   * 节点版本
    *
-   * @return 地址
+   * @return 版本描述
+   */
+  String version();
+
+  /**
+   * 获取节点主机名
+   *
+   * @return 节点主机名
    */
   @NonNull
-  Address address();
+  String hostName();
+
+  /**
+   * 节点地址列表
+   *
+   * @return 地址列表
+   */
+  @NonNull
+  Collection<String> addresses();
 
   /**
    * 是否本地节点
@@ -51,11 +66,10 @@ public interface ClusterNode {
   /**
    * 获取节点在集群内全局唯一的id
    *
-   * @param <T> id类型
    * @return id
    */
   @NonNull
-  <T extends Comparable<T>> T uuid();
+  Comparable<?> uuid();
 
   /**
    * 根据属性名获取属性值
