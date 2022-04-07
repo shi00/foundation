@@ -25,10 +25,10 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>we have a cluster of nodes, and each node can submit tasks to be executed by some other node in the
+    <description>we have a cluster of nodes, and each node can submit jobs to be executed by some other node in the
         cluster.
     </description>
-    <artifactId>distributed-task-scheduler</artifactId>
+    <artifactId>distributed-job-scheduler</artifactId>
     <version>1.0.0</version>
 
     <properties>

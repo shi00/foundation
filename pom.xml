@@ -57,8 +57,8 @@
     <modules>
         <module>reactive-webclient</module>
         <!--        <module>okhttp3-webclient</module>-->
-        <module>distributed-task/scheduler</module>
-        <module>distributed-task/discovery</module>
+        <module>distributed-job/scheduler</module>
+        <module>distributed-job/discovery</module>
         <module>crypto</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>

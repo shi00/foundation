@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.dts.scheduler.dist.allocator;
+package com.silong.foundation.dts.scheduler.allocator;
 
 import java.io.Serial;
 import java.io.Serializable;

@@ -25,8 +25,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>Distributed Task Scheduler nodes discovery.</description>
-    <artifactId>distributed-task-discovery</artifactId>
+    <description>Distributed Jobs Scheduler nodes discovery.</description>
+    <artifactId>distributed-job-discovery</artifactId>
     <version>1.0.0</version>
 
     <properties>
