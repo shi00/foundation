@@ -33,7 +33,6 @@ import java.net.NetworkInterface;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.codec.digest.HmacAlgorithms.HMAC_SHA_256;
@@ -70,23 +69,24 @@ public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receive
   public JgroupsClusterNode() {
     this.version = printVersion();
     this.hostName = getHostName();
-    this.addresses = getAllIpAddresses();
+    this.addresses = getNodeAddresses();
     this.uuid =
         new HmacUtils(HMAC_SHA_256, version)
-            .hmacHex(hostName + addresses.stream().sorted().collect(joining(",", "[", "]")));
+            .hmacHex(hostName + addresses.stream().collect(joining(",", "[", "]")));
     this.attributes.putAll(System.getenv());
   }
 
   @SneakyThrows
-  private Collection<String> getAllIpAddresses() {
+  private Collection<String> getNodeAddresses() {
     return NetworkInterface.networkInterfaces()
         .flatMap(NetworkInterface::inetAddresses)
         .map(InetAddress::getHostAddress)
+        .sorted(String::compareTo)
         .toList();
   }
 
   @Override
-  public String version() {
+  public @NotNull String version() {
     return version;
   }
 
@@ -110,7 +110,7 @@ public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receive
   @NotNull
   @Override
   public Comparable<String> uuid() {
-    return hostName() + addresses();
+    return uuid;
   }
 
   @Nullable

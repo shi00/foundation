@@ -34,10 +34,11 @@ import java.util.Map;
 public interface ClusterNode {
 
   /**
-   * 节点版本
+   * 节点版本，同一个集群内可能会存在不同版本的集群节点，可以通过版本号进行兼容性校验
    *
    * @return 版本描述
    */
+  @NonNull
   String version();
 
   /**
