@@ -20,7 +20,10 @@ package com.silong.foundation.dts.scheduler.cluster.allocator;
 
 import com.silong.foundation.dts.scheduler.cluster.ClusterDataAllocator;
 import com.silong.foundation.dts.scheduler.cluster.ClusterNode;
+import com.silong.foundation.dts.scheduler.utils.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,6 +56,13 @@ import java.util.stream.StreamSupport;
 public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
+
+  /** 备份节点过滤器，第一个参数为Primary节点, 第二个参数为被测试节点. */
+  @Setter @Getter private SerializableBiPredicate<ClusterNode, ClusterNode> backupFilter;
+
+  /** 第一个参数为被测试节点，第二个参数为当前partition已经分配的节点列表 (列表中的第一个节点为Primary) */
+  @Setter @Getter
+  private SerializableBiPredicate<ClusterNode, Collection<ClusterNode>> affinityBackupFilter;
 
   /** 分区数量 */
   private int partitions;
@@ -140,6 +150,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
       return WeightNodeTupleComparator.COMPARATOR.compare(this, o);
     }
   }
+
   /**
    * 把两个int类型hash值组合成一个long型hash。<br>
    * 基于Wang/Jenkins hash
@@ -182,8 +193,8 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
       throw new IllegalArgumentException("clusterNodes must not be null or empty.");
     }
 
-    final int size = clusterNodes.size();
-    WeightNodeTuple[] weightNodeTuples = new WeightNodeTuple[size];
+    final int nodesSize = clusterNodes.size();
+    WeightNodeTuple[] weightNodeTuples = new WeightNodeTuple[nodesSize];
     int i = 0;
     for (ClusterNode node : clusterNodes) {
       weightNodeTuples[i++] =
@@ -191,7 +202,8 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     }
 
     // 计算集群中真实保存的数据份数，含主
-    int primaryAndBackups = backupNum == Integer.MAX_VALUE ? size : Math.min(backupNum + 1, size);
+    final int primaryAndBackups =
+        backupNum == Integer.MAX_VALUE ? nodesSize : Math.min(backupNum + 1, nodesSize);
 
     Iterable<ClusterNode> sortedNodes =
         new LazyLinearSortedContainer(weightNodeTuples, primaryAndBackups);
@@ -206,27 +218,34 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     ClusterNode primary = it.next();
     List<ClusterNode> res = new ArrayList<>(primaryAndBackups);
     res.add(primary);
+
     boolean exclNeighbors;
     Collection<ClusterNode> allNeighbors =
-        (exclNeighbors = (neighborhood != null)) ? new HashSet<>() : null;
+        (exclNeighbors = (neighborhood != null && !neighborhood.isEmpty()))
+            ? new HashSet<>()
+            : null;
 
     if (backupNum > 0) {
       while (it.hasNext() && res.size() < primaryAndBackups) {
         ClusterNode node = it.next();
-        if (exclNeighbors) {
-          if (!allNeighbors.contains(node)) {
+        if ((affinityBackupFilter == null && backupFilter == null)
+            || (backupFilter != null && backupFilter.test(primary, node))
+            || (affinityBackupFilter != null && affinityBackupFilter.test(node, res))) {
+          if (exclNeighbors) {
+            if (!allNeighbors.contains(node)) {
+              res.add(node);
+              allNeighbors.addAll(neighborhood.get(node));
+            }
+          } else {
             res.add(node);
-            allNeighbors.addAll(neighborhood.get(node));
           }
-        } else {
-          res.add(node);
         }
       }
     }
 
     // Need to iterate again in case if there are no nodes which pass exclude neighbors backups
     // criteria.
-    if (res.size() < primaryAndBackups && size >= primaryAndBackups && exclNeighbors) {
+    if (res.size() < primaryAndBackups && nodesSize >= primaryAndBackups && exclNeighbors) {
       // 剔除primary
       it = sortedNodes.iterator();
       it.next();
@@ -238,12 +257,10 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
         }
       }
       log.warn(
-          "Affinity function excludeNeighbors property is ignored "
-              + "because topology has no enough nodes to assign backups.");
+          "ClusterDataAllocator excludeNeighbors is ignored because topology has no enough nodes to assign backups.");
     }
 
     assert res.size() <= primaryAndBackups;
-
     return res;
   }
 

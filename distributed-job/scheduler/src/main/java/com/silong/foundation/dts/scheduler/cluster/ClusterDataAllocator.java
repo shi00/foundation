@@ -24,7 +24,6 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  *
