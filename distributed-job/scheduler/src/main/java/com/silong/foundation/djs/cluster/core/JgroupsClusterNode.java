@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.scheduler.cluster.core;
+package com.silong.foundation.djs.cluster.core;
 
-import com.silong.foundation.djs.scheduler.cluster.ClusterNode;
+import com.silong.foundation.djs.cluster.ClusterNode;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.jgroups.ChannelListener;

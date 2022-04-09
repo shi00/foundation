@@ -16,14 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.scheduler.cluster.core;
+package com.silong.foundation.djs.utils;
+
+import java.io.Serializable;
+import java.util.function.BiPredicate;
 
 /**
- * 简介
+ * 可序列化BiPredicate
  *
+ * @param <T> the type of the first argument to the predicate
+ * @param <U> the type of the second argument the predicate
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 00:30
+ * @since 2022-04-09 23:59
  */
-public class DtsEngine {
+public interface SerializableBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {
+
+  /**
+   * Evaluates this predicate on the given arguments.
+   *
+   * @param t the first input argument
+   * @param u the second input argument
+   * @return {@code true} if the input arguments match the predicate, otherwise {@code false}
+   */
+  @Override
+  boolean test(T t, U u);
 }

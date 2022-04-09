@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package dts;
-option java_package = "com.silong.foundation.dts.protobuf";
+option java_package = "com.silong.foundation.djs.protobuf";
 option java_outer_classname = "DTSModels";
 
 //集群任务信息
