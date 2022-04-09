@@ -16,14 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.dts.scheduler.cluster.allocator;
+package com.silong.foundation.djs.scheduler.cluster.allocator;
 
-import com.silong.foundation.dts.scheduler.cluster.ClusterDataAllocator;
-import com.silong.foundation.dts.scheduler.cluster.ClusterNode;
-import com.silong.foundation.dts.scheduler.utils.SerializableBiPredicate;
+import com.silong.foundation.djs.scheduler.cluster.ClusterDataAllocator;
+import com.silong.foundation.djs.scheduler.cluster.ClusterNode;
+import com.silong.foundation.djs.scheduler.utils.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -141,7 +140,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
   }
 
   @Override
-  public int partition(@NotNull Object key) {
+  public int partition(Object key) {
     return calculatePartition(key);
   }
 
@@ -151,9 +150,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
 
     public static final WeightNodeTupleComparator COMPARATOR = new WeightNodeTupleComparator();
 
-    /**
-     * forbidden
-     */
+    /** forbidden */
     private WeightNodeTupleComparator() {}
 
     /** {@inheritDoc} */
@@ -170,7 +167,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     private static final long serialVersionUID = 0L;
 
     @Override
-    public int compareTo(@NotNull RendezvousAllocator.WeightNodeTuple o) {
+    public int compareTo(RendezvousAllocator.WeightNodeTuple o) {
       return WeightNodeTupleComparator.COMPARATOR.compare(this, o);
     }
   }
@@ -197,33 +194,23 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     return key;
   }
 
+  private WeightNodeTuple[] calculateWeight(
+      int partitionNum, Collection<ClusterNode> clusterNodes) {
+    return clusterNodes.stream()
+        .map(node -> new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node))
+        .toArray(WeightNodeTuple[]::new);
+  }
+
   @Override
   public Collection<ClusterNode> allocatePartition(
-      int partitionNum,
+      int partitionNo,
       int backupNum,
-      @NotNull Collection<ClusterNode> clusterNodes,
+      Collection<ClusterNode> clusterNodes,
       @Nullable Map<ClusterNode, Collection<ClusterNode>> neighborhood) {
-    if (partitionNum < 0 || partitionNum >= partitions) {
-      throw new IllegalArgumentException(
-          String.format(
-              "partitionNum must be greater than or equal to 0 less than %d", partitions));
-    }
+    validateParams(partitionNo, backupNum, clusterNodes);
 
-    if (backupNum < 0) {
-      throw new IllegalArgumentException("backupNum must be greater than or equal to 0");
-    }
-
-    if (clusterNodes.isEmpty()) {
-      throw new IllegalArgumentException("clusterNodes must not be null or empty.");
-    }
-
+    WeightNodeTuple[] weightNodeTuples = calculateWeight(partitionNo, clusterNodes);
     final int nodesSize = clusterNodes.size();
-    WeightNodeTuple[] weightNodeTuples = new WeightNodeTuple[nodesSize];
-    int i = 0;
-    for (ClusterNode node : clusterNodes) {
-      weightNodeTuples[i++] =
-          new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node);
-    }
 
     // 计算集群中真实保存的数据份数，含主
     final int primaryAndBackups =
@@ -252,9 +239,9 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     if (backupNum > 0) {
       while (it.hasNext() && res.size() < primaryAndBackups) {
         ClusterNode node = it.next();
-        if ((affinityBackupFilter == null && backupFilter == null)
-            || (backupFilter != null && backupFilter.test(primary, node))
-            || (affinityBackupFilter != null && affinityBackupFilter.test(node, res))) {
+        if (disableBackupNodeFilter()
+            || isPassedBackupNodeFilter(primary, node)
+            || isPassedAffinityBackupNodeFilter(node, res)) {
           if (exclNeighbors) {
             if (!allNeighbors.contains(node)) {
               res.add(node);
@@ -288,6 +275,34 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     return res;
   }
 
+  private void validateParams(
+      int partitionNo, int backupNum, Collection<ClusterNode> clusterNodes) {
+    if (partitionNo < 0 || partitionNo >= partitions) {
+      throw new IllegalArgumentException(
+          String.format("partitionNo must be greater than or equal to 0 less than %d", partitions));
+    }
+
+    if (backupNum < 0) {
+      throw new IllegalArgumentException("backupNum must be greater than or equal to 0");
+    }
+
+    if (clusterNodes.isEmpty()) {
+      throw new IllegalArgumentException("clusterNodes must not be null or empty.");
+    }
+  }
+
+  private boolean isPassedAffinityBackupNodeFilter(ClusterNode node, List<ClusterNode> res) {
+    return affinityBackupFilter != null && affinityBackupFilter.test(node, res);
+  }
+
+  private boolean isPassedBackupNodeFilter(ClusterNode primary, ClusterNode node) {
+    return backupFilter != null && backupFilter.test(primary, node);
+  }
+
+  private boolean disableBackupNodeFilter() {
+    return affinityBackupFilter == null && backupFilter == null;
+  }
+
   /** Sorts the initial array with linear sort algorithm array */
   private static class LazyLinearSortedContainer implements Iterable<ClusterNode> {
     /** Initial node-hash array. */
@@ -310,7 +325,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull Iterator<ClusterNode> iterator() {
+    public Iterator<ClusterNode> iterator() {
       return new LazyLinearSortedContainer.SortIterator();
     }
 

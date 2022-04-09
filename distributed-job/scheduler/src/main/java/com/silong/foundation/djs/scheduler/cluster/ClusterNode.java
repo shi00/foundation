@@ -16,11 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.dts.scheduler.cluster;
+package com.silong.foundation.djs.scheduler.cluster;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
@@ -31,7 +32,7 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2022-04-07 21:33
  */
-public interface ClusterNode {
+public interface ClusterNode extends Serializable {
 
   /** 节点角色 */
   enum Role {

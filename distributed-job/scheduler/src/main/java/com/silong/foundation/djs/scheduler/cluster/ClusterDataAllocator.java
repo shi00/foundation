@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.dts.scheduler.cluster;
+package com.silong.foundation.djs.scheduler.cluster;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -70,14 +70,14 @@ public interface ClusterDataAllocator extends Serializable {
   /**
    * 分区到集群节点映射
    *
-   * @param partitionNum 分区编号，大于等于0
+   * @param partitionNo 分区编号，大于等于0
    * @param backupNum 副本数量(不含主)，副本数大于等于0
    * @param clusterNodes 集群节点列表，节点列表大于等于1
    * @param neighborhood 各节点邻居关系表，如果此参数不为null，则避免把主备数据映射到互为邻居的节点，确保数据可靠性
    * @return 保存分区的节点列表，其中第一个节点为primary partition节点，后续为backup partition
    */
   Collection<ClusterNode> allocatePartition(
-      int partitionNum,
+      int partitionNo,
       int backupNum,
       @NonNull Collection<ClusterNode> clusterNodes,
       @Nullable Map<ClusterNode, Collection<ClusterNode>> neighborhood);

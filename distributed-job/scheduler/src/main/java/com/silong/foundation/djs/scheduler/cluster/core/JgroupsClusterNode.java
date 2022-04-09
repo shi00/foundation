@@ -16,13 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.dts.scheduler.cluster.discovery;
+package com.silong.foundation.djs.scheduler.cluster.core;
 
-import com.silong.foundation.dts.scheduler.cluster.ClusterNode;
+import com.silong.foundation.djs.scheduler.cluster.ClusterNode;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jgroups.ChannelListener;
 import org.jgroups.JChannel;
 import org.jgroups.Receiver;
@@ -92,17 +90,15 @@ public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receive
   }
 
   @Override
-  public @NotNull String version() {
+  public String version() {
     return version;
   }
 
-  @NotNull
   @Override
   public String hostName() {
     return hostName;
   }
 
-  @NotNull
   @Override
   public Collection<String> addresses() {
     return addresses;
@@ -113,19 +109,16 @@ public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receive
     return false;
   }
 
-  @NotNull
   @Override
   public Comparable<String> uuid() {
     return uuid;
   }
 
-  @Nullable
   @Override
   public <T> T attribute(String attributeName) {
     return (T) attributes.get(attributeName);
   }
 
-  @NotNull
   @Override
   public Map<String, Object> attributes() {
     return attributes;

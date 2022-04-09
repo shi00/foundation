@@ -145,6 +145,7 @@
         <!--开源组件-->
 
         <jgroups-kubernetes.version>2.0.0.Final</jgroups-kubernetes.version>
+        <rocksdbjni.version>7.0.4</rocksdbjni.version>
     </properties>
 
     <dependencyManagement>
@@ -273,6 +274,14 @@
                 <version>${cron-utils.version}</version>
             </dependency>
             <!-- cron工具 -->
+
+            <!-- rocksdb -->
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdbjni.version}</version>
+            </dependency>
+            <!-- rocksdb -->
 
             <!-- 集群通信组件 -->
             <dependency>
