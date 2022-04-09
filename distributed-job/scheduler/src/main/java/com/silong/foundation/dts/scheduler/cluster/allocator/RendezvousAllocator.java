@@ -22,8 +22,6 @@ import com.silong.foundation.dts.scheduler.cluster.ClusterDataAllocator;
 import com.silong.foundation.dts.scheduler.cluster.ClusterNode;
 import com.silong.foundation.dts.scheduler.utils.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,10 +56,9 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
   @Serial private static final long serialVersionUID = 0L;
 
   /** 备份节点过滤器，第一个参数为Primary节点, 第二个参数为被测试节点. */
-  @Setter @Getter private SerializableBiPredicate<ClusterNode, ClusterNode> backupFilter;
+  private SerializableBiPredicate<ClusterNode, ClusterNode> backupFilter;
 
   /** 第一个参数为被测试节点，第二个参数为当前partition已经分配的节点列表 (列表中的第一个节点为Primary) */
-  @Setter @Getter
   private SerializableBiPredicate<ClusterNode, Collection<ClusterNode>> affinityBackupFilter;
 
   /** 分区数量 */
@@ -114,6 +111,30 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
             MIN_PARTITIONS_COUNT, MAX_PARTITIONS_COUNT));
   }
 
+  /**
+   * 设置备份节点过滤器
+   *
+   * @param backupFilter 过滤器
+   * @return @{@code this}
+   */
+  public RendezvousAllocator setBackupFilter(
+      SerializableBiPredicate<ClusterNode, ClusterNode> backupFilter) {
+    this.backupFilter = backupFilter;
+    return this;
+  }
+
+  /**
+   * 设置亲和性节点过滤器
+   *
+   * @param affinityBackupFilter 过滤器
+   * @return @{@code this}
+   */
+  public RendezvousAllocator setAffinityBackupFilter(
+      SerializableBiPredicate<ClusterNode, Collection<ClusterNode>> affinityBackupFilter) {
+    this.affinityBackupFilter = affinityBackupFilter;
+    return this;
+  }
+
   @Override
   public int partitions() {
     return partitions;
@@ -130,6 +151,9 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
 
     public static final WeightNodeTupleComparator COMPARATOR = new WeightNodeTupleComparator();
 
+    /**
+     * forbidden
+     */
     private WeightNodeTupleComparator() {}
 
     /** {@inheritDoc} */
