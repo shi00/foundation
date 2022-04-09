@@ -74,6 +74,7 @@ public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receive
         new HmacUtils(HMAC_SHA_256, version)
             .hmacHex(hostName + addresses.stream().collect(joining(",", "[", "]")));
     this.attributes.putAll(System.getenv());
+//    this.jChannel = new JChannel("");
   }
 
   @SneakyThrows
@@ -83,6 +84,11 @@ public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receive
         .map(InetAddress::getHostAddress)
         .sorted(String::compareTo)
         .toList();
+  }
+
+  @Override
+  public Collection<Role> roles() {
+    return null;
   }
 
   @Override

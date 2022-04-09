@@ -70,14 +70,14 @@
             <artifactId>ignite-core</artifactId>
             <version>2.12.0</version>
         </dependency>
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>javax.xml.bind</groupId>-->
+<!--            <artifactId>jaxb-api</artifactId>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>com.sun.xml.bind</groupId>-->
+<!--            <artifactId>jaxb-impl</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -138,27 +138,27 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>jaxb2-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>xsd-to-java</id>
-                        <goals>
-                            <goal>xjc</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <packageName>com.silong.foundation.dts.scheduler.xsd2java</packageName>
-                    <createJavaDocAnnotations>true</createJavaDocAnnotations>
-                    <sources>
-                        <source>src/main/resources/META-INF/schemata/relay.xsd</source>
-                        <source>src/main/resources/META-INF/schemata/fork-stacks.xsd</source>
-                        <source>src/main/resources/META-INF/schemata/jgroups-5.2.xsd</source>
-                    </sources>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.codehaus.mojo</groupId>-->
+<!--                <artifactId>jaxb2-maven-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>xsd-to-java</id>-->
+<!--                        <goals>-->
+<!--                            <goal>xjc</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <packageName>com.silong.foundation.dts.scheduler.xsd2java</packageName>-->
+<!--                    <createJavaDocAnnotations>true</createJavaDocAnnotations>-->
+<!--                    <sources>-->
+<!--                        <source>src/main/resources/META-INF/schemata/relay.xsd</source>-->
+<!--                        <source>src/main/resources/META-INF/schemata/fork-stacks.xsd</source>-->
+<!--                        <source>src/main/resources/META-INF/schemata/jgroups-5.2.xsd</source>-->
+<!--                    </sources>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 </project>
