@@ -194,7 +194,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     return key;
   }
 
-  private WeightNodeTuple[] calculateWeight(
+  private WeightNodeTuple[] calculateNodeWeight(
       int partitionNum, Collection<ClusterNode> clusterNodes) {
     return clusterNodes.stream()
         .map(node -> new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node))
@@ -207,14 +207,15 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
       int backupNum,
       Collection<ClusterNode> clusterNodes,
       @Nullable Map<ClusterNode, Collection<ClusterNode>> neighborhood) {
-    validateParams(partitionNo, backupNum, clusterNodes);
+    validate(partitionNo, backupNum, clusterNodes);
 
-    WeightNodeTuple[] weightNodeTuples = calculateWeight(partitionNo, clusterNodes);
-    final int nodesSize = clusterNodes.size();
+    WeightNodeTuple[] weightNodeTuples = calculateNodeWeight(partitionNo, clusterNodes);
 
     // 计算集群中真实保存的数据份数，含主
     final int primaryAndBackups =
-        backupNum == Integer.MAX_VALUE ? nodesSize : Math.min(backupNum + 1, nodesSize);
+        backupNum == Integer.MAX_VALUE
+            ? clusterNodes.size()
+            : Math.min(backupNum + 1, clusterNodes.size());
 
     Iterable<ClusterNode> sortedNodes =
         new LazyLinearSortedContainer(weightNodeTuples, primaryAndBackups);
@@ -256,7 +257,9 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
 
     // Need to iterate again in case if there are no nodes which pass exclude neighbors backups
     // criteria.
-    if (res.size() < primaryAndBackups && nodesSize >= primaryAndBackups && exclNeighbors) {
+    if (res.size() < primaryAndBackups
+        && clusterNodes.size() >= primaryAndBackups
+        && exclNeighbors) {
       // 剔除primary
       it = sortedNodes.iterator();
       it.next();
@@ -275,8 +278,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     return res;
   }
 
-  private void validateParams(
-      int partitionNo, int backupNum, Collection<ClusterNode> clusterNodes) {
+  private void validate(int partitionNo, int backupNum, Collection<ClusterNode> clusterNodes) {
     if (partitionNo < 0 || partitionNo >= partitions) {
       throw new IllegalArgumentException(
           String.format("partitionNo must be greater than or equal to 0 less than %d", partitions));
@@ -286,7 +288,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
       throw new IllegalArgumentException("backupNum must be greater than or equal to 0");
     }
 
-    if (clusterNodes.isEmpty()) {
+    if (clusterNodes == null || clusterNodes.isEmpty()) {
       throw new IllegalArgumentException("clusterNodes must not be null or empty.");
     }
   }

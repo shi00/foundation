@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.djs.cluster;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.io.Serializable;
@@ -65,7 +64,7 @@ public interface ClusterDataAllocator extends Serializable {
    * @param key 数据key
    * @return 分区编号
    */
-  int partition(@NonNull Object key);
+  int partition(Object key);
 
   /**
    * 分区到集群节点映射
@@ -79,6 +78,6 @@ public interface ClusterDataAllocator extends Serializable {
   Collection<ClusterNode> allocatePartition(
       int partitionNo,
       int backupNum,
-      @NonNull Collection<ClusterNode> clusterNodes,
+      Collection<ClusterNode> clusterNodes,
       @Nullable Map<ClusterNode, Collection<ClusterNode>> neighborhood);
 }

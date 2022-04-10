@@ -16,16 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.cluster;
+package com.silong.foundation.djs.cluster.config;
 
-import java.io.Serializable;
-import java.util.concurrent.ExecutorService;
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
- * 分布式任务调度器
+ * 分布式任务调度器配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 01:19
+ * @since 2022-04-10 08:33
  */
-public interface DistributedJobScheduler extends ExecutorService, Serializable {}
+@Data
+@Builder
+@Accessors(fluent = true)
+public class DistributedJobSchedulerConfig {
+
+  /** 集群名 */
+  private String clusterName;
+}

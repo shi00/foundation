@@ -19,11 +19,12 @@
 package com.silong.foundation.djs.cluster.core;
 
 /**
- *
+ * 分布式任务引擎
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-10 00:30
  */
-public class DtsEngine {
+public class DistributedEngine {
+
 }

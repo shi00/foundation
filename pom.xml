@@ -146,6 +146,7 @@
 
         <jgroups-kubernetes.version>2.0.0.Final</jgroups-kubernetes.version>
         <rocksdbjni.version>7.0.4</rocksdbjni.version>
+        <wildfly-openssl.version>2.2.0.Final</wildfly-openssl.version>
     </properties>
 
     <dependencyManagement>
@@ -282,6 +283,14 @@
                 <version>${rocksdbjni.version}</version>
             </dependency>
             <!-- rocksdb -->
+
+            <!-- openssl -->
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl</artifactId>
+                <version>${wildfly-openssl.version}</version>
+            </dependency>
+            <!-- openssl -->
 
             <!-- 集群通信组件 -->
             <dependency>

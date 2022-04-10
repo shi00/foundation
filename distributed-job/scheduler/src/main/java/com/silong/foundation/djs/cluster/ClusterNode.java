@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.djs.cluster;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.io.Serializable;
@@ -58,7 +57,6 @@ public interface ClusterNode extends Serializable {
    *
    * @return 版本描述
    */
-  @NonNull
   String version();
 
   /**
@@ -66,7 +64,6 @@ public interface ClusterNode extends Serializable {
    *
    * @return 节点主机名
    */
-  @NonNull
   String hostName();
 
   /**
@@ -74,7 +71,6 @@ public interface ClusterNode extends Serializable {
    *
    * @return 地址列表
    */
-  @NonNull
   Collection<String> addresses();
 
   /**
@@ -90,7 +86,6 @@ public interface ClusterNode extends Serializable {
    * @param <T> uuid类型
    * @return id
    */
-  @NonNull
   <T extends Comparable<T>> T uuid();
 
   /**
@@ -108,6 +103,5 @@ public interface ClusterNode extends Serializable {
    *
    * @return 属性集合
    */
-  @NonNull
   Map<String, Object> attributes();
 }

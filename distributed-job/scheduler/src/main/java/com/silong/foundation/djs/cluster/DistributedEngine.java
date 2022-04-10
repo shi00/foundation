@@ -18,14 +18,20 @@
  */
 package com.silong.foundation.djs.cluster;
 
-import java.io.Serializable;
-import java.util.concurrent.ExecutorService;
+import java.io.Closeable;
 
 /**
- * 分布式任务调度器
+ * 分布式引擎
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 01:19
+ * @since 2022-04-10 09:01
  */
-public interface DistributedJobScheduler extends ExecutorService, Serializable {}
+public interface DistributedEngine extends Closeable {
+
+  /** 启动引擎 */
+  void start();
+
+  /** 停止引擎 */
+  void stop();
+}
