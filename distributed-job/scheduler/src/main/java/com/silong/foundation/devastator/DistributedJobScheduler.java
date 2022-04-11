@@ -16,29 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.utils;
+package com.silong.foundation.devastator;
 
 import java.io.Serializable;
-import java.util.function.BiPredicate;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * 可序列化BiPredicate
+ * 分布式任务调度器
  *
- * @param <T> the type of the first argument to the predicate
- * @param <U> the type of the second argument the predicate
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-09 23:59
+ * @since 2022-04-10 01:19
  */
-public interface SerializableBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {
-
-  /**
-   * Evaluates this predicate on the given arguments.
-   *
-   * @param t the first input argument
-   * @param u the second input argument
-   * @return {@code true} if the input arguments match the predicate, otherwise {@code false}
-   */
-  @Override
-  boolean test(T t, U u);
-}
+public interface DistributedJobScheduler extends ScheduledExecutorService, Serializable {}

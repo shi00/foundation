@@ -1,10 +1,10 @@
 syntax = "proto3";
 
 package dts;
-option java_package = "com.silong.foundation.djs.protobuf";
-option java_outer_classname = "DTSModels";
+option java_package = "com.silong.foundation.devastator.protobuf";
+option java_outer_classname = "Devastator";
 
-//集群任务信息
+//任务信息
 message ClusterTaskId {
   uint64 id = 1; //任务id
 }

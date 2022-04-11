@@ -25,10 +25,12 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>we have a cluster of nodes, and each node can submit jobs to be executed by some other node in the
-        cluster.
+    <description>Devastator is a distributed task execution system that can provide highly available task runtimes,
+        support scheduled tasks and one-shot task execution, support complex tasks to be automatically decomposed into
+        multiple sub-tasks and execute in parallel within the cluster nodes, and support real-time perception of task
+        running status.
     </description>
-    <artifactId>distributed-job-scheduler</artifactId>
+    <artifactId>devastator</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -64,6 +66,12 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ignite</groupId>
+            <artifactId>ignite-core</artifactId>
+            <version>2.12.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.wildfly.openssl</groupId>

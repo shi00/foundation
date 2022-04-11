@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.cluster;
+package com.silong.foundation.devastator;
 
 import edu.umd.cs.findbugs.annotations.Nullable;
 

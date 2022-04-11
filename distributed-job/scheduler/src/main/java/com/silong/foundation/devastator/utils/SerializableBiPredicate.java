@@ -16,24 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.cluster.config;
+package com.silong.foundation.devastator.utils;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.experimental.Accessors;
+import java.io.Serializable;
+import java.util.function.BiPredicate;
 
 /**
- * 分布式任务调度器配置
+ * 可序列化BiPredicate
  *
+ * @param <T> the type of the first argument to the predicate
+ * @param <U> the type of the second argument the predicate
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 08:33
+ * @since 2022-04-09 23:59
  */
-@Data
-@Builder
-@Accessors(fluent = true)
-public class DistributedJobSchedulerConfig {
+public interface SerializableBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {
 
-  /** 集群名 */
-  private String clusterName;
+  /**
+   * Evaluates this predicate on the given arguments.
+   *
+   * @param t the first input argument
+   * @param u the second input argument
+   * @return {@code true} if the input arguments match the predicate, otherwise {@code false}
+   */
+  @Override
+  boolean test(T t, U u);
 }

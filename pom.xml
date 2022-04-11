@@ -147,6 +147,8 @@
         <jgroups-kubernetes.version>2.0.0.Final</jgroups-kubernetes.version>
         <rocksdbjni.version>7.0.4</rocksdbjni.version>
         <wildfly-openssl.version>2.2.0.Final</wildfly-openssl.version>
+        <snappy-java.version>1.1.8.4</snappy-java.version>
+        <zstd-jni.version>1.5.2-2</zstd-jni.version>
     </properties>
 
     <dependencyManagement>
@@ -275,6 +277,19 @@
                 <version>${cron-utils.version}</version>
             </dependency>
             <!-- cron工具 -->
+
+            <!-- 压缩工具 -->
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${snappy-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>${zstd-jni.version}</version>
+            </dependency>
+            <!-- 压缩工具 -->
 
             <!-- rocksdb -->
             <dependency>

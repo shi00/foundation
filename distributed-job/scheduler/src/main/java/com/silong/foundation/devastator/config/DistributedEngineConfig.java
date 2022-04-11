@@ -16,16 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.cluster;
+package com.silong.foundation.devastator.config;
 
-import java.io.Serializable;
-import java.util.concurrent.ExecutorService;
+import lombok.Data;
+import lombok.experimental.Accessors;
+
+import static com.silong.foundation.devastator.ClusterDataAllocator.DEFAULT_PARTITION_SIZE;
 
 /**
- * 分布式任务调度器
+ * 分布式任务引擎配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 01:19
+ * @since 2022-04-10 08:33
  */
-public interface DistributedJobScheduler extends ExecutorService, Serializable {}
+@Data
+@Accessors(fluent = true)
+public class DistributedEngineConfig {
+  /** 默认配置文件名 */
+  public static final String DEFAULT_CONFIG_FILE_NAME = "default-tcp.xml";
+
+  /** 集群名 */
+  private String clusterName;
+
+  /** 实例名 */
+  private String instanceName;
+
+  /** 配置文件 */
+  private String configFile = DEFAULT_CONFIG_FILE_NAME;
+
+  /** 数据分区数量，默认：512 */
+  private int partitionCount = DEFAULT_PARTITION_SIZE;
+}

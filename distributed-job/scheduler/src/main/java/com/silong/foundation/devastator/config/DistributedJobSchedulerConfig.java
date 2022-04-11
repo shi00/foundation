@@ -16,15 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.cluster.core;
+package com.silong.foundation.devastator.config;
+
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
- * 分布式任务引擎
+ * 分布式任务调度器配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 00:30
+ * @since 2022-04-10 08:33
  */
-public class DistributedEngine {
-
-}
+@Data
+@Builder
+@Accessors(fluent = true)
+public class DistributedJobSchedulerConfig {}

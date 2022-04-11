@@ -16,22 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.cluster;
+package com.silong.foundation.devastator.config;
 
-import java.io.Closeable;
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.Accessors;
+import org.apache.commons.lang3.SystemUtils;
 
 /**
- * 分布式引擎
+ * 持久化存储配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 09:01
+ * @since 2022-04-10 08:33
  */
-public interface DistributedEngine extends Closeable {
+@Data
+@Builder
+@Accessors(fluent = true)
+public class PersistStorageConfig {
+    /**
+     * 数据库路径
+     */
+    private String dbPath;
 
-  /** 启动引擎 */
-  void start();
 
-  /** 停止引擎 */
-  void stop();
 }

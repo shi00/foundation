@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.cluster.allocator;
+package com.silong.foundation.devastator.allocator;
 
-import com.silong.foundation.djs.cluster.ClusterDataAllocator;
-import com.silong.foundation.djs.cluster.ClusterNode;
-import com.silong.foundation.djs.utils.SerializableBiPredicate;
+import com.silong.foundation.devastator.ClusterDataAllocator;
+import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.utils.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.extern.slf4j.Slf4j;
 

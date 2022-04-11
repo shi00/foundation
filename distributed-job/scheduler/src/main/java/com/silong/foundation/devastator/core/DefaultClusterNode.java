@@ -16,16 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.djs.cluster.core;
+package com.silong.foundation.devastator.core;
 
-import com.silong.foundation.djs.cluster.ClusterNode;
+import com.silong.foundation.devastator.ClusterNode;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.jgroups.ChannelListener;
-import org.jgroups.JChannel;
-import org.jgroups.Receiver;
 
-import java.io.Closeable;
+import java.io.Serial;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Collection;
@@ -38,15 +36,15 @@ import static org.apache.commons.lang3.SystemUtils.getHostName;
 import static org.jgroups.Version.printVersion;
 
 /**
- * 基于JGroups的集群节点实现
+ * 默认集群节点实现
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-07 22:49
  */
-public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receiver, Closeable {
+public class DefaultClusterNode implements ClusterNode, Serializable {
 
-  private JChannel jChannel;
+  @Serial private static final long serialVersionUID = 0L;
 
   /** 节点名 */
   private final String hostName;
@@ -64,7 +62,7 @@ public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receive
   private final String version;
 
   /** 构造方法 */
-  public JgroupsClusterNode() {
+  public DefaultClusterNode() {
     this.version = printVersion();
     this.hostName = getHostName();
     this.addresses = getNodeAddresses();
@@ -72,7 +70,7 @@ public class JgroupsClusterNode implements ClusterNode, ChannelListener, Receive
         new HmacUtils(HMAC_SHA_256, version)
             .hmacHex(hostName + addresses.stream().collect(joining(",", "[", "]")));
     this.attributes.putAll(System.getenv());
-//    this.jChannel = new JChannel("");
+    //    this.jChannel = new JChannel("");
   }
 
   @SneakyThrows
