@@ -21,14 +21,24 @@ package com.silong.foundation.devastator.core;
 import com.silong.foundation.devastator.Cluster;
 import com.silong.foundation.devastator.DistributedEngine;
 import com.silong.foundation.devastator.DistributedJobScheduler;
-import com.silong.foundation.devastator.exception.GeneralException;
 import com.silong.foundation.devastator.config.DistributedEngineConfig;
 import com.silong.foundation.devastator.config.DistributedJobSchedulerConfig;
+import com.silong.foundation.devastator.exception.GeneralException;
+import com.silong.foundation.devastator.protobuf.Devastator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.jgroups.*;
+import org.apache.commons.lang3.SystemUtils;
+import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.Receiver;
+import org.jgroups.View;
 import org.jgroups.util.ExtendedUUID;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serial;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -45,6 +55,7 @@ import static org.apache.commons.lang3.SystemUtils.getHostName;
  * @since 2022-04-10 00:30
  */
 @Slf4j
+@SuppressFBWarnings({"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"})
 public class DefaultDistributedEngine implements DistributedEngine, Receiver {
 
   @Serial private static final long serialVersionUID = 0L;
@@ -63,16 +74,18 @@ public class DefaultDistributedEngine implements DistributedEngine, Receiver {
    *
    * @param config 引擎配置
    */
-  public DefaultDistributedEngine(DistributedEngineConfig config) {
-    if (config == null) {
-      throw new IllegalArgumentException("config must not be null.");
-    }
+  public DefaultDistributedEngine(@NonNull DistributedEngineConfig config) {
     this.config = config;
     try (InputStream inputStream = requireNonNull(locateConfig(config.configFile())).openStream()) {
       this.jChannel = new JChannel(inputStream);
       this.jChannel.setReceiver(this);
       this.jChannel.addAddressGenerator(
-          () -> ExtendedUUID.randomUUID().put(HOSTNAME_KEY, getHostName().getBytes(UTF_8)));
+          () ->
+              ClusterNodeUUID.random()
+                  .clusterNodeInfo(
+                      Devastator.ClusterNodeInfo.newBuilder()
+                          .setHostName(SystemUtils.getHostName())
+                          .build()));
 
       this.jChannel.setName(config.instanceName());
       this.jChannel.connect(config.clusterName());

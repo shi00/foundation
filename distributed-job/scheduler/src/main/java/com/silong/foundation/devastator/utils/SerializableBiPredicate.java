@@ -30,15 +30,5 @@ import java.util.function.BiPredicate;
  * @version 1.0.0
  * @since 2022-04-09 23:59
  */
-public interface SerializableBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {
-
-  /**
-   * Evaluates this predicate on the given arguments.
-   *
-   * @param t the first input argument
-   * @param u the second input argument
-   * @return {@code true} if the input arguments match the predicate, otherwise {@code false}
-   */
-  @Override
-  boolean test(T t, U u);
-}
+@FunctionalInterface
+public interface SerializableBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {}

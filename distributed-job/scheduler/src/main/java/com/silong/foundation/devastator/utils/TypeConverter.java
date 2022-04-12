@@ -18,6 +18,12 @@
  */
 package com.silong.foundation.devastator.utils;
 
+import com.google.protobuf.AbstractMessage;
+import com.google.protobuf.Any;
+import lombok.NonNull;
+
+import java.io.IOException;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -36,16 +42,18 @@ public interface TypeConverter<T, R> {
    *
    * @param t 入参
    * @return 转换结果
+   * @throws IOException 异常
    */
-  R to(T t);
+  R to(T t) throws IOException;
 
   /**
    * 类型转换
    *
    * @param r 入参
    * @return 转换结果
+   * @throws IOException 异常
    */
-  T from(R r);
+  T from(R r) throws IOException;
 
   /**
    * 转换反转
@@ -55,12 +63,12 @@ public interface TypeConverter<T, R> {
   default TypeConverter<R, T> reverse() {
     return new TypeConverter<>() {
       @Override
-      public T to(R r) {
+      public T to(R r) throws IOException {
         return TypeConverter.this.from(r);
       }
 
       @Override
-      public R from(T t) {
+      public R from(T t) throws IOException {
         return TypeConverter.this.to(t);
       }
     };
@@ -91,7 +99,40 @@ public interface TypeConverter<T, R> {
     };
   }
 
-  /** 字符串和byte数组互转 */
+  /**
+   * 获取protobuf消息与byte数组之间的类型转换器
+   *
+   * @param tClass protobuf消息类型
+   * @param <T> 消息类型
+   * @return 类型转换器
+   */
+  static <T extends AbstractMessage> TypeConverter<T, byte[]> getProtobufTypeConver(
+      @NonNull Class<T> tClass) {
+    return new TypeConverter<>() {
+      @Override
+      public byte[] to(T t) {
+        if (t == null) {
+          return null;
+        }
+        return Any.pack(t).toByteArray();
+      }
+
+      @Override
+      public T from(byte[] bytes) throws IOException {
+        if (bytes == null) {
+          return null;
+        }
+        Any any = Any.parseFrom(bytes);
+        if (any.is(tClass)) {
+          return any.unpack(tClass);
+        }
+        throw new IllegalStateException(
+            String.format("Failed to convert bytes to %s", tClass.getName()));
+      }
+    };
+  }
+
+  /** 字符串和byte数组互转，使用UTF8编码 */
   TypeConverter<String, byte[]> STRING_TO_BYTES =
       new TypeConverter<>() {
         @Override

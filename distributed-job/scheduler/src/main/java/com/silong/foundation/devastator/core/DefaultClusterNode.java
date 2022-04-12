@@ -122,10 +122,10 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
     return attributes;
   }
 
-  @Override
-  public void close() {
-    if (jChannel != null) {
-      jChannel.close();
-    }
-  }
+//  @Override
+//  public void close() {
+//    if (jChannel != null) {
+//      jChannel.close();
+//    }
+//  }
 }
