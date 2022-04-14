@@ -31,7 +31,6 @@ import org.apache.commons.lang3.SystemUtils;
  * @since 2022-04-10 08:33
  */
 @Data
-@Builder
 @Accessors(fluent = true)
 public class PersistStorageConfig {
     /**

@@ -100,7 +100,7 @@ public interface TypeConverter<T, R> {
   }
 
   /**
-   * 获取protobuf消息与byte数组之间的类型转换器
+   * 获取protobuf消息与byte数组之间的类型转换器，使用Any类型实现，二进制信息中包含类型编码，效率较低，不推荐使用
    *
    * @param tClass protobuf消息类型
    * @param <T> 消息类型

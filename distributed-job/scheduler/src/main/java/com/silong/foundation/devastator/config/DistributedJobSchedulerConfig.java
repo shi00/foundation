@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.devastator.config;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -30,6 +29,15 @@ import lombok.experimental.Accessors;
  * @since 2022-04-10 08:33
  */
 @Data
-@Builder
 @Accessors(fluent = true)
-public class DistributedJobSchedulerConfig {}
+public class DistributedJobSchedulerConfig {
+
+  /** 分布式引擎配置 */
+  private DistributedEngineConfig distributedEngineConfig = new DistributedEngineConfig();
+
+  /** 节点配置 */
+  private ClusterNodeConfig clusterNodeConfig = new ClusterNodeConfig();
+
+  /** 存储配置 */
+  private PersistStorageConfig persistStorageConfig = new PersistStorageConfig();
+}

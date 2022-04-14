@@ -34,7 +34,7 @@ import static com.silong.foundation.devastator.ClusterDataAllocator.DEFAULT_PART
 @Accessors(fluent = true)
 public class DistributedEngineConfig {
   /** 默认配置文件名 */
-  public static final String DEFAULT_CONFIG_FILE_NAME = "default-tcp.xml";
+  public static final String DEFAULT_ENGINE_CONFIG_FILE = "default-tcp.xml";
 
   /** 集群名 */
   private String clusterName;
@@ -42,9 +42,9 @@ public class DistributedEngineConfig {
   /** 实例名 */
   private String instanceName;
 
-  /** 配置文件 */
-  private String configFile = DEFAULT_CONFIG_FILE_NAME;
+  /** classpath配置文件，默认： {@code DistributedEngineConfig.DEFAULT_CONFIG_FILE_NAME} */
+  private String configFile = DEFAULT_ENGINE_CONFIG_FILE;
 
-  /** 数据分区数量，默认：512 */
+  /** 数据分区数量，默认：1024 */
   private int partitionCount = DEFAULT_PARTITION_SIZE;
 }

@@ -1,13 +1,15 @@
 syntax = "proto3";
 
-package dts;
+package djs;
 option java_package = "com.silong.foundation.devastator.protobuf";
 option java_outer_classname = "Devastator";
 
 //集群节点信息
 message ClusterNodeInfo {
-  string host_name = 1; //主机名
-  string ip_address = 2; //ip地址，支持ipv6，ipv4
-  int32 port = 3; //端口
-  map<string, string> attributes = 4; //节点属性
+  uint32 jgroups_version = 1; //jgroups版本号
+  string host_name = 2; //主机名
+  string ip_address = 3; //节点绑定ip地址，支持ipv6，ipv4
+  uint32 port = 4; //节点绑定端口
+  uint32 role = 5; //角色
+  map<string, string> attributes = 6; //节点属性
 }
