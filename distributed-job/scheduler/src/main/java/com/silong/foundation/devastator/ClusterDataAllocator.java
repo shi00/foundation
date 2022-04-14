@@ -43,7 +43,7 @@ import java.util.Map;
 public interface ClusterDataAllocator extends Serializable {
 
   /** 默认分区数. */
-  int DEFAULT_PARTITION_SIZE = 512;
+  int DEFAULT_PARTITION_SIZE = 1024;
 
   /** 最大分区数 */
   int MAX_PARTITIONS_COUNT = 8192;
