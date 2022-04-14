@@ -24,11 +24,11 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.util.UUID;
-import org.jgroups.util.Util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.function.Supplier;
 
 /**
@@ -87,19 +87,25 @@ public class ClusterNodeUUID extends UUID {
 
   @Override
   public int serializedSize() {
-    return super.serializedSize() + clusterNodeInfo.getSerializedSize();
+    return super.serializedSize()
+        + (clusterNodeInfo == null ? 0 : clusterNodeInfo.getSerializedSize());
   }
 
   @Override
   public void writeTo(DataOutput out) throws IOException {
     super.writeTo(out);
-    out.write(clusterNodeInfo.toByteArray());
+    if (clusterNodeInfo != null) {
+      out.write(clusterNodeInfo.toByteArray());
+    }
   }
 
   @Override
   public void readFrom(DataInput in) throws IOException {
     super.readFrom(in);
-    clusterNodeInfo = ClusterNodeInfo.parseFrom(Util.readByteBuffer(in));
+    InputStream inputStream = (InputStream) in;
+    if (inputStream.available() != 0) {
+      clusterNodeInfo = ClusterNodeInfo.parseFrom(inputStream);
+    }
   }
 
   @Override
