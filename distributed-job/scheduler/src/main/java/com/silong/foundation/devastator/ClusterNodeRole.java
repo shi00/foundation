@@ -16,52 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.config;
+package com.silong.foundation.devastator;
 
-import lombok.Data;
 import lombok.Getter;
-import lombok.experimental.Accessors;
 
-import java.util.Map;
+import java.io.Serializable;
 
 /**
- * 节点配置
+ * 集群节点角色
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-13 23:06
+ * @since 2022-04-15 22:33
  */
-@Data
-@Accessors(fluent = true)
-public class ClusterNodeConfig {
+public enum ClusterNodeRole implements Serializable {
+  /** 工作节点 */
+  WORKER(1),
+
+  /** 客户端节点 */
+  CLIENT(2);
+
+  /** 角色值 */
+  @Getter final int value;
+
   /**
-   * 节点角色<br>
-   * 1: worker 分担工作负载 <br>
-   * 2: client 客户端不承担工作负载
+   * 构造方法
+   *
+   * @param value 角色值
    */
-  private Role role;
-
-  /** 节点属性 */
-  private Map<String, String> attributes;
-
-  /** 节点角色 */
-  public enum Role {
-    /** 工作节点 */
-    WORKER(1),
-
-    /** 客户端节点 */
-    CLIENT(2);
-
-    /** 角色值 */
-    @Getter final int value;
-
-    /**
-     * 构造方法
-     *
-     * @param value 角色值
-     */
-    Role(int value) {
-      this.value = value;
-    }
+  ClusterNodeRole(int value) {
+    this.value = value;
   }
 }

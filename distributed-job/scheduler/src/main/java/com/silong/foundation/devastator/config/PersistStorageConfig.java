@@ -18,25 +18,29 @@
  */
 package com.silong.foundation.devastator.config;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
-import org.apache.commons.lang3.SystemUtils;
+
+import javax.validation.constraints.NotEmpty;
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
- * 持久化存储配置
+ * Devastator持久化存储配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 08:33
+ * @since 2022-04-15 22:12
  */
 @Data
 @Accessors(fluent = true)
-public class PersistStorageConfig {
-    /**
-     * 数据库路径
-     */
-    private String dbPath;
+public class PersistStorageConfig implements Serializable {
 
+  @Serial private static final long serialVersionUID = 0L;
 
+  /** 默认持久化数据保存路径 */
+  public static final String DEFAULT_PERSIST_DATA_PATH = "./devastator-data/";
+
+  /** 持久化数据保存文件路径，默认：./devastator-data/ */
+  @NotEmpty private String persistDataPath = DEFAULT_PERSIST_DATA_PATH;
 }

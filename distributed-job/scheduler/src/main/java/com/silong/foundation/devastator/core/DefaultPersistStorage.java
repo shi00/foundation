@@ -18,9 +18,9 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.silong.foundation.devastator.exception.GeneralException;
 import com.silong.foundation.devastator.PersistStorage;
 import com.silong.foundation.devastator.config.PersistStorageConfig;
+import com.silong.foundation.devastator.exception.GeneralException;
 import org.rocksdb.*;
 
 import java.io.Serial;
@@ -64,7 +64,8 @@ public class DefaultPersistStorage implements PersistStorage {
         new Options().setCreateIfMissing(true).setCompressionType(CompressionType.ZSTD_COMPRESSION);
     this.transactionDBOptions = new TransactionDBOptions().setWritePolicy(WRITE_COMMITTED);
     try {
-      this.transactionDB = TransactionDB.open(options, transactionDBOptions, config.dbPath());
+      this.transactionDB =
+          TransactionDB.open(options, transactionDBOptions, config.persistDataPath());
     } catch (RocksDBException e) {
       throw new GeneralException("Failed to initialize RocksDB.", e);
     }
@@ -73,7 +74,7 @@ public class DefaultPersistStorage implements PersistStorage {
   public void put(byte[] key, byte[] value) {
     try (WriteOptions writeOptions = new WriteOptions();
         Transaction txn = transactionDB.beginTransaction(writeOptions)) {
-//      transactionDB.put(key,value);
+      //      transactionDB.put(key,value);
     }
   }
 

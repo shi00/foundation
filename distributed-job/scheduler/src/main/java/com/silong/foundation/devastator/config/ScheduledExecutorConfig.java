@@ -21,30 +21,39 @@ package com.silong.foundation.devastator.config;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import static com.silong.foundation.devastator.ClusterDataAllocator.DEFAULT_PARTITION_SIZE;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Positive;
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
- * 分布式任务引擎配置
+ * 任务调度器配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 08:33
+ * @since 2022-04-15 22:12
  */
 @Data
 @Accessors(fluent = true)
-public class DistributedEngineConfig {
-  /** 默认配置文件名 */
-  public static final String DEFAULT_ENGINE_CONFIG_FILE = "default-tcp.xml";
+public class ScheduledExecutorConfig implements Serializable {
 
-  /** 集群名 */
-  private String clusterName;
+  @Serial private static final long serialVersionUID = 0L;
 
-  /** 实例名 */
-  private String instanceName;
+  /** 默认线程池线程名前缀 */
+  public static final String DEFAULT_THREAD_PREFIX = "devastator-scheduler-";
 
-  /** classpath配置文件，默认： {@code DistributedEngineConfig.DEFAULT_CONFIG_FILE_NAME} */
-  private String configFile = DEFAULT_ENGINE_CONFIG_FILE;
+  /** 默认调度器名 */
+  public static final String DEFAULT_NAME = "devastator-scheduler";
 
-  /** 数据分区数量，默认：1024 */
-  private int partitionCount = DEFAULT_PARTITION_SIZE;
+  /** 默认线程池核心线程数 */
+  public static final int DEFAULT_THREAD_CORE_SIZE = 10;
+
+  /** 任务调度器名字，默认： devastator-scheduler */
+  @NotEmpty private String name = DEFAULT_NAME;
+
+  /** 核心线程数，默认：10 */
+  @Positive private int threadCoreSize = DEFAULT_THREAD_CORE_SIZE;
+
+  /** 线程池线程名字前缀，默认： devastator-scheduler- */
+  @NotEmpty private String threadNamePrefix = DEFAULT_THREAD_PREFIX;
 }

@@ -18,23 +18,23 @@
  */
 package com.silong.foundation.devastator;
 
-import com.silong.foundation.devastator.config.DistributedEngineConfig;
-import com.silong.foundation.devastator.config.DistributedJobSchedulerConfig;
+import com.silong.foundation.devastator.config.DevastatorConfig;
+import com.silong.foundation.devastator.config.ScheduledExecutorConfig;
 
 import java.io.Closeable;
 import java.io.Serializable;
 
 /**
- * 分布式引擎
+ * Devastator分布式引擎
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-10 09:01
  */
-public interface DistributedEngine extends Serializable, Closeable {
+public interface Devastator extends Serializable, Closeable {
 
   /**
-   * 引擎实例名
+   * 实例名
    *
    * @return 实例名
    */
@@ -45,7 +45,7 @@ public interface DistributedEngine extends Serializable, Closeable {
    *
    * @return 配置
    */
-  DistributedEngineConfig config();
+  DevastatorConfig config();
 
   /**
    * 获取集群
@@ -57,8 +57,8 @@ public interface DistributedEngine extends Serializable, Closeable {
   /**
    * 获取分布式调度器
    *
-   * @param config 调度器配置
+   * @param name 调度器名
    * @return 分布式调度器
    */
-  DistributedJobScheduler scheduler(DistributedJobSchedulerConfig config);
+  DistributedJobScheduler scheduler(String name);
 }

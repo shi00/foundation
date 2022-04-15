@@ -31,6 +31,13 @@ import java.util.Collection;
 public interface Cluster extends Serializable {
 
   /**
+   * 集群名称
+   *
+   * @return 集群名
+   */
+  String name();
+
+  /**
    * 集群唯一标识
    *
    * @param <T> uuid类型
@@ -58,5 +65,5 @@ public interface Cluster extends Serializable {
    *
    * @return 本地节点
    */
-  ClusterNode loadNode();
+  ClusterNode localNode();
 }

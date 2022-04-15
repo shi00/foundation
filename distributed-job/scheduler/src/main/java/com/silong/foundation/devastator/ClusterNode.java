@@ -33,24 +33,12 @@ import java.util.Map;
  */
 public interface ClusterNode extends Serializable {
 
-  /** 节点角色 */
-  enum Role {
-    /** 工作节点 */
-    WORKER,
-
-    /** 集群管理者，负责集群管理业务 */
-    LEADER,
-
-    /** 客户端节点，不负责处理业务，仅连接集群，访问集群数据 */
-    CLIENT
-  }
-
   /**
    * 节点角色列表
    *
    * @return 角色列表
    */
-  Collection<Role> roles();
+  ClusterNodeRole role();
 
   /**
    * 节点版本，同一个集群内可能会存在不同版本的集群节点，可以通过版本号进行兼容性校验

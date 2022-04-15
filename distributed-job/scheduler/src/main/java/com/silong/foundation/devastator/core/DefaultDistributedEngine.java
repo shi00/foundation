@@ -19,13 +19,12 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.Cluster;
-import com.silong.foundation.devastator.DistributedEngine;
+import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.Devastator;
 import com.silong.foundation.devastator.DistributedJobScheduler;
 import com.silong.foundation.devastator.allocator.RendezvousAllocator;
-import com.silong.foundation.devastator.config.DistributedEngineConfig;
-import com.silong.foundation.devastator.config.DistributedJobSchedulerConfig;
+import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
-import com.silong.foundation.devastator.protobuf.Devastator;
 import com.silong.foundation.devastator.protobuf.Devastator.ClusterNodeInfo;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.NonNull;
@@ -33,10 +32,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 import org.jgroups.*;
 import org.jgroups.protocols.TP;
+import org.jgroups.protocols.UDP;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.requireNonNull;
 
@@ -50,7 +53,7 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 @SuppressFBWarnings({"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"})
 public class DefaultDistributedEngine
-    implements DistributedEngine, Receiver, ChannelListener, Serializable {
+    implements Devastator, Receiver, ChannelListener, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
 
@@ -58,7 +61,7 @@ public class DefaultDistributedEngine
   private final JChannel jChannel;
 
   /** 配置 */
-  private final DistributedJobSchedulerConfig config;
+  private final DevastatorConfig config;
 
   /** 数据分配器 */
   private final RendezvousAllocator allocator;
@@ -67,35 +70,54 @@ public class DefaultDistributedEngine
   private View lastView;
 
   /**
+   * 分区到节点映射关系
+   */
+  private final Map<Integer, Collection<ClusterNode>> partition2Nodes = new ConcurrentHashMap<>();
+
+  /**
    * 构造方法
    *
    * @param config 引擎配置
    */
-  public DefaultDistributedEngine(@NonNull DistributedJobSchedulerConfig config) {
-    try (InputStream inputStream = requireNonNull(locateConfig(config.distributedEngineConfig().configFile())).openStream()) {
+  public DefaultDistributedEngine(@NonNull DevastatorConfig config) {
+    try (InputStream inputStream = requireNonNull(locateConfig(config.configFile())).openStream()) {
       this.config = config;
       this.allocator = new RendezvousAllocator(config.partitionCount());
       this.jChannel = new JChannel(inputStream);
       this.jChannel.setReceiver(this);
-      this.jChannel.addAddressGenerator(() -> buildClusterNodeInfo(config));
+      this.jChannel.addAddressGenerator(this::buildClusterNodeInfo);
       this.jChannel.setName(config.instanceName());
       this.jChannel.connect(config.clusterName());
-      this.jChannel.getState(null,);
+      this.jChannel.getState();
     } catch (Exception e) {
       throw new GeneralException("Failed to start distributed engine.", e);
     }
   }
 
-  private ClusterNodeUUID buildClusterNodeInfo(DistributedEngineConfig config) {
+  private ClusterNodeUUID buildClusterNodeInfo() {
     TP transport = jChannel.getProtocolStack().getTransport();
+    ClusterNodeInfo.Builder builder = ClusterNodeInfo.newBuilder()
+            .setVersion(Version.version)
+            .putAllAttributes(config.clusterNodeAttributes())
+            .setHostName(SystemUtils.getHostName())
+            .setPartitions(config.partitionCount())
+            .setRole(config.clusterNodeRole().getValue());
+    ClusterNodeInfo clusterNodeInfo;
+    if (transport instanceof UDP udp){
+      clusterNodeInfo =
+              builder
+                      .setIpAddress(udp.getMulticastAddress().getHostAddress())
+                      .setPort(udp.getMulticastPort())
+                      .build();
+    } else {
+      clusterNodeInfo =
+              builder
+                      .setIpAddress(transport.getBindAddress().getHostAddress())
+                      .setPort(transport.getBindPort())
+                      .build();
+    }
     return ClusterNodeUUID.random()
-        .clusterNodeInfo(
-            ClusterNodeInfo.newBuilder()
-                .setJgroupsVersion(Version.version)
-                .setPort(transport.getBindPort())
-                .setIpAddress(transport.getBindAddress().getHostAddress())
-                .setHostName(SystemUtils.getHostName())
-                .build());
+        .clusterNodeInfo(clusterNodeInfo);
   }
 
   private URL locateConfig(String confFile) throws Exception {
@@ -119,9 +141,11 @@ public class DefaultDistributedEngine
   @Override
   public void viewAccepted(View newView) {
     if (lastView == null) {
+         for (int i =0;i<config.partitionCount();i++)
+         {
+           this.allocator.allocatePartition(i,config.backupNums(),)
 
-      newView.getMembers().stream().filter(address -> ((ClusterNodeUUID)address).clusterNodeInfo().getRole()& Devastator.ClusterNodeRole.WORKER==0)
-
+         }
     } else {
 
     }
@@ -144,7 +168,7 @@ public class DefaultDistributedEngine
   }
 
   @Override
-  public DistributedEngineConfig config() {
+  public DevastatorConfig config() {
     return config;
   }
 
@@ -154,7 +178,7 @@ public class DefaultDistributedEngine
   }
 
   @Override
-  public DistributedJobScheduler scheduler(DistributedJobSchedulerConfig config) {
+  public DistributedJobScheduler scheduler(String name) {
     return null;
   }
 
