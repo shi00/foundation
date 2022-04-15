@@ -28,8 +28,10 @@ import org.jgroups.util.UUID;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.function.Supplier;
+
+import static org.jgroups.util.Util.readByteBuffer;
+import static org.jgroups.util.Util.writeByteBuffer;
 
 /**
  * 扩展ExtendedUUID，使用zstd压缩算法对key，value进行压缩
@@ -94,18 +96,15 @@ public class ClusterNodeUUID extends UUID {
   @Override
   public void writeTo(DataOutput out) throws IOException {
     super.writeTo(out);
-    if (clusterNodeInfo != null) {
-      out.write(clusterNodeInfo.toByteArray());
-    }
+    byte[] buf = clusterNodeInfo != null ? clusterNodeInfo.toByteArray() : null;
+    writeByteBuffer(buf, 0, buf != null ? buf.length : -1, out);
   }
 
   @Override
   public void readFrom(DataInput in) throws IOException {
     super.readFrom(in);
-    InputStream inputStream = (InputStream) in;
-    if (inputStream.available() != 0) {
-      clusterNodeInfo = ClusterNodeInfo.parseFrom(inputStream);
-    }
+    byte[] bytes = readByteBuffer(in);
+    clusterNodeInfo = bytes == null ? null : ClusterNodeInfo.parseFrom(bytes);
   }
 
   @Override
