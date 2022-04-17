@@ -21,6 +21,7 @@ package com.silong.foundation.devastator;
 import lombok.Getter;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * 集群节点角色
@@ -46,5 +47,20 @@ public enum ClusterNodeRole implements Serializable {
    */
   ClusterNodeRole(int value) {
     this.value = value;
+  }
+
+  /**
+   * 查找角色
+   *
+   * @param value 角色值
+   * @return 角色
+   * @throws IllegalArgumentException 未知角色值
+   */
+  public static ClusterNodeRole find(int value) {
+    return Arrays.stream(ClusterNodeRole.values())
+        .filter(r -> r.value == value)
+        .findAny()
+        .orElseThrow(
+            () -> new IllegalArgumentException(String.format("Unknown value[%d] of role.", value)));
   }
 }
