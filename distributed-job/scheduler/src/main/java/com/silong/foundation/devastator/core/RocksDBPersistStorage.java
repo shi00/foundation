@@ -141,6 +141,31 @@ public class RocksDBPersistStorage implements PersistStorage {
   }
 
   @Override
+  public void deleteColumnFamily(String columnFamilyName) {
+    validateColumnFamily(columnFamilyName);
+    try {
+      ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
+      rocksDB.dropColumnFamily(columnFamilyHandle);
+      columnFamilyHandlesMap.remove(columnFamilyName).close();
+    } catch (RocksDBException e) {
+      throw new GeneralException(e);
+    }
+  }
+
+  @Override
+  public void createColumnFamily(String columnFamilyName) {
+    validate(isEmpty(columnFamilyName), "columnFamilyName must not be null or empty.");
+    try {
+      columnFamilyHandlesMap.put(
+          columnFamilyName,
+          rocksDB.createColumnFamily(
+              new ColumnFamilyDescriptor(columnFamilyName.getBytes(), cfOpts)));
+    } catch (RocksDBException e) {
+      throw new GeneralException(e);
+    }
+  }
+
+  @Override
   public void remove(byte[] key) {
     remove(DEFAULT_COLUMN_FAMILY_NAME, key);
   }

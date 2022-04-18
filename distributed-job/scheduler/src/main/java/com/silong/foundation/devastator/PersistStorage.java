@@ -34,6 +34,20 @@ import java.util.List;
 public interface PersistStorage extends Closeable, Serializable {
 
   /**
+   * 创建列族
+   *
+   * @param columnFamilyName 列族名
+   */
+  void createColumnFamily(String columnFamilyName);
+
+  /**
+   * 删除列族以及其数据
+   *
+   * @param columnFamilyName 列族名
+   */
+  void deleteColumnFamily(String columnFamilyName);
+
+  /**
    * 在default ColumnFamily删除key
    *
    * @param key key
