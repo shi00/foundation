@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.Cluster;
 import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.Devastator;
@@ -69,9 +70,7 @@ public class DefaultDistributedEngine
   /** 集群视图 */
   private View lastView;
 
-  /**
-   * 分区到节点映射关系
-   */
+  /** 分区到节点映射关系 */
   private final Map<Integer, Collection<ClusterNode>> partition2Nodes = new ConcurrentHashMap<>();
 
   /**
@@ -88,6 +87,8 @@ public class DefaultDistributedEngine
       this.jChannel.addAddressGenerator(this::buildClusterNodeInfo);
       this.jChannel.setName(config.instanceName());
       this.jChannel.connect(config.clusterName());
+
+      // 获取集群状态
       this.jChannel.getState();
     } catch (Exception e) {
       throw new GeneralException("Failed to start distributed engine.", e);
@@ -96,28 +97,24 @@ public class DefaultDistributedEngine
 
   private ClusterNodeUUID buildClusterNodeInfo() {
     TP transport = jChannel.getProtocolStack().getTransport();
-    ClusterNodeInfo.Builder builder = ClusterNodeInfo.newBuilder()
-            .setVersion(Version.version)
-            .putAllAttributes(config.clusterNodeAttributes())
-            .setHostName(SystemUtils.getHostName())
-            .setPartitions(config.partitionCount())
-            .setRole(config.clusterNodeRole().getValue());
-    ClusterNodeInfo clusterNodeInfo;
-    if (transport instanceof UDP udp){
-      clusterNodeInfo =
-              builder
-                      .setIpAddress(udp.getMulticastAddress().getHostAddress())
-                      .setPort(udp.getMulticastPort())
-                      .build();
-    } else {
-      clusterNodeInfo =
-              builder
-                      .setIpAddress(transport.getBindAddress().getHostAddress())
-                      .setPort(transport.getBindPort())
-                      .build();
-    }
     return ClusterNodeUUID.random()
-        .clusterNodeInfo(clusterNodeInfo);
+        .clusterNodeInfo(
+            ClusterNodeInfo.newBuilder()
+                .setVersion(Version.version)
+                .putAllAttributes(config.clusterNodeAttributes())
+                .setInstanceName(config.instanceName())
+                .setHostName(SystemUtils.getHostName())
+                .setRole(config.clusterNodeRole().getValue())
+                .setIpAddress(
+                    ByteString.copyFrom(
+                        transport.getClass() == UDP.class
+                            ? ((UDP) transport).getMulticastAddress().getAddress()
+                            : transport.getBindAddress().getAddress()))
+                .setPort(
+                    transport.getClass() == UDP.class
+                        ? ((UDP) transport).getMulticastPort()
+                        : transport.getBindPort())
+                .build());
   }
 
   private URL locateConfig(String confFile) throws Exception {
@@ -141,11 +138,10 @@ public class DefaultDistributedEngine
   @Override
   public void viewAccepted(View newView) {
     if (lastView == null) {
-         for (int i =0;i<config.partitionCount();i++)
-         {
-           this.allocator.allocatePartition(i,config.backupNums(),)
+      for (int i = 0; i < config.partitionCount(); i++) {
+        //           this.allocator.allocatePartition(i,config.backupNums(),)
 
-         }
+      }
     } else {
 
     }

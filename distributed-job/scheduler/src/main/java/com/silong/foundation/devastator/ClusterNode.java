@@ -21,7 +21,6 @@ package com.silong.foundation.devastator;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -55,18 +54,18 @@ public interface ClusterNode extends Serializable {
   String hostName();
 
   /**
-   * 节点地址列表
+   * 节点地址(绑定地址)，
    *
-   * @return 地址列表
+   * @return 节点地址
    */
-  Collection<String> addresses();
+  String address();
 
   /**
    * 是否本地节点
    *
    * @return true or false
    */
-  boolean isLocalNode();
+  boolean isLocal();
 
   /**
    * 获取节点在集群内全局唯一的id

@@ -26,6 +26,8 @@ import javax.validation.Valid;
 import javax.validation.constraints.*;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -73,8 +75,11 @@ public class DevastatorConfig implements Serializable {
   @Valid @NotNull private Map<@NotEmpty String, @NotEmpty String> clusterNodeAttributes = Map.of();
 
   /** 持久化存储配置 */
-  @Valid private PersistStorageConfig persistStorageConfig = new PersistStorageConfig();
+  @Valid @NotEmpty
+  private List<@NotNull @Valid PersistStorageConfig> persistStorageConfigs = new LinkedList<>();
 
   /** 任务调度器配置 */
-  @Valid private ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
+  @Valid @NotEmpty
+  private List<@NotNull @Valid ScheduledExecutorConfig> scheduledExecutorConfigs =
+      new LinkedList<>();
 }

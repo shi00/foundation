@@ -19,21 +19,14 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterNode;
-import lombok.SneakyThrows;
-import org.apache.commons.codec.digest.HmacUtils;
+import com.silong.foundation.devastator.ClusterNodeRole;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import lombok.NonNull;
+import org.jgroups.Version;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Collection;
 import java.util.Map;
-import java.util.TreeMap;
-
-import static java.util.stream.Collectors.joining;
-import static org.apache.commons.codec.digest.HmacAlgorithms.HMAC_SHA_256;
-import static org.apache.commons.lang3.SystemUtils.getHostName;
-import static org.jgroups.Version.printVersion;
 
 /**
  * 默认集群节点实现
@@ -46,86 +39,56 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
 
-  /** 节点名 */
-  private final String hostName;
+  /** 集群节点信息 */
+  private final ClusterNodeUUID clusterNodeUUID;
 
-  /** 节点uuid */
-  private final String uuid;
-
-  /** 属性集合 */
-  private final Map<String, Object> attributes = new TreeMap<>();
-
-  /** ip地址列表 */
-  private final Collection<String> addresses;
-
-  /** 节点版本 */
-  private final String version;
-
-  /** 构造方法 */
-  public DefaultClusterNode() {
-    this.version = printVersion();
-    this.hostName = getHostName();
-    this.addresses = getNodeAddresses();
-    this.uuid =
-        new HmacUtils(HMAC_SHA_256, version)
-            .hmacHex(hostName + addresses.stream().collect(joining(",", "[", "]")));
-    this.attributes.putAll(System.getenv());
-    //    this.jChannel = new JChannel("");
-  }
-
-  @SneakyThrows
-  private Collection<String> getNodeAddresses() {
-    return NetworkInterface.networkInterfaces()
-        .flatMap(NetworkInterface::inetAddresses)
-        .map(InetAddress::getHostAddress)
-        .sorted(String::compareTo)
-        .toList();
+  /**
+   * 构造方法
+   *
+   * @param clusterNodeUUID 节点信息
+   */
+  public DefaultClusterNode(@NonNull ClusterNodeUUID clusterNodeUUID) {
+    this.clusterNodeUUID = clusterNodeUUID;
   }
 
   @Override
-  public Collection<Role> roles() {
-    return null;
+  public ClusterNodeRole role() {
+    return ClusterNodeRole.find(clusterNodeUUID.clusterNodeInfo().getRole());
   }
 
   @Override
   public String version() {
-    return version;
+    return Version.print((short) clusterNodeUUID.clusterNodeInfo().getVersion());
   }
 
   @Override
   public String hostName() {
-    return hostName;
+    return clusterNodeUUID.clusterNodeInfo().getHostName();
   }
 
   @Override
-  public Collection<String> addresses() {
-    return addresses;
+  public String address() {
+    return null;
   }
 
   @Override
-  public boolean isLocalNode() {
+  public boolean isLocal() {
     return false;
   }
 
   @Override
-  public Comparable<String> uuid() {
-    return uuid;
+  public ClusterNodeUUID uuid() {
+    return clusterNodeUUID;
   }
 
+  @Nullable
   @Override
   public <T> T attribute(String attributeName) {
-    return (T) attributes.get(attributeName);
+    return (T) clusterNodeUUID.clusterNodeInfo().getAttributesMap().get(attributeName);
   }
 
   @Override
   public Map<String, Object> attributes() {
-    return attributes;
+    return null;
   }
-
-//  @Override
-//  public void close() {
-//    if (jChannel != null) {
-//      jChannel.close();
-//    }
-//  }
 }

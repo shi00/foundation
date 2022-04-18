@@ -21,9 +21,14 @@ package com.silong.foundation.devastator.config;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Positive;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
+
+import static org.rocksdb.util.SizeUnit.MB;
 
 /**
  * Devastator持久化存储配置
@@ -41,6 +46,18 @@ public class PersistStorageConfig implements Serializable {
   /** 默认持久化数据保存路径 */
   public static final String DEFAULT_PERSIST_DATA_PATH = "./devastator-data/";
 
-  /** 持久化数据保存文件路径，默认：./devastator-data/ */
+  /** 持久化数据保存路径 */
   @NotEmpty private String persistDataPath = DEFAULT_PERSIST_DATA_PATH;
+
+  /** 列族名列表 */
+  @NotEmpty @Valid private List<@NotEmpty String> columnFamilyNames;
+
+  /** memtable memory budget. Default: 32MB */
+  @Positive private long memtableMemoryBudget = 32 * MB;
+
+  /** 写入缓存大小，默认：1MB */
+  @Positive private long writeBufferSize = MB;
+
+  /** 最大写缓存数量，默认：4 */
+  @Positive private int maxWriteBufferNumber = 4;
 }
