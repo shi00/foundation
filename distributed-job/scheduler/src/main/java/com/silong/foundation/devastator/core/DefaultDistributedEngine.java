@@ -101,19 +101,19 @@ public class DefaultDistributedEngine
         .clusterNodeInfo(
             ClusterNodeInfo.newBuilder()
                 .setVersion(Version.version)
-                .putAllAttributes(config.clusterNodeAttributes())
+//                .putAllAttributes(config.clusterNodeAttributes())
                 .setInstanceName(config.instanceName())
                 .setHostName(SystemUtils.getHostName())
                 .setRole(config.clusterNodeRole().getValue())
-                .setIpAddress(
-                    ByteString.copyFrom(
-                        transport.getClass() == UDP.class
-                            ? ((UDP) transport).getMulticastAddress().getAddress()
-                            : transport.getBindAddress().getAddress()))
-                .setPort(
-                    transport.getClass() == UDP.class
-                        ? ((UDP) transport).getMulticastPort()
-                        : transport.getBindPort())
+//                .setIpAddress(
+//                    ByteString.copyFrom(
+//                        transport.getClass() == UDP.class
+//                            ? ((UDP) transport).getMulticastAddress().getAddress()
+//                            : transport.getBindAddress().getAddress()))
+//                .setPort(
+//                    transport.getClass() == UDP.class
+//                        ? ((UDP) transport).getMulticastPort()
+//                        : transport.getBindPort())
                 .build());
   }
 

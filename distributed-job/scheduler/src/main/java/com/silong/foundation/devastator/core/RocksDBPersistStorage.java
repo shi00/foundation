@@ -30,6 +30,8 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.rocksdb.CompressionType.LZ4_COMPRESSION;
+import static org.rocksdb.CompressionType.ZSTD_COMPRESSION;
 
 /**
  * 基于RocksDB的持久化存储
@@ -54,6 +56,14 @@ public class RocksDBPersistStorage implements PersistStorage {
 
   private final DBOptions options;
 
+  private final Cache blockCache;
+
+  private final Filter bloomFilter;
+
+  private final RateLimiter rateLimiter;
+
+  private final Statistics statistics;
+
   private final Map<String, ColumnFamilyHandle> columnFamilyHandlesMap = new HashMap<>();
 
   /**
@@ -63,11 +73,28 @@ public class RocksDBPersistStorage implements PersistStorage {
    */
   public RocksDBPersistStorage(PersistStorageConfig config) {
     validate(config == null, "config must not be null.");
+    blockCache = new LRUCache(config.blockCacheCapacity());
+    bloomFilter = new BloomFilter(config.bloomFilterBitsPerKey(), false);
+    rateLimiter =
+        new RateLimiter(
+            config.rateBytesPerSecond(), config.refillPeriodMicros(), config.fairness());
 
-    this.cfOpts =
+    cfOpts =
         new ColumnFamilyOptions()
+            .setLevelCompactionDynamicLevelBytes(true)
+            .setCompressionType(LZ4_COMPRESSION)
+            .setBottommostCompressionType(ZSTD_COMPRESSION)
             .optimizeLevelStyleCompaction(config.memtableMemoryBudget())
-            .setWriteBufferSize(config.writeBufferSize())
+            .setWriteBufferSize(config.columnFamilyWriteBufferSize())
+            .setTableFormatConfig(
+                new BlockBasedTableConfig()
+                    .setBlockSize(config.blockSize())
+                    .setCacheIndexAndFilterBlocks(true)
+                    .setPinL0FilterAndIndexBlocksInCache(true)
+                    .setFormatVersion(config.formatVersion())
+                    .setBlockCache(blockCache)
+                    .setOptimizeFiltersForMemory(true)
+                    .setFilterPolicy(bloomFilter))
             .setMaxWriteBufferNumber(config.maxWriteBufferNumber());
 
     // list of column family descriptors, first entry must always be default column family
@@ -78,10 +105,26 @@ public class RocksDBPersistStorage implements PersistStorage {
         config.columnFamilyNames().stream()
             .map(name -> new ColumnFamilyDescriptor(name.getBytes(), cfOpts))
             .toList());
-    this.options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true);
+    options =
+        new DBOptions()
+            .setRateLimiter(rateLimiter)
+            .setMaxBackgroundJobs(config.maxBackgroundJobs())
+            .setBytesPerSync(config.bytesPerSync())
+            .setDbWriteBufferSize(config.dbWriteBufferSize())
+            .setCreateIfMissing(true)
+            .setCreateMissingColumnFamilies(true);
+
+    if (config.statistics().enable()) {
+      statistics = new Statistics();
+      statistics.setStatsLevel(config.statistics().statsLevel());
+      options.setStatistics(statistics);
+    } else {
+      statistics = null;
+    }
+
     List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
     try {
-      this.rocksDB =
+      rocksDB =
           RocksDB.open(
               options,
               new File(config.persistDataPath()).getCanonicalPath(),
@@ -100,6 +143,10 @@ public class RocksDBPersistStorage implements PersistStorage {
     closeNativeResources(rocksDB);
     closeNativeResources(cfOpts);
     closeNativeResources(options);
+    closeNativeResources(blockCache);
+    closeNativeResources(bloomFilter);
+    closeNativeResources(rateLimiter);
+    closeNativeResources(statistics);
     columnFamilyHandlesMap.values().forEach(this::closeNativeResources);
     columnFamilyHandlesMap.clear();
   }
