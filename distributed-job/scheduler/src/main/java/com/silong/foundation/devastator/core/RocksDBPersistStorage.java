@@ -157,6 +157,18 @@ public class RocksDBPersistStorage implements PersistStorage {
     }
   }
 
+  @Override
+  public void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey) {
+    validateColumnFamily(columnFamilyName);
+    validate(startKey == null, "startKey must not be null.");
+    validate(endKey == null, "endKey must not be null.");
+    try {
+      rocksDB.deleteRange(startKey, endKey);
+    } catch (RocksDBException e) {
+      throw new GeneralException(e);
+    }
+  }
+
   /**
    * 获取当前rocksdb中所有存在的列族名称列表
    *
@@ -336,5 +348,10 @@ public class RocksDBPersistStorage implements PersistStorage {
     } catch (RocksDBException e) {
       throw new GeneralException(e);
     }
+  }
+
+  @Override
+  public void deleteRange(byte[] startKey, byte[] endKey) {
+    deleteRange(DEFAULT_COLUMN_FAMILY_NAME, startKey, endKey);
   }
 }

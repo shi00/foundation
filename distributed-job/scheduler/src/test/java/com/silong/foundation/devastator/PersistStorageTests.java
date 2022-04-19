@@ -20,12 +20,14 @@ package com.silong.foundation.devastator;
 
 import com.silong.foundation.devastator.config.PersistStorageConfig;
 import com.silong.foundation.devastator.core.RocksDBPersistStorage;
+import com.silong.foundation.devastator.utils.KvPair;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,29 +66,32 @@ public class PersistStorageTests {
   @Test
   @DisplayName("putAll")
   void test11() {
-    Map<byte[], byte[]> map = new HashMap<>();
+    List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
     for (int i = 0; i < 1000; i++) {
       byte[] key = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
       byte[] value = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
-      map.put(key, value);
-      persistStorage.put(key, value);
+      kvPairs.add(new KvPair<>(key, value));
     }
+    persistStorage.putAll(kvPairs);
 
-    map.forEach((key, value) -> Assertions.assertArrayEquals(value, persistStorage.get(key)));
+    kvPairs.forEach(
+        kvPair -> Assertions.assertArrayEquals(kvPair.value(), persistStorage.get(kvPair.key())));
   }
 
   @Test
   @DisplayName("putAll-jobs")
   void test111() {
-    Map<byte[], byte[]> map = new HashMap<>();
+    List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
     for (int i = 0; i < 1000; i++) {
       byte[] key = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
       byte[] value = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
-      map.put(key, value);
-      persistStorage.put(JOBS, key, value);
+      kvPairs.add(new KvPair<>(key, value));
     }
+    persistStorage.putAll(JOBS, kvPairs);
 
-    map.forEach((key, value) -> Assertions.assertArrayEquals(value, persistStorage.get(JOBS, key)));
+    kvPairs.forEach(
+        kvPair ->
+            Assertions.assertArrayEquals(kvPair.value(), persistStorage.get(JOBS, kvPair.key())));
   }
 
   @Test
