@@ -33,6 +33,7 @@ import java.util.stream.IntStream;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.rocksdb.CompressionType.LZ4_COMPRESSION;
 import static org.rocksdb.CompressionType.ZSTD_COMPRESSION;
+import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
 
 /**
  * 基于RocksDB的持久化存储
@@ -76,11 +77,14 @@ public class RocksDbPersistStorage implements PersistStorage {
    */
   public RocksDbPersistStorage(PersistStorageConfig config) {
     validate(config == null, "config must not be null.");
-    blockCache = new LRUCache(config.blockCacheCapacity());
-    bloomFilter = new BloomFilter(config.bloomFilterBitsPerKey(), false);
+    blockCache = new LRUCache(config.blockBaseTable().cache().blockCacheCapacity());
+    bloomFilter =
+        new BloomFilter(config.blockBaseTable().bloomFilter().bloomFilterBitsPerKey(), false);
     rateLimiter =
         new RateLimiter(
-            config.rateBytesPerSecond(), config.refillPeriodMicros(), config.fairness());
+            config.rateLimiter().rateBytesPerSecond(),
+            config.rateLimiter().refillPeriodMicros(),
+            config.rateLimiter().fairness());
 
     cfOpts =
         new ColumnFamilyOptions()
@@ -91,10 +95,10 @@ public class RocksDbPersistStorage implements PersistStorage {
             .setWriteBufferSize(config.columnFamilyWriteBufferSize())
             .setTableFormatConfig(
                 new BlockBasedTableConfig()
-                    .setBlockSize(config.blockSize())
+                    .setBlockSize(config.blockBaseTable().blockSize())
                     .setCacheIndexAndFilterBlocks(true)
                     .setPinL0FilterAndIndexBlocksInCache(true)
-                    .setFormatVersion(config.formatVersion())
+                    .setFormatVersion(config.blockBaseTable().formatVersion())
                     .setBlockCache(blockCache)
                     .setOptimizeFiltersForMemory(true)
                     .setFilterPolicy(bloomFilter))
@@ -103,7 +107,7 @@ public class RocksDbPersistStorage implements PersistStorage {
     // list of column family descriptors, first entry must always be default column family
     ArrayList<ColumnFamilyDescriptor> columnFamilyDescriptors =
         new ArrayList<>(1 + config.columnFamilyNames().size());
-    columnFamilyDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, cfOpts));
+    columnFamilyDescriptors.add(new ColumnFamilyDescriptor(DEFAULT_COLUMN_FAMILY, cfOpts));
     columnFamilyDescriptors.addAll(
         config.columnFamilyNames().stream()
             .map(name -> new ColumnFamilyDescriptor(name.getBytes(), cfOpts))
