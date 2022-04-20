@@ -30,6 +30,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
+import static org.apache.commons.lang3.SystemUtils.getUserDir;
 import static org.rocksdb.StatsLevel.ALL;
 import static org.rocksdb.util.SizeUnit.KB;
 import static org.rocksdb.util.SizeUnit.MB;
@@ -48,13 +49,17 @@ public class PersistStorageConfig implements Serializable {
   @Serial private static final long serialVersionUID = 0L;
 
   /** 默认持久化数据保存路径 */
-  public static final String DEFAULT_PERSIST_DATA_PATH = "./devastator-data/";
+  public static final String DEFAULT_PERSIST_DATA_PATH =
+      getUserDir().toPath().resolve("devastator-data").toFile().getAbsolutePath();
+
+  /** jobs列族 */
+  public static final String JOBS_COLUMN_FAMILY = "jobs";
 
   /** 持久化数据保存路径 */
   @NotEmpty private String persistDataPath = DEFAULT_PERSIST_DATA_PATH;
 
   /** 列族名列表 */
-  @NotEmpty @Valid private List<@NotEmpty String> columnFamilyNames;
+  @NotEmpty @Valid private List<@NotEmpty String> columnFamilyNames = List.of(JOBS_COLUMN_FAMILY);
 
   /** memtable memory budget. Default: 32MB */
   @Positive private long memtableMemoryBudget = 32 * MB;

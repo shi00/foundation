@@ -34,7 +34,7 @@ import static org.jgroups.util.Util.readByteBuffer;
 import static org.jgroups.util.Util.writeByteBuffer;
 
 /**
- * 扩展ExtendedUUID，使用zstd压缩算法对key，value进行压缩
+ * 扩展UUID，作为节点信息
  *
  * @author louis sin
  * @version 1.0.0

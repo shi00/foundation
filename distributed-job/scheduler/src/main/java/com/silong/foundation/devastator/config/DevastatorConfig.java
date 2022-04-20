@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.devastator.config;
 
-import com.silong.foundation.devastator.ClusterNodeRole;
+import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -33,7 +33,7 @@ import java.util.UUID;
 
 import static com.silong.foundation.devastator.ClusterDataAllocator.DEFAULT_PARTITION_SIZE;
 import static com.silong.foundation.devastator.ClusterDataAllocator.MAX_PARTITIONS_COUNT;
-import static com.silong.foundation.devastator.ClusterNodeRole.WORKER;
+import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.WORKER;
 
 /**
  * Devastator配置
@@ -75,8 +75,7 @@ public class DevastatorConfig implements Serializable {
   @Valid @NotNull private Map<@NotEmpty String, @NotEmpty String> clusterNodeAttributes = Map.of();
 
   /** 持久化存储配置 */
-  @Valid @NotEmpty
-  private List<@NotNull @Valid PersistStorageConfig> persistStorageConfigs = new LinkedList<>();
+  @Valid @NotNull private PersistStorageConfig persistStorageConfig = new PersistStorageConfig();
 
   /** 任务调度器配置 */
   @Valid @NotEmpty

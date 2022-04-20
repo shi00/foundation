@@ -19,10 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.google.protobuf.ByteString;
-import com.silong.foundation.devastator.Cluster;
-import com.silong.foundation.devastator.ClusterNode;
-import com.silong.foundation.devastator.Devastator;
-import com.silong.foundation.devastator.DistributedJobScheduler;
+import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.allocator.RendezvousAllocator;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
@@ -67,6 +64,9 @@ public class DefaultDistributedEngine
   /** 数据分配器 */
   private final RendezvousAllocator allocator;
 
+  /** 持久化存储 */
+  private final PersistStorage persistStorage;
+
   /** 集群视图 */
   private View lastView;
 
@@ -82,6 +82,7 @@ public class DefaultDistributedEngine
     try (InputStream inputStream = requireNonNull(locateConfig(config.configFile())).openStream()) {
       this.config = config;
       this.allocator = new RendezvousAllocator(config.partitionCount());
+      this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
       this.jChannel = new JChannel(inputStream);
       this.jChannel.setReceiver(this);
       this.jChannel.addAddressGenerator(this::buildClusterNodeInfo);
@@ -101,19 +102,19 @@ public class DefaultDistributedEngine
         .clusterNodeInfo(
             ClusterNodeInfo.newBuilder()
                 .setVersion(Version.version)
-//                .putAllAttributes(config.clusterNodeAttributes())
+                //                .putAllAttributes(config.clusterNodeAttributes())
                 .setInstanceName(config.instanceName())
                 .setHostName(SystemUtils.getHostName())
                 .setRole(config.clusterNodeRole().getValue())
-//                .setIpAddress(
-//                    ByteString.copyFrom(
-//                        transport.getClass() == UDP.class
-//                            ? ((UDP) transport).getMulticastAddress().getAddress()
-//                            : transport.getBindAddress().getAddress()))
-//                .setPort(
-//                    transport.getClass() == UDP.class
-//                        ? ((UDP) transport).getMulticastPort()
-//                        : transport.getBindPort())
+                //                .setIpAddress(
+                //                    ByteString.copyFrom(
+                //                        transport.getClass() == UDP.class
+                //                            ? ((UDP) transport).getMulticastAddress().getAddress()
+                //                            : transport.getBindAddress().getAddress()))
+                //                .setPort(
+                //                    transport.getClass() == UDP.class
+                //                        ? ((UDP) transport).getMulticastPort()
+                //                        : transport.getBindPort())
                 .build());
   }
 

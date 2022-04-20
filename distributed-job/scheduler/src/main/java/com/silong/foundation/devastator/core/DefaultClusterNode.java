@@ -19,14 +19,25 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterNode;
-import com.silong.foundation.devastator.ClusterNodeRole;
+import com.silong.foundation.devastator.protobuf.Devastator.IpAddressInfo;
+import com.silong.foundation.devastator.utils.TypeConverter;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import lombok.NonNull;
+import lombok.SneakyThrows;
+import org.apache.commons.lang3.StringUtils;
 import org.jgroups.Version;
+import org.jgroups.util.UUID;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.silong.foundation.devastator.utils.TypeConverter.STRING_TO_BYTES;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.SystemUtils.getHostName;
 
 /**
  * 默认集群节点实现
@@ -40,55 +51,81 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
   @Serial private static final long serialVersionUID = 0L;
 
   /** 集群节点信息 */
-  private final ClusterNodeUUID clusterNodeUuid;
+  private final ClusterNodeUUID clusterNode;
 
   /**
    * 构造方法
    *
-   * @param clusterNodeUuid 节点信息
+   * @param clusterNode 节点信息
    */
-  public DefaultClusterNode(@NonNull ClusterNodeUUID clusterNodeUuid) {
-    this.clusterNodeUuid = clusterNodeUuid;
+  public DefaultClusterNode(ClusterNodeUUID clusterNode) {
+    if (clusterNode == null) {
+      throw new IllegalArgumentException("clusterNode must not be null.");
+    }
+    this.clusterNode = clusterNode;
   }
 
   @Override
   public ClusterNodeRole role() {
-    return ClusterNodeRole.find(clusterNodeUuid.clusterNodeInfo().getRole());
+    return ClusterNodeRole.find(clusterNode.clusterNodeInfo().getRole());
   }
 
   @Override
   public String version() {
-    return Version.print((short) clusterNodeUuid.clusterNodeInfo().getVersion());
+    return Version.print((short) clusterNode.clusterNodeInfo().getVersion());
   }
 
   @Override
   public String hostName() {
-    return clusterNodeUuid.clusterNodeInfo().getHostName();
+    return clusterNode.clusterNodeInfo().getHostName();
   }
 
   @Override
-  public String address() {
-    return null;
+  public Collection<String> addresses() {
+    return clusterNode.clusterNodeInfo().getAddressesList().stream()
+        .map(this::buildIpAddress)
+        .toList();
+  }
+
+  @SneakyThrows
+  private String buildIpAddress(IpAddressInfo ipAddressInfo) {
+    return InetAddress.getByAddress(ipAddressInfo.getIpAddress().toByteArray()).getHostAddress();
   }
 
   @Override
   public boolean isLocal() {
-    return false;
+    return StringUtils.equals(hostName(), getHostName());
   }
 
   @Override
-  public ClusterNodeUUID uuid() {
-    return clusterNodeUuid;
+  @NonNull
+  public <T extends UUID> T uuid() {
+    return (T) clusterNode;
   }
 
   @Nullable
   @Override
-  public <T> T attribute(String attributeName) {
-    return (T) clusterNodeUuid.clusterNodeInfo().getAttributesMap().get(attributeName);
+  @SneakyThrows
+  public <T> T attribute(String attributeName, TypeConverter<T, byte[]> converter) {
+    if (isEmpty(attributeName)) {
+      throw new IllegalArgumentException("attributeName must not be null or empty.");
+    }
+    if (converter == null) {
+      throw new IllegalArgumentException("converter must not be null.");
+    }
+    return converter.from(
+        clusterNode.clusterNodeInfo().getAttributesMap().get(attributeName).toByteArray());
+  }
+
+  @Nullable
+  @Override
+  public String attribute(String attributeName) {
+    return attribute(attributeName, STRING_TO_BYTES);
   }
 
   @Override
-  public Map<String, Object> attributes() {
-    return null;
+  public Map<String, byte[]> attributes() {
+    return clusterNode.clusterNodeInfo().getAttributesMap().entrySet().stream()
+        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toByteArray()));
   }
 }

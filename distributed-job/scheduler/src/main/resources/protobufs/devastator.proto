@@ -8,12 +8,17 @@ option java_outer_classname = "Devastator";
 message ClusterNodeInfo {
   uint32 version = 1; //版本号
   string host_name = 2; //主机名
-  bytes bind_address = 3; //节点绑定ip地址，支持ipv6，ipv4
+  repeated IpAddressInfo addresses = 3; //节点所有IP地址，除了绑定地址
   uint32 bind_port = 4; //节点绑定端口
   uint32 role = 5; //角色
   string instanceName = 6; //实例名
-  repeated bytes addresses = 7; //节点所有IP地址，除了绑定地址
   map<string, bytes> attributes = 8; //节点属性
+}
+
+//ip地址信息
+message IpAddressInfo{
+  bytes ipAddress = 1; //ip地址
+  bool bind = 2; //是否绑定用于集群通讯
 }
 
 //集群状态

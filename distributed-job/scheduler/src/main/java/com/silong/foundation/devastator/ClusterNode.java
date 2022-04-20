@@ -18,9 +18,15 @@
  */
 package com.silong.foundation.devastator;
 
+import com.silong.foundation.devastator.utils.TypeConverter;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import lombok.Getter;
+import org.jgroups.util.UUID;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -31,6 +37,49 @@ import java.util.Map;
  * @since 2022-04-07 21:33
  */
 public interface ClusterNode extends Serializable {
+
+  /**
+   * 集群节点角色
+   *
+   * @author louis sin
+   * @version 1.0.0
+   * @since 2022-04-15 22:33
+   */
+  enum ClusterNodeRole implements Serializable {
+    /** 工作节点 */
+    WORKER(1),
+
+    /** 客户端节点 */
+    CLIENT(2);
+
+    /** 角色值 */
+    @Getter final int value;
+
+    /**
+     * 构造方法
+     *
+     * @param value 角色值
+     */
+    ClusterNodeRole(int value) {
+      this.value = value;
+    }
+
+    /**
+     * 查找角色
+     *
+     * @param value 角色值
+     * @return 角色
+     * @throws IllegalArgumentException 未知角色值
+     */
+    public static ClusterNodeRole find(int value) {
+      return Arrays.stream(ClusterNodeRole.values())
+          .filter(r -> r.value == value)
+          .findAny()
+          .orElseThrow(
+              () ->
+                  new IllegalArgumentException(String.format("Unknown value[%d] of role.", value)));
+    }
+  }
 
   /**
    * 节点角色列表
@@ -54,11 +103,11 @@ public interface ClusterNode extends Serializable {
   String hostName();
 
   /**
-   * 节点地址(绑定地址)，
+   * 节点地址列表，
    *
-   * @return 节点地址
+   * @return 节点地址列表
    */
-  String address();
+  Collection<String> addresses();
 
   /**
    * 是否本地节点
@@ -73,22 +122,33 @@ public interface ClusterNode extends Serializable {
    * @param <T> uuid类型
    * @return id
    */
-  <T extends Comparable<T>> T uuid();
+  @NonNull
+  <T extends UUID> T uuid();
 
   /**
    * 根据属性名获取属性值
    *
    * @param attributeName 属性名
+   * @param converter 类型转换器
    * @param <T> 属性值类型
    * @return 属性值
    */
   @Nullable
-  <T> T attribute(String attributeName);
+  <T> T attribute(String attributeName, TypeConverter<T, byte[]> converter);
+
+  /**
+   * 获取节点属性
+   *
+   * @param attributeName 属性名
+   * @return 属性值
+   */
+  @Nullable
+  String attribute(String attributeName);
 
   /**
    * 获取节点属性集合
    *
    * @return 属性集合
    */
-  Map<String, Object> attributes();
+  Map<String, byte[]> attributes();
 }
