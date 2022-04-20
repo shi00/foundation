@@ -19,18 +19,20 @@
 package com.silong.foundation.devastator;
 
 import com.silong.foundation.devastator.config.PersistStorageConfig;
-import com.silong.foundation.devastator.core.RocksDBPersistStorage;
+import com.silong.foundation.devastator.core.RocksDbPersistStorage;
 import com.silong.foundation.devastator.utils.KvPair;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * 持久化存储单元测试
@@ -50,14 +52,20 @@ public class PersistStorageTests {
   static {
     config = new PersistStorageConfig();
     config.columnFamilyNames(List.of(JOBS)).persistDataPath("./target/devastator-data/");
-    persistStorage = new RocksDBPersistStorage(config);
+    persistStorage = new RocksDbPersistStorage(config);
+  }
+
+  @AfterEach
+  void clean() {
+    persistStorage.deleteColumnFamily(JOBS);
+    persistStorage.createColumnFamily(JOBS);
   }
 
   @Test
   @DisplayName("put")
   void test1() {
-    byte[] key = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
-    byte[] value = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
+    byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+    byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
     persistStorage.put(key, value);
     byte[] bytes = persistStorage.get(key);
     Assertions.assertArrayEquals(value, bytes);
@@ -68,8 +76,8 @@ public class PersistStorageTests {
   void test11() {
     List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
     for (int i = 0; i < 1000; i++) {
-      byte[] key = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
-      byte[] value = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
+      byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+      byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
       kvPairs.add(new KvPair<>(key, value));
     }
     persistStorage.putAll(kvPairs);
@@ -83,8 +91,8 @@ public class PersistStorageTests {
   void test111() {
     List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
     for (int i = 0; i < 1000; i++) {
-      byte[] key = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
-      byte[] value = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
+      byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+      byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
       kvPairs.add(new KvPair<>(key, value));
     }
     persistStorage.putAll(JOBS, kvPairs);
@@ -97,8 +105,8 @@ public class PersistStorageTests {
   @Test
   @DisplayName("put-jobs")
   void test2() {
-    byte[] key = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
-    byte[] value = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
+    byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+    byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
     persistStorage.put(JOBS, key, value);
     byte[] bytes = persistStorage.get(JOBS, key);
     Assertions.assertArrayEquals(value, bytes);
@@ -107,8 +115,8 @@ public class PersistStorageTests {
   @Test
   @DisplayName("remove")
   void test3() {
-    byte[] key = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
-    byte[] value = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
+    byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+    byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
     persistStorage.put(key, value);
     persistStorage.remove(key);
     byte[] bytes = persistStorage.get(key);
@@ -118,11 +126,122 @@ public class PersistStorageTests {
   @Test
   @DisplayName("remove-jobs")
   void test4() {
-    byte[] key = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
-    byte[] value = RandomStringUtils.random(100).getBytes(StandardCharsets.UTF_8);
+    byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+    byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
     persistStorage.put(JOBS, key, value);
     persistStorage.remove(JOBS, key);
     byte[] bytes = persistStorage.get(JOBS, key);
     Assertions.assertNull(bytes);
+  }
+
+  @Test
+  @DisplayName("multiRemove-jobs")
+  void test44() {
+    List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
+    for (int i = 0; i < 1000; i++) {
+      byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+      byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
+      kvPairs.add(new KvPair<>(key, value));
+    }
+    persistStorage.putAll(JOBS, kvPairs);
+    List<byte[]> keys = kvPairs.stream().map(KvPair::key).toList();
+    persistStorage.multiRemove(JOBS, keys);
+    Assertions.assertTrue(
+        persistStorage.multiGet(JOBS, keys).stream().allMatch(kvPair -> kvPair.value() == null));
+  }
+
+  @Test
+  @DisplayName("multiRemove")
+  void test444() {
+    List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
+    for (int i = 0; i < 1000; i++) {
+      byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+      byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
+      kvPairs.add(new KvPair<>(key, value));
+    }
+    persistStorage.putAll(kvPairs);
+    List<byte[]> keys = kvPairs.stream().map(KvPair::key).toList();
+    persistStorage.multiRemove(keys);
+    Assertions.assertTrue(
+        persistStorage.multiGet(keys).stream().allMatch(kvPair -> kvPair.value() == null));
+  }
+
+  @Test
+  @DisplayName("multiGet")
+  void test5() {
+    List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
+    for (int i = 0; i < 1000; i++) {
+      byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+      byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
+      kvPairs.add(new KvPair<>(key, value));
+    }
+    persistStorage.putAll(kvPairs);
+
+    List<KvPair<byte[], byte[]>> kvPairs1 =
+        persistStorage.multiGet(kvPairs.stream().map(KvPair::key).collect(Collectors.toList()));
+
+    Assertions.assertEquals(kvPairs1.size(), kvPairs.size());
+
+    for (int i = 0; i < kvPairs1.size(); i++) {
+      KvPair<byte[], byte[]> kvPair1 = kvPairs1.get(i);
+      KvPair<byte[], byte[]> kvPair = kvPairs.get(i);
+      Assertions.assertTrue(
+          Arrays.equals(kvPair1.key(), kvPair.key())
+              && Arrays.equals(kvPair1.value(), kvPair.value()));
+    }
+  }
+
+  @Test
+  @DisplayName("multiGet-jobs")
+  void test55() {
+    List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
+    for (int i = 0; i < 1000; i++) {
+      byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+      byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
+      kvPairs.add(new KvPair<>(key, value));
+    }
+    persistStorage.putAll(JOBS, kvPairs);
+
+    List<KvPair<byte[], byte[]>> kvPairs1 =
+        persistStorage.multiGet(
+            JOBS, kvPairs.stream().map(KvPair::key).collect(Collectors.toList()));
+
+    Assertions.assertEquals(kvPairs1.size(), kvPairs.size());
+
+    for (int i = 0; i < kvPairs1.size(); i++) {
+      KvPair<byte[], byte[]> kvPair1 = kvPairs1.get(i);
+      KvPair<byte[], byte[]> kvPair = kvPairs.get(i);
+      Assertions.assertTrue(
+          Arrays.equals(kvPair1.key(), kvPair.key())
+              && Arrays.equals(kvPair1.value(), kvPair.value()));
+    }
+  }
+
+  @Test
+  @DisplayName("create-column-family")
+  void test6() {
+    String columnFamilyName = "cf1";
+    persistStorage.createColumnFamily(columnFamilyName);
+    byte[] key = RandomStringUtils.random(1000).getBytes(UTF_8);
+    byte[] value = RandomStringUtils.random(2000).getBytes(UTF_8);
+    persistStorage.put(columnFamilyName, key, value);
+    byte[] bytes = persistStorage.get(columnFamilyName, key);
+    Assertions.assertArrayEquals(value, bytes);
+  }
+
+  @Test
+  @DisplayName("drop-column-family")
+  void test7() {
+    String columnFamilyName = "cf2";
+    persistStorage.createColumnFamily(columnFamilyName);
+    byte[] key = RandomStringUtils.random(2000).getBytes(UTF_8);
+    byte[] value = RandomStringUtils.random(2000).getBytes(UTF_8);
+    persistStorage.put(columnFamilyName, key, value);
+    byte[] bytes = persistStorage.get(columnFamilyName, key);
+    Assertions.assertArrayEquals(value, bytes);
+
+    persistStorage.deleteColumnFamily(columnFamilyName);
+
+    Assertions.assertThrows(Exception.class, () -> persistStorage.get(columnFamilyName, key));
   }
 }

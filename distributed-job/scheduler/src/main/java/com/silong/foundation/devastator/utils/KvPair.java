@@ -22,7 +22,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * kV对
+ * key<--->value对
  *
  * @param <K> key type
  * @param <V> value type

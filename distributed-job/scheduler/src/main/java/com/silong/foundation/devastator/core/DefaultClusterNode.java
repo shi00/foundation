@@ -40,30 +40,30 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
   @Serial private static final long serialVersionUID = 0L;
 
   /** 集群节点信息 */
-  private final ClusterNodeUUID clusterNodeUUID;
+  private final ClusterNodeUUID clusterNodeUuid;
 
   /**
    * 构造方法
    *
-   * @param clusterNodeUUID 节点信息
+   * @param clusterNodeUuid 节点信息
    */
-  public DefaultClusterNode(@NonNull ClusterNodeUUID clusterNodeUUID) {
-    this.clusterNodeUUID = clusterNodeUUID;
+  public DefaultClusterNode(@NonNull ClusterNodeUUID clusterNodeUuid) {
+    this.clusterNodeUuid = clusterNodeUuid;
   }
 
   @Override
   public ClusterNodeRole role() {
-    return ClusterNodeRole.find(clusterNodeUUID.clusterNodeInfo().getRole());
+    return ClusterNodeRole.find(clusterNodeUuid.clusterNodeInfo().getRole());
   }
 
   @Override
   public String version() {
-    return Version.print((short) clusterNodeUUID.clusterNodeInfo().getVersion());
+    return Version.print((short) clusterNodeUuid.clusterNodeInfo().getVersion());
   }
 
   @Override
   public String hostName() {
-    return clusterNodeUUID.clusterNodeInfo().getHostName();
+    return clusterNodeUuid.clusterNodeInfo().getHostName();
   }
 
   @Override
@@ -78,13 +78,13 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
 
   @Override
   public ClusterNodeUUID uuid() {
-    return clusterNodeUUID;
+    return clusterNodeUuid;
   }
 
   @Nullable
   @Override
   public <T> T attribute(String attributeName) {
-    return (T) clusterNodeUUID.clusterNodeInfo().getAttributesMap().get(attributeName);
+    return (T) clusterNodeUuid.clusterNodeInfo().getAttributesMap().get(attributeName);
   }
 
   @Override

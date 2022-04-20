@@ -22,6 +22,7 @@ import com.silong.foundation.devastator.PersistStorage;
 import com.silong.foundation.devastator.config.PersistStorageConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
 import com.silong.foundation.devastator.utils.KvPair;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.rocksdb.*;
 
 import java.io.File;
@@ -40,11 +41,13 @@ import static org.rocksdb.CompressionType.ZSTD_COMPRESSION;
  * @version 1.0.0
  * @since 2022-04-10 17:52
  */
-public class RocksDBPersistStorage implements PersistStorage {
+@SuppressFBWarnings({"PATH_TRAVERSAL_IN"})
+public class RocksDbPersistStorage implements PersistStorage {
 
   @Serial private static final long serialVersionUID = 0L;
 
-  private static final String DEFAULT_COLUMN_FAMILY_NAME = "default";
+  /** 默认列族 */
+  public static final String DEFAULT_COLUMN_FAMILY_NAME = "default";
 
   static {
     RocksDB.loadLibrary();
@@ -71,7 +74,7 @@ public class RocksDBPersistStorage implements PersistStorage {
    *
    * @param config 持久化存储配置
    */
-  public RocksDBPersistStorage(PersistStorageConfig config) {
+  public RocksDbPersistStorage(PersistStorageConfig config) {
     validate(config == null, "config must not be null.");
     blockCache = new LRUCache(config.blockCacheCapacity());
     bloomFilter = new BloomFilter(config.bloomFilterBitsPerKey(), false);
@@ -251,8 +254,7 @@ public class RocksDBPersistStorage implements PersistStorage {
   @Override
   public void multiRemove(String columnFamilyName, List<byte[]> keys) {
     validateColumnFamily(columnFamilyName);
-    validate(
-        keys == null || ((Collection<byte[]>) keys).isEmpty(), "keys must not be null or empty.");
+    validate(keys == null || keys.isEmpty(), "keys must not be null or empty.");
     validateKeysContainsNullKey(keys);
     try (WriteOptions writeOptions = new WriteOptions()) {
       try (WriteBatch batch = new WriteBatch()) {
@@ -295,12 +297,13 @@ public class RocksDBPersistStorage implements PersistStorage {
   @Override
   public List<KvPair<byte[], byte[]>> multiGet(String columnFamilyName, List<byte[]> keys) {
     validateColumnFamily(columnFamilyName);
-    validate(
-        keys == null || ((Collection<byte[]>) keys).isEmpty(), "keys must not be null or empty.");
+    validate(keys == null || keys.isEmpty(), "keys must not be null or empty.");
     validateKeysContainsNullKey(keys);
+    ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
+    List<ColumnFamilyHandle> handles =
+        IntStream.range(0, keys.size()).mapToObj(i -> columnFamilyHandle).toList();
     try {
-      ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
-      List<byte[]> values = rocksDB.multiGetAsList(List.of(columnFamilyHandle), keys);
+      List<byte[]> values = rocksDB.multiGetAsList(handles, keys);
       return IntStream.range(0, keys.size())
           .mapToObj(i -> new KvPair<>(keys.get(i), values.get(i)))
           .toList();
