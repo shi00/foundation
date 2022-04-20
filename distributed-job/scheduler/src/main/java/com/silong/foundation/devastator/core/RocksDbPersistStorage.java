@@ -166,7 +166,8 @@ public class RocksDbPersistStorage implements PersistStorage {
     validate(startKey == null, "startKey must not be null.");
     validate(endKey == null, "endKey must not be null.");
     try {
-      rocksDB.deleteRange(startKey, endKey);
+      ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
+      rocksDB.deleteRange(columnFamilyHandle, startKey, endKey);
     } catch (RocksDBException e) {
       throw new GeneralException(e);
     }

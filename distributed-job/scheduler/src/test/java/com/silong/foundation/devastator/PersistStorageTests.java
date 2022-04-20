@@ -22,16 +22,16 @@ import com.silong.foundation.devastator.config.PersistStorageConfig;
 import com.silong.foundation.devastator.core.RocksDbPersistStorage;
 import com.silong.foundation.devastator.utils.KvPair;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static com.silong.foundation.devastator.utils.TypeConverter.LONG_TO_BYTES;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -59,6 +59,11 @@ public class PersistStorageTests {
   void clean() {
     persistStorage.deleteColumnFamily(JOBS);
     persistStorage.createColumnFamily(JOBS);
+  }
+
+  @AfterAll
+  static void cleanUp() throws IOException {
+    persistStorage.close();
   }
 
   @Test
@@ -227,6 +232,8 @@ public class PersistStorageTests {
     persistStorage.put(columnFamilyName, key, value);
     byte[] bytes = persistStorage.get(columnFamilyName, key);
     Assertions.assertArrayEquals(value, bytes);
+
+    persistStorage.deleteColumnFamily(columnFamilyName);
   }
 
   @Test
@@ -243,5 +250,54 @@ public class PersistStorageTests {
     persistStorage.deleteColumnFamily(columnFamilyName);
 
     Assertions.assertThrows(Exception.class, () -> persistStorage.get(columnFamilyName, key));
+  }
+
+  @Test
+  @DisplayName("delete-range")
+  void test8() {
+    List<byte[]> keys =
+        IntStream.range(0, 1000)
+            .mapToObj(
+                i -> {
+                  try {
+                    return LONG_TO_BYTES.to((long) i);
+                  } catch (IOException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .toList();
+    keys.forEach(key -> persistStorage.put(key, RandomStringUtils.random(100).getBytes(UTF_8)));
+    persistStorage.deleteRange(keys.get(0), keys.get(keys.size() - 1));
+
+    List<KvPair<byte[], byte[]>> kvPairs = persistStorage.multiGet(keys);
+    for (int i = 0; i < 999; i++) {
+      Assertions.assertNull(kvPairs.get(0).value());
+    }
+    Assertions.assertArrayEquals(kvPairs.get(999).value(), persistStorage.get(keys.get(999)));
+  }
+
+  @Test
+  @DisplayName("delete-range-jobs")
+  void test88() {
+    List<byte[]> keys =
+        IntStream.range(0, 1000)
+            .mapToObj(
+                i -> {
+                  try {
+                    return LONG_TO_BYTES.to((long) i);
+                  } catch (IOException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .toList();
+    keys.forEach(
+        key -> persistStorage.put(JOBS, key, RandomStringUtils.random(100).getBytes(UTF_8)));
+    persistStorage.deleteRange(JOBS, keys.get(0), keys.get(keys.size() - 1));
+
+    List<KvPair<byte[], byte[]>> kvPairs = persistStorage.multiGet(JOBS, keys);
+    for (int i = 0; i < 999; i++) {
+      Assertions.assertNull(kvPairs.get(0).value());
+    }
+    Assertions.assertArrayEquals(kvPairs.get(999).value(), persistStorage.get(JOBS, keys.get(999)));
   }
 }
