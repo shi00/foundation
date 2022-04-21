@@ -19,9 +19,11 @@
 package com.silong.foundation.devastator;
 
 import com.silong.foundation.devastator.utils.KvPair;
+import com.silong.foundation.devastator.utils.Tuple;
 
 import java.io.Closeable;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -78,6 +80,13 @@ public interface PersistStorage extends Closeable, Serializable {
   void multiRemove(String columnFamilyName, List<byte[]> keys);
 
   /**
+   * 删除指定列族中的key对应的值
+   *
+   * @param keys 列族和key的Tuple列表
+   */
+  void multiRemoveAll(List<Tuple<String, byte[]>> keys);
+
+  /**
    * 在default ColumnFamily根据key查询value
    *
    * @param key key
@@ -112,6 +121,14 @@ public interface PersistStorage extends Closeable, Serializable {
   List<KvPair<byte[], byte[]>> multiGet(String columnFamilyName, List<byte[]> keys);
 
   /**
+   * 从不同列族查询结果
+   *
+   * @param keys 列族与key列表
+   * @return 查询结果
+   */
+  List<KvPair<Tuple<String, byte[]>, byte[]>> multiGetAll(List<Tuple<String, byte[]>> keys);
+
+  /**
    * 在default ColumnFamily保存kv
    *
    * @param key key
@@ -144,6 +161,13 @@ public interface PersistStorage extends Closeable, Serializable {
   void putAll(String columnFamilyName, List<KvPair<byte[], byte[]>> kvPairs);
 
   /**
+   * key,value保存到指定列族
+   *
+   * @param columnFamilyNameWithKvPairs 列族与kvpair列表
+   */
+  void putAllWith(List<Tuple<String, KvPair<byte[], byte[]>>> columnFamilyNameWithKvPairs);
+
+  /**
    * 删除default列族中的起始key和结束key之间的所有值
    *
    * @param startKey 起始key，includes
@@ -159,4 +183,11 @@ public interface PersistStorage extends Closeable, Serializable {
    * @param endKey 结束Key，excludes
    */
   void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey);
+
+  /**
+   * 获取当前rocksdb中所有存在的列族名称列表
+   *
+   * @return 列族名称列表
+   */
+  Collection<String> getAllColumnFamilyNames();
 }

@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator.config;
 
 import lombok.Data;
+import lombok.NonNull;
 import lombok.experimental.Accessors;
 import org.rocksdb.StatsLevel;
 
@@ -28,6 +29,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.apache.commons.lang3.SystemUtils.getUserDir;
@@ -52,14 +54,11 @@ public class PersistStorageConfig implements Serializable {
   public static final String DEFAULT_PERSIST_DATA_PATH =
       getUserDir().toPath().resolve("devastator-data").toFile().getAbsolutePath();
 
-  /** jobs列族 */
-  public static final String JOBS_COLUMN_FAMILY = "jobs";
-
   /** 持久化数据保存路径 */
   @NotEmpty private String persistDataPath = DEFAULT_PERSIST_DATA_PATH;
 
-  /** 列族名列表 */
-  @NotEmpty @Valid private List<@NotEmpty String> columnFamilyNames = List.of(JOBS_COLUMN_FAMILY);
+  /** 列族名列表，不指定则只有default列族 */
+  @NonNull @Valid private List<@NotEmpty String> columnFamilyNames = new LinkedList<>();
 
   /** memtable memory budget. Default: 32MB */
   @Positive private long memtableMemoryBudget = 32 * MB;

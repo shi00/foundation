@@ -22,6 +22,7 @@ import com.silong.foundation.devastator.PersistStorage;
 import com.silong.foundation.devastator.config.PersistStorageConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
 import com.silong.foundation.devastator.utils.KvPair;
+import com.silong.foundation.devastator.utils.Tuple;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.rocksdb.*;
 
@@ -31,6 +32,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.rocksdb.CompressionType.LZ4_COMPRESSION;
 import static org.rocksdb.CompressionType.ZSTD_COMPRESSION;
 import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
@@ -165,6 +167,11 @@ public class RocksDbPersistStorage implements PersistStorage {
   }
 
   @Override
+  public void deleteRange(byte[] startKey, byte[] endKey) {
+    deleteRange(DEFAULT_COLUMN_FAMILY_NAME, startKey, endKey);
+  }
+
+  @Override
   public void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey) {
     validateColumnFamily(columnFamilyName);
     validate(startKey == null, "startKey must not be null.");
@@ -182,6 +189,7 @@ public class RocksDbPersistStorage implements PersistStorage {
    *
    * @return 列族名称列表
    */
+  @Override
   public Collection<String> getAllColumnFamilyNames() {
     return columnFamilyHandlesMap.keySet();
   }
@@ -194,10 +202,6 @@ public class RocksDbPersistStorage implements PersistStorage {
     if (invalid) {
       throw new IllegalArgumentException(s);
     }
-  }
-
-  private void validateKeysContainsNullKey(Collection<byte[]> keys) {
-    validate(keys.stream().anyMatch(Objects::isNull), "Keys cannot contain any null key.");
   }
 
   private void validateColumnFamily(String columnFamilyName) {
@@ -258,14 +262,22 @@ public class RocksDbPersistStorage implements PersistStorage {
 
   @Override
   public void multiRemove(String columnFamilyName, List<byte[]> keys) {
-    validateColumnFamily(columnFamilyName);
+    validate(keys == null, "keys must not be null.");
+    multiRemoveAll(keys.stream().map(key -> new Tuple<>(columnFamilyName, key)).toList());
+  }
+
+  @Override
+  public void multiRemoveAll(List<Tuple<String, byte[]>> keys) {
     validate(keys == null || keys.isEmpty(), "keys must not be null or empty.");
-    validateKeysContainsNullKey(keys);
     try (WriteOptions writeOptions = new WriteOptions()) {
       try (WriteBatch batch = new WriteBatch()) {
-        ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
-        for (byte[] key : keys) {
-          batch.delete(columnFamilyHandle, key);
+        for (Tuple<String, byte[]> tuple : keys) {
+          byte[] key = tuple.t2();
+          String columnFamilyName = tuple.t1();
+          if (key == null || isEmpty(columnFamilyName)) {
+            continue;
+          }
+          batch.delete(findColumnFamilyHandle(columnFamilyName), key);
         }
         rocksDB.write(writeOptions, batch);
       }
@@ -301,14 +313,25 @@ public class RocksDbPersistStorage implements PersistStorage {
 
   @Override
   public List<KvPair<byte[], byte[]>> multiGet(String columnFamilyName, List<byte[]> keys) {
-    validateColumnFamily(columnFamilyName);
+    validate(keys == null, "keys must not be null.");
+    return multiGetAll(keys.stream().map(key -> new Tuple<>(columnFamilyName, key)).toList())
+        .stream()
+        .map(kvPair -> new KvPair<>(kvPair.key().t2(), kvPair.value()))
+        .toList();
+  }
+
+  @Override
+  public List<KvPair<Tuple<String, byte[]>, byte[]>> multiGetAll(List<Tuple<String, byte[]>> keys) {
     validate(keys == null || keys.isEmpty(), "keys must not be null or empty.");
-    validateKeysContainsNullKey(keys);
-    ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
-    List<ColumnFamilyHandle> handles =
-        IntStream.range(0, keys.size()).mapToObj(i -> columnFamilyHandle).toList();
+    List<ColumnFamilyHandle> columnFamilyHandles =
+        keys.stream()
+            .filter(t -> isNotEmpty(t.t1()))
+            .map(t -> findColumnFamilyHandle(t.t1()))
+            .toList();
+    List<byte[]> keys1 = keys.stream().filter(t -> t.t2() != null).map(Tuple::t2).toList();
+    assert keys1.size() == columnFamilyHandles.size();
     try {
-      List<byte[]> values = rocksDB.multiGetAsList(handles, keys);
+      List<byte[]> values = rocksDB.multiGetAsList(columnFamilyHandles, keys1);
       return IntStream.range(0, keys.size())
           .mapToObj(i -> new KvPair<>(keys.get(i), values.get(i)))
           .toList();
@@ -340,26 +363,34 @@ public class RocksDbPersistStorage implements PersistStorage {
 
   @Override
   public void putAll(String columnFamilyName, List<KvPair<byte[], byte[]>> kvPairs) {
-    validateColumnFamily(columnFamilyName);
-    validate(kvPairs == null || kvPairs.isEmpty(), "kvPairs must not be null or empty.");
+    validate(kvPairs == null, "kvPairs must not be null.");
+    putAllWith(kvPairs.stream().map(kvPair -> new Tuple<>(columnFamilyName, kvPair)).toList());
+  }
+
+  @Override
+  public void putAllWith(List<Tuple<String, KvPair<byte[], byte[]>>> columnFamilyNameWithKvPairs) {
     validate(
-        kvPairs.stream().anyMatch(KvPair::isKeyOrValueNull),
-        "kvPairs cannot contain any null key or null value.");
+        columnFamilyNameWithKvPairs == null || columnFamilyNameWithKvPairs.isEmpty(),
+        "kvPairs must not be null or empty.");
     try (WriteOptions writeOptions = new WriteOptions()) {
       try (WriteBatch batch = new WriteBatch()) {
-        ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
-        for (KvPair<byte[], byte[]> kvPair : kvPairs) {
-          batch.put(columnFamilyHandle, kvPair.key(), kvPair.value());
+        for (Tuple<String, KvPair<byte[], byte[]>> tuple : columnFamilyNameWithKvPairs) {
+          String columnFamilyName = tuple.t1();
+          KvPair<byte[], byte[]> kvPair = tuple.t2();
+          byte[] key;
+          byte[] value;
+          if (columnFamilyName == null
+              || kvPair == null
+              || (key = kvPair.key()) == null
+              || (value = kvPair.value()) == null) {
+            continue;
+          }
+          batch.put(findColumnFamilyHandle(columnFamilyName), key, value);
         }
         rocksDB.write(writeOptions, batch);
       }
     } catch (RocksDBException e) {
       throw new GeneralException(e);
     }
-  }
-
-  @Override
-  public void deleteRange(byte[] startKey, byte[] endKey) {
-    deleteRange(DEFAULT_COLUMN_FAMILY_NAME, startKey, endKey);
   }
 }

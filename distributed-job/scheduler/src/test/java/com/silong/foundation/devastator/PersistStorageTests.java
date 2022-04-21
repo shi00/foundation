@@ -27,10 +27,12 @@ import org.junit.jupiter.api.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
 import static com.silong.foundation.devastator.utils.TypeConverter.LONG_TO_BYTES;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -64,6 +66,19 @@ public class PersistStorageTests {
   @AfterAll
   static void cleanUp() throws IOException {
     persistStorage.close();
+  }
+
+  @Test
+  @DisplayName("ColumnFamilyExists")
+  void test() {
+    String aaaa = "AAAA";
+    persistStorage.createColumnFamily(aaaa);
+    Collection<String> allColumnFamilyNames = persistStorage.getAllColumnFamilyNames();
+    Assertions.assertEquals(allColumnFamilyNames.size(), 3);
+    Assertions.assertTrue(
+        allColumnFamilyNames.contains(JOBS)
+            && allColumnFamilyNames.contains(DEFAULT_COLUMN_FAMILY_NAME)
+            && allColumnFamilyNames.contains(aaaa));
   }
 
   @Test
