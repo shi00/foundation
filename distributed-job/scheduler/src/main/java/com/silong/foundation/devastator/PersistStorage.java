@@ -18,13 +18,14 @@
  */
 package com.silong.foundation.devastator;
 
-import com.silong.foundation.devastator.utils.KvPair;
-import com.silong.foundation.devastator.utils.Tuple;
+import com.silong.foundation.devastator.model.KvPair;
+import com.silong.foundation.devastator.model.Tuple;
 
 import java.io.Closeable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * 持久化存储
@@ -190,4 +191,19 @@ public interface PersistStorage extends Closeable, Serializable {
    * @return 列族名称列表
    */
   Collection<String> getAllColumnFamilyNames();
+
+  /**
+   * 遍历default列族内保存的所有kv pair
+   *
+   * @param consumer 消费者
+   */
+  void iterate(BiConsumer<byte[], byte[]> consumer);
+
+  /**
+   * 遍历列族内保存的所有kv pair
+   *
+   * @param columnFamilyName 列族名
+   * @param consumer 消费者
+   */
+  void iterate(String columnFamilyName, BiConsumer<byte[], byte[]> consumer);
 }

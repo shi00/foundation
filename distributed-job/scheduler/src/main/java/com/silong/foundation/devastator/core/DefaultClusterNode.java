@@ -26,13 +26,13 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.jgroups.Version;
-import org.jgroups.util.UUID;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.silong.foundation.devastator.utils.TypeConverter.STRING_TO_BYTES;
@@ -99,7 +99,7 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
 
   @Override
   @NonNull
-  public <T extends UUID> T uuid() {
+  public <T extends Comparable<T>> T uuid() {
     return (T) clusterNode;
   }
 
@@ -126,6 +126,27 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
   @Override
   public Map<String, byte[]> attributes() {
     return clusterNode.clusterNodeInfo().getAttributesMap().entrySet().stream()
-        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toByteArray()));
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toByteArray()));
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(clusterNode);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj instanceof DefaultClusterNode node) {
+      return Objects.equals(clusterNode, node.clusterNode);
+    }
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return clusterNode.toString();
   }
 }

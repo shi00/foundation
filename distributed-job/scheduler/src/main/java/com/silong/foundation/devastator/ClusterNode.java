@@ -22,7 +22,6 @@ import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.Getter;
-import org.jgroups.util.UUID;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -123,7 +122,7 @@ public interface ClusterNode extends Serializable {
    * @return id
    */
   @NonNull
-  <T extends UUID> T uuid();
+  <T extends Comparable<T>> T uuid();
 
   /**
    * 根据属性名获取属性值

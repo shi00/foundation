@@ -20,7 +20,6 @@ package com.silong.foundation.devastator.core;
 
 import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.*;
-import com.silong.foundation.devastator.allocator.RendezvousAllocator;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
 import com.silong.foundation.devastator.protobuf.Devastator.ClusterNodeInfo;
@@ -30,12 +29,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 import org.jgroups.*;
 import org.jgroups.protocols.TP;
-import org.jgroups.protocols.UDP;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -102,7 +102,7 @@ public class DefaultDistributedEngine
         .clusterNodeInfo(
             ClusterNodeInfo.newBuilder()
                 .setVersion(Version.version)
-                //                .putAllAttributes(config.clusterNodeAttributes())
+                .putAllAttributes(convert(config.clusterNodeAttributes()))
                 .setInstanceName(config.instanceName())
                 .setHostName(SystemUtils.getHostName())
                 .setRole(config.clusterNodeRole().getValue())
@@ -129,6 +129,13 @@ public class DefaultDistributedEngine
         return getClass().getClassLoader().getResource(confFile);
       }
     }
+  }
+
+  private Map<String, ByteString> convert(Map<String, Object> attributes) {
+    Map<String, ByteString> ret = new LinkedHashMap<>();
+    attributes.forEach((k, v) -> {});
+
+    return ret;
   }
 
   @Override

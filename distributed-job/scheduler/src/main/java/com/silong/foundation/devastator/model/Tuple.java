@@ -16,31 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.utils;
+package com.silong.foundation.devastator.model;
 
 import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * key<--->value对
+ * 二元组
  *
- * @param <K> key type
- * @param <V> value type
+ * @param <T1> 类型
+ * @param <T2> 类型
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-18 22:48
  */
-public record KvPair <K, V> (K key, V value) implements Serializable {
-
+public record Tuple<T1, T2> (T1 t1, T2 t2) implements Serializable {
     @Serial
     private static final long serialVersionUID = 0L;
-
-    /**
-     * key or value is null
-     *
-     * @return true or false
-     */
-    public boolean isKeyOrValueNull() {
-        return key == null || value == null;
-    }
 }

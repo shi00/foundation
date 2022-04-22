@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.allocator;
+package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterDataAllocator;
 import com.silong.foundation.devastator.ClusterNode;

@@ -21,14 +21,15 @@ package com.silong.foundation.devastator.core;
 import com.silong.foundation.devastator.PersistStorage;
 import com.silong.foundation.devastator.config.PersistStorageConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
-import com.silong.foundation.devastator.utils.KvPair;
-import com.silong.foundation.devastator.utils.Tuple;
+import com.silong.foundation.devastator.model.KvPair;
+import com.silong.foundation.devastator.model.Tuple;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.rocksdb.*;
 
 import java.io.File;
 import java.io.Serial;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -192,6 +193,22 @@ public class RocksDbPersistStorage implements PersistStorage {
   @Override
   public Collection<String> getAllColumnFamilyNames() {
     return columnFamilyHandlesMap.keySet();
+  }
+
+  @Override
+  public void iterate(BiConsumer<byte[], byte[]> consumer) {
+    iterate(DEFAULT_COLUMN_FAMILY_NAME, consumer);
+  }
+
+  @Override
+  public void iterate(String columnFamilyName, BiConsumer<byte[], byte[]> consumer) {
+    validateColumnFamily(columnFamilyName);
+    validate(consumer == null, "consumer must not be null.");
+    try (RocksIterator iterator = rocksDB.newIterator(findColumnFamilyHandle(columnFamilyName))) {
+      for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+        consumer.accept(iterator.key(), iterator.value());
+      }
+    }
   }
 
   private ColumnFamilyHandle findColumnFamilyHandle(String columnFamilyName) {

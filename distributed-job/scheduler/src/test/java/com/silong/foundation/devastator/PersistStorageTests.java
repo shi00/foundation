@@ -20,15 +20,12 @@ package com.silong.foundation.devastator;
 
 import com.silong.foundation.devastator.config.PersistStorageConfig;
 import com.silong.foundation.devastator.core.RocksDbPersistStorage;
-import com.silong.foundation.devastator.utils.KvPair;
+import com.silong.foundation.devastator.model.KvPair;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -79,6 +76,7 @@ public class PersistStorageTests {
         allColumnFamilyNames.contains(JOBS)
             && allColumnFamilyNames.contains(DEFAULT_COLUMN_FAMILY_NAME)
             && allColumnFamilyNames.contains(aaaa));
+    persistStorage.deleteColumnFamily(aaaa);
   }
 
   @Test
@@ -314,5 +312,64 @@ public class PersistStorageTests {
       Assertions.assertNull(kvPairs.get(0).value());
     }
     Assertions.assertArrayEquals(kvPairs.get(999).value(), persistStorage.get(JOBS, keys.get(999)));
+  }
+
+  @Test
+  @DisplayName("iterate-database-columnfamily")
+  void test9() {
+    List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
+    for (int i = 0; i < 1000; i++) {
+      byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+      byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
+      kvPairs.add(new KvPair<>(key, value));
+    }
+    persistStorage.putAll(JOBS, kvPairs);
+
+    List<KvPair<byte[], byte[]>> kvPairs1 = new ArrayList<>(1000);
+    persistStorage.iterate(JOBS, (k, v) -> kvPairs1.add(new KvPair<>(k, v)));
+
+    Assertions.assertEquals(kvPairs1.size(), kvPairs.size());
+    for (int i = 0; i < 1000; i++) {
+      KvPair<byte[], byte[]> pair = kvPairs.get(i);
+      Assertions.assertTrue(
+          kvPairs1.stream()
+              .anyMatch(
+                  pair1 ->
+                      Arrays.equals(pair.key(), pair1.key())
+                          && Arrays.equals(pair.value(), pair1.value())));
+    }
+  }
+
+  @Test
+  @DisplayName("iterate-database")
+  void test99() {
+
+    List<byte[]> keys = new ArrayList<>(1000);
+    persistStorage.iterate(DEFAULT_COLUMN_FAMILY_NAME, (k, v) -> keys.add(k));
+    if (!keys.isEmpty()) {
+      persistStorage.multiRemove(DEFAULT_COLUMN_FAMILY_NAME, keys);
+    }
+
+    List<KvPair<byte[], byte[]>> kvPairs = new ArrayList<>();
+    for (int i = 0; i < 1000; i++) {
+      byte[] key = RandomStringUtils.random(100).getBytes(UTF_8);
+      byte[] value = RandomStringUtils.random(100).getBytes(UTF_8);
+      kvPairs.add(new KvPair<>(key, value));
+    }
+    persistStorage.putAll(kvPairs);
+
+    List<KvPair<byte[], byte[]>> kvPairs1 = new ArrayList<>(1000);
+    persistStorage.iterate((k, v) -> kvPairs1.add(new KvPair<>(k, v)));
+
+    Assertions.assertEquals(kvPairs1.size(), kvPairs.size());
+    for (int i = 0; i < 1000; i++) {
+      KvPair<byte[], byte[]> pair = kvPairs.get(i);
+      Assertions.assertTrue(
+          kvPairs1.stream()
+              .anyMatch(
+                  pair1 ->
+                      Arrays.equals(pair.key(), pair1.key())
+                          && Arrays.equals(pair.value(), pair1.value())));
+    }
   }
 }
