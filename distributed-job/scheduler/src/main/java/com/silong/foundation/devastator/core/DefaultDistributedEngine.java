@@ -22,6 +22,8 @@ import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
+import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
+import com.silong.foundation.devastator.model.Devastator.ClusterState;
 import com.silong.foundation.devastator.model.Devastator.IpAddressInfo;
 import com.silong.foundation.devastator.utils.KryoUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -40,6 +42,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.silong.foundation.devastator.config.ConfiguableProperties.CLUSTER_VIEW_STACK_CAPACITY;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -56,6 +59,10 @@ public class DefaultDistributedEngine
 
   @Serial private static final long serialVersionUID = 0L;
 
+  /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
+  private final Map<Integer, Collection<ClusterNode>> partition2ClusterNodes =
+      new ConcurrentHashMap<>();
+
   /** 集群通信信道 */
   private final JChannel jChannel;
 
@@ -69,10 +76,13 @@ public class DefaultDistributedEngine
   private final PersistStorage persistStorage;
 
   /** 集群视图 */
-  private View lastView;
+  private final Deque<View> clusterViews = new ArrayDeque<>(CLUSTER_VIEW_STACK_CAPACITY);
 
-  /** 分区到节点映射关系 */
-  private final Map<Integer, Collection<ClusterNode>> partition2Nodes = new ConcurrentHashMap<>();
+  /** 集群状态 */
+  private ClusterState clusterState;
+
+  /** 集群节点列表 */
+  private Collection<ClusterNode> clusterNodes;
 
   /**
    * 构造方法
@@ -104,8 +114,8 @@ public class DefaultDistributedEngine
     TP transport = jChannel.getProtocolStack().getTransport();
     return ClusterNodeUUID.random()
         .clusterNodeInfo(
-            com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo.newBuilder()
-                .setVersion(Version.version)
+            ClusterNodeInfo.newBuilder()
+                .setJgVersion(Version.version)
                 .putAllAttributes(convert(config.clusterNodeAttributes()))
                 .setInstanceName(config.instanceName())
                 .setHostName(SystemUtils.getHostName())
@@ -179,25 +189,38 @@ public class DefaultDistributedEngine
 
   @Override
   public void viewAccepted(View newView) {
-    if (lastView == null) {
-      for (int i = 0; i < config.partitionCount(); i++) {
-        //           this.allocator.allocatePartition(i,config.backupNums(),)
-
-      }
-    } else {
-
+    if (clusterViews.size() == CLUSTER_VIEW_STACK_CAPACITY) {
+      clusterViews.removeLast();
     }
-    lastView = newView;
+    clusterViews.push(newView);
+    if (newView instanceof MergeView) {
+
+    } else {
+      clusterNodes = newView.getMembers().stream().map(this::buildClusterNode).toList();
+      for (int i = 0, count = config.partitionCount(); i < count; i++) {
+        partition2ClusterNodes.put(
+            i, allocator.allocatePartition(i, config.backupNums(), clusterNodes, null));
+      }
+    }
+  }
+
+  private ClusterNode buildClusterNode(Address address) {
+    return new DefaultClusterNode((ClusterNodeUUID) address);
   }
 
   @Override
   public void getState(OutputStream output) throws Exception {
-    Receiver.super.getState(output);
+    clusterState =
+        ClusterState.newBuilder()
+            .setPartitions(config.partitionCount())
+            .setClusterName(config.clusterName())
+            .build();
+    clusterState.writeTo(output);
   }
 
   @Override
   public void setState(InputStream input) throws Exception {
-    Receiver.super.setState(input);
+    clusterState = ClusterState.parseFrom(input);
   }
 
   @Override
@@ -225,5 +248,7 @@ public class DefaultDistributedEngine
     if (jChannel != null) {
       jChannel.close();
     }
+    partition2ClusterNodes.clear();
+    clusterViews.clear();
   }
 }

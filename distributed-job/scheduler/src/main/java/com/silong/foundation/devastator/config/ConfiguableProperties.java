@@ -37,4 +37,8 @@ public interface ConfiguableProperties {
   /** kryo Output对象池容量，默认：16 */
   int KRYO_OUTPUT_POOL_CAPACITY =
       Integer.parseInt(System.getProperty("kryo.output.pool.capacity", "16"));
+
+  /** 集群视图堆栈最大容量，默认：8 */
+  int CLUSTER_VIEW_STACK_CAPACITY =
+      Integer.parseInt(System.getProperty("cluster-view.stack.capacity", "8"));
 }

@@ -72,7 +72,7 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
 
   @Override
   public String version() {
-    return Version.print((short) clusterNode.clusterNodeInfo().getVersion());
+    return Version.print((short) clusterNode.clusterNodeInfo().getJgVersion());
   }
 
   @Override
