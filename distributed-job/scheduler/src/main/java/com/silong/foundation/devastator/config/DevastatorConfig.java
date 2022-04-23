@@ -51,11 +51,14 @@ public class DevastatorConfig implements Serializable {
   /** 默认jgroups配置文件名 */
   public static final String DEFAULT_JGUDP_CONFIG_FILE = "default-udp.xml";
 
+  /** 默认集群名 */
+  public static final String DEFAULT_CLUSTER = "default-cluster";
+
   /** 实例名，不指定则随机生成一个uuid */
   @NotEmpty private String instanceName = UUID.randomUUID().toString();
 
-  /** 集群名，节点join的集群名，相同集群名配置的节点才能组成一个集群 */
-  @NotEmpty private String clusterName;
+  /** 集群名，节点join的集群名，相同集群名配置的节点才能组成一个集群，默认：default-cluster */
+  @NotEmpty private String clusterName = DEFAULT_CLUSTER;
 
   /** jgroups配置文件，支持classpath，url，file默认： {@code DEFAULT_JGUDP_CONFIG_FILE} */
   @NotEmpty private String configFile = DEFAULT_JGUDP_CONFIG_FILE;

@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.silong.foundation.devastator.protobuf.Devastator.ClusterNodeInfo;
+import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

@@ -22,21 +22,22 @@ import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
-import com.silong.foundation.devastator.protobuf.Devastator.ClusterNodeInfo;
+import com.silong.foundation.devastator.model.Devastator.IpAddressInfo;
+import com.silong.foundation.devastator.utils.KryoUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 import org.jgroups.*;
 import org.jgroups.protocols.TP;
+import org.jgroups.protocols.UDP;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.NetworkInterface;
 import java.net.URL;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.requireNonNull;
@@ -78,7 +79,10 @@ public class DefaultDistributedEngine
    *
    * @param config 引擎配置
    */
-  public DefaultDistributedEngine(@NonNull DevastatorConfig config) {
+  public DefaultDistributedEngine(DevastatorConfig config) {
+    if (config == null) {
+      throw new IllegalArgumentException("config must not be null.");
+    }
     try (InputStream inputStream = requireNonNull(locateConfig(config.configFile())).openStream()) {
       this.config = config;
       this.allocator = new RendezvousAllocator(config.partitionCount());
@@ -100,21 +104,14 @@ public class DefaultDistributedEngine
     TP transport = jChannel.getProtocolStack().getTransport();
     return ClusterNodeUUID.random()
         .clusterNodeInfo(
-            ClusterNodeInfo.newBuilder()
+            com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo.newBuilder()
                 .setVersion(Version.version)
                 .putAllAttributes(convert(config.clusterNodeAttributes()))
                 .setInstanceName(config.instanceName())
                 .setHostName(SystemUtils.getHostName())
                 .setRole(config.clusterNodeRole().getValue())
-                //                .setIpAddress(
-                //                    ByteString.copyFrom(
-                //                        transport.getClass() == UDP.class
-                //                            ? ((UDP) transport).getMulticastAddress().getAddress()
-                //                            : transport.getBindAddress().getAddress()))
-                //                .setPort(
-                //                    transport.getClass() == UDP.class
-                //                        ? ((UDP) transport).getMulticastPort()
-                //                        : transport.getBindPort())
+                .setBindPort(getBindPort(transport))
+                .addAllAddresses(getAllAddresses(transport))
                 .build());
   }
 
@@ -131,10 +128,47 @@ public class DefaultDistributedEngine
     }
   }
 
+  @SneakyThrows
+  private Collection<IpAddressInfo> getAllAddresses(TP transport) {
+    List<InetAddress> list = new LinkedList<>();
+    Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+    while (interfaces.hasMoreElements()) {
+      NetworkInterface networkInterface = interfaces.nextElement();
+      Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+      while (inetAddresses.hasMoreElements()) {
+        list.add(inetAddresses.nextElement());
+      }
+    }
+    InetAddress bindAddress = getBindAddress(transport);
+    return list.stream()
+        .map(
+            inetAddress ->
+                IpAddressInfo.newBuilder()
+                    .setBind(inetAddress.equals(bindAddress))
+                    .setIpAddress(ByteString.copyFrom(inetAddress.getAddress()))
+                    .build())
+        .toList();
+  }
+
+  private InetAddress getBindAddress(TP transport) {
+    return transport.getClass() == UDP.class
+        ? ((UDP) transport).getMulticastAddress()
+        : transport.getBindAddress();
+  }
+
+  private int getBindPort(TP transport) {
+    return transport.getClass() == UDP.class
+        ? ((UDP) transport).getMulticastPort()
+        : transport.getBindPort();
+  }
+
   private Map<String, ByteString> convert(Map<String, Object> attributes) {
     Map<String, ByteString> ret = new LinkedHashMap<>();
-    attributes.forEach((k, v) -> {});
-
+    for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+      String k = entry.getKey();
+      Object v = entry.getValue();
+      ret.put(k, ByteString.copyFrom(KryoUtils.serialize(v)));
+    }
     return ret;
   }
 

@@ -19,7 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterNode;
-import com.silong.foundation.devastator.protobuf.Devastator.IpAddressInfo;
+import com.silong.foundation.devastator.model.Devastator.IpAddressInfo;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;

@@ -75,6 +75,26 @@ public interface TypeConverter<T, R> {
   }
 
   /**
+   * kryo类型转换器
+   *
+   * @return 对象转换器
+   * @param <T> 对象类型
+   */
+  static <T> TypeConverter<T, byte[]> getKryoTypeConverter() {
+    return new TypeConverter<>() {
+      @Override
+      public byte[] to(T t) {
+        return KryoUtils.serialize(t);
+      }
+
+      @Override
+      public T from(byte[] bytes) {
+        return KryoUtils.deserialize(bytes);
+      }
+    };
+  }
+
+  /**
    * 输出即输入
    *
    * @param <S> 类型
