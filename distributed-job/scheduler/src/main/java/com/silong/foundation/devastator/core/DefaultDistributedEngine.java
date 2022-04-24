@@ -41,8 +41,8 @@ import java.net.NetworkInterface;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 
-import static com.silong.foundation.devastator.config.ConfiguableProperties.CLUSTER_VIEW_STACK_CAPACITY;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -75,9 +75,6 @@ public class DefaultDistributedEngine
   /** 持久化存储 */
   private final PersistStorage persistStorage;
 
-  /** 集群视图 */
-  private final Deque<View> clusterViews = new ArrayDeque<>(CLUSTER_VIEW_STACK_CAPACITY);
-
   /** 集群状态 */
   private ClusterState clusterState;
 
@@ -101,6 +98,7 @@ public class DefaultDistributedEngine
       this.jChannel.setReceiver(this);
       this.jChannel.addAddressGenerator(this::buildClusterNodeInfo);
       this.jChannel.setName(config.instanceName());
+      this.jChannel.setDiscardOwnMessages(true);
       this.jChannel.connect(config.clusterName());
 
       // 获取集群状态
@@ -111,7 +109,7 @@ public class DefaultDistributedEngine
   }
 
   private ClusterNodeUUID buildClusterNodeInfo() {
-    TP transport = jChannel.getProtocolStack().getTransport();
+    TP transport = getTransport();
     return ClusterNodeUUID.random()
         .clusterNodeInfo(
             ClusterNodeInfo.newBuilder()
@@ -121,8 +119,12 @@ public class DefaultDistributedEngine
                 .setHostName(SystemUtils.getHostName())
                 .setRole(config.clusterNodeRole().getValue())
                 .setBindPort(getBindPort(transport))
-                .addAllAddresses(getAllAddresses(transport))
+                .addAllAddresses(getLocalAllAddresses(transport))
                 .build());
+  }
+
+  private TP getTransport() {
+    return jChannel.getProtocolStack().getTransport();
   }
 
   private URL locateConfig(String confFile) throws Exception {
@@ -139,7 +141,7 @@ public class DefaultDistributedEngine
   }
 
   @SneakyThrows
-  private Collection<IpAddressInfo> getAllAddresses(TP transport) {
+  private Collection<IpAddressInfo> getLocalAllAddresses(TP transport) {
     List<InetAddress> list = new LinkedList<>();
     Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
     while (interfaces.hasMoreElements()) {
@@ -175,9 +177,7 @@ public class DefaultDistributedEngine
   private Map<String, ByteString> convert(Map<String, Object> attributes) {
     Map<String, ByteString> ret = new LinkedHashMap<>();
     for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-      String k = entry.getKey();
-      Object v = entry.getValue();
-      ret.put(k, ByteString.copyFrom(KryoUtils.serialize(v)));
+      ret.put(entry.getKey(), ByteString.copyFrom(KryoUtils.serialize(entry.getValue())));
     }
     return ret;
   }
@@ -189,23 +189,27 @@ public class DefaultDistributedEngine
 
   @Override
   public void viewAccepted(View newView) {
-    if (clusterViews.size() == CLUSTER_VIEW_STACK_CAPACITY) {
-      clusterViews.removeLast();
-    }
-    clusterViews.push(newView);
     if (newView instanceof MergeView) {
 
     } else {
+      // 获取集群节点列表
       clusterNodes = newView.getMembers().stream().map(this::buildClusterNode).toList();
-      for (int i = 0, count = config.partitionCount(); i < count; i++) {
-        partition2ClusterNodes.put(
-            i, allocator.allocatePartition(i, config.backupNums(), clusterNodes, null));
-      }
+      // 根据集群节点调整分区分布
+      IntStream.range(0, config.partitionCount())
+          .parallel()
+          .forEach(
+              partitionNo ->
+                  partition2ClusterNodes.put(
+                      partitionNo,
+                      allocator.allocatePartition(
+                          partitionNo, config.backupNums(), clusterNodes, null)));
     }
   }
 
   private ClusterNode buildClusterNode(Address address) {
-    return new DefaultClusterNode((ClusterNodeUUID) address);
+    TP transport = getTransport();
+    return new DefaultClusterNode(
+        (ClusterNodeUUID) address, getBindAddress(transport).getAddress(), getBindPort(transport));
   }
 
   @Override
@@ -249,6 +253,5 @@ public class DefaultDistributedEngine
       jChannel.close();
     }
     partition2ClusterNodes.clear();
-    clusterViews.clear();
   }
 }

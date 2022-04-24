@@ -19,17 +19,18 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.IpAddressInfo;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.StringUtils;
 import org.jgroups.Version;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -37,7 +38,6 @@ import java.util.stream.Collectors;
 
 import static com.silong.foundation.devastator.utils.TypeConverter.STRING_TO_BYTES;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.SystemUtils.getHostName;
 
 /**
  * 默认集群节点实现
@@ -54,15 +54,35 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
   private final ClusterNodeUUID clusterNode;
 
   /**
+   * 绑定地址
+   */
+  private final byte[] bindAddress;
+
+  /**
+   * 绑定端口
+   */
+  private final int bindPort;
+
+  /**
    * 构造方法
    *
    * @param clusterNode 节点信息
+   * @param bindAddress 本地节点绑定地址
+   * @param bindPort 绑定端口
    */
-  public DefaultClusterNode(ClusterNodeUUID clusterNode) {
+  public DefaultClusterNode(ClusterNodeUUID clusterNode, byte[] bindAddress, int bindPort) {
     if (clusterNode == null) {
       throw new IllegalArgumentException("clusterNode must not be null.");
     }
+    if (bindAddress == null || bindAddress.length == 0) {
+      throw new IllegalArgumentException("bindAddress must not be null or empty.");
+    }
+    if (bindPort < 0 || bindPort > 65535){
+      throw new IllegalArgumentException(String.format("Illegal port: %d", bindPort));
+    }
     this.clusterNode = clusterNode;
+    this.bindAddress = bindAddress;
+    this.bindPort  = bindPort;
   }
 
   @Override
@@ -94,7 +114,10 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
 
   @Override
   public boolean isLocal() {
-    return StringUtils.equals(hostName(), getHostName());
+    ClusterNodeInfo clusterNodeInfo = clusterNode.clusterNodeInfo();
+    return bindPort == clusterNodeInfo.getBindPort()
+            &&clusterNodeInfo.getAddressesList().stream().anyMatch(ipAddressInfo -> ipAddressInfo.getBind()
+            && Arrays.equals(ipAddressInfo.getIpAddress().toByteArray(), bindAddress));
   }
 
   @Override
