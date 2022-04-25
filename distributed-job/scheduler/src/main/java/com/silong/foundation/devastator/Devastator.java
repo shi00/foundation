@@ -19,7 +19,6 @@
 package com.silong.foundation.devastator;
 
 import com.silong.foundation.devastator.config.DevastatorConfig;
-import com.silong.foundation.devastator.config.ScheduledExecutorConfig;
 
 import java.io.Closeable;
 import java.io.Serializable;
@@ -34,14 +33,7 @@ import java.io.Serializable;
 public interface Devastator extends Serializable, Closeable {
 
   /**
-   * 实例名
-   *
-   * @return 实例名
-   */
-  String name();
-
-  /**
-   * 获取集群配置
+   * 获取配置
    *
    * @return 配置
    */

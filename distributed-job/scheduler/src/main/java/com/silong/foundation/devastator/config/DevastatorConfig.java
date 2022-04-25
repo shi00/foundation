@@ -27,6 +27,7 @@ import javax.validation.constraints.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static com.silong.foundation.devastator.ClusterDataAllocator.DEFAULT_PARTITION_SIZE;
 import static com.silong.foundation.devastator.ClusterDataAllocator.MAX_PARTITIONS_COUNT;
@@ -71,12 +72,18 @@ public class DevastatorConfig implements Serializable {
   /** 数据副本数量，默认：1 */
   @Positive private int backupNums = 1;
 
+  /** 版本号 */
+  @NotEmpty private String version = "v0.0.1";
+
+  /** 集群状态同步超时时间，默认：10000ms */
+  @Positive private long clusterStateSyncTimeout = TimeUnit.SECONDS.toMillis(10);
+
   /** 节点角色，默认: WORKER */
   @NotNull private ClusterNodeRole clusterNodeRole = WORKER;
 
   /** 节点属性 */
   @Valid @NotNull
-  private Map<@NotEmpty String, @NotNull Object> clusterNodeAttributes = new LinkedHashMap<>();
+  private Map<@NotEmpty String, @NotEmpty String> clusterNodeAttributes = new LinkedHashMap<>();
 
   /** 持久化存储配置 */
   @Valid @NotNull private PersistStorageConfig persistStorageConfig = new PersistStorageConfig();

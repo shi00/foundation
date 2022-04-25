@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.devastator;
 
-import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.Getter;
@@ -125,17 +124,6 @@ public interface ClusterNode extends Serializable {
   <T extends Comparable<T>> T uuid();
 
   /**
-   * 根据属性名获取属性值
-   *
-   * @param attributeName 属性名
-   * @param converter 类型转换器
-   * @param <T> 属性值类型
-   * @return 属性值
-   */
-  @Nullable
-  <T> T attribute(String attributeName, TypeConverter<T, byte[]> converter);
-
-  /**
    * 获取节点属性
    *
    * @param attributeName 属性名
@@ -149,5 +137,5 @@ public interface ClusterNode extends Serializable {
    *
    * @return 属性集合
    */
-  Map<String, byte[]> attributes();
+  Map<String, String> attributes();
 }

@@ -18,26 +18,20 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
-import com.silong.foundation.devastator.model.Devastator.IpAddressInfo;
-import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.SneakyThrows;
-import org.jgroups.Version;
+import org.jgroups.Address;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static com.silong.foundation.devastator.utils.TypeConverter.STRING_TO_BYTES;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * 默认集群节点实现
@@ -53,71 +47,58 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
   /** 集群节点信息 */
   private final ClusterNodeUUID clusterNode;
 
-  /**
-   * 绑定地址
-   */
-  private final byte[] bindAddress;
-
-  /**
-   * 绑定端口
-   */
-  private final int bindPort;
+  /** 本地地址 */
+  private final Address localAddress;
 
   /**
    * 构造方法
    *
    * @param clusterNode 节点信息
-   * @param bindAddress 本地节点绑定地址
-   * @param bindPort 绑定端口
+   * @param localAddress 节点地址
    */
-  public DefaultClusterNode(ClusterNodeUUID clusterNode, byte[] bindAddress, int bindPort) {
+  public DefaultClusterNode(ClusterNodeUUID clusterNode, Address localAddress) {
     if (clusterNode == null) {
       throw new IllegalArgumentException("clusterNode must not be null.");
     }
-    if (bindAddress == null || bindAddress.length == 0) {
-      throw new IllegalArgumentException("bindAddress must not be null or empty.");
-    }
-    if (bindPort < 0 || bindPort > 65535){
-      throw new IllegalArgumentException(String.format("Illegal port: %d", bindPort));
+    if (localAddress == null) {
+      throw new IllegalArgumentException("localAddress must not be null.");
     }
     this.clusterNode = clusterNode;
-    this.bindAddress = bindAddress;
-    this.bindPort  = bindPort;
+    this.localAddress = localAddress;
+  }
+
+  private ClusterNodeInfo getClusterNodeInfo() {
+    return clusterNode.clusterNodeInfo();
   }
 
   @Override
   public ClusterNodeRole role() {
-    return ClusterNodeRole.find(clusterNode.clusterNodeInfo().getRole());
+    return ClusterNodeRole.find(getClusterNodeInfo().getRole());
   }
 
   @Override
   public String version() {
-    return Version.print((short) clusterNode.clusterNodeInfo().getJgVersion());
+    return getClusterNodeInfo().getVersion();
   }
 
   @Override
   public String hostName() {
-    return clusterNode.clusterNodeInfo().getHostName();
+    return getClusterNodeInfo().getHostName();
   }
 
   @Override
   public Collection<String> addresses() {
-    return clusterNode.clusterNodeInfo().getAddressesList().stream()
-        .map(this::buildIpAddress)
-        .toList();
+    return getClusterNodeInfo().getAddressesList().stream().map(this::buildIpAddress).toList();
   }
 
   @SneakyThrows
-  private String buildIpAddress(IpAddressInfo ipAddressInfo) {
-    return InetAddress.getByAddress(ipAddressInfo.getIpAddress().toByteArray()).getHostAddress();
+  private String buildIpAddress(ByteString ipAddress) {
+    return InetAddress.getByAddress(ipAddress.toByteArray()).getHostAddress();
   }
 
   @Override
   public boolean isLocal() {
-    ClusterNodeInfo clusterNodeInfo = clusterNode.clusterNodeInfo();
-    return bindPort == clusterNodeInfo.getBindPort()
-            &&clusterNodeInfo.getAddressesList().stream().anyMatch(ipAddressInfo -> ipAddressInfo.getBind()
-            && Arrays.equals(ipAddressInfo.getIpAddress().toByteArray(), bindAddress));
+    return localAddress.equals(clusterNode);
   }
 
   @Override
@@ -128,28 +109,13 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
 
   @Nullable
   @Override
-  @SneakyThrows
-  public <T> T attribute(String attributeName, TypeConverter<T, byte[]> converter) {
-    if (isEmpty(attributeName)) {
-      throw new IllegalArgumentException("attributeName must not be null or empty.");
-    }
-    if (converter == null) {
-      throw new IllegalArgumentException("converter must not be null.");
-    }
-    return converter.from(
-        clusterNode.clusterNodeInfo().getAttributesMap().get(attributeName).toByteArray());
-  }
-
-  @Nullable
-  @Override
   public String attribute(String attributeName) {
-    return attribute(attributeName, STRING_TO_BYTES);
+    return attributes().get(attributeName);
   }
 
   @Override
-  public Map<String, byte[]> attributes() {
-    return clusterNode.clusterNodeInfo().getAttributesMap().entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toByteArray()));
+  public Map<String, String> attributes() {
+    return getClusterNodeInfo().getAttributesMap();
   }
 
   @Override
@@ -162,8 +128,8 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
     if (obj == this) {
       return true;
     }
-    if (obj instanceof DefaultClusterNode node) {
-      return Objects.equals(clusterNode, node.clusterNode);
+    if (obj instanceof DefaultClusterNode) {
+      return Objects.equals(clusterNode, ((DefaultClusterNode) obj).clusterNode);
     }
     return false;
   }

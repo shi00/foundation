@@ -24,15 +24,13 @@ import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
-import com.silong.foundation.devastator.model.Devastator.IpAddressInfo;
-import com.silong.foundation.devastator.utils.KryoUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.SystemUtils;
 import org.jgroups.*;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
+import org.jgroups.protocols.pbcast.GMS;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -44,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.SystemUtils.getHostName;
 
 /**
  * 基于jgroups的分布式任务引擎
@@ -54,8 +53,7 @@ import static java.util.Objects.requireNonNull;
  */
 @Slf4j
 @SuppressFBWarnings({"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"})
-public class DefaultDistributedEngine
-    implements Devastator, Receiver, ChannelListener, Serializable {
+public class DevastatorEngine implements Devastator, Receiver, ChannelListener, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
 
@@ -86,7 +84,7 @@ public class DefaultDistributedEngine
    *
    * @param config 引擎配置
    */
-  public DefaultDistributedEngine(DevastatorConfig config) {
+  public DevastatorEngine(DevastatorConfig config) {
     if (config == null) {
       throw new IllegalArgumentException("config must not be null.");
     }
@@ -102,29 +100,24 @@ public class DefaultDistributedEngine
       this.jChannel.connect(config.clusterName());
 
       // 获取集群状态
-      this.jChannel.getState();
+      this.jChannel.getState(null, config.clusterStateSyncTimeout());
     } catch (Exception e) {
       throw new GeneralException("Failed to start distributed engine.", e);
     }
   }
 
   private ClusterNodeUUID buildClusterNodeInfo() {
-    TP transport = getTransport();
     return ClusterNodeUUID.random()
         .clusterNodeInfo(
             ClusterNodeInfo.newBuilder()
                 .setJgVersion(Version.version)
-                .putAllAttributes(convert(config.clusterNodeAttributes()))
+                .setVersion(config.version())
+                .putAllAttributes(config.clusterNodeAttributes())
                 .setInstanceName(config.instanceName())
-                .setHostName(SystemUtils.getHostName())
+                .setHostName(getHostName())
                 .setRole(config.clusterNodeRole().getValue())
-                .setBindPort(getBindPort(transport))
-                .addAllAddresses(getLocalAllAddresses(transport))
+                .addAllAddresses(getLocalAllAddresses())
                 .build());
-  }
-
-  private TP getTransport() {
-    return jChannel.getProtocolStack().getTransport();
   }
 
   private URL locateConfig(String confFile) throws Exception {
@@ -141,7 +134,7 @@ public class DefaultDistributedEngine
   }
 
   @SneakyThrows
-  private Collection<IpAddressInfo> getLocalAllAddresses(TP transport) {
+  private Collection<ByteString> getLocalAllAddresses() {
     List<InetAddress> list = new LinkedList<>();
     Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
     while (interfaces.hasMoreElements()) {
@@ -151,41 +144,62 @@ public class DefaultDistributedEngine
         list.add(inetAddresses.nextElement());
       }
     }
-    InetAddress bindAddress = getBindAddress(transport);
-    return list.stream()
-        .map(
-            inetAddress ->
-                IpAddressInfo.newBuilder()
-                    .setBind(inetAddress.equals(bindAddress))
-                    .setIpAddress(ByteString.copyFrom(inetAddress.getAddress()))
-                    .build())
-        .toList();
+    return list.stream().map(inetAddress -> ByteString.copyFrom(inetAddress.getAddress())).toList();
   }
 
-  private InetAddress getBindAddress(TP transport) {
+  /**
+   * 获取传输协议
+   *
+   * @return 传输协议
+   */
+  public TP getTransport() {
+    return jChannel.getProtocolStack().getTransport();
+  }
+
+  /**
+   * 获取GMS协议
+   *
+   * @return 协议
+   */
+  public GMS getGmsProtocol() {
+    return jChannel.getProtocolStack().findProtocol(GMS.class);
+  }
+
+  /**
+   * 获取集群绑定的通讯地址
+   *
+   * @return 绑定地址
+   */
+  public InetAddress getBindAddress() {
+    TP transport = getTransport();
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastAddress()
         : transport.getBindAddress();
   }
 
-  private int getBindPort(TP transport) {
+  /**
+   * 获取绑定端口
+   *
+   * @return 绑定端口
+   */
+  public int getBindPort() {
+    TP transport = getTransport();
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastPort()
         : transport.getBindPort();
   }
 
-  private Map<String, ByteString> convert(Map<String, Object> attributes) {
-    Map<String, ByteString> ret = new LinkedHashMap<>();
-    for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-      ret.put(entry.getKey(), ByteString.copyFrom(KryoUtils.serialize(entry.getValue())));
-    }
-    return ret;
+  /**
+   * 集群名
+   *
+   * @return 集群名
+   */
+  public String clusterName() {
+    return jChannel.clusterName();
   }
 
   @Override
-  public void receive(Message msg) {
-    Receiver.super.receive(msg);
-  }
+  public void receive(Message msg) {}
 
   @Override
   public void viewAccepted(View newView) {
@@ -193,7 +207,7 @@ public class DefaultDistributedEngine
 
     } else {
       // 获取集群节点列表
-      clusterNodes = newView.getMembers().stream().map(this::buildClusterNode).toList();
+      clusterNodes = getClusterNodes(newView);
       // 根据集群节点调整分区分布
       IntStream.range(0, config.partitionCount())
           .parallel()
@@ -206,30 +220,31 @@ public class DefaultDistributedEngine
     }
   }
 
+  /**
+   * 获取集群节点列表
+   *
+   * @param view 集群视图
+   * @return 集群节点列表
+   */
+  public List<ClusterNode> getClusterNodes(View view) {
+    if (view == null) {
+      throw new IllegalArgumentException("view must not be null.");
+    }
+    return view.getMembers().stream().map(this::buildClusterNode).toList();
+  }
+
   private ClusterNode buildClusterNode(Address address) {
-    TP transport = getTransport();
-    return new DefaultClusterNode(
-        (ClusterNodeUUID) address, getBindAddress(transport).getAddress(), getBindPort(transport));
+    return new DefaultClusterNode((ClusterNodeUUID) address, jChannel.address());
   }
 
   @Override
   public void getState(OutputStream output) throws Exception {
-    clusterState =
-        ClusterState.newBuilder()
-            .setPartitions(config.partitionCount())
-            .setClusterName(config.clusterName())
-            .build();
-    clusterState.writeTo(output);
+    ClusterState.newBuilder().setPartitions(config.partitionCount()).build().writeTo(output);
   }
 
   @Override
   public void setState(InputStream input) throws Exception {
     clusterState = ClusterState.parseFrom(input);
-  }
-
-  @Override
-  public String name() {
-    return config.instanceName();
   }
 
   @Override
@@ -239,7 +254,16 @@ public class DefaultDistributedEngine
 
   @Override
   public Cluster cluster() {
-    return null;
+    return new DefaultCluster(this);
+  }
+
+  /**
+   * 当前集群视图
+   *
+   * @return 视图
+   */
+  public View currentView() {
+    return jChannel.view();
   }
 
   @Override
@@ -252,6 +276,35 @@ public class DefaultDistributedEngine
     if (jChannel != null) {
       jChannel.close();
     }
+  }
+
+  @Override
+  public void channelConnected(JChannel channel) {
+    log.info(
+        "The node of [{}({}:{})] has successfully joined the cluster[{}].",
+        getHostName(),
+        getBindAddress().getHostAddress(),
+        getBindPort(),
+        jChannel.getClusterName());
+  }
+
+  @Override
+  public void channelDisconnected(JChannel channel) {
+    log.info(
+        "The node of [{}({}:{})] has successfully left the cluster[{}].",
+        getHostName(),
+        getBindAddress().getHostAddress(),
+        getBindPort(),
+        jChannel.getClusterName());
+  }
+
+  @Override
+  public void channelClosed(JChannel channel) {
+    log.info(
+        "The node of [{}({}:{})] has been successfully shut down.",
+        getHostName(),
+        getBindAddress().getHostAddress(),
+        getBindPort());
     partition2ClusterNodes.clear();
   }
 }

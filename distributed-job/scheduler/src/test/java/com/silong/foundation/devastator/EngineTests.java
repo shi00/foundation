@@ -19,7 +19,7 @@
 package com.silong.foundation.devastator;
 
 import com.silong.foundation.devastator.config.DevastatorConfig;
-import com.silong.foundation.devastator.core.DefaultDistributedEngine;
+import com.silong.foundation.devastator.core.DevastatorEngine;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +40,6 @@ public class EngineTests {
         new DevastatorConfig()
             .configFile(EngineTests.class.getClassLoader().getResource("tcp-nio.xml").getFile());
     config.persistStorageConfig().persistDataPath(SystemUtils.getJavaIoTmpDir().getAbsolutePath());
-    DefaultDistributedEngine engine = new DefaultDistributedEngine(config);
+    DevastatorEngine engine = new DevastatorEngine(config);
   }
 }

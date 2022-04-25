@@ -16,39 +16,53 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator;
+package com.silong.foundation.devastator.core;
 
+import com.silong.foundation.devastator.Cluster;
+import com.silong.foundation.devastator.ClusterNode;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.UUID;
 
 /**
  * 集群
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 09:28
+ * @since 2022-04-25 22:50
  */
-public interface Cluster extends Serializable {
+public class DefaultCluster implements Cluster, Serializable {
+
+  @Serial private static final long serialVersionUID = 0L;
+
+  /** 分布式引擎 */
+  private final DevastatorEngine engine;
 
   /**
-   * 集群名称
+   * 构造方法
    *
-   * @return 集群名
+   * @param engine 分布式引擎
    */
-  String name();
+  public DefaultCluster(DevastatorEngine engine) {
+    if (engine == null) {
+      throw new IllegalArgumentException("engine must not be null.");
+    }
+    this.engine = engine;
+  }
 
-  /**
-   * 获取集群节点列表
-   *
-   * @return 集群节点列表
-   */
-  Collection<ClusterNode> clusterNodes();
+  @Override
+  public String name() {
+    return engine.clusterName();
+  }
 
-  /**
-   * 获取本地节点
-   *
-   * @return 本地节点
-   */
-  ClusterNode localNode();
+  @Override
+  public Collection<ClusterNode> clusterNodes() {
+    return engine.getClusterNodes(engine.currentView());
+  }
+
+  @Override
+  public ClusterNode localNode() {
+    return null;
+  }
 }
