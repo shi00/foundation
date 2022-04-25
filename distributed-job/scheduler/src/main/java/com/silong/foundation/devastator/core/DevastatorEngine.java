@@ -41,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
+import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
 
@@ -97,6 +98,10 @@ public class DevastatorEngine implements Devastator, Receiver, ChannelListener, 
       this.jChannel.addAddressGenerator(this::buildClusterNodeInfo);
       this.jChannel.setName(config.instanceName());
       this.jChannel.setDiscardOwnMessages(true);
+
+      // 自定义集群节点策略
+      getGmsProtocol().setMembershipChangePolicy(INSTANCE);
+
       this.jChannel.connect(config.clusterName());
 
       // 获取集群状态
