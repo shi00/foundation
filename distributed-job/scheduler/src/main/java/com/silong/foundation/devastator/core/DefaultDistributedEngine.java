@@ -309,7 +309,7 @@ public class DefaultDistributedEngine
   @Override
   public void channelClosed(JChannel channel) {
     log.info(
-        "The node of [{}:{}({}:{})] has been successfully shut down.",
+        "The node of [{}:{}({}:{})] has been successfully shutdown.",
         getHostName(),
         config.instanceName(),
         getBindAddress().getHostAddress(),
