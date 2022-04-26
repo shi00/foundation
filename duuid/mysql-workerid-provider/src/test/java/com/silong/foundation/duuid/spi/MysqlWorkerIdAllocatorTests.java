@@ -30,7 +30,7 @@ import java.util.Map;
 
 import static com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.testcontainers.shaded.org.apache.commons.lang.SystemUtils.USER_NAME;
+import static org.testcontainers.shaded.org.apache.commons.lang3.SystemUtils.USER_NAME;
 
 /**
  * 单元测试
