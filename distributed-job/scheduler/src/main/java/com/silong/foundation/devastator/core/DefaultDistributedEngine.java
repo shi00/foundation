@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.GeneralException;
@@ -141,7 +140,7 @@ public class DefaultDistributedEngine
   }
 
   @SneakyThrows
-  private Collection<ByteString> getLocalAllAddresses() {
+  private Collection<String> getLocalAllAddresses() {
     List<InetAddress> list = new LinkedList<>();
     Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
     while (interfaces.hasMoreElements()) {
@@ -151,7 +150,7 @@ public class DefaultDistributedEngine
         list.add(inetAddresses.nextElement());
       }
     }
-    return list.stream().map(inetAddress -> ByteString.copyFrom(inetAddress.getAddress())).toList();
+    return list.stream().map(InetAddress::getHostAddress).toList();
   }
 
   /**

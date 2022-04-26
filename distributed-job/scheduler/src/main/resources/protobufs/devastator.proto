@@ -6,13 +6,13 @@ option java_outer_classname = "Devastator";
 
 //集群节点信息
 message ClusterNodeInfo {
-  uint32 jg_version = 1; //版本号
-  string host_name = 2; //主机名
-  repeated bytes addresses = 3; //节点所有IP地址，除了绑定地址
-  uint32 role = 4; //角色
-  string instanceName = 5; //实例名
-  map<string, string> attributes = 6; //节点属性
-  string version = 7; //节点软件版本号
+  string version = 1; //节点软件版本号
+  uint32 jg_version = 2; //版本号
+  string host_name = 3; //主机名
+  repeated string addresses = 4; //节点所有IP地址，除了绑定地址
+  uint32 role = 5; //角色
+  string instanceName = 6; //实例名
+  map<string, string> attributes = 7; //节点属性
 }
 
 //集群状态
