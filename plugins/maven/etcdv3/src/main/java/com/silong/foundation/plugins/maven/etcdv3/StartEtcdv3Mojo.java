@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.Properties;
 
 import static java.util.Collections.emptyList;
-import static org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
-import static org.testcontainers.shaded.org.apache.commons.lang.StringUtils.isEmpty;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.testcontainers.shaded.org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * 容器启动

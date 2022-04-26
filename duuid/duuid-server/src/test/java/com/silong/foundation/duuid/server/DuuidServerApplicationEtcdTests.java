@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
-import static org.testcontainers.shaded.org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 /**
  * 服务集成测试

@@ -19,7 +19,6 @@
 package com.silong.foundation.devastator.core;
 
 import org.jgroups.Address;
-import org.jgroups.Membership;
 import org.jgroups.stack.MembershipChangePolicy;
 
 import java.io.Serial;
@@ -107,19 +106,17 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
 
   @Override
   public List<Address> getNewMembership(Collection<Collection<Address>> subviews) {
-    // add the coord of each subview
-    Membership coords = new Membership();
-    subviews.stream()
-        .filter(subview -> !subview.isEmpty())
-        .forEach(subview -> coords.add(subview.iterator().next()));
-
-    // pick the first coord of the sorted list as the new coord
-    coords.sort();
-    Membership newMbrs = new Membership().add(coords.elementAt(0));
-
-    // add all other members in the order in which they occurred in their subviews - dupes are not
-    // added
-    subviews.forEach(newMbrs::add);
-    return newMbrs.getMembers();
+    Address coord =
+        subviews.stream()
+            .filter(view -> view != null && !view.isEmpty())
+            .map(view -> view.iterator().next())
+            .min(this::compare)
+            .orElseThrow(() -> new IllegalStateException("The coordinator does not exist."));
+    List<Address> addresses = new LinkedList<>();
+    subviews.stream().filter(view -> view != null && !view.isEmpty()).forEach(addresses::addAll);
+    addresses.sort(Comparable::compareTo);
+    addresses.remove(coord);
+    addresses.add(0, coord);
+    return addresses;
   }
 }
