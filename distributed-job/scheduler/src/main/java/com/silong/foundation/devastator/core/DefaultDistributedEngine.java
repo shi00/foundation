@@ -54,7 +54,8 @@ import static org.apache.commons.lang3.SystemUtils.getHostName;
  */
 @Slf4j
 @SuppressFBWarnings({"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"})
-public class DevastatorEngine implements Devastator, Receiver, ChannelListener, Serializable {
+public class DefaultDistributedEngine
+    implements DistributedEngine, Receiver, ChannelListener, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
 
@@ -85,7 +86,7 @@ public class DevastatorEngine implements Devastator, Receiver, ChannelListener, 
    *
    * @param config 引擎配置
    */
-  public DevastatorEngine(DevastatorConfig config) {
+  public DefaultDistributedEngine(DevastatorConfig config) {
     if (config == null) {
       throw new IllegalArgumentException("config must not be null.");
     }
@@ -98,6 +99,7 @@ public class DevastatorEngine implements Devastator, Receiver, ChannelListener, 
       this.jChannel.addAddressGenerator(this::buildClusterNodeInfo);
       this.jChannel.setName(config.instanceName());
       this.jChannel.setDiscardOwnMessages(true);
+      this.jChannel.addChannelListener(this);
 
       // 自定义集群节点策略
       getGmsProtocol().setMembershipChangePolicy(INSTANCE);
@@ -286,28 +288,31 @@ public class DevastatorEngine implements Devastator, Receiver, ChannelListener, 
   @Override
   public void channelConnected(JChannel channel) {
     log.info(
-        "The node of [{}({}:{})] has successfully joined the cluster[{}].",
+        "The node of [{}:{}({}:{})] has successfully joined the cluster[{}].",
         getHostName(),
+        config.instanceName(),
         getBindAddress().getHostAddress(),
         getBindPort(),
-        jChannel.getClusterName());
+        config.clusterName());
   }
 
   @Override
   public void channelDisconnected(JChannel channel) {
     log.info(
-        "The node of [{}({}:{})] has successfully left the cluster[{}].",
+        "The node of [{}:{}({}:{})] has successfully left the cluster[{}].",
         getHostName(),
+        config.instanceName(),
         getBindAddress().getHostAddress(),
         getBindPort(),
-        jChannel.getClusterName());
+        config.clusterName());
   }
 
   @Override
   public void channelClosed(JChannel channel) {
     log.info(
-        "The node of [{}({}:{})] has been successfully shut down.",
+        "The node of [{}:{}({}:{})] has been successfully shut down.",
         getHostName(),
+        config.instanceName(),
         getBindAddress().getHostAddress(),
         getBindPort());
     partition2ClusterNodes.clear();

@@ -37,14 +37,14 @@ public class DefaultCluster implements Cluster, Serializable {
   @Serial private static final long serialVersionUID = 0L;
 
   /** 分布式引擎 */
-  private final DevastatorEngine engine;
+  private final DefaultDistributedEngine engine;
 
   /**
    * 构造方法
    *
    * @param engine 分布式引擎
    */
-  public DefaultCluster(DevastatorEngine engine) {
+  public DefaultCluster(DefaultDistributedEngine engine) {
     if (engine == null) {
       throw new IllegalArgumentException("engine must not be null.");
     }

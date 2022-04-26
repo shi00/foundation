@@ -30,7 +30,7 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2022-04-10 09:01
  */
-public interface Devastator extends Serializable, Closeable {
+public interface DistributedEngine extends Serializable, Closeable {
 
   /**
    * 获取配置

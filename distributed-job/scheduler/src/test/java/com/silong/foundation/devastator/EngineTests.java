@@ -18,12 +18,20 @@
  */
 package com.silong.foundation.devastator;
 
+import com.github.javafaker.Animal;
+import com.github.javafaker.Faker;
+import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
 import com.silong.foundation.devastator.config.DevastatorConfig;
-import com.silong.foundation.devastator.core.DevastatorEngine;
+import com.silong.foundation.devastator.core.DefaultDistributedEngine;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Map;
+
+import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.CLIENT;
+import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.WORKER;
+import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY;
 
 /**
  * 序列化测试
@@ -34,12 +42,49 @@ import java.io.IOException;
  */
 public class EngineTests {
 
+  private final String udpConfigFile =
+      EngineTests.class.getClassLoader().getResource("fast.xml").getFile();
+
+  private final Animal animal = new Faker().animal();
+
   @Test
   void test1() throws IOException {
+    DistributedEngine distributedEngine1 =
+        buildEngine(
+            "test-cluster",
+            animal.name(),
+            CLIENT,
+            udpConfigFile,
+            Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
+
+    DistributedEngine distributedEngine2 =
+        buildEngine(
+            "test-cluster",
+            animal.name(),
+            WORKER,
+            udpConfigFile,
+            Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.1"));
+
+    distributedEngine1.close();
+    distributedEngine2.close();
+  }
+
+  private DistributedEngine buildEngine(
+      String clusterName,
+      String instanceName,
+      ClusterNodeRole role,
+      String configFile,
+      Map<String, String> attributes) {
+    String absolutePath =
+        SystemUtils.getJavaIoTmpDir().toPath().resolve(instanceName).toFile().getAbsolutePath();
     DevastatorConfig config =
         new DevastatorConfig()
-            .configFile(EngineTests.class.getClassLoader().getResource("tcp-nio.xml").getFile());
-    config.persistStorageConfig().persistDataPath(SystemUtils.getJavaIoTmpDir().getAbsolutePath());
-    DevastatorEngine engine = new DevastatorEngine(config);
+            .configFile(configFile)
+            .clusterNodeRole(role)
+            .clusterName(clusterName)
+            .instanceName(instanceName);
+    config.persistStorageConfig().persistDataPath(absolutePath);
+    config.clusterNodeAttributes().putAll(attributes);
+    return new DefaultDistributedEngine(config);
   }
 }
