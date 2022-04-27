@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
 
 /**
@@ -154,6 +155,15 @@ public class DefaultDistributedEngine
   }
 
   /**
+   * 获取分区数，优先从集群状态取
+   *
+   * @return 分区数
+   */
+  private int getPartitionCount() {
+    return clusterState == null ? config.partitionCount() : clusterState.getPartitions();
+  }
+
+  /**
    * 获取传输协议
    *
    * @return 传输协议
@@ -215,7 +225,7 @@ public class DefaultDistributedEngine
       // 获取集群节点列表
       clusterNodes = getClusterNodes(newView);
       // 根据集群节点调整分区分布
-      IntStream.range(0, config.partitionCount())
+      IntStream.range(0, getPartitionCount())
           .parallel()
           .forEach(
               partitionNo ->
@@ -287,18 +297,30 @@ public class DefaultDistributedEngine
   @Override
   public void channelConnected(JChannel channel) {
     log.info(
-        "The node of [{}:{}({}:{})] has successfully joined the cluster[{}].",
+        "The node of [{}-{}({}:{})] has successfully joined the {}{}.",
         getHostName(),
         config.instanceName(),
         getBindAddress().getHostAddress(),
         getBindPort(),
-        config.clusterName());
+        channel.clusterName(),
+        printViewMembers(channel));
+  }
+
+  private String printViewMembers(JChannel channel) {
+    return channel.getView().getMembers().stream()
+        .map(
+            address -> {
+              ClusterNodeInfo clusterNodeInfo = ((ClusterNodeUUID) address).clusterNodeInfo();
+              return String.format(
+                  "%s-%s", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
+            })
+        .collect(joining(",", "{", "}"));
   }
 
   @Override
   public void channelDisconnected(JChannel channel) {
     log.info(
-        "The node of [{}:{}({}:{})] has successfully left the cluster[{}].",
+        "The node of [{}-{}({}:{})] has successfully left {}.",
         getHostName(),
         config.instanceName(),
         getBindAddress().getHostAddress(),
@@ -309,7 +331,7 @@ public class DefaultDistributedEngine
   @Override
   public void channelClosed(JChannel channel) {
     log.info(
-        "The node of [{}:{}({}:{})] has been successfully shutdown.",
+        "The node of [{}-{}({}:{})] has been successfully shutdown.",
         getHostName(),
         config.instanceName(),
         getBindAddress().getHostAddress(),

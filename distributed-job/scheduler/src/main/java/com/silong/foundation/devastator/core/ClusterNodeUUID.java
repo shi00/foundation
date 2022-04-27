@@ -107,8 +107,12 @@ public class ClusterNodeUUID extends UUID {
     clusterNodeInfo = bytes == null ? null : ClusterNodeInfo.parseFrom(bytes);
   }
 
-  @Override
-  public String toString() {
-    return String.format("[%s - %s]", super.toString(), clusterNodeInfo);
+  /**
+   * 获取节点打印信息
+   *
+   * @return 打印信息
+   */
+  public String printClusterNodeInfo() {
+    return String.format("[%s]", clusterNodeInfo);
   }
 }
