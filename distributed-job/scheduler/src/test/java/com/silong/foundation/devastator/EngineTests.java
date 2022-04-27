@@ -22,8 +22,10 @@ import com.github.javafaker.Animal;
 import com.github.javafaker.Faker;
 import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
 import com.silong.foundation.devastator.config.DevastatorConfig;
+import com.silong.foundation.devastator.core.ClusterNodeUUID;
 import com.silong.foundation.devastator.core.DefaultDistributedEngine;
 import org.apache.commons.lang3.SystemUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -49,22 +51,85 @@ public class EngineTests {
 
   @Test
   void test1() throws IOException {
+    String name1 = animal.name();
     DistributedEngine distributedEngine1 =
         buildEngine(
             "test-cluster",
-            animal.name(),
+            name1,
             CLIENT,
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
+    String name2 = animal.name();
     DistributedEngine distributedEngine2 =
         buildEngine(
             "test-cluster",
-            animal.name(),
+            name2,
             WORKER,
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.1"));
 
+    ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
+    ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
+    String instanceName = uuid.clusterNodeInfo().getInstanceName();
+    Assertions.assertEquals(name2, instanceName);
+    distributedEngine1.close();
+    distributedEngine2.close();
+  }
+
+  @Test
+  void test2() throws IOException {
+    String name1 = animal.name();
+    DistributedEngine distributedEngine1 =
+        buildEngine(
+            "test-cluster1",
+            name1,
+            CLIENT,
+            udpConfigFile,
+            Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
+
+    String name2 = animal.name();
+    DistributedEngine distributedEngine2 =
+        buildEngine(
+            "test-cluster1",
+            name2,
+            WORKER,
+            udpConfigFile,
+            Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
+
+    ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
+    ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
+    String instanceName = uuid.clusterNodeInfo().getInstanceName();
+    Assertions.assertEquals(name1, instanceName);
+    distributedEngine1.close();
+    distributedEngine2.close();
+  }
+
+
+  @Test
+  void test3() throws IOException {
+    String name1 = "bee";
+    DistributedEngine distributedEngine1 =
+            buildEngine(
+                    "test-cluster2",
+                    name1,
+                    WORKER,
+                    udpConfigFile,
+                    Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
+
+    String name2 = "butterfly";
+    DistributedEngine distributedEngine2 =
+            buildEngine(
+                    "test-cluster2",
+                    name2,
+                    WORKER,
+                    udpConfigFile,
+                    Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
+
+    ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
+    ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
+    String instanceName = uuid.clusterNodeInfo().getInstanceName();
+    Assertions.assertEquals(name1, instanceName);
     distributedEngine1.close();
     distributedEngine2.close();
   }

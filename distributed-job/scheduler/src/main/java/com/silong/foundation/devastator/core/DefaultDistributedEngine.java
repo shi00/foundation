@@ -30,6 +30,8 @@ import org.jgroups.*;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
 import org.jgroups.protocols.pbcast.GMS;
+import org.jgroups.util.ByteArrayDataInputStream;
+import org.jgroups.util.ByteArrayDataOutputStream;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -41,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
@@ -78,9 +81,6 @@ public class DefaultDistributedEngine
   /** 集群状态 */
   private ClusterState clusterState;
 
-  /** 集群节点列表 */
-  private Collection<ClusterNode> clusterNodes;
-
   /**
    * 构造方法
    *
@@ -96,7 +96,7 @@ public class DefaultDistributedEngine
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
       this.jChannel = new JChannel(inputStream);
       this.jChannel.setReceiver(this);
-      this.jChannel.addAddressGenerator(this::buildClusterNodeInfo);
+      this.jChannel.addAddressGenerator(this::buildAddressGenerator);
       this.jChannel.setName(config.instanceName());
       this.jChannel.setDiscardOwnMessages(true);
       this.jChannel.addChannelListener(this);
@@ -113,18 +113,37 @@ public class DefaultDistributedEngine
     }
   }
 
-  private ClusterNodeUUID buildClusterNodeInfo() {
-    return ClusterNodeUUID.random()
-        .clusterNodeInfo(
-            ClusterNodeInfo.newBuilder()
-                .setJgVersion(Version.version)
-                .setVersion(config.version())
-                .putAllAttributes(config.clusterNodeAttributes())
-                .setInstanceName(config.instanceName())
-                .setHostName(getHostName())
-                .setRole(config.clusterNodeRole().getValue())
-                .addAllAddresses(getLocalAllAddresses())
-                .build());
+  @SneakyThrows
+  private ClusterNodeUUID buildAddressGenerator() {
+    byte[] key =
+        String.format("%s:%s:%s", config.clusterName(), getHostName(), config.instanceName())
+            .getBytes(UTF_8);
+    byte[] value = persistStorage.get(key);
+    ClusterNodeInfo clusterNodeInfo = buildClusterNodeInfo();
+    ClusterNodeUUID uuid;
+    if (value != null) {
+      uuid = new ClusterNodeUUID();
+      uuid.readFrom(new ByteArrayDataInputStream(value));
+      uuid.clusterNodeInfo(clusterNodeInfo);
+    } else {
+      uuid = ClusterNodeUUID.random().clusterNodeInfo(clusterNodeInfo);
+      ByteArrayDataOutputStream out = new ByteArrayDataOutputStream();
+      uuid.writeTo(out);
+      persistStorage.put(key, out.getBuffer().getBytes());
+    }
+    return uuid;
+  }
+
+  private ClusterNodeInfo buildClusterNodeInfo() {
+    return ClusterNodeInfo.newBuilder()
+        .setJgVersion(Version.version)
+        .setVersion(config.version())
+        .putAllAttributes(config.clusterNodeAttributes())
+        .setInstanceName(config.instanceName())
+        .setHostName(getHostName())
+        .setRole(config.clusterNodeRole().getValue())
+        .addAllAddresses(getLocalAllAddresses())
+        .build();
   }
 
   private URL locateConfig(String confFile) throws Exception {
@@ -223,7 +242,7 @@ public class DefaultDistributedEngine
 
     } else {
       // 获取集群节点列表
-      clusterNodes = getClusterNodes(newView);
+      Collection<ClusterNode> clusterNodes = getClusterNodes(newView);
       // 根据集群节点调整分区分布
       IntStream.range(0, getPartitionCount())
           .parallel()
