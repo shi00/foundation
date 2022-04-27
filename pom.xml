@@ -131,7 +131,7 @@
         <jmh.version>1.35</jmh.version>
         <jaxb-impl.version>3.0.2</jaxb-impl.version>
         <testcontainers.version>1.17.1</testcontainers.version>
-        <springdoc.version>1.6.8</springdoc.version>
+        <springdoc.version>1.6.7</springdoc.version>
         <libphonenumber.version>8.12.47</libphonenumber.version>
         <javafaker.version>1.0.2</javafaker.version>
         <commons-io.version>2.11.0</commons-io.version>
@@ -148,7 +148,6 @@
         <snappy-java.version>1.1.8.4</snappy-java.version>
         <zstd-jni.version>1.5.2-2</zstd-jni.version>
         <kryo.version>5.3.0</kryo.version>
-        <jakarta.xml.bind-api.version>4.0.0</jakarta.xml.bind-api.version>
         <!--开源组件-->
 
     </properties>
@@ -337,12 +336,6 @@
                 <version>${jaxb-impl.version}</version>
             </dependency>
             <!-- xml解析api -->
-
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${jakarta.xml.bind-api.version}</version>
-            </dependency>
 
             <!-- OpenAPI -->
             <dependency>

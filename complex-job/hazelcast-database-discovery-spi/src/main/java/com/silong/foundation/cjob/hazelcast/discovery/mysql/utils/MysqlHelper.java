@@ -29,7 +29,6 @@ import org.jooq.Record3;
 import org.jooq.impl.DSL;
 
 import java.io.Closeable;
-import java.net.InetAddress;
 import java.sql.Connection;
 import java.util.List;
 
@@ -225,8 +224,7 @@ public final class MysqlHelper implements Closeable {
 
   @SneakyThrows
   private DiscoveryNode map2Node(Record3<String, Integer, String> record3) {
-    return new SimpleDiscoveryNode(
-        new Address(InetAddress.getByName(record3.value1()), record3.value2()));
+    return new SimpleDiscoveryNode(new Address(record3.value1(), record3.value2()));
   }
 
   @Override

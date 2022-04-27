@@ -77,9 +77,6 @@ public class MysqlDiscoveryStrategy extends AbstractDiscoveryStrategy {
   /** 数据库工具 */
   @Getter private final MysqlHelper dbHelper;
 
-  /** 下次执行时间 */
-  private ZonedDateTime nextExecutionTime;
-
   /**
    * 构造方法
    *
