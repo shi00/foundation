@@ -18,4 +18,5 @@ message ClusterNodeInfo {
 //集群状态
 message ClusterState {
   uint32 partitions = 1 ; //集群数据分区总数
+  uint32 backupNums = 2; //数据备份数
 }

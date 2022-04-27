@@ -92,7 +92,7 @@ public class DefaultDistributedEngine
     }
     try (InputStream inputStream = requireNonNull(locateConfig(config.configFile())).openStream()) {
       this.config = config;
-      this.allocator = new RendezvousAllocator(config.partitionCount());
+      this.allocator = new RendezvousAllocator(getPartitionCount());
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
       this.jChannel = new JChannel(inputStream);
       this.jChannel.setReceiver(this);
@@ -178,8 +178,17 @@ public class DefaultDistributedEngine
    *
    * @return 分区数
    */
-  private int getPartitionCount() {
+  public int getPartitionCount() {
     return clusterState == null ? config.partitionCount() : clusterState.getPartitions();
+  }
+
+  /**
+   * 获取数据备份数
+   *
+   * @return 数据备份数
+   */
+  public int getBackupNums() {
+    return clusterState == null ? config.backupNums() : clusterState.getBackupNums();
   }
 
   /**
@@ -230,7 +239,7 @@ public class DefaultDistributedEngine
    * @return 集群名
    */
   public String clusterName() {
-    return jChannel.clusterName();
+    return config.clusterName();
   }
 
   @Override
@@ -251,7 +260,7 @@ public class DefaultDistributedEngine
                   partition2ClusterNodes.put(
                       partitionNo,
                       allocator.allocatePartition(
-                          partitionNo, config.backupNums(), clusterNodes, null)));
+                          partitionNo, getBackupNums(), clusterNodes, null)));
     }
   }
 
@@ -348,6 +357,7 @@ public class DefaultDistributedEngine
   }
 
   @Override
+  @SneakyThrows
   public void channelClosed(JChannel channel) {
     log.info(
         "The node of [{}-{}({}:{})] has been successfully shutdown.",
@@ -356,5 +366,8 @@ public class DefaultDistributedEngine
         getBindAddress().getHostAddress(),
         getBindPort());
     partition2ClusterNodes.clear();
+    if (persistStorage != null) {
+      persistStorage.close();
+    }
   }
 }
