@@ -119,6 +119,30 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.silong</groupId>
+                <artifactId>write-properties-file-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-properties</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>write-properties-file</goal>
+                        </goals>
+                        <configuration>
+                            <fileName>${project.artifactId}.properties</fileName>
+                            <outputDirectory>${project.build.sourceDirectory}/../resources/META-INF</outputDirectory>
+                            <properties>
+                                <property>
+                                    <name>version</name>
+                                    <value>${project.version}</value>
+                                </property>
+                            </properties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <executions>

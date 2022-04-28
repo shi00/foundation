@@ -21,7 +21,7 @@
                       http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.silong.foundation.plugins.maven.wprops.tests</groupId>
-    <artifactId>write-properties-file-maven-plugin-test</artifactId>
+    <artifactId>properties-writer-maven-plugin-test</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
@@ -30,6 +30,16 @@
             <plugin>
                 <groupId>com.silong</groupId>
                 <artifactId>properties-writer-maven-plugin</artifactId>
+                <configuration>
+                    <fileName>test.properties</fileName>
+                    <outputDirectory>target</outputDirectory>
+                    <properties>
+                        <property>
+                            <name>version</name>
+                            <value>1</value>
+                        </property>
+                    </properties>
+                </configuration>
                 <executions>
                     <execution>
                         <id>generate-properties</id>
@@ -37,16 +47,6 @@
                         <goals>
                             <goal>write-properties-file</goal>
                         </goals>
-                        <configuration>
-                            <fileName>${artifactId}.properties</fileName>
-                            <outputDirectory>${build.sourceDirectory}/../resources/META-INF</outputDirectory>
-                            <properties>
-                                <property>
-                                    <name>version</name>
-                                    <value>${version}</value>
-                                </property>
-                            </properties>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

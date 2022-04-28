@@ -18,12 +18,14 @@
  */
 package com.silong.foundation.plugins.maven.wprops;
 
+import lombok.Getter;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -41,17 +43,19 @@ import java.util.Properties;
     name = "write-properties-file",
     defaultPhase = LifecyclePhase.GENERATE_RESOURCES,
     threadSafe = true)
-public class PropertiesFileWriterMojo extends AbstractMojo {
+public class PropertiesWriterMojo extends AbstractMojo {
 
   /** Output directory (defaults to ${project.build.outputDirectory}) */
   @Parameter(
       property = "outputDirectory",
       defaultValue = "${project.build.outputDirectory}",
       required = true)
+  @Getter
   private File outputDirectory;
 
   /** Filename where the properties are saved */
   @Parameter(property = "fileName", required = true)
+  @Getter
   private String fileName;
 
   /** Properties to save */
@@ -65,6 +69,12 @@ public class PropertiesFileWriterMojo extends AbstractMojo {
   /** Create intermediate directories if necessary (defaults to true) */
   @Parameter(property = "createDirectory", defaultValue = "true")
   private boolean createDirectory;
+
+  /**
+   * @since 1.2
+   */
+  @Parameter(readonly = true, defaultValue = "${project}")
+  protected MavenProject project;
 
   public void execute() throws MojoFailureException {
     Log log = getLog();

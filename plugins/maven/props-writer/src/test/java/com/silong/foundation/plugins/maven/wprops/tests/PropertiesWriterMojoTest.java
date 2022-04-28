@@ -18,11 +18,12 @@
  */
 package com.silong.foundation.plugins.maven.wprops.tests;
 
-import com.silong.foundation.plugins.maven.wprops.PropertiesFileWriterMojo;
+import com.silong.foundation.plugins.maven.wprops.PropertiesWriterMojo;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
 
 /**
  * 单元测试
@@ -31,20 +32,25 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0.0
  * @since 2022-01-23 19:52
  */
-public class PropertiesFileWriterMojoTest extends AbstractMojoTestCase {
+public class PropertiesWriterMojoTest extends AbstractMojoTestCase {
 
   /** 测试pom */
   public static final String FORKED_POM_FILE = "src/test/resources/unit/pom.xml";
 
-  private static final Map PLUGIN_CONTEXT = new ConcurrentHashMap();
-
   public void test() throws Exception {
-
-    PropertiesFileWriterMojo mojo = (PropertiesFileWriterMojo) lookupMojo("write-properties-file", FORKED_POM_FILE);
-    mojo.setPluginContext(PLUGIN_CONTEXT);
-//    assertNotNull(mojo);
+    PropertiesWriterMojo mojo =
+        (PropertiesWriterMojo) lookupMojo("write-properties-file", FORKED_POM_FILE);
+    assertNotNull(mojo);
     mojo.execute();
 
+    File outputDirectory = mojo.getOutputDirectory();
+    String fileName = mojo.getFileName();
 
+    try (FileInputStream input =
+        new FileInputStream(outputDirectory.toPath().resolve(fileName).toFile())) {
+      Properties properties = new Properties();
+      properties.load(input);
+      assertEquals(properties.get("version"), "1");
+    }
   }
 }
