@@ -257,8 +257,9 @@ public class DefaultDistributedEngine
 
   /** 同步集群状态 */
   public void syncClusterState() throws Exception {
-    // 获取集群状态
-    jChannel.getState(null, config.clusterStateSyncTimeout());
+    if (jChannel.isConnected()) {
+      jChannel.getState(null, config.clusterStateSyncTimeout());
+    }
   }
 
   /**
@@ -307,8 +308,8 @@ public class DefaultDistributedEngine
     try {
       ringBuffer.get(seq).oldView(lastView).newview(newView);
     } finally {
-      ringBuffer.publish(seq);
       lastView = newView;
+      ringBuffer.publish(seq);
     }
   }
 
