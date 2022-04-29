@@ -37,7 +37,7 @@ public class PropertiesWriterMojoTest extends AbstractMojoTestCase {
   /** 测试pom */
   public static final String FORKED_POM_FILE = "src/test/resources/unit/pom.xml";
 
-  public void test() throws Exception {
+  public void test1() throws Exception {
     PropertiesWriterMojo mojo =
         (PropertiesWriterMojo) lookupMojo("write-properties-file", FORKED_POM_FILE);
     assertNotNull(mojo);
