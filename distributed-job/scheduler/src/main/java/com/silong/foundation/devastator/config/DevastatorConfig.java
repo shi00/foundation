@@ -72,9 +72,6 @@ public class DevastatorConfig implements Serializable {
   /** 数据副本数量，默认：1 */
   @Positive private int backupNums = 1;
 
-  /** 版本号 */
-  @NotEmpty private String version = "v0.0.1";
-
   /** 集群状态同步超时时间，默认：10000ms */
   @Positive private long clusterStateSyncTimeout = TimeUnit.SECONDS.toMillis(10);
 
