@@ -19,12 +19,18 @@
 package com.silong.foundation.devastator.core;
 
 import com.google.protobuf.ByteString;
+import com.lmax.disruptor.LiteBlockingWaitStrategy;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.dsl.Disruptor;
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
+import com.silong.foundation.devastator.event.ViewChangedEvent;
 import com.silong.foundation.devastator.exception.InitializationException;
+import com.silong.foundation.devastator.handler.ViewChangedEventHandler;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.*;
@@ -39,8 +45,9 @@ import java.net.NetworkInterface;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 import static com.silong.foundation.devastator.config.DevastatorProperties.getVersionNumber;
 import static com.silong.foundation.devastator.core.ClusterNodeUUID.deserialize;
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
@@ -63,6 +70,7 @@ public class DefaultDistributedEngine
   @Serial private static final long serialVersionUID = 0L;
 
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
+  @Getter
   private final Map<Integer, Collection<ClusterNode>> partition2ClusterNodes =
       new ConcurrentHashMap<>();
 
@@ -73,7 +81,7 @@ public class DefaultDistributedEngine
   private final DevastatorConfig config;
 
   /** 数据分配器 */
-  private final RendezvousAllocator allocator;
+  @Getter private final RendezvousAllocator allocator;
 
   /** 持久化存储 */
   private final PersistStorage persistStorage;
@@ -83,6 +91,8 @@ public class DefaultDistributedEngine
 
   /** 最后一个集群视图 */
   private volatile View lastView;
+
+  private final Disruptor<ViewChangedEvent> viewChangedEventDisruptor;
 
   /**
    * 构造方法
@@ -94,35 +104,59 @@ public class DefaultDistributedEngine
       throw new IllegalArgumentException("config must not be null.");
     }
 
-    URL configUrl;
     try {
-      configUrl = locateConfig(config.configFile());
-    } catch (MalformedURLException e) {
-      throw new IllegalArgumentException(
-          String.format("Failed to load %s.", config.configFile()), e);
-    }
-
-    try (InputStream inputStream = configUrl.openStream()) {
       this.config = config;
       this.allocator = new RendezvousAllocator(getPartitionCount());
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
-      this.jChannel = new JChannel(inputStream);
-      this.jChannel.setReceiver(this);
-      this.jChannel.addAddressGenerator(this::buildAddressGenerator);
-      this.jChannel.setName(config.instanceName());
-      this.jChannel.setDiscardOwnMessages(true);
-      this.jChannel.addChannelListener(this);
+      this.viewChangedEventDisruptor =
+          buildViewChangedEventDisruptor(config.viewChangedEventQueueSize());
+      this.viewChangedEventDisruptor.start();
+      configureDistributedEngine(
+          this.jChannel = buildDistributedEngine(config.configFile()), config);
 
-      // 自定义集群节点策略
-      this.getGmsProtocol().setMembershipChangePolicy(INSTANCE);
-
+      // 启动引擎
       this.jChannel.connect(config.clusterName());
-
-      // 获取集群状态
-      this.jChannel.getState(null, config.clusterStateSyncTimeout());
     } catch (Exception e) {
       throw new InitializationException("Failed to start distributed engine.", e);
     }
+  }
+
+  private void configureDistributedEngine(JChannel jChannel, DevastatorConfig config) {
+    jChannel.setReceiver(this);
+    jChannel.addAddressGenerator(this::buildAddressGenerator);
+    jChannel.setDiscardOwnMessages(true);
+    jChannel.addChannelListener(this);
+    jChannel.setName(config.instanceName());
+
+    // 自定义集群节点策略
+    ((GMS) jChannel.getProtocolStack().findProtocol(GMS.class)).setMembershipChangePolicy(INSTANCE);
+  }
+
+  private JChannel buildDistributedEngine(String configFile) throws Exception {
+    URL configUrl;
+    try {
+      configUrl = locateConfig(configFile);
+    } catch (MalformedURLException e) {
+      throw new IllegalArgumentException(String.format("Failed to load %s.", configFile), e);
+    }
+    try (InputStream inputStream = configUrl.openStream()) {
+      return new JChannel(inputStream);
+    }
+  }
+
+  private Disruptor<ViewChangedEvent> buildViewChangedEventDisruptor(int queueSize) {
+    AtomicInteger count = new AtomicInteger(0);
+    Disruptor<ViewChangedEvent> disruptor =
+        new Disruptor<>(
+            ViewChangedEvent::new,
+            queueSize,
+            r -> {
+              return new Thread(r, "ViewChangedEventProcessor-" + count.getAndIncrement());
+            },
+            MULTI,
+            new LiteBlockingWaitStrategy());
+    disruptor.handleEventsWith(new ViewChangedEventHandler(this));
+    return disruptor;
   }
 
   private URL locateConfig(String confFile) throws MalformedURLException {
@@ -222,15 +256,6 @@ public class DefaultDistributedEngine
   }
 
   /**
-   * 获取GMS协议
-   *
-   * @return 协议
-   */
-  public GMS getGmsProtocol() {
-    return jChannel.getProtocolStack().findProtocol(GMS.class);
-  }
-
-  /**
    * 获取集群绑定的通讯地址
    *
    * @return 绑定地址
@@ -268,20 +293,12 @@ public class DefaultDistributedEngine
 
   @Override
   public void viewAccepted(View newView) {
-    if (newView instanceof MergeView) {
-
-    } else {
-      // 获取集群节点列表
-      Collection<ClusterNode> clusterNodes = getClusterNodes(newView);
-      // 根据集群节点调整分区分布
-      IntStream.range(0, getPartitionCount())
-          .parallel()
-          .forEach(
-              partitionNo ->
-                  partition2ClusterNodes.put(
-                      partitionNo,
-                      allocator.allocatePartition(
-                          partitionNo, getBackupNums(), clusterNodes, null)));
+    RingBuffer<ViewChangedEvent> ringBuffer = viewChangedEventDisruptor.getRingBuffer();
+    long seq = ringBuffer.next();
+    try {
+      ringBuffer.get(seq).oldView(lastView).newview(newView);
+    } finally {
+      ringBuffer.publish(seq);
     }
   }
 
@@ -386,6 +403,7 @@ public class DefaultDistributedEngine
         config.instanceName(),
         getBindAddress().getHostAddress(),
         getBindPort());
+    viewChangedEventDisruptor.shutdown();
     partition2ClusterNodes.clear();
     if (persistStorage != null) {
       persistStorage.close();
