@@ -26,9 +26,7 @@ import com.esotericsoftware.kryo.util.Pool;
 import org.jgroups.util.Util;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
 
 import static org.rocksdb.util.SizeUnit.KB;
 
@@ -39,7 +37,9 @@ import static org.rocksdb.util.SizeUnit.KB;
  * @version 1.0.0
  * @since 2022-04-22 22:44
  */
-public final class KryoUtils {
+public final class KryoUtils implements Serializable {
+
+  @Serial private static final long serialVersionUID = 0L;
 
   /** kryo对象池容量，默认：8 */
   public static final int KRYO_POOL_CAPACITY =

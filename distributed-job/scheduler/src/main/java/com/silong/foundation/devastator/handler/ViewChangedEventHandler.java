@@ -25,6 +25,8 @@ import com.silong.foundation.devastator.event.ViewChangedEvent;
 import org.jgroups.MergeView;
 import org.jgroups.View;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.stream.IntStream;
 
@@ -35,17 +37,30 @@ import java.util.stream.IntStream;
  * @version 1.0.0
  * @since 2022-04-29 23:40
  */
-public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent> {
+public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, Serializable {
+
+  @Serial private static final long serialVersionUID = 0L;
 
   /** 分布式引擎 */
   private final DefaultDistributedEngine engine;
 
+  /**
+   * 事件处理器
+   *
+   * @param engine 分布式引擎
+   */
   public ViewChangedEventHandler(DefaultDistributedEngine engine) {
+    if (engine == null) {
+      throw new IllegalArgumentException("engine must not be null.");
+    }
     this.engine = engine;
   }
 
   @Override
   public void onEvent(ViewChangedEvent event, long sequence, boolean endOfBatch) throws Exception {
+    // 同步集群状态
+    engine.syncClusterState();
+
     try {
       View newView = event.newview();
       View oldView = event.oldView();
@@ -70,7 +85,7 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent> {
       }
     } finally {
       // 处理完毕置空，避免影响GC及时收集
-      event.oldView(null).newview(null);
+      event.close();
     }
   }
 }

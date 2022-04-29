@@ -255,6 +255,12 @@ public class DefaultDistributedEngine
     return jChannel.getProtocolStack().getTransport();
   }
 
+  /** 同步集群状态 */
+  public void syncClusterState() throws Exception {
+    // 获取集群状态
+    jChannel.getState(null, config.clusterStateSyncTimeout());
+  }
+
   /**
    * 获取集群绑定的通讯地址
    *
@@ -293,12 +299,16 @@ public class DefaultDistributedEngine
 
   @Override
   public void viewAccepted(View newView) {
+    if (log.isDebugEnabled()) {
+      log.debug("topology: {}", newView);
+    }
     RingBuffer<ViewChangedEvent> ringBuffer = viewChangedEventDisruptor.getRingBuffer();
     long seq = ringBuffer.next();
     try {
       ringBuffer.get(seq).oldView(lastView).newview(newView);
     } finally {
       ringBuffer.publish(seq);
+      lastView = newView;
     }
   }
 
@@ -321,7 +331,14 @@ public class DefaultDistributedEngine
 
   @Override
   public void getState(OutputStream output) throws Exception {
-    ClusterState.newBuilder().setPartitions(config.partitionCount()).build().writeTo(output);
+    if (clusterState == null) {
+      clusterState =
+          ClusterState.newBuilder()
+              .setPartitions(config.partitionCount())
+              .setBackupNums(config.backupNums())
+              .build();
+    }
+    clusterState.writeTo(output);
   }
 
   @Override

@@ -23,6 +23,8 @@ import com.google.protobuf.Any;
 import lombok.NonNull;
 
 import java.io.IOException;
+import java.io.Serial;
+import java.io.Serializable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -35,7 +37,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @version 1.0.0
  * @since 2022-04-11 23:24
  */
-public interface TypeConverter<T, R> {
+public interface TypeConverter<T, R> extends Serializable {
 
   /**
    * 类型转换
@@ -62,6 +64,9 @@ public interface TypeConverter<T, R> {
    */
   default TypeConverter<R, T> reverse() {
     return new TypeConverter<>() {
+
+      @Serial private static final long serialVersionUID = 0L;
+
       @Override
       public T to(R r) throws IOException {
         return TypeConverter.this.from(r);
@@ -82,6 +87,9 @@ public interface TypeConverter<T, R> {
    */
   static <T> TypeConverter<T, byte[]> getKryoTypeConverter() {
     return new TypeConverter<>() {
+
+      @Serial private static final long serialVersionUID = 0L;
+
       @Override
       public byte[] to(T t) {
         return KryoUtils.serialize(t);
@@ -102,6 +110,9 @@ public interface TypeConverter<T, R> {
    */
   static <S> TypeConverter<S, S> identity() {
     return new TypeConverter<>() {
+
+      @Serial private static final long serialVersionUID = 0L;
+
       @Override
       public S to(S s) {
         return s;
@@ -129,6 +140,9 @@ public interface TypeConverter<T, R> {
   static <T extends AbstractMessage> TypeConverter<T, byte[]> getProtobufTypeConver(
       @NonNull Class<T> tClass) {
     return new TypeConverter<>() {
+
+      @Serial private static final long serialVersionUID = 0L;
+
       @Override
       public byte[] to(T t) {
         if (t == null) {
@@ -155,6 +169,8 @@ public interface TypeConverter<T, R> {
   /** 字符串和byte数组互转，使用UTF8编码 */
   TypeConverter<Long, byte[]> LONG_TO_BYTES =
       new TypeConverter<>() {
+
+        @Serial private static final long serialVersionUID = 0L;
 
         @Override
         public byte[] to(Long value) {
@@ -188,6 +204,9 @@ public interface TypeConverter<T, R> {
   /** 字符串和byte数组互转，使用UTF8编码 */
   TypeConverter<String, byte[]> STRING_TO_BYTES =
       new TypeConverter<>() {
+
+        @Serial private static final long serialVersionUID = 0L;
+
         @Override
         public byte[] to(String str) {
           if (str == null) {

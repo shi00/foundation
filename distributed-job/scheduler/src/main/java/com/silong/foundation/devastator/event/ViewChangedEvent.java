@@ -25,6 +25,11 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jgroups.View;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * 视图变化事件
  *
@@ -37,11 +42,18 @@ import org.jgroups.View;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(fluent = true)
-public class ViewChangedEvent {
+public class ViewChangedEvent implements Closeable, Serializable {
+
+  @Serial private static final long serialVersionUID = 0L;
 
   /** 当前视图 */
   private View newview;
 
   /** 上一个视图 */
   private View oldView;
+
+  @Override
+  public void close() {
+    oldView = newview = null;
+  }
 }
