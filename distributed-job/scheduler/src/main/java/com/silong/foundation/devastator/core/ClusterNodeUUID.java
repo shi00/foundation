@@ -18,18 +18,27 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
+import com.silong.foundation.devastator.config.DevastatorProperties;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
+import com.silong.foundation.devastator.utils.TypeConverter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.jgroups.Version;
 import org.jgroups.conf.ClassConfigurator;
+import org.jgroups.util.ByteArrayDataInputStream;
+import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.UUID;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.StringJoiner;
 import java.util.function.Supplier;
 
+import static java.lang.System.lineSeparator;
+import static java.util.stream.Collectors.joining;
 import static org.jgroups.util.Util.readByteBuffer;
 import static org.jgroups.util.Util.writeByteBuffer;
 
@@ -41,6 +50,32 @@ import static org.jgroups.util.Util.writeByteBuffer;
  * @since 2022-04-11 22:49
  */
 public class ClusterNodeUUID extends UUID {
+
+  /** 类型转换器 */
+  public static final TypeConverter<ClusterNodeUUID, byte[]> CONVERTER =
+      new TypeConverter<>() {
+        @Override
+        public byte[] to(ClusterNodeUUID clusterNodeUUID) throws IOException {
+          if (clusterNodeUUID == null) {
+            return null;
+          }
+          ByteArrayDataOutputStream out =
+              new ByteArrayDataOutputStream(clusterNodeUUID.serializedSize());
+          clusterNodeUUID.writeTo(out);
+          return out.buffer();
+        }
+
+        @Override
+        public ClusterNodeUUID from(byte[] bytes) throws IOException {
+          if (bytes == null || bytes.length == 0) {
+            return null;
+          }
+          ClusterNodeUUID clusterNodeUUID = new ClusterNodeUUID();
+          clusterNodeUUID.readFrom(new ByteArrayDataInputStream(bytes));
+          return clusterNodeUUID;
+        }
+      };
+
   static {
     // it will need to get registered with the ClassConfigurator in order to marshal it correctly
     // Note that the ID should be chosen such that it doesn’t collide with any IDs defined in
@@ -108,11 +143,56 @@ public class ClusterNodeUUID extends UUID {
   }
 
   /**
+   * 对象序列化
+   *
+   * @return 二进制
+   * @throws IOException 异常
+   */
+  public byte[] serialize() throws IOException {
+    return CONVERTER.to(this);
+  }
+
+  /**
+   * 反序列化
+   *
+   * @param bytes 二进制
+   * @return 对象
+   * @throws IOException 异常
+   */
+  public static ClusterNodeUUID deserialize(byte[] bytes) throws IOException {
+    return CONVERTER.from(bytes);
+  }
+
+  /**
    * 获取节点打印信息
    *
    * @return 打印信息
    */
   public String printClusterNodeInfo() {
-    return String.format("[%s]", clusterNodeInfo);
+    StringJoiner joiner = new StringJoiner(lineSeparator());
+    String jpVersion = Version.print((short) clusterNodeInfo.getJgVersion());
+    String hostName = clusterNodeInfo.getHostName();
+    String instanceName = clusterNodeInfo.getInstanceName();
+    String ipAddresses =
+        clusterNodeInfo.getIpAddressesList().stream()
+            .map(DefaultClusterNode::getIpAddress)
+            .collect(joining(",", "[", "]"));
+    ClusterNodeRole role = ClusterNodeRole.find(clusterNodeInfo.getRole());
+    String attributes =
+        clusterNodeInfo.getAttributesMap().entrySet().stream()
+            .map(e -> String.format("%s=%s", e.getKey(), e.getValue()))
+            .collect(joining(",", "[", "]"));
+    String version = DevastatorProperties.parse((short) clusterNodeInfo.getDevastatorVersion());
+    joiner
+        .add("ClusterNodeInfo: {")
+        .add(String.format("version:%s", version))
+        .add(String.format("jpVersion:%s", jpVersion))
+        .add(String.format("hostName:%s", hostName))
+        .add(String.format("role:%s", role.name()))
+        .add(String.format("instanceName:%s", instanceName))
+        .add(String.format("ipAddresses:%s", ipAddresses))
+        .add(String.format("attributes:%s", attributes))
+        .add("}");
+    return joiner.toString();
   }
 }

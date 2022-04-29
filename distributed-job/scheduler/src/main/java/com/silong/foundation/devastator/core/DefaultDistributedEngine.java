@@ -18,9 +18,10 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
-import com.silong.foundation.devastator.exception.GeneralException;
+import com.silong.foundation.devastator.exception.InitializationException;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -30,8 +31,6 @@ import org.jgroups.*;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
 import org.jgroups.protocols.pbcast.GMS;
-import org.jgroups.util.ByteArrayDataInputStream;
-import org.jgroups.util.ByteArrayDataOutputStream;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -42,9 +41,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
+import static com.silong.foundation.devastator.config.DevastatorProperties.getVersionNumber;
+import static com.silong.foundation.devastator.core.ClusterNodeUUID.deserialize;
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNull;
+import static com.silong.foundation.devastator.utils.TypeConverter.STRING_TO_BYTES;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
 
@@ -79,7 +79,10 @@ public class DefaultDistributedEngine
   private final PersistStorage persistStorage;
 
   /** 集群状态 */
-  private ClusterState clusterState;
+  private volatile ClusterState clusterState;
+
+  /** 最后一个集群视图 */
+  private volatile View lastView;
 
   /**
    * 构造方法
@@ -90,7 +93,16 @@ public class DefaultDistributedEngine
     if (config == null) {
       throw new IllegalArgumentException("config must not be null.");
     }
-    try (InputStream inputStream = requireNonNull(locateConfig(config.configFile())).openStream()) {
+
+    URL configUrl;
+    try {
+      configUrl = locateConfig(config.configFile());
+    } catch (MalformedURLException e) {
+      throw new IllegalArgumentException(
+          String.format("Failed to load %s.", config.configFile()), e);
+    }
+
+    try (InputStream inputStream = configUrl.openStream()) {
       this.config = config;
       this.allocator = new RendezvousAllocator(getPartitionCount());
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
@@ -102,51 +114,18 @@ public class DefaultDistributedEngine
       this.jChannel.addChannelListener(this);
 
       // 自定义集群节点策略
-      getGmsProtocol().setMembershipChangePolicy(INSTANCE);
+      this.getGmsProtocol().setMembershipChangePolicy(INSTANCE);
 
       this.jChannel.connect(config.clusterName());
 
       // 获取集群状态
       this.jChannel.getState(null, config.clusterStateSyncTimeout());
     } catch (Exception e) {
-      throw new GeneralException("Failed to start distributed engine.", e);
+      throw new InitializationException("Failed to start distributed engine.", e);
     }
   }
 
-  @SneakyThrows
-  private ClusterNodeUUID buildAddressGenerator() {
-    byte[] key =
-        String.format("%s:%s:%s", config.clusterName(), getHostName(), config.instanceName())
-            .getBytes(UTF_8);
-    byte[] value = persistStorage.get(key);
-    ClusterNodeInfo clusterNodeInfo = buildClusterNodeInfo();
-    ClusterNodeUUID uuid;
-    if (value != null) {
-      uuid = new ClusterNodeUUID();
-      uuid.readFrom(new ByteArrayDataInputStream(value));
-      uuid.clusterNodeInfo(clusterNodeInfo);
-    } else {
-      uuid = ClusterNodeUUID.random().clusterNodeInfo(clusterNodeInfo);
-      ByteArrayDataOutputStream out = new ByteArrayDataOutputStream();
-      uuid.writeTo(out);
-      persistStorage.put(key, out.getBuffer().getBytes());
-    }
-    return uuid;
-  }
-
-  private ClusterNodeInfo buildClusterNodeInfo() {
-    return ClusterNodeInfo.newBuilder()
-        .setJgVersion(Version.version)
-        .setVersion(config.version())
-        .putAllAttributes(config.clusterNodeAttributes())
-        .setInstanceName(config.instanceName())
-        .setHostName(getHostName())
-        .setRole(config.clusterNodeRole().getValue())
-        .addAllAddresses(getLocalAllAddresses())
-        .build();
-  }
-
-  private URL locateConfig(String confFile) throws Exception {
+  private URL locateConfig(String confFile) throws MalformedURLException {
     try {
       return new URL(confFile);
     } catch (MalformedURLException e) {
@@ -160,7 +139,39 @@ public class DefaultDistributedEngine
   }
 
   @SneakyThrows
-  private Collection<String> getLocalAllAddresses() {
+  private ClusterNodeUUID buildAddressGenerator() {
+    byte[] key = STRING_TO_BYTES.to(getClusterNodeUuidKey());
+    byte[] value = persistStorage.get(key);
+    ClusterNodeInfo clusterNodeInfo = buildClusterNodeInfo();
+    ClusterNodeUUID uuid;
+    if (value != null) {
+      uuid = deserialize(value);
+
+      // 更新节点附加信息
+      uuid.clusterNodeInfo(clusterNodeInfo);
+    } else {
+      uuid = ClusterNodeUUID.random().clusterNodeInfo(clusterNodeInfo);
+
+      // 保存uuid
+      persistStorage.put(key, uuid.serialize());
+    }
+    return uuid;
+  }
+
+  private ClusterNodeInfo buildClusterNodeInfo() {
+    return ClusterNodeInfo.newBuilder()
+        .setJgVersion(Version.version)
+        .setDevastatorVersion(getVersionNumber())
+        .putAllAttributes(config.clusterNodeAttributes())
+        .setInstanceName(config.instanceName())
+        .setHostName(getHostName())
+        .setRole(config.clusterNodeRole().getValue())
+        .addAllIpAddresses(getLocalAllAddresses())
+        .build();
+  }
+
+  @SneakyThrows
+  private Collection<ByteString> getLocalAllAddresses() {
     List<InetAddress> list = new LinkedList<>();
     Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
     while (interfaces.hasMoreElements()) {
@@ -170,7 +181,17 @@ public class DefaultDistributedEngine
         list.add(inetAddresses.nextElement());
       }
     }
-    return list.stream().map(InetAddress::getHostAddress).toList();
+    return list.stream().map(InetAddress::getAddress).map(ByteString::copyFrom).toList();
+  }
+
+  /**
+   * 构造节点持久化key
+   *
+   * @return key
+   */
+  private String getClusterNodeUuidKey() {
+    return String.format(
+        "%s:%s:%s:node:uuid", config.clusterName(), getHostName(), config.instanceName());
   }
 
   /**
