@@ -30,7 +30,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import static com.silong.foundation.devastator.config.ConfiguableProperties.*;
 import static org.rocksdb.util.SizeUnit.KB;
 
 /**
@@ -41,6 +40,18 @@ import static org.rocksdb.util.SizeUnit.KB;
  * @since 2022-04-22 22:44
  */
 public final class KryoUtils {
+
+  /** kryo对象池容量，默认：8 */
+  public static final int KRYO_POOL_CAPACITY =
+      Integer.parseInt(System.getProperty("kryo.pool.capacity", "8"));
+
+  /** kryo Input对象池容量，默认：16 */
+  public static final int KRYO_INPUT_POOL_CAPACITY =
+      Integer.parseInt(System.getProperty("kryo.input.pool.capacity", "16"));
+
+  /** kryo Output对象池容量，默认：16 */
+  public static final int KRYO_OUTPUT_POOL_CAPACITY =
+      Integer.parseInt(System.getProperty("kryo.output.pool.capacity", "16"));
 
   private static final int DEFAULT_BUFFER_SIZE = (int) (4 * KB);
 
