@@ -178,56 +178,51 @@ public class DefaultDistributedEngine
   private ClusterNodeUUID buildAddressGenerator() {
     byte[] key = STRING_TO_BYTES.to(getClusterNodeUuidKey());
     byte[] value = persistStorage.get(key);
-    ClusterNodeInfo clusterNodeInfo = buildClusterNodeInfo();
     ClusterNodeUUID uuid;
     if (value != null) {
       uuid = deserialize(value);
-
-      // 更新节点附加信息
-      uuid.clusterNodeInfo(clusterNodeInfo);
     } else {
-      uuid = ClusterNodeUUID.random().clusterNodeInfo(clusterNodeInfo);
+      uuid = ClusterNodeUUID.random();
 
       // 保存uuid
       persistStorage.put(key, uuid.serialize());
     }
-    return uuid;
+    // 更新节点附加信息
+    return uuid.clusterNodeInfo(buildClusterNodeInfo());
   }
 
   private ClusterNodeInfo buildClusterNodeInfo() {
     RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
     return ClusterNodeInfo.newBuilder()
         .setJgVersion(Version.version)
-//        .setPid(mxbean.getPid())
-        .setClusterName(config.clusterName())
-//        .setStartTime(mxbean.getStartTime())
-//        .setJvmInfo(buildJvmInfo(mxbean))
-//        .setHardwareInfo(buildHardwareInfo())
+        .setPid(mxbean.getPid())
+        .setClusterName(clusterName())
+        .setStartTime(mxbean.getStartTime())
+        .setJvmInfo(buildJvmInfo(mxbean))
+        .setHardwareInfo(buildHardwareInfo())
         .setDevastatorVersion(DevastatorProperties.version().getVersion())
         .putAllAttributes(config.clusterNodeAttributes())
         .setInstanceName(config.instanceName())
         .setHostName(getHostName())
         .setRole(config.clusterNodeRole().getValue())
-//        .addAllIpAddresses(getLocalAllAddresses())
+        .addAllIpAddresses(getLocalAllAddresses())
         .build();
   }
 
-  private HardwareInfo buildHardwareInfo() {
+  private HardwareInfo.Builder buildHardwareInfo() {
     Runtime runtime = Runtime.getRuntime();
     return HardwareInfo.newBuilder()
         .setAvailableProcessors(runtime.availableProcessors())
-        .setTotalMemory(runtime.totalMemory())
-        .build();
+        .setTotalMemory(runtime.totalMemory());
   }
 
-  private JvmInfo buildJvmInfo(RuntimeMXBean mxbean) {
+  private JvmInfo.Builder buildJvmInfo(RuntimeMXBean mxbean) {
     return JvmInfo.newBuilder()
         .setVmVendor(mxbean.getVmVendor())
         .setVmVersion(mxbean.getVmVersion())
         .setVmName(mxbean.getVmName())
         .setClassPath(String.join(";", mxbean.getClassPath()))
-        .setVmArgs(String.join(" ", mxbean.getInputArguments()))
-        .build();
+        .setVmArgs(String.join(" ", mxbean.getInputArguments()));
   }
 
   @SneakyThrows

@@ -87,9 +87,6 @@ public class UdpEngineTests {
 
   @Test
   void test2() throws IOException {
-
-    short parse = Version.parse("1.0.1");
-
     String name1 = animal.name();
     DistributedEngine distributedEngine1 =
         buildEngine(
