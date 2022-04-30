@@ -64,10 +64,10 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
   private SerializableBiPredicate<ClusterNode, Collection<ClusterNode>> affinityBackupFilter;
 
   /** 分区数量 */
-  private int partitions;
+  private volatile int partitions;
 
   /** 标识分区数值是否为2的指数，-1表示非2的指数 */
-  private int mask;
+  private volatile int mask;
 
   /** 默认构造方法 */
   public RendezvousAllocator() {
@@ -138,9 +138,19 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     return partitions;
   }
 
+  /**
+   * 计算key映射到的partitions编号
+   *
+   * @param key – Key 建对象.
+   * @return 给定key映射到的分区编号.
+   */
   @Override
   public int partition(Object key) {
-    return calculatePartition(key);
+    if (mask >= 0) {
+      int h;
+      return ((h = key.hashCode()) ^ (h >>> 16)) & mask;
+    }
+    return Math.max(Math.abs(key.hashCode() % partitions), 0);
   }
 
   private WeightNodeTuple[] calculateNodeWeight(
@@ -331,19 +341,5 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
    */
   private int calculateMask(int partCount) {
     return (partCount & (partCount - 1)) == 0 ? partCount - 1 : -1;
-  }
-
-  /**
-   * 计算key映射到的partitions编号
-   *
-   * @param key – Key 建对象.
-   * @return 给定key映射到的分区编号.
-   */
-  private int calculatePartition(Object key) {
-    if (mask >= 0) {
-      int h;
-      return ((h = key.hashCode()) ^ (h >>> 16)) & mask;
-    }
-    return Math.max(Math.abs(key.hashCode() % partitions), 0);
   }
 }
