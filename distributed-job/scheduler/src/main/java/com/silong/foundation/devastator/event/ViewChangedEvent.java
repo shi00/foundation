@@ -26,7 +26,6 @@ import lombok.experimental.Accessors;
 import org.jgroups.View;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
 

@@ -8,11 +8,31 @@ option java_outer_classname = "Devastator";
 message ClusterNodeInfo {
   uint32 devastator_version = 1; //节点软件版本号
   uint32 jg_version = 2; //jgroups版本号
-  string host_name = 3; //主机名
-  string instance_name = 4; //实例名
-  repeated bytes ip_addresses = 5; //节点所有IP地址列表
-  uint32 role = 6; //节点角色
-  map<string, string> attributes = 7; //节点属性
+  uint64 pid = 3;  //进程id
+  uint64 start_time = 4; //启动时间，UTC时间
+  string cluster_name = 12; //集群名
+  string host_name = 5; //主机名
+  string instance_name = 6; //实例名
+  repeated string ip_addresses = 7; //节点所有IP地址列表
+  uint32 role = 8; //节点角色
+  map<string, string> attributes = 9; //节点属性
+  JvmInfo jvm_info = 10; //jvm信息
+  HardwareInfo hardware_info = 11; //硬件信息
+}
+
+//操作系统信息
+message HardwareInfo{
+  uint64 total_memory = 1; //内存总量，单位：字节
+  uint32 available_processors = 2; //可用cpu数量
+}
+
+//集群节点运行时信息
+message JvmInfo{
+  string vmVersion = 1; //jvm版本
+  string vmVendor = 2;  //jvm厂商
+  string vmName = 3;    //jvm名
+  string classPath = 4; //classpath
+  string vmArgs = 5;    //jvm启动参数
 }
 
 //集群状态

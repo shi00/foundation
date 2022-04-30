@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.google.protobuf.ByteString;
 import com.lmax.disruptor.LiteBlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
@@ -30,6 +29,8 @@ import com.silong.foundation.devastator.exception.InitializationException;
 import com.silong.foundation.devastator.handler.ViewChangedEventHandler;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
+import com.silong.foundation.devastator.model.Devastator.HardwareInfo;
+import com.silong.foundation.devastator.model.Devastator.JvmInfo;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -40,13 +41,14 @@ import org.jgroups.protocols.UDP;
 import org.jgroups.protocols.pbcast.GMS;
 
 import java.io.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 import static com.silong.foundation.devastator.core.ClusterNodeUUID.deserialize;
@@ -86,13 +88,14 @@ public class DefaultDistributedEngine
   /** 持久化存储 */
   private final PersistStorage persistStorage;
 
+  /** 事件变更消息队列 */
+  private final Disruptor<ViewChangedEvent> viewChangedEventDisruptor;
+
   /** 集群状态 */
   private volatile ClusterState clusterState;
 
   /** 最后一个集群视图 */
   private volatile View lastView;
-
-  private final Disruptor<ViewChangedEvent> viewChangedEventDisruptor;
 
   /**
    * 构造方法
@@ -145,13 +148,12 @@ public class DefaultDistributedEngine
   }
 
   private Disruptor<ViewChangedEvent> buildViewChangedEventDisruptor(int queueSize) {
-    AtomicInteger count = new AtomicInteger(0);
     Disruptor<ViewChangedEvent> disruptor =
         new Disruptor<>(
             ViewChangedEvent::new,
             queueSize,
             r -> {
-              return new Thread(r, "ViewChangedEventProcessor-" + count.getAndIncrement());
+              return new Thread(r, "ViewChangedEvent-Processor");
             },
             MULTI,
             new LiteBlockingWaitStrategy());
@@ -193,19 +195,43 @@ public class DefaultDistributedEngine
   }
 
   private ClusterNodeInfo buildClusterNodeInfo() {
+    RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
     return ClusterNodeInfo.newBuilder()
         .setJgVersion(Version.version)
+//        .setPid(mxbean.getPid())
+        .setClusterName(config.clusterName())
+//        .setStartTime(mxbean.getStartTime())
+//        .setJvmInfo(buildJvmInfo(mxbean))
+//        .setHardwareInfo(buildHardwareInfo())
         .setDevastatorVersion(DevastatorProperties.version().getVersion())
         .putAllAttributes(config.clusterNodeAttributes())
         .setInstanceName(config.instanceName())
         .setHostName(getHostName())
         .setRole(config.clusterNodeRole().getValue())
-        .addAllIpAddresses(getLocalAllAddresses())
+//        .addAllIpAddresses(getLocalAllAddresses())
+        .build();
+  }
+
+  private HardwareInfo buildHardwareInfo() {
+    Runtime runtime = Runtime.getRuntime();
+    return HardwareInfo.newBuilder()
+        .setAvailableProcessors(runtime.availableProcessors())
+        .setTotalMemory(runtime.totalMemory())
+        .build();
+  }
+
+  private JvmInfo buildJvmInfo(RuntimeMXBean mxbean) {
+    return JvmInfo.newBuilder()
+        .setVmVendor(mxbean.getVmVendor())
+        .setVmVersion(mxbean.getVmVersion())
+        .setVmName(mxbean.getVmName())
+        .setClassPath(String.join(";", mxbean.getClassPath()))
+        .setVmArgs(String.join(" ", mxbean.getInputArguments()))
         .build();
   }
 
   @SneakyThrows
-  private Collection<ByteString> getLocalAllAddresses() {
+  private Collection<String> getLocalAllAddresses() {
     List<InetAddress> list = new LinkedList<>();
     Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
     while (interfaces.hasMoreElements()) {
@@ -215,7 +241,7 @@ public class DefaultDistributedEngine
         list.add(inetAddresses.nextElement());
       }
     }
-    return list.stream().map(InetAddress::getAddress).map(ByteString::copyFrom).toList();
+    return list.stream().map(InetAddress::getHostAddress).toList();
   }
 
   /**

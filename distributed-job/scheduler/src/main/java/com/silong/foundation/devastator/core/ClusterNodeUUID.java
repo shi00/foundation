@@ -18,14 +18,12 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
-import com.silong.foundation.devastator.config.DevastatorProperties;
+import com.google.protobuf.TextFormat;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.jgroups.Version;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.util.ByteArrayDataInputStream;
 import org.jgroups.util.ByteArrayDataOutputStream;
@@ -34,11 +32,8 @@ import org.jgroups.util.UUID;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.StringJoiner;
 import java.util.function.Supplier;
 
-import static java.lang.System.lineSeparator;
-import static java.util.stream.Collectors.joining;
 import static org.jgroups.util.Util.readByteBuffer;
 import static org.jgroups.util.Util.writeByteBuffer;
 
@@ -169,30 +164,6 @@ public class ClusterNodeUUID extends UUID {
    * @return 打印信息
    */
   public String printClusterNodeInfo() {
-    StringJoiner joiner = new StringJoiner(lineSeparator());
-    String jpVersion = Version.print((short) clusterNodeInfo.getJgVersion());
-    String hostName = clusterNodeInfo.getHostName();
-    String instanceName = clusterNodeInfo.getInstanceName();
-    String ipAddresses =
-        clusterNodeInfo.getIpAddressesList().stream()
-            .map(DefaultClusterNode::getIpAddress)
-            .collect(joining(",", "[", "]"));
-    ClusterNodeRole role = ClusterNodeRole.find(clusterNodeInfo.getRole());
-    String attributes =
-        clusterNodeInfo.getAttributesMap().entrySet().stream()
-            .map(e -> String.format("%s=%s", e.getKey(), e.getValue()))
-            .collect(joining(",", "[", "]"));
-    String version = DevastatorProperties.version().toString();
-    joiner
-        .add("ClusterNodeInfo: {")
-        .add(String.format("version:%s", version))
-        .add(String.format("jpVersion:%s", jpVersion))
-        .add(String.format("hostName:%s", hostName))
-        .add(String.format("role:%s", role.name()))
-        .add(String.format("instanceName:%s", instanceName))
-        .add(String.format("ipAddresses:%s", ipAddresses))
-        .add(String.format("attributes:%s", attributes))
-        .add("}");
-    return joiner.toString();
+    return TextFormat.printer().printToString(this.clusterNodeInfo);
   }
 }

@@ -22,6 +22,7 @@ import com.lmax.disruptor.EventHandler;
 import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.core.DefaultDistributedEngine;
 import com.silong.foundation.devastator.event.ViewChangedEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.jgroups.MergeView;
 import org.jgroups.View;
 
@@ -37,6 +38,7 @@ import java.util.stream.IntStream;
  * @version 1.0.0
  * @since 2022-04-29 23:40
  */
+@Slf4j
 public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
@@ -57,11 +59,11 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, 
   }
 
   @Override
-  public void onEvent(ViewChangedEvent event, long sequence, boolean endOfBatch) throws Exception {
-    // 同步集群状态
-    engine.syncClusterState();
+  public void onEvent(ViewChangedEvent event, long sequence, boolean endOfBatch) {
+    try (event) {
+      // 同步集群状态
+      engine.syncClusterState();
 
-    try {
       View newView = event.newview();
       View oldView = event.oldView();
       if (newView instanceof MergeView) {
@@ -83,9 +85,8 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, 
                                 .allocatePartition(
                                     partitionNo, engine.getBackupNums(), clusterNodes, null)));
       }
-    } finally {
-      // 处理完毕置空，避免影响GC及时收集
-      event.close();
+    } catch (Exception e) {
+      log.warn("Failed to process {}.", event, e);
     }
   }
 }

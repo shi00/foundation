@@ -18,18 +18,15 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.config.DevastatorProperties.Version;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import lombok.SneakyThrows;
 import org.jgroups.Address;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -89,14 +86,7 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
 
   @Override
   public Collection<String> addresses() {
-    return getClusterNodeInfo().getIpAddressesList().stream()
-        .map(DefaultClusterNode::getIpAddress)
-        .toList();
-  }
-
-  @SneakyThrows
-  static String getIpAddress(ByteString bs) {
-    return InetAddress.getByAddress(bs.toByteArray()).getHostAddress();
+    return getClusterNodeInfo().getIpAddressesList().stream().toList();
   }
 
   @Override
