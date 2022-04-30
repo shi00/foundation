@@ -278,9 +278,8 @@ public class DefaultDistributedEngine
 
   /** 同步集群状态 */
   public void syncClusterState() throws Exception {
-    if (jChannel.isConnected()) {
-      jChannel.getState(null, config.clusterStateSyncTimeout());
-    }
+    // 向coord请求同步集群状态
+    jChannel.getState(null, config.clusterStateSyncTimeout());
   }
 
   /**
@@ -288,7 +287,7 @@ public class DefaultDistributedEngine
    *
    * @return 绑定地址
    */
-  public InetAddress getBindAddress() {
+  public InetAddress bindAddress() {
     TP transport = getTransport();
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastAddress()
@@ -300,7 +299,7 @@ public class DefaultDistributedEngine
    *
    * @return 绑定端口
    */
-  public int getBindPort() {
+  public int bindPort() {
     TP transport = getTransport();
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastPort()
@@ -361,11 +360,13 @@ public class DefaultDistributedEngine
               .build();
     }
     clusterState.writeTo(output);
+    log.info("The node{} sends the clusterState:{}", localIdentity(), clusterState);
   }
 
   @Override
   public void setState(InputStream input) throws Exception {
     clusterState = ClusterState.parseFrom(input);
+    log.info("The node{} receives the clusterState:{}", localIdentity(), clusterState);
   }
 
   @Override
@@ -399,16 +400,10 @@ public class DefaultDistributedEngine
     }
   }
 
-  @Override
-  public void channelConnected(JChannel channel) {
-    log.info(
-        "The node of [{}-{}({}:{})] has successfully joined the {}{}.",
-        getHostName(),
-        config.instanceName(),
-        getBindAddress().getHostAddress(),
-        getBindPort(),
-        channel.clusterName(),
-        printViewMembers(channel));
+  private String localIdentity() {
+    return String.format(
+        "(%s:%s|%s:%d)",
+        getHostName(), config.instanceName(), bindAddress().getHostAddress(), bindPort());
   }
 
   private String printViewMembers(JChannel channel) {
@@ -417,31 +412,29 @@ public class DefaultDistributedEngine
             address -> {
               ClusterNodeInfo clusterNodeInfo = ((ClusterNodeUUID) address).clusterNodeInfo();
               return String.format(
-                  "%s-%s", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
+                  "(%s:%s)", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
             })
-        .collect(joining(",", "{", "}"));
+        .collect(joining(",", "[", "]"));
+  }
+
+  @Override
+  public void channelConnected(JChannel channel) {
+    log.info(
+        "The node{} has successfully joined {} with topology:{}.",
+        localIdentity(),
+        channel.clusterName(),
+        printViewMembers(channel));
   }
 
   @Override
   public void channelDisconnected(JChannel channel) {
-    log.info(
-        "The node of [{}-{}({}:{})] has successfully left {}.",
-        getHostName(),
-        config.instanceName(),
-        getBindAddress().getHostAddress(),
-        getBindPort(),
-        config.clusterName());
+    log.info("The node{} has left {}.", localIdentity(), config.clusterName());
   }
 
   @Override
   @SneakyThrows
   public void channelClosed(JChannel channel) {
-    log.info(
-        "The node of [{}-{}({}:{})] has been successfully shutdown.",
-        getHostName(),
-        config.instanceName(),
-        getBindAddress().getHostAddress(),
-        getBindPort());
+    log.info("The node{} has been shutdown.", localIdentity());
     viewChangedEventDisruptor.shutdown();
     partition2ClusterNodes.clear();
     if (persistStorage != null) {

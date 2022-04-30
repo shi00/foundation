@@ -20,9 +20,12 @@ package com.silong.foundation.devastator.handler;
 
 import com.lmax.disruptor.EventHandler;
 import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.core.ClusterNodeUUID;
 import com.silong.foundation.devastator.core.DefaultDistributedEngine;
 import com.silong.foundation.devastator.event.ViewChangedEvent;
+import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.jgroups.Address;
 import org.jgroups.MergeView;
 import org.jgroups.View;
 
@@ -58,14 +61,40 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, 
     this.engine = engine;
   }
 
+  private boolean isCoordChanged(View oldView, View newView) {
+    if (oldView == null) {
+      return true;
+    }
+    Address newCoord = newView.getMembers().get(0);
+    Address oldCoord = oldView.getMembers().get(0);
+    boolean isChanged = !newCoord.equals(oldCoord);
+    if (isChanged) {
+      ClusterNodeInfo newClusterNodeInfo = ((ClusterNodeUUID) newCoord).clusterNodeInfo();
+      ClusterNodeInfo oldClusterNodeInfo = ((ClusterNodeUUID) oldCoord).clusterNodeInfo();
+      String clusterName = newClusterNodeInfo.getClusterName();
+      log.info(
+          "The coordinator for {} has been changed from {} to {}",
+          clusterName,
+          nodeIdentity(oldClusterNodeInfo),
+          nodeIdentity(newClusterNodeInfo));
+    }
+    return isChanged;
+  }
+
+  private String nodeIdentity(ClusterNodeInfo clusterNodeInfo) {
+    return String.format("%s:%s", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
+  }
+
   @Override
   public void onEvent(ViewChangedEvent event, long sequence, boolean endOfBatch) {
     try (event) {
-      // 同步集群状态
-      engine.syncClusterState();
-
       View newView = event.newview();
       View oldView = event.oldView();
+      if (isCoordChanged(oldView, newView)) {
+        // 同步集群状态
+        engine.syncClusterState();
+      }
+
       if (newView instanceof MergeView) {
 
       } else {
