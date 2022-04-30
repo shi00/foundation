@@ -20,6 +20,7 @@ package com.silong.foundation.plugins.maven.wprops;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
@@ -78,7 +79,8 @@ public class PropertiesWriterMojo extends AbstractMojo {
   @Setter
   private boolean createDirectory;
 
-  public void execute() throws MojoFailureException {
+  @SneakyThrows
+  public void execute() {
     Log log = getLog();
 
     // 文件输出目录不存在，则创建
@@ -86,20 +88,20 @@ public class PropertiesWriterMojo extends AbstractMojo {
       if (outputDirectory.mkdirs()) {
         log.info(
             String.format(
-                "Directory %s was successfully created.", outputDirectory.getAbsolutePath()));
+                "Directory %s was successfully created.", outputDirectory.getCanonicalPath()));
       } else {
         throw new MojoFailureException(
-            "Failed to create directory " + outputDirectory.getAbsolutePath());
+            "Failed to create directory " + outputDirectory.getCanonicalPath());
       }
     }
 
     File outputFile = outputDirectory.toPath().resolve(fileName).toFile();
-    log.info("Saving properties to file " + outputFile.getAbsolutePath());
+    log.info("Saving properties to file " + outputFile.getCanonicalPath());
     try (FileOutputStream out = new FileOutputStream(outputFile)) {
       properties.store(out, comment);
     } catch (IOException e) {
       throw new MojoFailureException(
-          "Failed to save properties to " + outputFile.getAbsolutePath(), e);
+          "Failed to save properties to " + outputFile.getCanonicalPath(), e);
     }
   }
 }
