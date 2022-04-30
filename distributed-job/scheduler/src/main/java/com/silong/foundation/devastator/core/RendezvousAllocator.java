@@ -20,6 +20,7 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterDataAllocator;
 import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.model.WeightNodeTuple;
 import com.silong.foundation.devastator.utils.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.StreamSupport;
+
+import static com.silong.foundation.devastator.model.WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR;
+import static com.silong.foundation.devastator.utils.HashUtils.mixHash;
 
 /**
  *
@@ -83,15 +86,6 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
   }
 
   /**
-   * 获取分区数量。
-   *
-   * @return 分区数量
-   */
-  public int getPartitions() {
-    return partitions;
-  }
-
-  /**
    * 设置分区数量，其中partitions值必须大于0，小于等于{@code MAX_PARTITIONS_COUNT}<br>
    * 推荐分区为2的指数值，提升计算性能
    *
@@ -134,6 +128,11 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
     return this;
   }
 
+  /**
+   * 获取分区数量。
+   *
+   * @return 分区数量
+   */
   @Override
   public int partitions() {
     return partitions;
@@ -142,56 +141,6 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
   @Override
   public int partition(Object key) {
     return calculatePartition(key);
-  }
-
-  private static class WeightNodeTupleComparator
-      implements Comparator<WeightNodeTuple>, Serializable {
-    @Serial private static final long serialVersionUID = 0L;
-
-    public static final WeightNodeTupleComparator COMPARATOR = new WeightNodeTupleComparator();
-
-    /** forbidden */
-    private WeightNodeTupleComparator() {}
-
-    /** {@inheritDoc} */
-    @Override
-    public int compare(WeightNodeTuple o1, WeightNodeTuple o2) {
-      return o1.weight < o2.weight
-          ? -1
-          : o1.weight > o2.weight ? 1 : o1.node.uuid().compareTo(o2.node.uuid());
-    }
-  }
-
-  private record WeightNodeTuple(long weight, ClusterNode node) implements Comparable<WeightNodeTuple>, Serializable {
-    @Serial
-    private static final long serialVersionUID = 0L;
-
-    @Override
-    public int compareTo(RendezvousAllocator.WeightNodeTuple o) {
-      return WeightNodeTupleComparator.COMPARATOR.compare(this, o);
-    }
-  }
-
-  /**
-   * 把两个int类型hash值组合成一个long型hash。<br>
-   * 基于Wang/Jenkins hash
-   *
-   * @param val1 Hash1
-   * @param val2 Hash2
-   * @see <a href="https://gist.github.com/badboy/6267743#64-bit-mix-functions">64 bit mix
-   *     functions</a>
-   * @return long hash
-   */
-  private long mixHash(int val1, int val2) {
-    long key = (val1 & 0xFFFFFFFFL) | ((val2 & 0xFFFFFFFFL) << 32);
-    key = (~key) + (key << 21);
-    key ^= (key >>> 24);
-    key += (key << 3) + (key << 8);
-    key ^= (key >>> 14);
-    key += (key << 2) + (key << 4);
-    key ^= (key >>> 28);
-    key += (key << 31);
-    return key;
   }
 
   private WeightNodeTuple[] calculateNodeWeight(
@@ -207,9 +156,18 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
       int backupNum,
       Collection<ClusterNode> clusterNodes,
       @Nullable Map<ClusterNode, Collection<ClusterNode>> neighborhood) {
-    validate(partitionNo, backupNum, clusterNodes);
+    if (partitionNo < 0 || partitionNo >= partitions) {
+      throw new IllegalArgumentException(
+          String.format("partitionNo must be greater than or equal to 0 less than %d", partitions));
+    }
 
-    WeightNodeTuple[] weightNodeTuples = calculateNodeWeight(partitionNo, clusterNodes);
+    if (backupNum < 0) {
+      throw new IllegalArgumentException("backupNum must be greater than or equal to 0");
+    }
+
+    if (clusterNodes == null || clusterNodes.isEmpty()) {
+      throw new IllegalArgumentException("clusterNodes must not be null or empty.");
+    }
 
     // 计算集群中真实保存的数据份数，含主
     final int primaryAndBackups =
@@ -217,26 +175,27 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
             ? clusterNodes.size()
             : Math.min(backupNum + 1, clusterNodes.size());
 
+    // 如果是同步复制到所有节点，则直接返回所有节点
+    if (primaryAndBackups == clusterNodes.size()) {
+      return new ArrayList<>(clusterNodes);
+    }
+
+    // 延迟排序优化
+    WeightNodeTuple[] weightNodeTuples = calculateNodeWeight(partitionNo, clusterNodes);
     Iterable<ClusterNode> sortedNodes =
         new LazyLinearSortedContainer(weightNodeTuples, primaryAndBackups);
 
-    // 如果是同步复制到所有节点，则直接按照节点权重排序顺序返回
-    if (backupNum == Integer.MAX_VALUE) {
-      return StreamSupport.stream(sortedNodes.spliterator(), false).toList();
-    }
-
-    // 先添加主
+    // 先添加主(最高随机权重)
     Iterator<ClusterNode> it = sortedNodes.iterator();
     ClusterNode primary = it.next();
     List<ClusterNode> res = new ArrayList<>(primaryAndBackups);
     res.add(primary);
 
-    boolean exclNeighbors;
-    Collection<ClusterNode> allNeighbors =
-        (exclNeighbors = (neighborhood != null && !neighborhood.isEmpty()))
-            ? new HashSet<>()
-            : null;
+    // 是否排除邻居节点
+    boolean exclNeighbors = neighborhood != null && !neighborhood.isEmpty();
+    Collection<ClusterNode> allNeighbors = exclNeighbors ? new HashSet<>() : null;
 
+    // 选取备份节点
     if (backupNum > 0) {
       while (it.hasNext() && res.size() < primaryAndBackups) {
         ClusterNode node = it.next();
@@ -276,21 +235,6 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
 
     assert res.size() <= primaryAndBackups;
     return res;
-  }
-
-  private void validate(int partitionNo, int backupNum, Collection<ClusterNode> clusterNodes) {
-    if (partitionNo < 0 || partitionNo >= partitions) {
-      throw new IllegalArgumentException(
-          String.format("partitionNo must be greater than or equal to 0 less than %d", partitions));
-    }
-
-    if (backupNum < 0) {
-      throw new IllegalArgumentException("backupNum must be greater than or equal to 0");
-    }
-
-    if (clusterNodes == null || clusterNodes.isEmpty()) {
-      throw new IllegalArgumentException("clusterNodes must not be null or empty.");
-    }
   }
 
   private boolean isPassedAffinityBackupNodeFilter(ClusterNode node, List<ClusterNode> res) {
@@ -350,13 +294,13 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
         }
 
         if (cur < sorted) {
-          return arr[cur++].node;
+          return arr[cur++].node();
         }
 
         WeightNodeTuple min = arr[cur];
         int minIdx = cur;
         for (int i = cur + 1; i < arr.length; i++) {
-          if (WeightNodeTupleComparator.COMPARATOR.compare(arr[i], min) < 0) {
+          if (COMPARATOR.compare(arr[i], min) < 0) {
             minIdx = i;
             min = arr[i];
           }
@@ -368,7 +312,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
         }
 
         sorted = cur++;
-        return min.node;
+        return min.node();
       }
 
       /** {@inheritDoc} */
