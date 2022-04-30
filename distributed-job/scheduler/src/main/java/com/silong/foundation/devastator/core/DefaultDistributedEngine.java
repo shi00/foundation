@@ -24,6 +24,7 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
+import com.silong.foundation.devastator.config.DevastatorProperties;
 import com.silong.foundation.devastator.event.ViewChangedEvent;
 import com.silong.foundation.devastator.exception.InitializationException;
 import com.silong.foundation.devastator.handler.ViewChangedEventHandler;
@@ -48,7 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
-import static com.silong.foundation.devastator.config.DevastatorProperties.getVersionNumber;
 import static com.silong.foundation.devastator.core.ClusterNodeUUID.deserialize;
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
 import static com.silong.foundation.devastator.utils.TypeConverter.STRING_TO_BYTES;
@@ -195,7 +195,7 @@ public class DefaultDistributedEngine
   private ClusterNodeInfo buildClusterNodeInfo() {
     return ClusterNodeInfo.newBuilder()
         .setJgVersion(Version.version)
-        .setDevastatorVersion(getVersionNumber())
+        .setDevastatorVersion(DevastatorProperties.version().getVersion())
         .putAllAttributes(config.clusterNodeAttributes())
         .setInstanceName(config.instanceName())
         .setHostName(getHostName())

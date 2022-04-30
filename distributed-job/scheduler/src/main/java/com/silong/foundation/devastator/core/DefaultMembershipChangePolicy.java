@@ -65,19 +65,17 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
       Collection<Address> leavers,
       Collection<Address> suspects) {
     List<Address> members =
-        currentMembers == null || currentMembers.isEmpty()
-            ? new LinkedList<>()
-            : new LinkedList<>(currentMembers);
+        currentMembers.isEmpty() ? new LinkedList<>() : new LinkedList<>(currentMembers);
 
-    if (leavers != null && !leavers.isEmpty()) {
+    if (isNotEmpty(leavers)) {
       members.removeAll(leavers);
     }
 
-    if (suspects != null && !suspects.isEmpty()) {
+    if (isNotEmpty(suspects)) {
       members.removeAll(suspects);
     }
 
-    if (joiners != null && !joiners.isEmpty()) {
+    if (isNotEmpty(joiners)) {
       members.addAll(joiners);
     }
 
@@ -86,6 +84,7 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
   }
 
   private int compare(Address m1, Address m2) {
+    // 选取性能级别最高的节点优先作为coordinator
     int compare =
         Double.compare(
             getNodePowerWeight(m2, CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY),
@@ -94,29 +93,28 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
       return compare;
     }
 
-    // 客户端节点有限作为coordinator
+    // 客户端节点不承担工作负载，优先作为coordinator
     int role1 = getRole((ClusterNodeUUID) m1);
     int role2 = getRole((ClusterNodeUUID) m2);
     compare = Integer.compare(role2, role1);
     if (compare != 0) {
       return compare;
     }
+
+    // 按照uuid排序
     return m1.compareTo(m2);
   }
 
   @Override
   public List<Address> getNewMembership(Collection<Collection<Address>> subviews) {
-    Address coord =
-        subviews.stream()
-            .filter(view -> view != null && !view.isEmpty())
-            .map(view -> view.iterator().next())
-            .min(this::compare)
-            .orElseThrow(() -> new IllegalStateException("The coordinator does not exist."));
-    List<Address> addresses = new LinkedList<>();
-    subviews.stream().filter(view -> view != null && !view.isEmpty()).forEach(addresses::addAll);
-    addresses.sort(Comparable::compareTo);
-    addresses.remove(coord);
-    addresses.add(0, coord);
-    return addresses;
+    return subviews.stream()
+        .filter(this::isNotEmpty)
+        .flatMap(Collection::stream)
+        .sorted(this::compare)
+        .toList();
+  }
+
+  private boolean isNotEmpty(Collection<?> view) {
+    return !view.isEmpty();
   }
 }

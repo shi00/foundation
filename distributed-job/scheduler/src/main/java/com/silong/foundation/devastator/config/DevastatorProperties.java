@@ -19,10 +19,12 @@
 package com.silong.foundation.devastator.config;
 
 import com.silong.foundation.devastator.exception.InitializationException;
-import org.jgroups.Version;
+import lombok.EqualsAndHashCode;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Properties;
 import java.util.StringJoiner;
 
@@ -38,13 +40,18 @@ import java.util.StringJoiner;
  * @since 2022-04-28 22:11
  */
 @SuppressWarnings("URLCONNECTION_SSRF_FD")
-public final class DevastatorProperties {
+public final class DevastatorProperties implements Serializable {
+
+  @Serial private static final long serialVersionUID = 0L;
 
   /** 软件包配置 */
   private static final Properties DEVASTATOR;
 
   /** 配置文件路径 */
   public static final String DEVASTATOR_PROPERTIES = "META-INF/devastator.properties";
+
+  /** 软件版本 */
+  private static final Version VERSION;
 
   static {
     try (InputStream input =
@@ -58,50 +65,92 @@ public final class DevastatorProperties {
     } catch (IOException e) {
       throw new InitializationException("Failed to load " + DEVASTATOR_PROPERTIES, e);
     }
+
+    VERSION = getVersionInternal();
   }
 
   /** 禁止实例化 */
   private DevastatorProperties() {}
 
   /**
+   * 全部属性
+   *
+   * @return 全属性
+   */
+  public static Properties properties() {
+    return DEVASTATOR;
+  }
+
+  /**
+   * 获取软件版本
+   *
+   * @return 版本
+   */
+  public static Version version() {
+    return VERSION;
+  }
+
+  /**
    * 获取软件包版本号
    *
    * @return 软件版本号
    */
-  public static short getVersionNumber() {
-    return Version.parse(getVersionString());
+  private static Version getVersionInternal() {
+    return new Version(DEVASTATOR.getProperty(Version.VERSION, "0.0.1"));
   }
 
-  /**
-   * 解析字符串版本号为数字版本号
-   *
-   * @param version 字符串版本号
-   * @return 数字版本号
-   */
-  public static short parse(String version) {
-    return Version.parse(version);
-  }
+  /** 软件版本 */
+  @EqualsAndHashCode
+  public static final class Version implements Serializable {
 
-  /**
-   * 解析数字版本号为字符串版本号
-   *
-   * @param version 数字版本号
-   * @return 字符串版本号
-   */
-  public static String parse(short version) {
-    StringJoiner joiner = new StringJoiner(".");
-    for (short i : Version.decode(version)) {
-      joiner.add(String.valueOf(i));
+    @Serial private static final long serialVersionUID = 0L;
+
+    /** 版本key */
+    public static final String VERSION = "version";
+
+    /** 版本 */
+    private final short version;
+
+    Version(String version) {
+      this.version = org.jgroups.Version.parse(version);
     }
-    return joiner.toString();
-  }
 
-  /**
-   * 获取软件包版本号
-   *
-   * @return 软件版本号
-   */
-  public static String getVersionString() {
-    return DEVASTATOR.getProperty("version");
+    /**
+     * 获取软件包版本号
+     *
+     * @return 软件版本号
+     */
+    public short getVersion() {
+      return version;
+    }
+
+    /**
+     * 解析字符串版本号
+     *
+     * @param version 字符串版本号
+     * @return 版本
+     */
+    public static Version parse(String version) {
+      return new Version(version);
+    }
+
+    /**
+     * 解析数字版本号
+     *
+     * @param version 数字版本号
+     * @return 版本
+     */
+    public static Version parse(short version) {
+      StringJoiner joiner = new StringJoiner(".");
+      for (short i : org.jgroups.Version.decode(version)) {
+        joiner.add(String.valueOf(i));
+      }
+      return new Version(joiner.toString());
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(version);
+    }
   }
 }

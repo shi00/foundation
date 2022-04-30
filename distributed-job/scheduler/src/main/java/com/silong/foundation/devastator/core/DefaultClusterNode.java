@@ -79,7 +79,9 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
 
   @Override
   public String version() {
-    return DevastatorProperties.parse((short) getClusterNodeInfo().getDevastatorVersion());
+    return DevastatorProperties.version()
+        .parse((short) getClusterNodeInfo().getDevastatorVersion())
+        .toString();
   }
 
   @Override

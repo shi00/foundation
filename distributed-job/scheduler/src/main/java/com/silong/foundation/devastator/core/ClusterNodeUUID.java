@@ -182,7 +182,7 @@ public class ClusterNodeUUID extends UUID {
         clusterNodeInfo.getAttributesMap().entrySet().stream()
             .map(e -> String.format("%s=%s", e.getKey(), e.getValue()))
             .collect(joining(",", "[", "]"));
-    String version = DevastatorProperties.parse((short) clusterNodeInfo.getDevastatorVersion());
+    String version = DevastatorProperties.version().toString();
     joiner
         .add("ClusterNodeInfo: {")
         .add(String.format("version:%s", version))
