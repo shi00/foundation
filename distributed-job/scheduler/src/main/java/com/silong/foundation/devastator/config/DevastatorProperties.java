@@ -29,11 +29,7 @@ import java.util.Properties;
 import java.util.StringJoiner;
 
 /**
- * 软件包信息 <br>
- * 软件版本号组合公式: major.minor.micro <br>
- * X = 0-31 for major versions <br>
- * Y = 0-31 for minor versions <br>
- * Z = 0-63 for micro versions <br>
+ * 软件包配置
  *
  * @author louis sin
  * @version 1.0.0
@@ -99,7 +95,13 @@ public final class DevastatorProperties implements Serializable {
     return new Version(DEVASTATOR.getProperty(Version.VERSION, "0.0.1"));
   }
 
-  /** 软件版本 */
+  /**
+   * 软件包信息 <br>
+   * 软件版本号组合公式: major.minor.micro <br>
+   * X = 0-31 for major versions <br>
+   * Y = 0-31 for minor versions <br>
+   * Z = 0-63 for micro versions <br>
+   */
   @EqualsAndHashCode
   public static final class Version implements Serializable {
 
