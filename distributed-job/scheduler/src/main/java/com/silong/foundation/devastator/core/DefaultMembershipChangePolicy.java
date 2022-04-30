@@ -67,15 +67,15 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
     List<Address> members =
         currentMembers.isEmpty() ? new LinkedList<>() : new LinkedList<>(currentMembers);
 
-    if (isNotEmpty(leavers)) {
+    if (!leavers.isEmpty()) {
       members.removeAll(leavers);
     }
 
-    if (isNotEmpty(suspects)) {
+    if (!suspects.isEmpty()) {
       members.removeAll(suspects);
     }
 
-    if (isNotEmpty(joiners)) {
+    if (!joiners.isEmpty()) {
       members.addAll(joiners);
     }
 
@@ -108,13 +108,9 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
   @Override
   public List<Address> getNewMembership(Collection<Collection<Address>> subviews) {
     return subviews.stream()
-        .filter(this::isNotEmpty)
+        .filter(view -> !view.isEmpty())
         .flatMap(Collection::stream)
         .sorted(this::compare)
         .toList();
-  }
-
-  private boolean isNotEmpty(Collection<?> view) {
-    return !view.isEmpty();
   }
 }
