@@ -61,19 +61,28 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, 
     this.engine = engine;
   }
 
+  private ClusterNodeInfo getClusterNodeInfo(Address address) {
+    return ((ClusterNodeUUID) address).clusterNodeInfo();
+  }
+
   private boolean isCoordChanged(View oldView, View newView) {
+    Address newCoord = newView.getMembers().get(0);
+    ClusterNodeInfo newClusterNodeInfo = getClusterNodeInfo(newCoord);
     if (oldView == null) {
+      log.info(
+          "{} becomes the coordinator of {}.",
+          nodeIdentity(newClusterNodeInfo),
+          newClusterNodeInfo.getClusterName());
       return true;
     }
-    Address newCoord = newView.getMembers().get(0);
+
     Address oldCoord = oldView.getMembers().get(0);
     boolean isChanged = !newCoord.equals(oldCoord);
     if (isChanged) {
-      ClusterNodeInfo newClusterNodeInfo = ((ClusterNodeUUID) newCoord).clusterNodeInfo();
-      ClusterNodeInfo oldClusterNodeInfo = ((ClusterNodeUUID) oldCoord).clusterNodeInfo();
+      ClusterNodeInfo oldClusterNodeInfo = getClusterNodeInfo(oldCoord);
       String clusterName = newClusterNodeInfo.getClusterName();
       log.info(
-          "The coordinator for {} has been changed from {} to {}",
+          "The coordinator for {} has been changed from {} to {}.",
           clusterName,
           nodeIdentity(oldClusterNodeInfo),
           nodeIdentity(newClusterNodeInfo));
@@ -87,9 +96,11 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, 
 
   @Override
   public void onEvent(ViewChangedEvent event, long sequence, boolean endOfBatch) {
+    View newView = null;
+    View oldView = null;
     try (event) {
-      View newView = event.newview();
-      View oldView = event.oldView();
+      newView = event.newview();
+      oldView = event.oldView();
       if (isCoordChanged(oldView, newView)) {
         // 同步集群状态
         engine.syncClusterState();
@@ -115,7 +126,7 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, 
                                     partitionNo, engine.getBackupNums(), clusterNodes, null)));
       }
     } catch (Exception e) {
-      log.warn("Failed to process {}.", event, e);
+      log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
     }
   }
 }

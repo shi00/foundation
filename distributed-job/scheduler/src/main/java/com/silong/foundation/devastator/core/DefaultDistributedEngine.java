@@ -49,6 +49,7 @@ import java.net.NetworkInterface;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadFactory;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 import static com.silong.foundation.devastator.core.ClusterNodeUUID.deserialize;
@@ -147,14 +148,16 @@ public class DefaultDistributedEngine
     }
   }
 
+  private ThreadFactory viewChangedEventThreadFactory() {
+    return r -> new Thread(r, "view-changed-event-processor");
+  }
+
   private Disruptor<ViewChangedEvent> buildViewChangedEventDisruptor(int queueSize) {
     Disruptor<ViewChangedEvent> disruptor =
         new Disruptor<>(
             ViewChangedEvent::new,
             queueSize,
-            r -> {
-              return new Thread(r, "ViewChangedEvent-Processor");
-            },
+            viewChangedEventThreadFactory(),
             MULTI,
             new LiteBlockingWaitStrategy());
     disruptor.handleEventsWith(new ViewChangedEventHandler(this));
@@ -360,13 +363,13 @@ public class DefaultDistributedEngine
               .build();
     }
     clusterState.writeTo(output);
-    log.info("The node{} sends the clusterState:{}", localIdentity(), clusterState);
+    log.info("The node{} sends the clusterState:[{}]", localIdentity(), clusterState);
   }
 
   @Override
   public void setState(InputStream input) throws Exception {
     clusterState = ClusterState.parseFrom(input);
-    log.info("The node{} receives the clusterState:{}", localIdentity(), clusterState);
+    log.info("The node{} receives the clusterState:[{}]", localIdentity(), clusterState);
   }
 
   @Override
