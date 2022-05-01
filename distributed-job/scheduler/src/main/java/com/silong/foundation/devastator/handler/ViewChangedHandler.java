@@ -37,7 +37,7 @@ import java.io.Serializable;
 import java.util.concurrent.ThreadFactory;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
-import static com.silong.foundation.devastator.core.DefaultDistributedEngine.calculateMask;
+import static com.silong.foundation.devastator.core.DefaultObjectPartitionMapping.calculateMask;
 
 /**
  * 集群视图变化事件处理器

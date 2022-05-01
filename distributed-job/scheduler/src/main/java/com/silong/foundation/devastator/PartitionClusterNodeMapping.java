@@ -40,31 +40,7 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2022-04-09 19:01
  */
-public interface ClusterDataAllocator extends Serializable {
-
-  /** 默认分区数. */
-  int DEFAULT_PARTITION_SIZE = 1024;
-
-  /** 最大分区数 */
-  int MAX_PARTITIONS_COUNT = 8192;
-
-  /** 最小分区数 */
-  int MIN_PARTITIONS_COUNT = 1;
-
-  /**
-   * 数据在集群内的分区数量
-   *
-   * @return 分区数量
-   */
-  int partitions();
-
-  /**
-   * 数据key映射到分区
-   *
-   * @param key 数据key
-   * @return 分区编号
-   */
-  int partition(Object key);
+public interface PartitionClusterNodeMapping extends Serializable {
 
   /**
    * 分区到集群节点映射

@@ -29,8 +29,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.silong.foundation.devastator.ClusterDataAllocator.DEFAULT_PARTITION_SIZE;
-import static com.silong.foundation.devastator.ClusterDataAllocator.MAX_PARTITIONS_COUNT;
 import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.WORKER;
 
 /**
@@ -45,6 +43,15 @@ import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.WORKE
 public class DevastatorConfig implements Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
+
+  /** 默认分区数. */
+  public static final int DEFAULT_PARTITION_SIZE = 1024;
+
+  /** 最大分区数 */
+  public static final int MAX_PARTITIONS_COUNT = 8192;
+
+  /** 最小分区数 */
+  public static final int MIN_PARTITIONS_COUNT = 1;
 
   /** 默认jgroups配置文件名 */
   public static final String DEFAULT_JGTCP_CONFIG_FILE = "default-tcp.xml";

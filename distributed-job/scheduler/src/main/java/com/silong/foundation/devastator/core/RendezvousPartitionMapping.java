@@ -18,8 +18,8 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.silong.foundation.devastator.ClusterDataAllocator;
 import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.PartitionClusterNodeMapping;
 import com.silong.foundation.devastator.model.WeightNodeTuple;
 import com.silong.foundation.devastator.utils.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -53,9 +53,12 @@ import static com.silong.foundation.devastator.utils.HashUtils.mixHash;
  * @since 2022-04-06 22:29
  */
 @Slf4j
-public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
+public class RendezvousPartitionMapping implements PartitionClusterNodeMapping, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
+
+  /** 最高随机权重分区节点映射器 */
+  public static final RendezvousPartitionMapping INSTANCE = new RendezvousPartitionMapping();
 
   /** 备份节点过滤器，第一个参数为Primary节点, 第二个参数为被测试节点. */
   private SerializableBiPredicate<ClusterNode, ClusterNode> backupFilter;
@@ -63,46 +66,8 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
   /** 第一个参数为被测试节点，第二个参数为当前partition已经分配的节点列表 (列表中的第一个节点为Primary) */
   private SerializableBiPredicate<ClusterNode, Collection<ClusterNode>> affinityBackupFilter;
 
-  /** 分区数量 */
-  private volatile int partitions;
-
-  /** 标识分区数值是否为2的指数，-1表示非2的指数 */
-  private volatile int mask;
-
   /** 默认构造方法 */
-  public RendezvousAllocator() {
-    this(DEFAULT_PARTITION_SIZE);
-  }
-
-  /**
-   * 构造方法
-   *
-   * @param partitions 分区数，此分区数应远大于集群节点数，但是必须小于等于{@code
-   *     ClusterDataAllocator.MAX_PARTITIONS_COUNT}，大于等于{@code
-   *     ClusterDataAllocator.MIN_PARTITIONS_COUNT}
-   */
-  public RendezvousAllocator(int partitions) {
-    setPartitions(partitions);
-  }
-
-  /**
-   * 设置分区数量，其中partitions值必须大于0，小于等于{@code MAX_PARTITIONS_COUNT}<br>
-   * 推荐分区为2的指数值，提升计算性能
-   *
-   * @param partitions 分区数
-   * @return @{@code this}
-   */
-  public RendezvousAllocator setPartitions(int partitions) {
-    if (partitions <= MAX_PARTITIONS_COUNT && partitions >= MIN_PARTITIONS_COUNT) {
-      this.partitions = partitions;
-      this.mask = calculateMask(partitions);
-      return this;
-    }
-    throw new IllegalArgumentException(
-        String.format(
-            "partitions must be greater than or equal to %d less than or equal to %d",
-            MIN_PARTITIONS_COUNT, MAX_PARTITIONS_COUNT));
-  }
+  private RendezvousPartitionMapping() {}
 
   /**
    * 设置备份节点过滤器
@@ -110,7 +75,7 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
    * @param backupFilter 过滤器
    * @return @{@code this}
    */
-  public RendezvousAllocator setBackupFilter(
+  public RendezvousPartitionMapping setBackupFilter(
       SerializableBiPredicate<ClusterNode, ClusterNode> backupFilter) {
     this.backupFilter = backupFilter;
     return this;
@@ -122,35 +87,10 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
    * @param affinityBackupFilter 过滤器
    * @return @{@code this}
    */
-  public RendezvousAllocator setAffinityBackupFilter(
+  public RendezvousPartitionMapping setAffinityBackupFilter(
       SerializableBiPredicate<ClusterNode, Collection<ClusterNode>> affinityBackupFilter) {
     this.affinityBackupFilter = affinityBackupFilter;
     return this;
-  }
-
-  /**
-   * 获取分区数量。
-   *
-   * @return 分区数量
-   */
-  @Override
-  public int partitions() {
-    return partitions;
-  }
-
-  /**
-   * 计算key映射到的partitions编号
-   *
-   * @param key – Key 建对象.
-   * @return 给定key映射到的分区编号.
-   */
-  @Override
-  public int partition(Object key) {
-    if (mask >= 0) {
-      int h;
-      return ((h = key.hashCode()) ^ (h >>> 16)) & mask;
-    }
-    return Math.max(Math.abs(key.hashCode() % partitions), 0);
   }
 
   private WeightNodeTuple[] calculateNodeWeight(
@@ -166,9 +106,8 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
       int backupNum,
       Collection<ClusterNode> clusterNodes,
       @Nullable Map<ClusterNode, Collection<ClusterNode>> neighborhood) {
-    if (partitionNo < 0 || partitionNo >= partitions) {
-      throw new IllegalArgumentException(
-          String.format("partitionNo must be greater than or equal to 0 less than %d", partitions));
+    if (partitionNo < 0) {
+      throw new IllegalArgumentException("partitionNo must be greater than or equal to 0.");
     }
 
     if (backupNum < 0) {
@@ -331,15 +270,5 @@ public class RendezvousAllocator implements ClusterDataAllocator, Serializable {
         throw new UnsupportedOperationException();
       }
     }
-  }
-
-  /**
-   * 计算分区是否2的指数值
-   *
-   * @param partCount 分区数量
-   * @return -1表示非2的指数值，否则其他值.
-   */
-  private int calculateMask(int partCount) {
-    return (partCount & (partCount - 1)) == 0 ? partCount - 1 : -1;
   }
 }
