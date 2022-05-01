@@ -20,7 +20,7 @@ message ClusterNodeInfo {
   HardwareInfo hardware_info = 11; //硬件信息
 }
 
-//操作系统信息
+//host性能规格信息
 message HardwareInfo{
   uint64 total_memory = 1; //内存总量，单位：字节
   uint32 available_processors = 2; //可用cpu数量
