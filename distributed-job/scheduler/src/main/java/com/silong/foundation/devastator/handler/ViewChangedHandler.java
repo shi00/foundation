@@ -19,7 +19,9 @@
 package com.silong.foundation.devastator.handler;
 
 import com.lmax.disruptor.EventHandler;
-import com.silong.foundation.devastator.ClusterNode;
+import com.lmax.disruptor.LiteBlockingWaitStrategy;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.dsl.Disruptor;
 import com.silong.foundation.devastator.core.ClusterNodeUUID;
 import com.silong.foundation.devastator.core.DefaultDistributedEngine;
 import com.silong.foundation.devastator.event.ViewChangedEvent;
@@ -29,10 +31,13 @@ import org.jgroups.Address;
 import org.jgroups.MergeView;
 import org.jgroups.View;
 
+import java.io.Closeable;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.stream.IntStream;
+import java.util.concurrent.ThreadFactory;
+
+import static com.lmax.disruptor.dsl.ProducerType.MULTI;
+import static com.silong.foundation.devastator.core.DefaultDistributedEngine.calculateMask;
 
 /**
  * 集群视图变化事件处理器
@@ -42,23 +47,47 @@ import java.util.stream.IntStream;
  * @since 2022-04-29 23:40
  */
 @Slf4j
-public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, Serializable {
+public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Closeable, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
 
+  /** 视图变更事件处理器线程名 */
+  public static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor";
+
   /** 分布式引擎 */
   private final DefaultDistributedEngine engine;
+
+  private final Disruptor<ViewChangedEvent> disruptor;
+
+  private final RingBuffer<ViewChangedEvent> ringBuffer;
 
   /**
    * 事件处理器
    *
    * @param engine 分布式引擎
    */
-  public ViewChangedEventHandler(DefaultDistributedEngine engine) {
+  public ViewChangedHandler(DefaultDistributedEngine engine) {
     if (engine == null) {
       throw new IllegalArgumentException("engine must not be null.");
     }
     this.engine = engine;
+    this.disruptor = buildViewChangedEventDisruptor(engine.config().viewChangedEventQueueSize());
+    this.ringBuffer = disruptor.start();
+  }
+
+  private Disruptor<ViewChangedEvent> buildViewChangedEventDisruptor(int queueSize) {
+    if (calculateMask(queueSize) == -1) {
+      throw new IllegalArgumentException("queueSize must be power of 2.");
+    }
+    Disruptor<ViewChangedEvent> disruptor =
+        new Disruptor<>(
+            ViewChangedEvent::new,
+            queueSize,
+            (ThreadFactory) r -> new Thread(r, VIEW_CHANGED_EVENT_PROCESSOR),
+            MULTI,
+            new LiteBlockingWaitStrategy());
+    disruptor.handleEventsWith(this);
+    return disruptor;
   }
 
   private ClusterNodeInfo getClusterNodeInfo(Address address) {
@@ -90,8 +119,24 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, 
     return isChanged;
   }
 
+  /**
+   * 处理集群视图变化
+   *
+   * @param oldView 旧视图
+   * @param newView 新视图
+   */
+  public void handle(View oldView, View newView) {
+    long seq = ringBuffer.next();
+    try {
+      ringBuffer.get(seq).oldView(oldView).newview(newView);
+    } finally {
+      ringBuffer.publish(seq);
+    }
+  }
+
   private String nodeIdentity(ClusterNodeInfo clusterNodeInfo) {
-    return String.format("%s:%s", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
+    return String.format(
+        "[%s:%s]", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
   }
 
   @Override
@@ -102,31 +147,24 @@ public class ViewChangedEventHandler implements EventHandler<ViewChangedEvent>, 
       newView = event.newview();
       oldView = event.oldView();
       if (isCoordChanged(oldView, newView)) {
-        // 同步集群状态
+        // 1.节点首次加入集群
+        // 2.集群coord变更
+        // 以上两情况同步集群状态
         engine.syncClusterState();
       }
 
       if (newView instanceof MergeView) {
 
       } else {
-        // 获取集群节点列表
-        Collection<ClusterNode> clusterNodes = engine.getClusterNodes(newView);
-        // 根据集群节点调整分区分布
-        IntStream.range(0, engine.getPartitionCount())
-            .parallel()
-            .forEach(
-                partitionNo ->
-                    engine
-                        .getPartition2ClusterNodes()
-                        .put(
-                            partitionNo,
-                            engine
-                                .getAllocator()
-                                .allocatePartition(
-                                    partitionNo, engine.getBackupNums(), clusterNodes, null)));
+
       }
     } catch (Exception e) {
       log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
     }
+  }
+
+  @Override
+  public void close() {
+    disruptor.shutdown();
   }
 }
