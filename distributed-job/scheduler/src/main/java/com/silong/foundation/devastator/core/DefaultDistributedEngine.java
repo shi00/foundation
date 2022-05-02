@@ -265,7 +265,7 @@ public class DefaultDistributedEngine
       LinkedList<Tuple<Integer, Boolean>> newLocal = new LinkedList<>();
       partition2ClusterNodes.forEach(
           (k, v) -> {
-            if (Collections.binarySearch(v, localNode)) {}
+            if (Collections.binarySearch(v, localNode)==-1) {}
           });
     }
   }
