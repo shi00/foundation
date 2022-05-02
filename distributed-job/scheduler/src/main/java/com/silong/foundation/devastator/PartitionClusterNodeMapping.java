@@ -23,6 +23,7 @@ import org.jgroups.Address;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -53,7 +54,7 @@ public interface PartitionClusterNodeMapping<T extends ObjectIdentity<Address>>
    * @param neighborhood 各节点邻居关系表，如果此参数不为null，则避免把主备数据映射到互为邻居的节点，确保数据可靠性
    * @return 保存分区的节点列表，其中第一个节点为primary partition节点，后续为backup partition
    */
-  Collection<T> allocatePartition(
+  List<T> allocatePartition(
       int partitionNo,
       int backupNum,
       Collection<T> clusterNodes,

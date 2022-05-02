@@ -109,7 +109,7 @@ public class RendezvousPartitionMapping
   }
 
   @Override
-  public Collection<SimpleClusterNode> allocatePartition(
+  public List<SimpleClusterNode> allocatePartition(
       int partitionNo,
       int backupNum,
       Collection<SimpleClusterNode> clusterNodes,

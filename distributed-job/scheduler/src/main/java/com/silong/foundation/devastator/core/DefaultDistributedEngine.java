@@ -81,7 +81,7 @@ public class DefaultDistributedEngine
   private final ViewChangedHandler viewChangedHandler;
 
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
-  private Map<Integer, Collection<SimpleClusterNode>> partition2ClusterNodes;
+  private Map<Integer, List<SimpleClusterNode>> partition2ClusterNodes;
 
   /** 数据uuid到分区的映射关系 */
   private final Map<Object, Integer> uuid2Partitions;
@@ -231,7 +231,7 @@ public class DefaultDistributedEngine
    * @param view 集群视图
    */
   public synchronized void repartition(View view) {
-    Map<Integer, Collection<SimpleClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
+    Map<Integer, List<SimpleClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
 
     int partitionCount = getPartitionCount();
     if (partition2ClusterNodes == null) {
@@ -247,7 +247,7 @@ public class DefaultDistributedEngine
     }
 
     // 获取集群节点列表
-    Collection<SimpleClusterNode> clusterNodes =
+    List<SimpleClusterNode> clusterNodes =
         view.getMembers().stream().map(SimpleClusterNode::new).toList();
 
     // 根据集群节点调整分区分布
@@ -263,9 +263,16 @@ public class DefaultDistributedEngine
     if (oldPartition2ClusterNodes != null) {
       SimpleClusterNode localNode = new SimpleClusterNode(jChannel.getAddress());
       LinkedList<Tuple<Integer, Boolean>> newLocal = new LinkedList<>();
-      partition2ClusterNodes.forEach(
-          (k, v) -> {
-            if (Collections.binarySearch(v, localNode)==-1) {}
+      partition2ClusterNodes.entrySet().parallelStream().map(
+          e -> {
+            int index = e.getValue().indexOf(localNode);
+            if (index >0){
+
+            }else if (index==0){
+
+            }
+
+
           });
     }
   }
