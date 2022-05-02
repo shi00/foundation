@@ -18,11 +18,14 @@
  */
 package com.silong.foundation.devastator.model;
 
-import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.ObjectIdentity;
+import org.jgroups.Address;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Comparator;
+
+import static com.silong.foundation.devastator.model.WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR;
 
 /**
  * 节点权重二元组
@@ -31,7 +34,7 @@ import java.util.Comparator;
  * @version 1.0.0
  * @since 2022-04-30 09:35
  */
-public record WeightNodeTuple(long weight, ClusterNode node) implements Comparable<WeightNodeTuple>, Serializable {
+public record WeightNodeTuple(long weight, ObjectIdentity<Address> node) implements Comparable<WeightNodeTuple>, Serializable {
     @Serial
     private static final long serialVersionUID = 0L;
 
@@ -63,6 +66,6 @@ public record WeightNodeTuple(long weight, ClusterNode node) implements Comparab
 
     @Override
     public int compareTo(WeightNodeTuple o) {
-        return WeightNodeTupleComparator.COMPARATOR.compare(this, o);
+        return COMPARATOR.compare(this, o);
     }
 }
