@@ -34,7 +34,7 @@ import static com.silong.foundation.devastator.model.WeightNodeTuple.WeightNodeT
  * @version 1.0.0
  * @since 2022-04-30 09:35
  */
-public record WeightNodeTuple(long weight, ObjectIdentity<Address> node) implements Comparable<WeightNodeTuple>, Serializable {
+public record WeightNodeTuple<T extends ObjectIdentity<Address>>(long weight, ObjectIdentity<Address> node) implements Comparable<WeightNodeTuple<T>>, Serializable {
     @Serial
     private static final long serialVersionUID = 0L;
 
@@ -46,7 +46,7 @@ public record WeightNodeTuple(long weight, ObjectIdentity<Address> node) impleme
      * @since 2022-04-30 09:35
      */
     public static class WeightNodeTupleComparator
-            implements Comparator<WeightNodeTuple>, Serializable {
+            implements Comparator<WeightNodeTuple<?>>, Serializable {
 
         @Serial private static final long serialVersionUID = 0L;
 
@@ -57,7 +57,7 @@ public record WeightNodeTuple(long weight, ObjectIdentity<Address> node) impleme
 
         /** {@inheritDoc} */
         @Override
-        public int compare(WeightNodeTuple o1, WeightNodeTuple o2) {
+        public int compare(WeightNodeTuple<?> o1, WeightNodeTuple<?> o2) {
             return o1.weight < o2.weight
                     ? -1
                     : o1.weight > o2.weight ? 1 : o1.node.uuid().compareTo(o2.node.uuid());
@@ -65,7 +65,7 @@ public record WeightNodeTuple(long weight, ObjectIdentity<Address> node) impleme
     }
 
     @Override
-    public int compareTo(WeightNodeTuple o) {
+    public int compareTo(WeightNodeTuple<T> o) {
         return COMPARATOR.compare(this, o);
     }
 }
