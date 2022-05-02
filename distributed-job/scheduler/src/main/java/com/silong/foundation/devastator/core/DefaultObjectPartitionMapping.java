@@ -63,7 +63,7 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
    *
    * @param partitions 分区数
    */
-  public synchronized DefaultObjectPartitionMapping partitions(int partitions) {
+  public DefaultObjectPartitionMapping partitions(int partitions) {
     if (partitions <= MAX_PARTITIONS_COUNT && partitions >= MIN_PARTITIONS_COUNT) {
       this.partitions = partitions;
       this.mask = calculateMask(partitions);
@@ -81,7 +81,7 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
    * @return 给定key映射到的分区编号.
    */
   @Override
-  public synchronized int partition(Object key) {
+  public int partition(Object key) {
     if (mask >= 0) {
       int h;
       return ((h = key.hashCode()) ^ (h >>> 16)) & mask;
