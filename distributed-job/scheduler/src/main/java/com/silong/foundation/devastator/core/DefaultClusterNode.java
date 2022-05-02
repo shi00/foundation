@@ -21,7 +21,6 @@ package com.silong.foundation.devastator.core;
 import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.config.DevastatorProperties.Version;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.jgroups.Address;
 
@@ -38,7 +37,7 @@ import java.util.Objects;
  * @version 1.0.0
  * @since 2022-04-07 22:49
  */
-public class DefaultClusterNode implements ClusterNode, Serializable {
+public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
 
@@ -95,9 +94,8 @@ public class DefaultClusterNode implements ClusterNode, Serializable {
   }
 
   @Override
-  @NonNull
-  public <T extends Comparable<T>> T uuid() {
-    return (T) clusterNode;
+  public ClusterNodeUUID uuid() {
+    return clusterNode;
   }
 
   @Nullable
