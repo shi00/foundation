@@ -54,7 +54,7 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
    *     ClusterDataAllocator.MIN_PARTITIONS_COUNT}
    */
   public DefaultObjectPartitionMapping(int partitions) {
-    setPartitions(partitions);
+    partitions(partitions);
   }
 
   /**
@@ -63,7 +63,7 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
    *
    * @param partitions 分区数
    */
-  public synchronized void setPartitions(int partitions) {
+  public synchronized DefaultObjectPartitionMapping partitions(int partitions) {
     if (partitions <= MAX_PARTITIONS_COUNT && partitions >= MIN_PARTITIONS_COUNT) {
       this.partitions = partitions;
       this.mask = calculateMask(partitions);

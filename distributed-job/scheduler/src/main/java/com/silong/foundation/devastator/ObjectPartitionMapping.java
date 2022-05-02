@@ -35,6 +35,14 @@ public interface ObjectPartitionMapping {
   int partitions();
 
   /**
+   * 重置分区数量
+   *
+   * @param partitions 分区数
+   * @return {@code this}
+   */
+  ObjectPartitionMapping partitions(int partitions);
+
+  /**
    * 数据key映射到分区
    *
    * @param key 数据key

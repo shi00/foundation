@@ -22,6 +22,8 @@ import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.InitializationException;
 import com.silong.foundation.devastator.handler.ViewChangedHandler;
+import com.silong.foundation.devastator.message.PooledBytesMessage;
+import com.silong.foundation.devastator.message.PooledNioMessage;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -38,9 +40,9 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
@@ -63,7 +65,7 @@ public class DefaultDistributedEngine
   @Serial private static final long serialVersionUID = 0L;
 
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
-  private final Map<Integer, Collection<ClusterNode>> partition2ClusterNodes = new HashMap<>();
+  private Map<Integer, Collection<ClusterNode>> partition2ClusterNodes;
 
   /** 集群通信信道 */
   private final JChannel jChannel;
@@ -101,6 +103,8 @@ public class DefaultDistributedEngine
 
     try {
       this.config = config;
+      // 分区表key数量在没有集群节点变化时是固定的，并且每个分区号都不同，此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
+      this.partition2ClusterNodes = new ConcurrentHashMap<>(config.partitionCount() + 1, 1.0f);
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
       this.objectPartitionMapping = new DefaultObjectPartitionMapping(config.partitionCount());
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
@@ -123,8 +127,18 @@ public class DefaultDistributedEngine
     jChannel.addChannelListener(this);
     jChannel.setName(config.instanceName());
 
+    // 注册定制消息
+    registerMessages(jChannel);
+
     // 自定义集群节点策略
     ((GMS) jChannel.getProtocolStack().findProtocol(GMS.class)).setMembershipChangePolicy(INSTANCE);
+  }
+
+  /** 注册自定义消息类型 */
+  private void registerMessages(JChannel jChannel) {
+    MessageFactory messageFactory = getMessageFactory(jChannel);
+    PooledNioMessage.register(messageFactory);
+    PooledBytesMessage.register(messageFactory);
   }
 
   private JChannel buildDistributedEngine(String configFile) throws Exception {
@@ -175,25 +189,23 @@ public class DefaultDistributedEngine
    *
    * @return 传输协议
    */
-  public TP getTransport() {
+  private TP getTransport() {
     return jChannel.getProtocolStack().getTransport();
+  }
+
+  /**
+   * 获取消息工厂
+   *
+   * @return 消息工程
+   */
+  private MessageFactory getMessageFactory(JChannel jChannel) {
+    return jChannel.getProtocolStack().getTransport().getMessageFactory();
   }
 
   /** 同步集群状态 */
   public void syncClusterState() throws Exception {
     // 向coord请求同步集群状态
     jChannel.getState(null, config.clusterStateSyncTimeout());
-
-    // 如果分区数变化则重置分区映射器
-    int partitionCount = getPartitionCount();
-    if (partitionMapping.partitions() != partitionCount) {
-      partitionMapping.setPartitions(partitionCount);
-    }
-
-    // 如果集群分区数量变化，导致当前节点分区数量大于集群分区数量，则先清空，待后续重新映射
-    if (partition2ClusterNodes.size() > partitionCount) {
-      partition2ClusterNodes.clear();
-    }
   }
 
   /**
@@ -202,6 +214,19 @@ public class DefaultDistributedEngine
    * @param view 集群视图
    */
   public void repartition(View view) {
+
+    // 如果分区数变化则重置分区映射器
+    int partitionCount = getPartitionCount();
+    if (objectPartitionMapping.partitions() != partitionCount) {
+      objectPartitionMapping.partitions(partitionCount);
+
+      // 如果集群分区数量变化，导致当前节点分区数量大于集群分区数量，则先清空，待后续重新映射
+      if (partition2ClusterNodes.size() > partitionCount) {
+        partition2ClusterNodes.clear();
+      }
+    }
+
+
     // 获取集群节点列表
     Collection<ClusterNode> clusterNodes = getClusterNodes(view);
 
@@ -249,17 +274,52 @@ public class DefaultDistributedEngine
     return config.clusterName();
   }
 
+  /**
+   * Sends a message. The message contains
+   *
+   * <ol>
+   *   <li>a destination address (Address). A {@code null} address sends the message to all cluster
+   *       members.
+   *   <li>a source address. Can be left empty as it will be assigned automatically
+   *   <li>a byte buffer. The message contents.
+   *   <li>several additional fields. They can be used by application programs (or patterns). E.g. a
+   *       message ID, flags etc
+   * </ol>
+   *
+   * @param message the message to be sent. Destination and buffer should be set. A null destination
+   *     means to send to all group members.
+   * @return {@code this}
+   * @exception Exception thrown if the channel is disconnected or closed
+   */
+  public DistributedEngine send(Message message) throws Exception {
+    assert message != null;
+    jChannel.send(message);
+    return this;
+  }
+
   @Override
-  public void receive(Message msg) {}
+  public void receive(Message message) {
+    assert message != null;
+    if (message instanceof BytesMessage) {
+
+    } else if (message instanceof NioMessage) {
+
+    } else if (message instanceof ObjectMessage) {
+
+    }
+  }
 
   @Override
   public void viewAccepted(View newView) {
+    assert newView != null;
     if (log.isDebugEnabled()) {
       log.debug("A new view is received {}.", newView);
     }
     try {
+      // 异步处理集群视图变更
       viewChangedHandler.handle(lastView, newView);
     } finally {
+      // 更新视图
       lastView = newView;
     }
   }
@@ -271,9 +331,7 @@ public class DefaultDistributedEngine
    * @return 集群节点列表
    */
   public List<ClusterNode> getClusterNodes(View view) {
-    if (view == null) {
-      throw new IllegalArgumentException("view must not be null.");
-    }
+    assert view != null;
     return view.getMembers().stream().map(this::buildClusterNode).toList();
   }
 
@@ -366,8 +424,12 @@ public class DefaultDistributedEngine
   @SneakyThrows
   public void channelClosed(JChannel channel) {
     log.info("The node{} has been shutdown.", localIdentity());
-    viewChangedHandler.close();
-    partition2ClusterNodes.clear();
+    if (viewChangedHandler != null) {
+      viewChangedHandler.close();
+    }
+    if (partition2ClusterNodes != null) {
+      partition2ClusterNodes.clear();
+    }
     if (persistStorage != null) {
       persistStorage.close();
     }

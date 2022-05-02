@@ -76,9 +76,7 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
   }
 
   private Disruptor<ViewChangedEvent> buildViewChangedEventDisruptor(int queueSize) {
-    if (calculateMask(queueSize) == -1) {
-      throw new IllegalArgumentException("queueSize must be power of 2.");
-    }
+    assert calculateMask(queueSize) >= 0;
     Disruptor<ViewChangedEvent> disruptor =
         new Disruptor<>(
             ViewChangedEvent::new,
@@ -94,8 +92,8 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
     return ((ClusterNodeUUID) address).clusterNodeInfo();
   }
 
-  private boolean isCoordChanged(View oldView, View newView) {
-    Address newCoord = newView.getMembers().get(0);
+  private boolean isCoordinatorChanged(View oldView, View newView) {
+    Address newCoord = newView.getCoord();
     ClusterNodeInfo newClusterNodeInfo = getClusterNodeInfo(newCoord);
     if (oldView == null) {
       log.info(
@@ -105,8 +103,8 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
       return true;
     }
 
-    Address oldCoord = oldView.getMembers().get(0);
-    boolean isChanged = !newCoord.equals(oldCoord);
+    Address oldCoord = oldView.getCoord();
+    boolean isChanged = !oldCoord.equals(newCoord);
     if (isChanged) {
       ClusterNodeInfo oldClusterNodeInfo = getClusterNodeInfo(oldCoord);
       String clusterName = newClusterNodeInfo.getClusterName();
@@ -126,11 +124,14 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
    * @param newView 新视图
    */
   public void handle(View oldView, View newView) {
-    long seq = ringBuffer.next();
+    long sequence = ringBuffer.next();
     try {
-      ringBuffer.get(seq).oldView(oldView).newview(newView);
+      ViewChangedEvent event = ringBuffer.get(sequence).oldView(oldView).newview(newView);
+      if (log.isDebugEnabled()) {
+        log.debug("Enqueue {} with sequence:{}.", event, sequence);
+      }
     } finally {
-      ringBuffer.publish(seq);
+      ringBuffer.publish(sequence);
     }
   }
 
@@ -141,12 +142,17 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
 
   @Override
   public void onEvent(ViewChangedEvent event, long sequence, boolean endOfBatch) {
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Start processing {} with sequence:{} and endOfBatch:{}.", event, sequence, endOfBatch);
+    }
+
     View newView = null;
     View oldView = null;
     try (event) {
       newView = event.newview();
       oldView = event.oldView();
-      if (isCoordChanged(oldView, newView)) {
+      if (isCoordinatorChanged(oldView, newView)) {
         // 1.节点首次加入集群
         // 2.集群coord变更
         // 以上两情况同步集群状态
@@ -160,6 +166,10 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
       }
     } catch (Exception e) {
       log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug("End processing {}.", event);
+      }
     }
   }
 
