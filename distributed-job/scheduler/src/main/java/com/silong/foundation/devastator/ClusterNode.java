@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.devastator;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.Getter;
 
@@ -34,7 +33,7 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2022-04-07 21:33
  */
-public interface ClusterNode extends Serializable {
+public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>, Serializable {
 
   /**
    * 集群节点角色
@@ -117,11 +116,9 @@ public interface ClusterNode extends Serializable {
   /**
    * 获取节点在集群内全局唯一的id
    *
-   * @param <T> uuid类型
    * @return id
    */
-  @NonNull
-  <T extends Comparable<T>> T uuid();
+  T uuid();
 
   /**
    * 获取节点属性
