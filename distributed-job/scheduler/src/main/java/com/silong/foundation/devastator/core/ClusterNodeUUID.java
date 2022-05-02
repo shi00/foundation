@@ -19,11 +19,13 @@
 package com.silong.foundation.devastator.core;
 
 import com.google.protobuf.TextFormat;
+import com.silong.foundation.devastator.ObjectIdentity;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.jgroups.Address;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.util.ByteArrayDataInputStream;
 import org.jgroups.util.ByteArrayDataOutputStream;
@@ -44,7 +46,7 @@ import static org.jgroups.util.Util.writeByteBuffer;
  * @version 1.0.0
  * @since 2022-04-11 22:49
  */
-public class ClusterNodeUUID extends UUID {
+public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
 
   /** 类型转换器 */
   public static final TypeConverter<ClusterNodeUUID, byte[]> CONVERTER =
@@ -96,6 +98,11 @@ public class ClusterNodeUUID extends UUID {
    */
   public ClusterNodeUUID(byte[] uuid) {
     super(uuid);
+  }
+
+  @Override
+  public ClusterNodeUUID uuid() {
+    return this;
   }
 
   /**
