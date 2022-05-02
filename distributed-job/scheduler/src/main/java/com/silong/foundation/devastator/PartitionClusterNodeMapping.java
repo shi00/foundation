@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator;
 
 import edu.umd.cs.findbugs.annotations.Nullable;
+import org.jgroups.Address;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -40,7 +41,8 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2022-04-09 19:01
  */
-public interface PartitionClusterNodeMapping extends Serializable {
+public interface PartitionClusterNodeMapping<T extends ObjectIdentity<Address>>
+    extends Serializable {
 
   /**
    * 分区到集群节点映射
@@ -51,9 +53,9 @@ public interface PartitionClusterNodeMapping extends Serializable {
    * @param neighborhood 各节点邻居关系表，如果此参数不为null，则避免把主备数据映射到互为邻居的节点，确保数据可靠性
    * @return 保存分区的节点列表，其中第一个节点为primary partition节点，后续为backup partition
    */
-  Collection<ClusterNode> allocatePartition(
+  Collection<T> allocatePartition(
       int partitionNo,
       int backupNum,
-      Collection<ClusterNode> clusterNodes,
-      @Nullable Map<ClusterNode, Collection<ClusterNode>> neighborhood);
+      Collection<T> clusterNodes,
+      @Nullable Map<T, Collection<T>> neighborhood);
 }
