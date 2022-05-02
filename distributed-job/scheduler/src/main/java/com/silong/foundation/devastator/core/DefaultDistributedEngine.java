@@ -26,6 +26,8 @@ import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.message.PooledNioMessage;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
+import com.silong.foundation.devastator.model.SimpleClusterNode;
+import com.silong.foundation.devastator.model.Tuple;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
@@ -39,15 +41,14 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
+import static org.rocksdb.util.SizeUnit.KB;
 
 /**
  * 基于jgroups的分布式任务引擎
@@ -64,9 +65,6 @@ public class DefaultDistributedEngine
 
   @Serial private static final long serialVersionUID = 0L;
 
-  /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
-  private Map<Integer, Collection<ClusterNode>> partition2ClusterNodes;
-
   /** 集群通信信道 */
   private final JChannel jChannel;
 
@@ -76,14 +74,20 @@ public class DefaultDistributedEngine
   /** 分区节点映射器 */
   private final RendezvousPartitionMapping partitionMapping;
 
-  /** 对象分区映射器 */
-  private final ObjectPartitionMapping objectPartitionMapping;
-
   /** 持久化存储 */
   private final PersistStorage persistStorage;
 
   /** 集群视图变更处理器 */
   private final ViewChangedHandler viewChangedHandler;
+
+  /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
+  private Map<Integer, Collection<SimpleClusterNode>> partition2ClusterNodes;
+
+  /** 数据uuid到分区的映射关系 */
+  private final Map<Object, Integer> uuid2Partitions;
+
+  /** 对象分区映射器 */
+  private ObjectPartitionMapping objectPartitionMapping;
 
   /** 集群状态 */
   private volatile ClusterState clusterState;
@@ -103,10 +107,8 @@ public class DefaultDistributedEngine
 
     try {
       this.config = config;
-      // 分区表key数量在没有集群节点变化时是固定的，并且每个分区号都不同，此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
-      this.partition2ClusterNodes = new ConcurrentHashMap<>(config.partitionCount() + 1, 1.0f);
+      this.uuid2Partitions = new ConcurrentHashMap<>((int) KB);
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
-      this.objectPartitionMapping = new DefaultObjectPartitionMapping(config.partitionCount());
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
       this.viewChangedHandler = new ViewChangedHandler(this);
       configureDistributedEngine(
@@ -209,29 +211,47 @@ public class DefaultDistributedEngine
   }
 
   /**
+   * 数据到分区映射
+   *
+   * @param obj 数据对象
+   * @return {@code this}
+   * @param <T> 数据类型
+   */
+  public synchronized <T extends Comparable<T>> DefaultDistributedEngine partition(
+      ObjectIdentity<T> obj) {
+    assert obj != null;
+    T key = obj.uuid();
+    uuid2Partitions.put(key, objectPartitionMapping.partition(key));
+    return this;
+  }
+
+  /**
    * 根据新的集群视图调整分区表
    *
    * @param view 集群视图
    */
-  public void repartition(View view) {
+  public synchronized void repartition(View view) {
+    Map<Integer, Collection<SimpleClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
 
-    // 如果分区数变化则重置分区映射器
     int partitionCount = getPartitionCount();
-    if (objectPartitionMapping.partitions() != partitionCount) {
-      objectPartitionMapping.partitions(partitionCount);
-
-      // 如果集群分区数量变化，导致当前节点分区数量大于集群分区数量，则先清空，待后续重新映射
-      if (partition2ClusterNodes.size() > partitionCount) {
-        partition2ClusterNodes.clear();
-      }
+    if (partition2ClusterNodes == null) {
+      // 分区表key数量在没有集群节点变化时是固定的，并且每个分区号都不同，此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
+      partition2ClusterNodes = new ConcurrentHashMap<>(partitionCount, 1.0f);
+      objectPartitionMapping = new DefaultObjectPartitionMapping(partitionCount);
     }
 
+    // 如果分区数变化则重置分区映射器
+    if (objectPartitionMapping.partitions() != partitionCount) {
+      objectPartitionMapping.partitions(partitionCount);
+      partition2ClusterNodes = new ConcurrentHashMap<>(partitionCount, 1.0f);
+    }
 
     // 获取集群节点列表
-    Collection<ClusterNode> clusterNodes = getClusterNodes(view);
+    Collection<SimpleClusterNode> clusterNodes =
+        view.getMembers().stream().map(SimpleClusterNode::new).toList();
 
     // 根据集群节点调整分区分布
-    IntStream.range(0, getPartitionCount())
+    IntStream.range(0, partitionCount)
         .parallel()
         .forEach(
             partitionNo ->
@@ -239,6 +259,15 @@ public class DefaultDistributedEngine
                     partitionNo,
                     partitionMapping.allocatePartition(
                         partitionNo, getBackupNums(), clusterNodes, null)));
+
+    if (oldPartition2ClusterNodes != null) {
+      SimpleClusterNode localNode = new SimpleClusterNode(jChannel.getAddress());
+      LinkedList<Tuple<Integer, Boolean>> newLocal = new LinkedList<>();
+      partition2ClusterNodes.forEach(
+          (k, v) -> {
+            if (Collections.binarySearch(v, localNode)) {}
+          });
+    }
   }
 
   /**
@@ -426,6 +455,9 @@ public class DefaultDistributedEngine
     log.info("The node{} has been shutdown.", localIdentity());
     if (viewChangedHandler != null) {
       viewChangedHandler.close();
+    }
+    if (uuid2Partitions != null) {
+      uuid2Partitions.clear();
     }
     if (partition2ClusterNodes != null) {
       partition2ClusterNodes.clear();

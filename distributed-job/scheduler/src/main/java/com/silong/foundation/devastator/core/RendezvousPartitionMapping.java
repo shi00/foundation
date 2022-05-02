@@ -20,6 +20,7 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ObjectIdentity;
 import com.silong.foundation.devastator.PartitionClusterNodeMapping;
+import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.WeightNodeTuple;
 import com.silong.foundation.devastator.utils.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -55,7 +56,7 @@ import static com.silong.foundation.devastator.utils.HashUtils.mixHash;
  */
 @Slf4j
 public class RendezvousPartitionMapping
-    implements PartitionClusterNodeMapping<ObjectIdentity<Address>>, Serializable {
+    implements PartitionClusterNodeMapping<SimpleClusterNode>, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
 
@@ -63,10 +64,10 @@ public class RendezvousPartitionMapping
   public static final RendezvousPartitionMapping INSTANCE = new RendezvousPartitionMapping();
 
   /** 备份节点过滤器，第一个参数为Primary节点, 第二个参数为被测试节点. */
-  private SerializableBiPredicate<ObjectIdentity<Address>, ObjectIdentity<Address>> backupFilter;
+  private SerializableBiPredicate<SimpleClusterNode, SimpleClusterNode> backupFilter;
 
   /** 第一个参数为被测试节点，第二个参数为当前partition已经分配的节点列表 (列表中的第一个节点为Primary) */
-  private SerializableBiPredicate<ObjectIdentity<Address>, Collection<ObjectIdentity<Address>>>
+  private SerializableBiPredicate<SimpleClusterNode, Collection<SimpleClusterNode>>
       affinityBackupFilter;
 
   /** 默认构造方法 */
@@ -79,7 +80,7 @@ public class RendezvousPartitionMapping
    * @return @{@code this}
    */
   public RendezvousPartitionMapping setBackupFilter(
-      SerializableBiPredicate<ObjectIdentity<Address>, ObjectIdentity<Address>> backupFilter) {
+      SerializableBiPredicate<SimpleClusterNode, SimpleClusterNode> backupFilter) {
     this.backupFilter = backupFilter;
     return this;
   }
@@ -91,28 +92,28 @@ public class RendezvousPartitionMapping
    * @return @{@code this}
    */
   public RendezvousPartitionMapping setAffinityBackupFilter(
-      SerializableBiPredicate<ObjectIdentity<Address>, Collection<ObjectIdentity<Address>>>
+      SerializableBiPredicate<SimpleClusterNode, Collection<SimpleClusterNode>>
           affinityBackupFilter) {
     this.affinityBackupFilter = affinityBackupFilter;
     return this;
   }
 
-  private WeightNodeTuple<ObjectIdentity<Address>>[] calculateNodeWeight(
-      int partitionNum, Collection<ObjectIdentity<Address>> clusterNodes) {
+  private WeightNodeTuple[] calculateNodeWeight(
+      int partitionNum, Collection<SimpleClusterNode> clusterNodes) {
     int i = 0;
-    WeightNodeTuple<ObjectIdentity<Address>>[] array = new WeightNodeTuple[clusterNodes.size()];
-    for (ObjectIdentity<Address> node : clusterNodes) {
-      array[i++] = new WeightNodeTuple<>(mixHash(node.uuid().hashCode(), partitionNum), node);
+    WeightNodeTuple[] array = new WeightNodeTuple[clusterNodes.size()];
+    for (SimpleClusterNode node : clusterNodes) {
+      array[i++] = new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node);
     }
     return array;
   }
 
   @Override
-  public Collection<ObjectIdentity<Address>> allocatePartition(
+  public Collection<SimpleClusterNode> allocatePartition(
       int partitionNo,
       int backupNum,
-      Collection<ObjectIdentity<Address>> clusterNodes,
-      @Nullable Map<ObjectIdentity<Address>, Collection<ObjectIdentity<Address>>> neighborhood) {
+      Collection<SimpleClusterNode> clusterNodes,
+      @Nullable Map<SimpleClusterNode, Collection<SimpleClusterNode>> neighborhood) {
     if (partitionNo < 0) {
       throw new IllegalArgumentException("partitionNo must be greater than or equal to 0.");
     }
@@ -137,15 +138,14 @@ public class RendezvousPartitionMapping
     }
 
     // 延迟排序优化
-    WeightNodeTuple<ObjectIdentity<Address>>[] weightNodeTuples =
-        calculateNodeWeight(partitionNo, clusterNodes);
-    Iterable<ObjectIdentity<Address>> sortedNodes =
+    WeightNodeTuple[] weightNodeTuples = calculateNodeWeight(partitionNo, clusterNodes);
+    Iterable<SimpleClusterNode> sortedNodes =
         new LazyLinearSortedContainer(weightNodeTuples, primaryAndBackups);
 
     // 先添加主(最高随机权重)
-    Iterator<ObjectIdentity<Address>> it = sortedNodes.iterator();
-    ObjectIdentity<Address> primary = it.next();
-    List<ObjectIdentity<Address>> res = new ArrayList<>(primaryAndBackups);
+    Iterator<SimpleClusterNode> it = sortedNodes.iterator();
+    SimpleClusterNode primary = it.next();
+    List<SimpleClusterNode> res = new ArrayList<>(primaryAndBackups);
     res.add(primary);
 
     // 是否排除邻居节点
@@ -155,7 +155,7 @@ public class RendezvousPartitionMapping
     // 选取备份节点
     if (backupNum > 0) {
       while (it.hasNext() && res.size() < primaryAndBackups) {
-        ObjectIdentity<Address> node = it.next();
+        SimpleClusterNode node = it.next();
         if (disableBackupNodeFilter()
             || isPassedBackupNodeFilter(primary, node)
             || isPassedAffinityBackupNodeFilter(node, res)) {
@@ -181,7 +181,7 @@ public class RendezvousPartitionMapping
       it.next();
 
       while (it.hasNext() && res.size() < primaryAndBackups) {
-        ObjectIdentity<Address> node = it.next();
+        SimpleClusterNode node = it.next();
         if (!res.contains(node)) {
           res.add(node);
         }
@@ -195,12 +195,11 @@ public class RendezvousPartitionMapping
   }
 
   private boolean isPassedAffinityBackupNodeFilter(
-      ObjectIdentity<Address> node, List<ObjectIdentity<Address>> res) {
+      SimpleClusterNode node, List<SimpleClusterNode> res) {
     return affinityBackupFilter != null && affinityBackupFilter.test(node, res);
   }
 
-  private boolean isPassedBackupNodeFilter(
-      ObjectIdentity<Address> primary, ObjectIdentity<Address> node) {
+  private boolean isPassedBackupNodeFilter(SimpleClusterNode primary, SimpleClusterNode node) {
     return backupFilter != null && backupFilter.test(primary, node);
   }
 
@@ -209,9 +208,9 @@ public class RendezvousPartitionMapping
   }
 
   /** Sorts the initial array with linear sort algorithm array */
-  private static class LazyLinearSortedContainer implements Iterable<ObjectIdentity<Address>> {
+  private static class LazyLinearSortedContainer implements Iterable<SimpleClusterNode> {
     /** Initial node-hash array. */
-    private final WeightNodeTuple<ObjectIdentity<Address>>[] arr;
+    private final WeightNodeTuple[] arr;
 
     /** Count of the sorted elements */
     private int sorted;
@@ -220,8 +219,7 @@ public class RendezvousPartitionMapping
      * @param arr Node / partition hash list.
      * @param needFirstSortedCnt Estimate count of elements to return by iterator.
      */
-    LazyLinearSortedContainer(
-        WeightNodeTuple<ObjectIdentity<Address>>[] arr, int needFirstSortedCnt) {
+    LazyLinearSortedContainer(WeightNodeTuple[] arr, int needFirstSortedCnt) {
       this.arr = arr;
       if (needFirstSortedCnt > (int) Math.log(arr.length)) {
         Arrays.sort(arr);
@@ -231,12 +229,12 @@ public class RendezvousPartitionMapping
 
     /** {@inheritDoc} */
     @Override
-    public Iterator<ObjectIdentity<Address>> iterator() {
+    public Iterator<SimpleClusterNode> iterator() {
       return new LazyLinearSortedContainer.SortIterator();
     }
 
     /** */
-    private class SortIterator implements Iterator<ObjectIdentity<Address>> {
+    private class SortIterator implements Iterator<SimpleClusterNode> {
       /** Index of the first unsorted element. */
       private int cur;
 
@@ -248,7 +246,7 @@ public class RendezvousPartitionMapping
 
       /** {@inheritDoc} */
       @Override
-      public ObjectIdentity<Address> next() {
+      public SimpleClusterNode next() {
         if (!hasNext()) {
           throw new NoSuchElementException();
         }
@@ -257,7 +255,7 @@ public class RendezvousPartitionMapping
           return arr[cur++].node();
         }
 
-        WeightNodeTuple<ObjectIdentity<Address>> min = arr[cur];
+        WeightNodeTuple min = arr[cur];
         int minIdx = cur;
         for (int i = cur + 1; i < arr.length; i++) {
           if (COMPARATOR.compare(arr[i], min) < 0) {
