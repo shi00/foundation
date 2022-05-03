@@ -159,12 +159,6 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
         engine.syncClusterState();
       }
 
-      if (newView instanceof MergeView) {
-
-      } else {
-
-      }
-
       engine.repartition(newView);
     } catch (Exception e) {
       log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
