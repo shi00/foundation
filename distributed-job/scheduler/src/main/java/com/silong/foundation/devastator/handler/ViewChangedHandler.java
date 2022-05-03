@@ -164,6 +164,8 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
       } else {
 
       }
+
+      engine.repartition(newView);
     } catch (Exception e) {
       log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
     } finally {

@@ -28,6 +28,7 @@ import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
 import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.Tuple;
+import com.silong.foundation.devastator.utils.KryoUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
@@ -41,11 +42,15 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
+import static java.lang.System.lineSeparator;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
 import static org.rocksdb.util.SizeUnit.KB;
@@ -220,8 +225,18 @@ public class DefaultDistributedEngine
   public synchronized <T extends Comparable<T>> DefaultDistributedEngine partition(
       ObjectIdentity<T> obj) {
     assert obj != null;
+
+    // 计算对象对应的分区
     T key = obj.uuid();
-    uuid2Partitions.put(key, objectPartitionMapping.partition(key));
+    int partition = objectPartitionMapping.partition(key);
+    uuid2Partitions.put(key, partition);
+
+    // 如果分区被映射到本地节点，则保存数据
+    Address local = jChannel.address();
+    if (partition2ClusterNodes.get(partition).stream()
+        .anyMatch(node -> node.address().equals(local))) {
+      persistStorage.put(KryoUtils.serialize(key), KryoUtils.serialize(obj));
+    }
     return this;
   }
 
@@ -231,8 +246,9 @@ public class DefaultDistributedEngine
    * @param view 集群视图
    */
   public synchronized void repartition(View view) {
-    Map<Integer, List<SimpleClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
+    assert view != null;
 
+    Map<Integer, List<SimpleClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
     int partitionCount = getPartitionCount();
     if (partition2ClusterNodes == null) {
       // 分区表key数量在没有集群节点变化时是固定的，并且每个分区号都不同，此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
@@ -251,6 +267,19 @@ public class DefaultDistributedEngine
         view.getMembers().stream().map(SimpleClusterNode::new).toList();
 
     // 根据集群节点调整分区分布
+    refreshPartitionTable(partitionCount, clusterNodes);
+
+    Address address = jChannel.getAddress();
+    List<Tuple<Integer, Boolean>> oldLocalPartitions = null;
+    if (oldPartition2ClusterNodes != null) {
+      oldLocalPartitions = getLocalPartitions(address, oldPartition2ClusterNodes);
+    }
+
+    List<Tuple<Integer, Boolean>> newLocalPartitions =
+        getLocalPartitions(address, partition2ClusterNodes);
+  }
+
+  private void refreshPartitionTable(int partitionCount, List<SimpleClusterNode> clusterNodes) {
     IntStream.range(0, partitionCount)
         .parallel()
         .forEach(
@@ -259,22 +288,34 @@ public class DefaultDistributedEngine
                     partitionNo,
                     partitionMapping.allocatePartition(
                         partitionNo, getBackupNums(), clusterNodes, null)));
+  }
 
-    if (oldPartition2ClusterNodes != null) {
-      SimpleClusterNode localNode = new SimpleClusterNode(jChannel.getAddress());
-      LinkedList<Tuple<Integer, Boolean>> newLocal = new LinkedList<>();
-      partition2ClusterNodes.entrySet().parallelStream().map(
-          e -> {
-            int index = e.getValue().indexOf(localNode);
-            if (index >0){
-
-            }else if (index==0){
-
-            }
-
-
-          });
+  private List<Tuple<Integer, Boolean>> getLocalPartitions(
+      Address local, Map<Integer, List<SimpleClusterNode>> p2n) {
+    if (p2n == null) {
+      return List.of();
     }
+    LinkedList<Tuple<Integer, Boolean>> newLocalPartitions = new LinkedList<>();
+    partition2ClusterNodes.forEach(
+        (k, v) -> {
+          int index = indexOf(v, local);
+          if (index > 0) {
+            newLocalPartitions.add(new Tuple<>(k, false));
+          } else if (index == 0) {
+            newLocalPartitions.add(new Tuple<>(k, true));
+          }
+        });
+    return newLocalPartitions;
+  }
+
+  private int indexOf(Collection<SimpleClusterNode> nodes, Address address) {
+    int i = 0;
+    for (SimpleClusterNode node : nodes) {
+      if (node.address().equals(address)) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   /**
@@ -385,13 +426,21 @@ public class DefaultDistributedEngine
               .build();
     }
     clusterState.writeTo(output);
-    log.info("The node{} sends the clusterState:[{}]", localIdentity(), clusterState);
+    log.info(
+        "The node{} sends the clusterState:{}[{}]",
+        localIdentity(),
+        lineSeparator(),
+        clusterState);
   }
 
   @Override
   public void setState(InputStream input) throws Exception {
     clusterState = ClusterState.parseFrom(input);
-    log.info("The node{} receives the clusterState:[{}]", localIdentity(), clusterState);
+    log.info(
+        "The node{} receives the clusterState:{}[{}]",
+        localIdentity(),
+        lineSeparator(),
+        clusterState);
   }
 
   @Override

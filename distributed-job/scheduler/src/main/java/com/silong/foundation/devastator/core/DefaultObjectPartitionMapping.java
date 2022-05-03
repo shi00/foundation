@@ -67,6 +67,7 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
     if (partitions <= MAX_PARTITIONS_COUNT && partitions >= MIN_PARTITIONS_COUNT) {
       this.partitions = partitions;
       this.mask = calculateMask(partitions);
+      return this;
     }
     throw new IllegalArgumentException(
         String.format(
