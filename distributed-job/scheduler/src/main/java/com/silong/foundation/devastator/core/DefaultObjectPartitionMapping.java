@@ -63,11 +63,11 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
    *
    * @param partitions 分区数
    */
-  public DefaultObjectPartitionMapping partitions(int partitions) {
+  public void partitions(int partitions) {
     if (partitions <= MAX_PARTITIONS_COUNT && partitions >= MIN_PARTITIONS_COUNT) {
       this.partitions = partitions;
       this.mask = calculateMask(partitions);
-      return this;
+      return;
     }
     throw new IllegalArgumentException(
         String.format(
