@@ -20,7 +20,6 @@ package com.silong.foundation.devastator;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.UUID;
 
 /**
  * 集群
@@ -43,12 +42,12 @@ public interface Cluster extends Serializable {
    *
    * @return 集群节点列表
    */
-  Collection<ClusterNode> clusterNodes();
+  <T extends Comparable<T>> Collection<ClusterNode<T>> clusterNodes();
 
   /**
    * 获取本地节点
    *
    * @return 本地节点
    */
-  ClusterNode localNode();
+  <T extends Comparable<T>> ClusterNode<T> localNode();
 }

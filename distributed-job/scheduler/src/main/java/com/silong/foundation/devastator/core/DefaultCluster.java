@@ -20,6 +20,7 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.Cluster;
 import com.silong.foundation.devastator.ClusterNode;
+import org.jgroups.Address;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -57,12 +58,12 @@ public class DefaultCluster implements Cluster, Serializable {
   }
 
   @Override
-  public Collection<ClusterNode> clusterNodes() {
+  public Collection<ClusterNode<Address>> clusterNodes() {
     return engine.getClusterNodes(engine.currentView());
   }
 
   @Override
-  public ClusterNode localNode() {
-    return null;
+  public ClusterNode<Address> localNode() {
+    return engine.getLocalNode();
   }
 }
