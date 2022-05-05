@@ -33,4 +33,19 @@ public interface ObjectIdentity<T extends Comparable<T>> {
    * @return 唯一标识
    */
   T uuid();
+
+  /**
+   * 对象版本
+   *
+   * @return 对象版本
+   */
+  long version();
+
+  /**
+   * 校验对象是否变化
+   *
+   * @param obj 对象
+   * @return true对象发送变化，否则false
+   */
+  boolean verify(ObjectIdentity<T> obj);
 }
