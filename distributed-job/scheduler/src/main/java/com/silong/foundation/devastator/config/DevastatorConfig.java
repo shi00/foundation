@@ -82,8 +82,8 @@ public class DevastatorConfig implements Serializable {
   /** 数据副本数量，默认：1 */
   @Positive private int backupNums = 1;
 
-  /** 集群状态同步超时时间，默认：10000ms */
-  @Positive private long clusterStateSyncTimeout = TimeUnit.SECONDS.toMillis(10);
+  /** 集群状态同步超时时间，默认：30000ms */
+  @Positive private long clusterStateSyncTimeout = TimeUnit.SECONDS.toMillis(30);
 
   /** 节点角色，默认: WORKER */
   @NotNull private ClusterNodeRole clusterNodeRole = WORKER;
