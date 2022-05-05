@@ -21,6 +21,9 @@ package com.silong.foundation.devastator.model;
 import com.silong.foundation.devastator.ObjectIdentity;
 import org.jgroups.Address;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * 简单节点
  *
@@ -28,7 +31,11 @@ import org.jgroups.Address;
  * @version 1.0.0
  * @since 2022-05-03 00:15
  */
-public record SimpleClusterNode(Address address) implements ObjectIdentity<Address> {
+public record SimpleClusterNode(Address address) implements ObjectIdentity<Address>, Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 0L;
+
     @Override
     public Address uuid() {
         return address;
