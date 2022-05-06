@@ -64,22 +64,34 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
       Collection<Address> joiners,
       Collection<Address> leavers,
       Collection<Address> suspects) {
-    List<Address> members =
+    LinkedList<Address> members =
         currentMembers.isEmpty() ? new LinkedList<>() : new LinkedList<>(currentMembers);
+    Address oldCoordinator = members.getFirst();
 
+    // 删除离开集群的节点
     if (!leavers.isEmpty()) {
       members.removeAll(leavers);
     }
 
+    // 删除疑似无响应节点
     if (!suspects.isEmpty()) {
       members.removeAll(suspects);
     }
 
+    // 追加新加入集群节点
     if (!joiners.isEmpty()) {
       members.addAll(joiners);
     }
 
-    members.sort(this::compare);
+    // 如果当前coordinator仍然存在则保证当前coordinator不变，但是后续节点按权重，角色排序
+    if (members.indexOf(oldCoordinator) == 0) {
+      members.remove(oldCoordinator);
+      members.sort(this::compare);
+      members.addFirst(oldCoordinator);
+    } else {
+      // 如果当前coordinator离群，则按权重，角色排序决定新coordinator
+      members.sort(this::compare);
+    }
     return members;
   }
 
