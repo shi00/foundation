@@ -26,6 +26,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 集群成员变更策略
@@ -119,10 +120,23 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
 
   @Override
   public List<Address> getNewMembership(Collection<Collection<Address>> subviews) {
-    return subviews.stream()
-        .filter(view -> !view.isEmpty())
-        .flatMap(Collection::stream)
-        .sorted(this::compare)
-        .toList();
+
+    // 从各子视图中挑选当前作为coordinator的节点进行排序，选择新coordinator
+    Address coordinator =
+        subviews.stream()
+            .filter(subView -> !subView.isEmpty())
+            .map(subView -> subView.iterator().next())
+            .min(this::compare)
+            .orElseThrow(IllegalStateException::new);
+
+    LinkedList<Address> addresses =
+        subviews.stream()
+            .filter(subView -> !subView.isEmpty())
+            .flatMap(Collection::stream)
+            .filter(address -> !address.equals(coordinator))
+            .sorted(this::compare)
+            .collect(Collectors.toCollection(LinkedList::new));
+    addresses.addFirst(coordinator);
+    return addresses;
   }
 }
