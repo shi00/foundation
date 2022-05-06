@@ -20,7 +20,8 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.PersistStorage;
 import com.silong.foundation.devastator.config.PersistStorageConfig;
-import com.silong.foundation.devastator.exception.GeneralException;
+import com.silong.foundation.devastator.exception.DataAccessException;
+import com.silong.foundation.devastator.exception.InitializationException;
 import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.Tuple;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -144,7 +145,7 @@ public class RocksDbPersistStorage implements PersistStorage {
         this.columnFamilyHandlesMap.put(new String(handle.getName()), handle);
       }
     } catch (Exception e) {
-      throw new GeneralException(e);
+      throw new InitializationException(e);
     }
   }
 
@@ -181,7 +182,7 @@ public class RocksDbPersistStorage implements PersistStorage {
       ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
       rocksDB.deleteRange(columnFamilyHandle, startKey, endKey);
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 
@@ -236,7 +237,7 @@ public class RocksDbPersistStorage implements PersistStorage {
       rocksDB.dropColumnFamily(columnFamilyHandle);
       columnFamilyHandlesMap.remove(columnFamilyName).close();
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 
@@ -249,7 +250,7 @@ public class RocksDbPersistStorage implements PersistStorage {
           rocksDB.createColumnFamily(
               new ColumnFamilyDescriptor(columnFamilyName.getBytes(), cfOpts)));
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 
@@ -268,7 +269,7 @@ public class RocksDbPersistStorage implements PersistStorage {
         rocksDB.delete(columnFamilyHandle, key);
       }
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 
@@ -299,7 +300,7 @@ public class RocksDbPersistStorage implements PersistStorage {
         rocksDB.write(writeOptions, batch);
       }
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 
@@ -319,7 +320,7 @@ public class RocksDbPersistStorage implements PersistStorage {
           ? rocksDB.get(columnFamilyHandle, key)
           : null;
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 
@@ -353,7 +354,7 @@ public class RocksDbPersistStorage implements PersistStorage {
           .mapToObj(i -> new KvPair<>(keys.get(i), values.get(i)))
           .toList();
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 
@@ -369,7 +370,7 @@ public class RocksDbPersistStorage implements PersistStorage {
     try {
       rocksDB.put(findColumnFamilyHandle(columnFamilyName), key, value);
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 
@@ -407,7 +408,7 @@ public class RocksDbPersistStorage implements PersistStorage {
         rocksDB.write(writeOptions, batch);
       }
     } catch (RocksDBException e) {
-      throw new GeneralException(e);
+      throw new DataAccessException(e);
     }
   }
 }
