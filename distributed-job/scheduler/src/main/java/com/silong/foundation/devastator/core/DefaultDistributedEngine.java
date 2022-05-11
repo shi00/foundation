@@ -559,5 +559,6 @@ public class DefaultDistributedEngine
     if (persistStorage != null) {
       persistStorage.close();
     }
+    ADDRESS_BUFFER.remove();
   }
 }
