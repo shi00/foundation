@@ -63,7 +63,7 @@ public class DevastatorConfig implements Serializable {
   public static final String DEFAULT_CLUSTER = "default-cluster";
 
   /** 默认集群视图变化事件处理队列长度 */
-  public static final int DEFAULT_VIEW_CHANGED_EVENT_QUEUE_SIZE = 32;
+  public static final int DEFAULT_VIEW_CHANGED_EVENT_QUEUE_SIZE = 16;
 
   /** 实例名，不指定则随机生成一个uuid */
   @NotEmpty private String instanceName = UUID.randomUUID().toString();
@@ -82,13 +82,13 @@ public class DevastatorConfig implements Serializable {
   /** 数据副本数量，默认：1 */
   @Positive private int backupNums = 1;
 
-  /** 集群状态同步超时时间，默认：30000ms */
-  @Positive private long clusterStateSyncTimeout = TimeUnit.SECONDS.toMillis(30);
+  /** 集群状态同步超时时间，默认：15000ms */
+  @Positive private long clusterStateSyncTimeout = TimeUnit.SECONDS.toMillis(15);
 
   /** 节点角色，默认: WORKER */
   @NotNull private ClusterNodeRole clusterNodeRole = WORKER;
 
-  /** 集群视图变化事件处理队列长度，必须是2的指数。默认：32。 */
+  /** 集群视图变化事件处理队列长度，必须是2的指数。默认：16。 */
   @Positive private int viewChangedEventQueueSize = DEFAULT_VIEW_CHANGED_EVENT_QUEUE_SIZE;
 
   /** 节点属性 */
