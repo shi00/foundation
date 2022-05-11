@@ -24,11 +24,10 @@ import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.core.ClusterNodeUUID;
 import com.silong.foundation.devastator.core.DefaultDistributedEngine;
-import org.apache.commons.lang3.SystemUtils;
-import org.jgroups.Version;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -146,9 +145,16 @@ public class UdpEngineTests {
       String instanceName,
       ClusterNodeRole role,
       String configFile,
-      Map<String, String> attributes) {
+      Map<String, String> attributes)
+      throws IOException {
     String absolutePath =
-        SystemUtils.getJavaIoTmpDir().toPath().resolve(instanceName).toFile().getAbsolutePath();
+        new File(".")
+            .getCanonicalFile()
+            .toPath()
+            .resolve("target")
+            .resolve(instanceName)
+            .toFile()
+            .getAbsolutePath();
     DevastatorConfig config =
         new DevastatorConfig()
             .configFile(configFile)

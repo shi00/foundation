@@ -26,6 +26,7 @@ import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.message.PooledNioMessage;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
+import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.Tuple;
 import com.silong.foundation.devastator.utils.KryoUtils;
@@ -37,22 +38,24 @@ import org.jgroups.*;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
 import org.jgroups.protocols.pbcast.GMS;
+import org.jgroups.util.ByteArrayDataOutputStream;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
+import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
+import static com.silong.foundation.devastator.utils.TypeConverter.LONG_TO_BYTES;
 import static java.lang.System.lineSeparator;
+import static java.lang.ThreadLocal.withInitial;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
+import static org.jgroups.Global.LONG_SIZE;
 import static org.rocksdb.util.SizeUnit.KB;
 
 /**
@@ -69,6 +72,10 @@ public class DefaultDistributedEngine
     implements DistributedEngine, Receiver, ChannelListener, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
+
+  /** address缓存 */
+  private static final ThreadLocal<ByteArrayDataOutputStream> ADDRESS_BUFFER =
+      withInitial(() -> new ByteArrayDataOutputStream(LONG_SIZE * 2));
 
   /** 集群通信信道 */
   private final JChannel jChannel;
@@ -209,74 +216,98 @@ public class DefaultDistributedEngine
     return jChannel.getProtocolStack().getTransport().getMessageFactory();
   }
 
-  /** 同步集群状态 */
+  /** 向coordinator请求，同步集群状态 */
   public void syncClusterState() throws Exception {
-    // 向coord请求同步集群状态
     jChannel.getState(null, config.clusterStateSyncTimeout());
   }
 
   /**
-   * 数据到分区映射
+   * 数据到分区映射并持久化
    *
    * @param obj 数据对象
-   * @return {@code this}
-   * @param <T> 数据类型
+   * @return 对象映射分区
    */
-  public synchronized <T extends Comparable<T>> DefaultDistributedEngine partition(
-      ObjectIdentity<T> obj) {
-    assert obj != null;
+  @SneakyThrows
+  public synchronized int partitionAndPersistence(ObjectIdentity<Address> obj) {
+    if (obj == null) {
+      throw new IllegalArgumentException("obj must not be null.");
+    }
 
     // 计算对象对应的分区
-    T key = obj.uuid();
+    Address key = obj.uuid();
     int partition = objectPartitionMapping.partition(key);
     uuid2Partitions.put(key, partition);
 
-    // 如果分区被映射到本地节点，则保存数据
-    Address local = jChannel.address();
-    if (partition2ClusterNodes.get(partition).stream()
-        .anyMatch(node -> node.address().equals(local))) {
-      persistStorage.put(KryoUtils.serialize(key), KryoUtils.serialize(obj));
+    // 从默认列族查询key对应的版本，如果新数据版本大于当前已有版本则更新数据到partition对应的列族
+    if (isPartition2LocalNode(partition)) {
+      byte[] keyBytes = address2Bytes(key);
+      byte[] versionBytes = persistStorage.get(keyBytes);
+      long version = obj.objectVersion();
+      if (versionBytes == null || LONG_TO_BYTES.from(versionBytes) < version) {
+        persistStorage.putAllWith(
+            List.of(
+                new Tuple<>(
+                    DEFAULT_COLUMN_FAMILY_NAME, new KvPair<>(keyBytes, LONG_TO_BYTES.to(version))),
+                new Tuple<>(
+                    String.valueOf(partition), new KvPair<>(keyBytes, KryoUtils.serialize(obj)))));
+      }
     }
-    return this;
+    return partition;
+  }
+
+  private boolean isPartition2LocalNode(int partition) {
+    Address local = jChannel.address();
+    for (SimpleClusterNode node : partition2ClusterNodes.get(partition)) {
+      if (local.equals(node.address())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private byte[] address2Bytes(Address address) throws IOException {
+    ByteArrayDataOutputStream outputStream = ADDRESS_BUFFER.get();
+    address.writeTo(outputStream);
+    return outputStream.buffer();
   }
 
   /**
    * 根据新的集群视图调整分区表
    *
-   * @param view 集群视图
+   * @param oldView 旧集群视图
+   * @param newView 新集群视图
    */
-  public synchronized void repartition(View view) {
-    assert view != null;
+  public synchronized void repartition(View oldView, View newView) {
+    assert newView != null;
 
     Map<Integer, List<SimpleClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
     int partitionCount = getPartitionCount();
     if (partition2ClusterNodes == null) {
       // 分区表key数量在没有集群节点变化时是固定的，并且每个分区号都不同，此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
-      partition2ClusterNodes = new ConcurrentHashMap<>(partitionCount, 1.0f);
       objectPartitionMapping = new DefaultObjectPartitionMapping(partitionCount);
+      partition2ClusterNodes = new ConcurrentHashMap<>(partitionCount, 1.0f);
     }
-
     // 如果分区数变化则重置分区映射器
-    if (objectPartitionMapping.partitions() != partitionCount) {
+    else if (objectPartitionMapping.partitions() != partitionCount) {
       objectPartitionMapping.partitions(partitionCount);
       partition2ClusterNodes = new ConcurrentHashMap<>(partitionCount, 1.0f);
     }
 
     // 获取集群节点列表
-    List<SimpleClusterNode> clusterNodes =
-        view.getMembers().stream().map(SimpleClusterNode::new).toList();
+    List<SimpleClusterNode> newClusterNodes =
+        newView.getMembers().stream().map(SimpleClusterNode::new).toList();
 
     // 根据集群节点调整分区分布
-    refreshPartitionTable(partitionCount, clusterNodes);
+    refreshPartitionTable(partitionCount, newClusterNodes);
 
-    Address address = jChannel.getAddress();
+    Address localAddress = jChannel.getAddress();
     List<Tuple<Integer, Boolean>> oldLocalPartitions = null;
     if (oldPartition2ClusterNodes != null) {
-      oldLocalPartitions = getLocalPartitions(address, oldPartition2ClusterNodes);
+      oldLocalPartitions = getLocalPartitions(localAddress, oldPartition2ClusterNodes);
     }
 
     List<Tuple<Integer, Boolean>> newLocalPartitions =
-        getLocalPartitions(address, partition2ClusterNodes);
+        getLocalPartitions(localAddress, partition2ClusterNodes);
   }
 
   private void refreshPartitionTable(int partitionCount, List<SimpleClusterNode> clusterNodes) {
@@ -295,17 +326,18 @@ public class DefaultDistributedEngine
     if (p2n == null) {
       return List.of();
     }
-    LinkedList<Tuple<Integer, Boolean>> newLocalPartitions = new LinkedList<>();
+    List<Tuple<Integer, Boolean>> list = new ArrayList<>(p2n.size());
     partition2ClusterNodes.forEach(
         (k, v) -> {
           int index = indexOf(v, local);
           if (index > 0) {
-            newLocalPartitions.add(new Tuple<>(k, false));
+            list.add(new Tuple<>(k, false));
           } else if (index == 0) {
-            newLocalPartitions.add(new Tuple<>(k, true));
+            list.add(new Tuple<>(k, true));
           }
         });
-    return newLocalPartitions;
+    list.sort(Comparator.comparingInt(Tuple::t1));
+    return list;
   }
 
   private int indexOf(Collection<SimpleClusterNode> nodes, Address address) {
@@ -407,12 +439,21 @@ public class DefaultDistributedEngine
    * @param view 集群视图
    * @return 集群节点列表
    */
-  public List<ClusterNode> getClusterNodes(View view) {
+  public List<ClusterNode<Address>> getClusterNodes(View view) {
     assert view != null;
     return view.getMembers().stream().map(this::buildClusterNode).toList();
   }
 
-  private ClusterNode buildClusterNode(Address address) {
+  /**
+   * 获取本地节点
+   *
+   * @return 本地节点
+   */
+  public ClusterNode<Address> getLocalNode() {
+    return buildClusterNode(jChannel.address());
+  }
+
+  private ClusterNode<Address> buildClusterNode(Address address) {
     return new DefaultClusterNode((ClusterNodeUUID) address, jChannel.address());
   }
 
@@ -427,10 +468,7 @@ public class DefaultDistributedEngine
     }
     clusterState.writeTo(output);
     log.info(
-        "The node{} sends the clusterState:{}[{}]",
-        localIdentity(),
-        lineSeparator(),
-        clusterState);
+        "The node{} sends the clusterState:{}[{}]", localIdentity(), lineSeparator(), clusterState);
   }
 
   @Override

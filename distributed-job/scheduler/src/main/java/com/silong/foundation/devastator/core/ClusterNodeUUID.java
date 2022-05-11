@@ -105,6 +105,16 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
     return this;
   }
 
+  @Override
+  public long objectVersion() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean verify(ObjectIdentity<Address> obj) {
+    throw new UnsupportedOperationException();
+  }
+
   /**
    * 随机uuid生成对象
    *

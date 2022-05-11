@@ -57,8 +57,10 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
   /** 分布式引擎 */
   private final DefaultDistributedEngine engine;
 
+  /** 事件处理器 */
   private final Disruptor<ViewChangedEvent> disruptor;
 
+  /** 环状队列 */
   private final RingBuffer<ViewChangedEvent> ringBuffer;
 
   /**
@@ -76,7 +78,9 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
   }
 
   private Disruptor<ViewChangedEvent> buildViewChangedEventDisruptor(int queueSize) {
-    assert calculateMask(queueSize) >= 0;
+    if (calculateMask(queueSize) < 0) {
+      throw new IllegalArgumentException("queueSize must be power of 2.");
+    }
     Disruptor<ViewChangedEvent> disruptor =
         new Disruptor<>(
             ViewChangedEvent::new,
@@ -159,7 +163,12 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
         engine.syncClusterState();
       }
 
-      engine.repartition(newView);
+      // 脑裂恢复
+      if (newView instanceof MergeView) {
+
+      }
+
+      engine.repartition(oldView, newView);
     } catch (Exception e) {
       log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
     } finally {

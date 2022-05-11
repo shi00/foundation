@@ -40,4 +40,14 @@ public record SimpleClusterNode(Address address) implements ObjectIdentity<Addre
     public Address uuid() {
         return address;
     }
+
+    @Override
+    public long objectVersion() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean verify(ObjectIdentity<Address> obj) {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.ObjectIdentity;
 import com.silong.foundation.devastator.config.DevastatorProperties.Version;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -96,6 +97,16 @@ public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   @Override
   public ClusterNodeUUID uuid() {
     return clusterNode;
+  }
+
+  @Override
+  public long objectVersion() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean verify(ObjectIdentity<Address> obj) {
+    throw new UnsupportedOperationException();
   }
 
   @Nullable

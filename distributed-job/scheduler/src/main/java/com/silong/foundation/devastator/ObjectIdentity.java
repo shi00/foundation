@@ -39,7 +39,7 @@ public interface ObjectIdentity<T extends Comparable<T>> {
    *
    * @return 对象版本
    */
-  long version();
+  long objectVersion();
 
   /**
    * 校验对象是否变化
