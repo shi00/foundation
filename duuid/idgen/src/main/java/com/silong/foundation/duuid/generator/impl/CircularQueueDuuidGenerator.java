@@ -127,7 +127,7 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
   /** 日期格式化 */
   private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-  private static final String DUUID_PRODUCER_THREAD_PREFIX = "DUuid-Producer";
+  private static final String DUUID_PRODUCER_THREAD_PREFIX = "Duuid-Producer";
 
   /** 是否开启序号随机，避免生成id连续可能引起的潜在安全问题 */
   protected final boolean enableSequenceRandom;
