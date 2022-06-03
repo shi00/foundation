@@ -96,12 +96,12 @@
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-pmd-plugin.version>3.16.0</maven-pmd-plugin.version>
         <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
-        <checkstyle.version>10.2</checkstyle.version>
+        <checkstyle.version>10.3</checkstyle.version>
         <p3c-pmd.version>2.1.1</p3c-pmd.version>
         <jaxb2-maven-plugin.version>2.5.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.2.0</maven-jxr-plugin.version>
-        <spotbugs-maven-plugin.version>4.6.0.0</spotbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.7.0.0</spotbugs-maven-plugin.version>
         <findsecbugs-plugin.version>1.12.0</findsecbugs-plugin.version>
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <versions-maven-plugin.version>2.10.0</versions-maven-plugin.version>
@@ -121,13 +121,13 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>2.6.7</spring-boot.version>
-        <spring-cloud.version>2021.0.1</spring-cloud.version>
-        <spring-native.version>0.11.4</spring-native.version>
+        <spring-boot.version>2.7.0</spring-boot.version>
+        <spring-cloud.version>2021.0.3</spring-cloud.version>
+        <spring-native.version>0.11.5</spring-native.version>
         <guava.version>31.1-jre</guava.version>
         <passay.version>1.6.1</passay.version>
         <zxcvbn.version>1.7.0</zxcvbn.version>
-        <spotbugs.version>4.6.0</spotbugs.version>
+        <spotbugs.version>4.7.0</spotbugs.version>
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>3.3.0</jctools.version>
         <jetcd.version>0.7.0</jetcd.version>
