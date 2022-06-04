@@ -134,7 +134,7 @@
         <jmh.version>1.35</jmh.version>
         <jaxb-impl.version>3.0.2</jaxb-impl.version>
         <testcontainers.version>1.17.2</testcontainers.version>
-        <springdoc.version>1.6.7</springdoc.version>
+        <springdoc.version>1.6.9</springdoc.version>
         <libphonenumber.version>8.12.49</libphonenumber.version>
         <javafaker.version>1.0.2</javafaker.version>
         <commons-io.version>2.11.0</commons-io.version>

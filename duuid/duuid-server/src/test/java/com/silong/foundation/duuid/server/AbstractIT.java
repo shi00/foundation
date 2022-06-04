@@ -99,7 +99,7 @@ abstract class AbstractIT {
     prometheusEngdpoint = String.format("http://localhost:%d/actuator/prometheus", actuatorPort);
     openApiEngdpoint =
         String.format("http://localhost:%d/actuator/openapi/duuid-server", actuatorPort);
-    swaggerUiEndpoint = String.format("http://localhost:%d/actuator/swaggerui", actuatorPort);
+    swaggerUiEndpoint = String.format("http://localhost:%d/actuator/swagger-ui", actuatorPort);
     headers = new HttpHeaders();
     // set `content-type` header
     headers.setContentType(APPLICATION_JSON);
