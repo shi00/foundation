@@ -21,15 +21,16 @@ package com.silong.foundation.devastator.timer.impl;
 import com.silong.foundation.devastator.exception.GeneralException;
 import com.silong.foundation.devastator.exception.InitializationException;
 import com.silong.foundation.devastator.timer.Timer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.MpscArrayQueue;
 
+import java.util.LinkedHashSet;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.silong.foundation.devastator.core.DefaultObjectPartitionMapping.calculateMask;
+import static com.silong.foundation.devastator.timer.TimerTask.State.CANCELLED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
@@ -41,7 +42,6 @@ import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
  * @since 2022-05-08 22:17
  */
 @Slf4j
-@SuppressFBWarnings("PMD")
 public class HashedWheelTimer implements Timer, Runnable {
 
   /** 单例 */
@@ -93,7 +93,7 @@ public class HashedWheelTimer implements Timer, Runnable {
   private final CountDownLatch TIMER_STOPPED_LATCH = new CountDownLatch(1);
 
   /** timer wheel */
-  private final HashedWheelBucket[] wheel;
+  private final LinkedHashSet<HashedTimerTask>[] wheel;
 
   /** 定时任务提交队列 */
   private final MpscArrayQueue<HashedTimerTask> taskQueue;
@@ -104,8 +104,8 @@ public class HashedWheelTimer implements Timer, Runnable {
   /** 定时器线程 */
   private final Thread timerThread;
 
-  /** MARK */
-  private final int mark;
+  /** mask */
+  private final int mask;
 
   /** 定时器线程运行标识 */
   private volatile boolean timerThreadRunning;
@@ -114,7 +114,7 @@ public class HashedWheelTimer implements Timer, Runnable {
   private long startedTime;
 
   /** 计时ticker */
-  private long tick;
+  long tick;
 
   /** 禁止实例化 */
   @SuppressWarnings("PMD.AvoidManuallyCreateThreadRule")
@@ -130,7 +130,7 @@ public class HashedWheelTimer implements Timer, Runnable {
 
     // 初始化定时器线程池
     timerThread = new Thread(this, "hashed-wheel-timer-trigger");
-    mark = calculateMask(wheel.length);
+    mask = calculateMask(wheel.length);
   }
 
   private MpscArrayQueue<HashedTimerTask> initializeTaskQueue() {
@@ -154,14 +154,14 @@ public class HashedWheelTimer implements Timer, Runnable {
         r -> new Thread(r, "hashed-wheel-timer-executor" + count.getAndIncrement()));
   }
 
-  private HashedWheelBucket[] initializeWheelBuckets() {
+  private LinkedHashSet<HashedTimerTask>[] initializeWheelBuckets() {
     if (TICK_PER_WHEEL > MAX_SIZE || TICK_PER_WHEEL <= 0) {
       throw new InitializationException(
           "timer.wheel.size must be greater than 0 less than or equal to " + MAX_SIZE);
     }
-    HashedWheelBucket[] wheel = new HashedWheelBucket[TICK_PER_WHEEL];
+    LinkedHashSet<HashedTimerTask>[] wheel = new LinkedHashSet[TICK_PER_WHEEL];
     for (int i = 0; i < wheel.length; i++) {
-      wheel[i] = new HashedWheelBucket();
+      wheel[i] = new LinkedHashSet<>();
     }
     return wheel;
   }
@@ -247,67 +247,83 @@ public class HashedWheelTimer implements Timer, Runnable {
     TIMER_STARTED_LATCH.countDown();
 
     do {
-      int index = (int) (tick & mark);
-      HashedWheelBucket bucket = wheel[index];
 
-      // 获取提交的定时任务，填充至相应的bucket
-      HashedTimerTask task;
-      while ((task = taskQueue.poll()) != null) {
-        if (task.isInit()) {
-          bucket.add(task);
-          if (log.isDebugEnabled()) {
-            log.debug("Add {} to a bucket with index:{}", task.runnable, index);
-          }
-        } else {
-          if (log.isDebugEnabled()) {
-            log.debug(
-                "{} is ignored because the task status:{} is not INIT",
-                task.runnable,
-                task.getState());
-          }
+      long deadLine = waitForNextTick();
+      if (deadLine > 0) {
+
+        // 计算当前对应的buckets
+        int index = (int) (tick & mask);
+        LinkedHashSet<HashedTimerTask> bucket = wheel[index];
+
+        // 去掉已被取消的任务
+        bucket.removeIf(next -> next.getState() == CANCELLED);
+
+        // 获取提交的定时任务，填充至相应的bucket
+        HashedTimerTask task;
+        while ((task = taskQueue.poll()) != null) {
+          addTask(task);
         }
-      }
 
-      tick++;
+        tick++;
+      }
     } while (timerThreadRunning);
 
     TIMER_STOPPED_LATCH.countDown();
+
+    log.info("timer has stopped.");
+  }
+
+  private void addTask(HashedTimerTask task) {
+    if (task.isInit()) {
+      long calculated = task.deadLine / TICK_DURATION;
+      task.remainingRounds = (calculated - tick) / wheel.length;
+
+      // Ensure we don't schedule for past.
+      long ticks = Math.max(calculated, tick);
+      int index = (int) (ticks & mask);
+
+      wheel[index].add(task);
+      if (log.isDebugEnabled()) {
+        log.debug("Add {} to a bucket with index:{}", task.runnable, index);
+      }
+    } else {
+      log.info(
+          "{} is ignored because the task status:{} is not State.INIT.",
+          task.runnable,
+          task.getState());
+    }
   }
 
   private long waitForNextTick() {
     long deadline = TICK_DURATION * (tick + 1);
-
-    for (; ; ) {
-
+    while (true) {
       long currentTime = System.nanoTime() - startedTime;
-
       long sleepTimeMs = (deadline - currentTime + 999999) / 1000000;
 
       if (sleepTimeMs <= 0) {
-
         if (currentTime == Long.MIN_VALUE) {
-
           return -Long.MAX_VALUE;
-
         } else {
           return currentTime;
         }
       }
 
+      // Check if we run on windows, as if thats the case we will need
+      // to round the sleepTime as workaround for a bug that only affect
+      // the JVM if it runs on windows.
+      //
+      // See https://github.com/netty/netty/issues/356
       if (IS_OS_WINDOWS) {
         sleepTimeMs = sleepTimeMs / 10 * 10;
+        if (sleepTimeMs == 0) {
+          sleepTimeMs = 1;
+        }
       }
 
       try {
-
         Thread.sleep(sleepTimeMs);
-
       } catch (InterruptedException ignored) {
-
-        //        if (WORKER_STATE_UPDATER.get(HashedWheelTimer.this) == WORKER_STATE_SHUTDOWN) {
-        //
-        //          return Long.MIN_VALUE;
-        //        }
+        return Long.MIN_VALUE;
       }
     }
   }

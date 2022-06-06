@@ -132,7 +132,7 @@
         <plugins>
             <plugin>
                 <groupId>com.silong</groupId>
-                <artifactId>write-properties-file-maven-plugin</artifactId>
+                <artifactId>properties-writer-maven-plugin</artifactId>
                 <version>1.0.0</version>
                 <configuration>
                     <fileName>${project.artifactId}.properties</fileName>

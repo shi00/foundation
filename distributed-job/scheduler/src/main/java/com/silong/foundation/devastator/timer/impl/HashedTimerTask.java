@@ -42,6 +42,9 @@ class HashedTimerTask implements TimerTask {
   /** 任务执行时间，以添加任务至定时器时间点为基准，单位：ns */
   final long deadLine;
 
+  /** 任务轮次 */
+  long remainingRounds;
+
   /** 任务执行异常 */
   volatile Throwable throwable;
 

@@ -1,12 +1,12 @@
 # 第一阶段使用 layertools 的 extract 命令将应用程序拆分为多个层  本次构建标记为builder
-FROM bellsoft/liberica-openjdk-alpine:17.0.3-7 as builder
+FROM bellsoft/liberica-openjdk-alpine:17.0.3.1-2 as builder
 
 WORKDIR application
 ARG JAR_FILE
 COPY ${JAR_FILE} app.jar
 RUN java -Djarmode=layertools -jar app.jar extract && rm app.jar
 
-FROM bellsoft/liberica-openjdk-alpine:17.0.3-7
+FROM bellsoft/liberica-openjdk-alpine:17.0.3.1-2
 
 LABEL maintainer="louis2sin@gmail.com"
 LABEL jre="17"
