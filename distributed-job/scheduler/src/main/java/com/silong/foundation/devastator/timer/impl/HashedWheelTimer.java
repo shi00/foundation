@@ -24,13 +24,14 @@ import com.silong.foundation.devastator.timer.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.MpscArrayQueue;
 
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.silong.foundation.devastator.core.DefaultObjectPartitionMapping.calculateMask;
-import static com.silong.foundation.devastator.timer.TimerTask.State.CANCELLED;
+import static com.silong.foundation.devastator.timer.TimerTask.State.INIT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
@@ -114,7 +115,7 @@ public class HashedWheelTimer implements Timer, Runnable {
   private long startedTime;
 
   /** 计时ticker */
-  long tick;
+  private long tick;
 
   /** 禁止实例化 */
   @SuppressWarnings("PMD.AvoidManuallyCreateThreadRule")
@@ -247,21 +248,41 @@ public class HashedWheelTimer implements Timer, Runnable {
     TIMER_STARTED_LATCH.countDown();
 
     do {
-
       long deadLine = waitForNextTick();
       if (deadLine > 0) {
-
         // 计算当前对应的buckets
         int index = (int) (tick & mask);
         LinkedHashSet<HashedTimerTask> bucket = wheel[index];
 
-        // 去掉已被取消的任务
-        bucket.removeIf(next -> next.getState() == CANCELLED);
+        // 去掉非初始化状态的任务
+        bucket.removeIf(next -> next.getState() != INIT);
 
         // 获取提交的定时任务，填充至相应的bucket
         HashedTimerTask task;
         while ((task = taskQueue.poll()) != null) {
           addTask(task);
+        }
+
+        Iterator<HashedTimerTask> iterator = bucket.iterator();
+        while (iterator.hasNext()) {
+          HashedTimerTask timerTask = iterator.next();
+          if (timerTask.remainingRounds <= 0) {
+            iterator.remove();
+
+            if (timerTask.deadLine <= deadLine) {
+              timerExecutors.execute(timerTask);
+            } else {
+              // The timeout was placed into a wrong slot. This should never happen.
+              throw new IllegalStateException(
+                  String.format(
+                      "timerTask.deadline (%d) > deadline (%d)", timerTask.deadLine, deadLine));
+            }
+
+          } else if (timerTask.getState() != INIT) {
+            iterator.remove();
+          } else {
+            timerTask.remainingRounds--;
+          }
         }
 
         tick++;

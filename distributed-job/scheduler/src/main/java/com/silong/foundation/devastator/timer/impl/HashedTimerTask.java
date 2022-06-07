@@ -116,16 +116,6 @@ class HashedTimerTask implements TimerTask {
     return state.compareAndSet(State.INIT, State.CANCELLED);
   }
 
-  /**
-   * 任务是否超期
-   *
-   * @param now 给定时间点
-   * @return {@code true} or {@code false}
-   */
-  public boolean expired(long now) {
-    return this.deadLine <= now;
-  }
-
   @Override
   public boolean equals(Object o) {
     return this == o;
