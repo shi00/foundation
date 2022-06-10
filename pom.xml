@@ -620,6 +620,7 @@
                         <exclude>**/*.xsd</exclude>
                         <!-- Git related files -->
                         <exclude>**/.git/**</exclude>
+                        <exclude>**/bindings/**</exclude>
                         <exclude>**/.mvn/**</exclude>
                         <exclude>**/.gitignore</exclude>
                         <exclude>**/.gitmodules</exclude>
