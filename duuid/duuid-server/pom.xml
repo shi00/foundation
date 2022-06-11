@@ -76,6 +76,10 @@
                     <artifactId>spring-native</artifactId>
                 </dependency>
                 <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </dependency>
+                <dependency>
                     <groupId>org.springdoc</groupId>
                     <artifactId>springdoc-openapi-native</artifactId>
                 </dependency>
@@ -111,14 +115,26 @@
                             <image>
                                 <builder>paketobuildpacks/builder:tiny</builder>
                                 <name>com.silong/${project.artifactId}:${project.version}</name>
+                                <pullPolicy>IF_NOT_PRESENT</pullPolicy>
+                                <publish>false</publish>
                                 <env>
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
+                                    <BP_JVM_TYPE>JRE</BP_JVM_TYPE>
+                                    <BP_JVM_VERSION>17.*</BP_JVM_VERSION>
+                                    <SERVICE_BINDING_ROOT>/bindings</SERVICE_BINDING_ROOT>
                                     <!--                                    <HTTPS_PROXY>http://127.0.0.1:8080</HTTPS_PROXY>-->
                                     <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                         --verbose
-                                        -H:name=${project.artifactId}
+                                        --report-unsupported-elements-at-runtime
+                                        -H:+ReportExceptionStackTraces
+                                        --initialize-at-run-time=io.netty.handler.ssl.JdkNpnApplicationProtocolNegotiator,io.netty.handler.ssl.ConscryptAlpnSslEngine,io.netty.handler.ssl.ConscryptAlpnSslEngine,io.netty.handler.ssl.JettyNpnSslEngine,io.netty.handler.ssl.BouncyCastleAlpnSslUtils,io.netty.handler.ssl.OpenSsl
                                     </BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                 </env>
+                                <bindings>
+                                    <binding>${basedir}/bindings/dependency-mapping:/bindings/dependency-mapping
+                                    </binding>
+                                    <binding>${basedir}/deps:/deps</binding>
+                                </bindings>
                             </image>
                         </configuration>
                     </plugin>
@@ -130,6 +146,16 @@
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-log4j2</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.lmax</groupId>
+                    <artifactId>disruptor</artifactId>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -215,6 +241,103 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>oci-image</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-log4j2</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.lmax</groupId>
+                    <artifactId>disruptor</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <fork>true</fork>
+                            <jmxPort>${jmx.port}</jmxPort>
+                            <jvmArguments>-Dspring.application.admin.enabled=true</jvmArguments>
+                            <layers>
+                                <enabled>true</enabled>
+                            </layers>
+                            <excludes>
+                                <exclude>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                </exclude>
+                            </excludes>
+                            <image>
+                                <builder>paketobuildpacks/builder:tiny</builder>
+                                <name>com.silong/${project.artifactId}:${project.version}</name>
+                                <pullPolicy>IF_NOT_PRESENT</pullPolicy>
+                                <publish>false</publish>
+                                <env>
+                                    <BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
+                                    <BP_JVM_TYPE>JRE</BP_JVM_TYPE>
+                                    <BP_JVM_VERSION>17.*</BP_JVM_VERSION>
+                                    <SERVICE_BINDING_ROOT>/bindings</SERVICE_BINDING_ROOT>
+                                </env>
+                                <bindings>
+                                    <binding>${basedir}/bindings/dependency-mapping:/bindings/dependency-mapping
+                                    </binding>
+                                    <binding>${basedir}/deps:/deps</binding>
+                                </bindings>
+                            </image>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>build-info</id>
+                                <goals>
+                                    <goal>build-info</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <goals>
+                                    <goal>build-image</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>repackage</id>
+                                <goals>
+                                    <goal>repackage</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>pre-integration-test</id>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>
+                                        <argument>--management.server.port=${management.server.port}</argument>
+                                        <argument>--server.port=${server.port}</argument>
+                                        <argument>--duuid.worker-id-provider.etcdv3.server-addresses=${etcdv3.endpoint}
+                                        </argument>
+                                    </arguments>
+                                    <profiles>
+                                        <profile>etcd</profile>
+                                    </profiles>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>post-integration-test</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <dependencies>
@@ -260,20 +383,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-logging</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-log4j2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
