@@ -125,6 +125,8 @@
                                     <!--                                    <HTTPS_PROXY>http://127.0.0.1:8080</HTTPS_PROXY>-->
                                     <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                         --verbose
+                                        -H:+PrintAnalysisCallTree
+                                        -H:Log=registerResource:3
                                         --report-unsupported-elements-at-runtime
                                         -H:+ReportExceptionStackTraces
                                         --initialize-at-run-time=io.netty.handler.ssl.JdkNpnApplicationProtocolNegotiator,io.netty.handler.ssl.ConscryptAlpnSslEngine,io.netty.handler.ssl.ConscryptAlpnSslEngine,io.netty.handler.ssl.JettyNpnSslEngine,io.netty.handler.ssl.BouncyCastleAlpnSslUtils,io.netty.handler.ssl.OpenSsl
