@@ -221,6 +221,7 @@
                                 <pullPolicy>IF_NOT_PRESENT</pullPolicy>
                                 <publish>false</publish>
                                 <env>
+                                    <BP_BINARY_COMPRESSION_METHOD>upx</BP_BINARY_COMPRESSION_METHOD>
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
                                     <BP_JVM_TYPE>JRE</BP_JVM_TYPE>
                                     <BP_JVM_VERSION>17.*</BP_JVM_VERSION>
@@ -228,8 +229,8 @@
                                     <!--                                    <HTTPS_PROXY>http://127.0.0.1:8080</HTTPS_PROXY>-->
                                     <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                         --verbose
-                                <!--         -H:+PrintAnalysisCallTree
-                                        -H:Log=registerResource:3    -->
+                                        <!--                                        -H:+PrintAnalysisCallTree-->
+                                        <!--                                        -H:Log=registerResource:3-->
                                         --report-unsupported-elements-at-runtime
                                         -H:+ReportExceptionStackTraces
                                         --initialize-at-run-time=io.netty.handler.ssl.JdkNpnApplicationProtocolNegotiator,io.netty.handler.ssl.ConscryptAlpnSslEngine,io.netty.handler.ssl.ConscryptAlpnSslEngine,io.netty.handler.ssl.JettyNpnSslEngine,io.netty.handler.ssl.BouncyCastleAlpnSslUtils,io.netty.handler.ssl.OpenSsl
