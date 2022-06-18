@@ -54,7 +54,7 @@
         <profile>
             <id>oci-image</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <dependencies>
                 <dependency>
@@ -68,6 +68,21 @@
             </dependencies>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <!-- This is where the exclusion occurs -->
+                                <exclude>**/application*.properties</exclude>
+                                <exclude>**/log*.xml</exclude>
+                                <exclude>**/zoo/*</exclude>
+                                <exclude>**/zoo/north/*</exclude>
+                                <exclude>**/zoo/south/*</exclude>
+                                <exclude>**/zoo/west/*</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -90,6 +105,8 @@
                                 <pullPolicy>IF_NOT_PRESENT</pullPolicy>
                                 <publish>false</publish>
                                 <env>
+                                    <BPE_DELIM_JAVA_TOOL_OPTIONS xml:space="preserve"> </BPE_DELIM_JAVA_TOOL_OPTIONS>
+                                    <BPE_APPEND_JAVA_TOOL_OPTIONS>-Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector -Dreactor.netty.http.server.accessLogEnabled=true -XX:MinRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0 -XX:+UseZGC -XX:+DisableExplicitGC -XX:ReservedCodeCacheSize=64m -XX:InitialCodeCacheSize=64m -XX:ConcGCThreads=2 -XX:ParallelGCThreads=6 -XX:ZCollectionInterval=120 -XX:ZAllocationSpikeTolerance=5 -XX:ZUncommitDelay=600 -XX:+UnlockDiagnosticVMOptions -XX:-ZProactive -Xlog:safepoint,classhisto*=trace,age*,gc*=info:file=/var/log/app/gc/gc-%t.log:time,tid,tags:filecount=5,filesize=50m -XX:+HeapDumpOnOutOfMemoryError</BPE_APPEND_JAVA_TOOL_OPTIONS>
                                     <BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
                                     <BP_JVM_TYPE>JRE</BP_JVM_TYPE>
                                     <BP_JVM_VERSION>17.*</BP_JVM_VERSION>
@@ -250,7 +267,7 @@
         <profile>
             <id>docker-image</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <activeByDefault>false</activeByDefault>
             </activation>
             <dependencies>
                 <dependency>
@@ -497,20 +514,6 @@
                             </includes>
                         </fileset>
                     </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <!-- This is where the exclusion occurs -->
-                        <exclude>**/application*.properties</exclude>
-                        <exclude>**/zoo/*</exclude>
-                        <exclude>**/zoo/north/*</exclude>
-                        <exclude>**/zoo/south/*</exclude>
-                        <exclude>**/zoo/west/*</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
             <plugin>

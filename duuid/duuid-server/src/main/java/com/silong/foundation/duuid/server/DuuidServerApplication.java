@@ -27,9 +27,6 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.nativex.hint.FieldHint;
-import org.springframework.nativex.hint.NativeHint;
-import org.springframework.nativex.hint.TypeHint;
 
 import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
 import static io.swagger.v3.oas.annotations.enums.SecuritySchemeIn.HEADER;
@@ -69,15 +66,6 @@ import static io.swagger.v3.oas.annotations.enums.SecuritySchemeType.APIKEY;
   @SecurityScheme(type = APIKEY, name = RANDOM, in = HEADER, description = "random string"),
   @SecurityScheme(type = APIKEY, name = IDENTITY, in = HEADER, description = "identity")
 })
-@NativeHint(
-    types = {
-      @TypeHint(
-          typeNames = "org.jctools.queues.SpmcArrayQueueProducerIndexField",
-          fields = @FieldHint(name = "producerIndex", allowUnsafeAccess = true)),
-      @TypeHint(
-          typeNames = "org.jctools.queues.SpmcArrayQueueConsumerIndexField",
-          fields = @FieldHint(name = "consumerIndex", allowUnsafeAccess = true)),
-    })
 public class DuuidServerApplication {
 
   static {
