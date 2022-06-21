@@ -45,10 +45,13 @@ import org.springdoc.core.annotations.RouterOperation;
 import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -77,6 +80,8 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
  * @since 2022-01-13 21:23
  */
 @Configuration
+@EnableWebFlux
+@AutoConfigureBefore(WebFluxAutoConfiguration.class)
 @EnableConfigurationProperties({
   DuuidGeneratorProperties.class,
   EtcdProperties.class,

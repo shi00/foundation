@@ -718,6 +718,7 @@
                     <excludeRoots>
                         <excludeRoot>target/generated-sources</excludeRoot>
                         <excludeRoot>target/generated-test-sources</excludeRoot>
+                        <excludeRoot>target/generated-runtime-sources</excludeRoot>
                     </excludeRoots>
                     <rulesets>
                         <ruleset>rulesets/java/ali-comment.xml</ruleset>

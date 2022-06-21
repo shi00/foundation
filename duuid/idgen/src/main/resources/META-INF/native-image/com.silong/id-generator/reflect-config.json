@@ -1,0 +1,22 @@
+[
+  {
+    "name": "org.jctools.queues.SpmcArrayQueueConsumerIndexField",
+    "allDeclaredConstructors": true,
+    "fields": [
+      {
+        "name": "consumerIndex",
+        "allowWrite": true
+      }
+    ]
+  },
+  {
+    "name": "org.jctools.queues.SpmcArrayQueueProducerIndexField",
+    "allDeclaredConstructors": true,
+    "fields": [
+      {
+        "name": "producerIndex",
+        "allowWrite": true
+      }
+    ]
+  }
+]
