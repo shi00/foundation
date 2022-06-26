@@ -67,7 +67,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
    */
   private static final int MAXIMUM_CAPACITY = 1 << 30;
 
-  final ObjectPool<DefaultDelayedTask> delayedTaskObjectPool;
+  ObjectPool<DefaultDelayedTask> delayedTaskObjectPool;
 
   /** 时间轮 */
   private WheelBucket[] wheelBuckets;
@@ -307,6 +307,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
 
     if (delayedTaskObjectPool != null) {
       delayedTaskObjectPool.close();
+      delayedTaskObjectPool = null;
     }
   }
 

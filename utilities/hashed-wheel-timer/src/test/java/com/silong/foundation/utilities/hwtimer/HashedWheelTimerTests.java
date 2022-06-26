@@ -71,4 +71,24 @@ public class HashedWheelTimerTests {
     Assertions.assertEquals(value, count.get());
     Assertions.assertTrue(timer.stop());
   }
+
+  @Test
+  public void test3() throws Exception {
+    HashedWheelTimer timer = new HashedWheelTimer();
+    NullPointerException npe = new NullPointerException();
+    try (DelayedTask b =
+        timer.submit(
+            "B",
+            () -> {
+              throw npe;
+            },
+            0,
+            TimeUnit.DAYS)) {
+      Exception exception = b.getException();
+      Assertions.assertEquals(npe, exception);
+    }
+    Assertions.assertTrue(timer.stop());
+
+    System.out.println();
+  }
 }
