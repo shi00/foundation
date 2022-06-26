@@ -90,7 +90,7 @@ class WheelBucket implements Closeable {
   }
 
   private void removeLastRounds(long rounds) {
-    if (rounds >= 1) {
+    if (rounds >= 1 && roundTasks.containsKey(rounds - 1)) {
       LinkedList<DefaultDelayedTask> deleted = roundTasks.remove(rounds - 1);
       if (deleted != null && !deleted.isEmpty()) {
         throw new IllegalStateException(

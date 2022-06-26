@@ -24,6 +24,8 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -153,9 +155,12 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     }
     this.mark = calculateMask(wheelBuckets.length);
     GenericObjectPoolConfig<DefaultDelayedTask> objectPoolConfig = new GenericObjectPoolConfig<>();
-    objectPoolConfig.setMaxIdle(32);
-    objectPoolConfig.setMinIdle(8);
     objectPoolConfig.setMaxTotal(maxTaskCount);
+    objectPoolConfig.setMaxIdle(16);
+    objectPoolConfig.setMinIdle(8);
+    objectPoolConfig.setTimeBetweenEvictionRuns(Duration.of(3, ChronoUnit.SECONDS));
+    objectPoolConfig.setNumTestsPerEvictionRun(8);
+    objectPoolConfig.setMinEvictableIdleTime(Duration.of(1, ChronoUnit.MINUTES));
     this.delayedTaskObjectPool =
         new GenericObjectPool<>(new DelayedTaskFactory(), objectPoolConfig);
   }
