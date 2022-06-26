@@ -46,7 +46,8 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
 
         @Override
         public Thread newThread(Runnable r) {
-          return new Thread(r, HashedWheelTimer.class.getSimpleName() + COUNT.getAndIncrement());
+          return new Thread(
+              r, HashedWheelTimer.class.getSimpleName() + "-" + COUNT.getAndIncrement());
         }
       };
 
@@ -255,17 +256,15 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     startedFlag.countDown();
     log.info("{} has been started.", clockThread.getName());
     do {
-      // 延迟任务插入时间轮
-      appendTasks();
-
       // 获取下一个触发时间，如果需要会sleep
       long deadLine = waitForNextTick();
 
+      // 延迟任务插入时间轮
+      appendTasks();
+
       int index = (int) (tick & mark);
       wheelBuckets[index].trigger(
-          tick / wheelBuckets.length,
-          deadLine,
-          task -> task.result = executor.submit(task.callable));
+          tick / wheelBuckets.length, deadLine, task -> task.result = executor.submit(task.wrap()));
 
       tick++;
     } while (isClockRunning.get());

@@ -21,6 +21,8 @@ package com.silong.foundation.utilities.hwtimer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 单元测试
  *
@@ -31,11 +33,12 @@ import org.junit.jupiter.api.Test;
 public class HashedWheelTimerTests {
 
   @Test
-  public void test1() {
+  public void test1() throws Exception {
     HashedWheelTimer timer = new HashedWheelTimer();
-    boolean start = timer.start();
-    Assertions.assertTrue(start);
-    boolean stop = timer.stop();
-    Assertions.assertTrue(stop);
+    try (DelayedTask a = timer.submit("A", () -> 1, 0, TimeUnit.HOURS)) {
+      int num = (int) a.getResult().get();
+      Assertions.assertEquals(1, num);
+    }
+    Assertions.assertTrue(timer.stop());
   }
 }

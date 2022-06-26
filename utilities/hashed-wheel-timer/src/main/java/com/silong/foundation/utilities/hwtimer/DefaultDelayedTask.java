@@ -48,22 +48,25 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
   long deadLine;
 
   /** 任务逻辑 */
-  Callable callable;
+  @ToString.Exclude Callable callable;
 
   /** 任务名 */
   String name;
 
   /** 任务执行异常 */
-  volatile Exception exception;
+  @ToString.Exclude Exception exception;
 
   /** 任务执行结果 */
-  volatile Future result;
+  @ToString.Exclude Future result;
 
   /** 任务归属定时器 */
-  HashedWheelTimer wheelTimer;
+  @ToString.Exclude HashedWheelTimer wheelTimer;
 
   /** 任务状态 */
   AtomicReference<State> stateRef = new AtomicReference<>(State.READY);
+
+  /** 任务执行结束信号 */
+  CountDownLatch2 signal = new CountDownLatch2(1);
 
   /**
    * 包裹延时任务执行逻辑
@@ -72,21 +75,29 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
    */
   public <R> Callable<R> wrap() {
     return () -> {
-      if (stateRef.compareAndSet(State.READY, State.RUNNING)) {
-        try {
-          log.debug("Start executing DelayTask:{}.", name);
-          R call = (R) callable.call();
-          log.debug("DelayTask:{} has been successfully executed.", name);
-          stateRef.compareAndSet(State.RUNNING, State.FINISH);
-          return call;
-        } catch (Exception e) {
-          log.error("Failed to execute DelayTask:{}.", name, exception = e);
-          stateRef.compareAndSet(State.RUNNING, State.EXCEPTION);
+      try {
+        if (stateRef.compareAndSet(State.READY, State.RUNNING)) {
+          try {
+            log.debug("Start executing DelayTask:{}.", name);
+            R call = (R) callable.call();
+            log.debug("DelayTask:{} has been successfully executed.", name);
+            stateRef.compareAndSet(State.RUNNING, State.FINISH);
+            return call;
+          } catch (Exception e) {
+            log.error("Failed to execute DelayTask:{}.", name, exception = e);
+            stateRef.compareAndSet(State.RUNNING, State.EXCEPTION);
+            return null;
+          }
+        } else {
+          log.debug(
+              "DelayTask:[{}:{}] is not in the {} state and cannot be executed.",
+              name,
+              getState(),
+              State.READY);
           return null;
         }
-      } else {
-        log.info("DelayTask:{} is not in the {} state and cannot be executed.", name, State.READY);
-        return null;
+      } finally {
+        signal.countDown();
       }
     };
   }
@@ -98,12 +109,22 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
 
   @Override
   public Exception getException() {
-    return exception;
+    try {
+      signal.await();
+      return exception;
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public <R> Future<R> getResult() {
-    return result;
+    try {
+      signal.await();
+      return result;
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

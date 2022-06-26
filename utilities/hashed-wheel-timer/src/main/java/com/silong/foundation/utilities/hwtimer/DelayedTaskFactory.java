@@ -40,6 +40,7 @@ class DelayedTaskFactory extends BasePooledObjectFactory<DefaultDelayedTask> {
     object.callable = null;
     object.result = null;
     object.wheelTimer = null;
+    object.signal = null;
   }
 
   @Override
@@ -62,6 +63,7 @@ class DelayedTaskFactory extends BasePooledObjectFactory<DefaultDelayedTask> {
     object.name = null;
     object.exception = null;
     object.wheelTimer = null;
+    object.signal.reset();
     object.stateRef.set(DelayedTask.State.READY);
   }
 }
