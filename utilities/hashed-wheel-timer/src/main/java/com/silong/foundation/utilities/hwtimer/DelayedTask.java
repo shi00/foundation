@@ -59,16 +59,18 @@ public interface DelayedTask extends Closeable {
    * 获取任务执行异常，如果有异常的话
    *
    * @return 异常，可能为null
+   * @throws InterruptedException 线程被中断
    */
-  Exception getException();
+  Exception getException() throws InterruptedException;
 
   /**
    * 任务执行结果，如果任务未执行成功返回null
    *
    * @return 任务执行结果
    * @param <R> 任务执行结果
+   * @throws InterruptedException 线程被中断
    */
-  <R> Future<R> getResult();
+  <R> Future<R> getResult() throws InterruptedException;
 
   /**
    * 任务状态
