@@ -20,6 +20,7 @@ package com.silong.foundation.utilities.hwtimer;
 
 import java.io.Closeable;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -66,8 +67,10 @@ class WheelBucket implements Closeable {
     if (executor == null) {
       throw new IllegalArgumentException("executor must not be null.");
     }
+
     LinkedList<DefaultDelayedTask> defaultDelayedTasks = roundTasks.get(rounds);
     if (defaultDelayedTasks == null || defaultDelayedTasks.isEmpty()) {
+      removeLastRounds(rounds);
       return;
     }
 
@@ -81,6 +84,18 @@ class WheelBucket implements Closeable {
           throw new IllegalStateException(
               String.format("task.deadline (%d) > currentTime (%d)", task.deadLine, currentTime));
         }
+      }
+    }
+
+    removeLastRounds(rounds);
+  }
+
+  private void removeLastRounds(long rounds) {
+    if (rounds >= 1) {
+      LinkedList<DefaultDelayedTask> deleted = roundTasks.remove(rounds - 1);
+      if (deleted != null && !deleted.isEmpty()) {
+        throw new IllegalStateException(
+            String.format("Discover %s that were not triggered for execution.", deleted));
       }
     }
   }

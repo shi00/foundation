@@ -33,7 +33,11 @@ public class HashedWheelTimerTests {
 
   @Test
   public void test1() {
+    long l1 = System.nanoTime();
     long l = Long.MAX_VALUE - Long.MIN_VALUE;
-    System.out.println( TimeUnit.NANOSECONDS.toDays(Long.MAX_VALUE)/365);
+    System.out.println( Long.MAX_VALUE);
+    System.out.println( Long.MIN_VALUE);
+    System.out.println( TimeUnit.MILLISECONDS.toDays(9223372036854L)/365);
+    System.out.println( -Long.MAX_VALUE);
   }
 }

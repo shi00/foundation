@@ -227,7 +227,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
 
     // 计算任务触发时间，可能出现负数，表示当前定时器启动时间到任务提交时间之差超过了最大值
     // 需要处理这种特殊情况，出现负值则按最大值处理
-    long deadLine = System.nanoTime() + timeUnit.toNanos(delay) - startedTime;
+    long deadLine = System.nanoTime() - startedTime + timeUnit.toNanos(delay);
     DefaultDelayedTask defaultDelayedTask = delayedTaskObjectPool.borrowObject();
     defaultDelayedTask.deadLine = deadLine < 0 ? Long.MAX_VALUE : deadLine;
     defaultDelayedTask.name = name;
@@ -242,16 +242,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     while (true) {
       long currentTime = System.nanoTime() - startedTime;
       if (nextTick > currentTime) {
-        long sleepTime = TimeUnit.NANOSECONDS.toMillis(nextTick - currentTime);
-        if (sleepTime == 0) {
-          Thread.onSpinWait();
-        } else {
-          try {
-            Thread.sleep(sleepTime);
-          } catch (InterruptedException e) {
-            throw new IllegalStateException(e);
-          }
-        }
+        Thread.onSpinWait();
       } else {
         return currentTime;
       }
@@ -266,8 +257,10 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     do {
       // 延迟任务插入时间轮
       appendTasks();
+
       // 获取下一个触发时间，如果需要会sleep
       long deadLine = waitForNextTick();
+
       int index = (int) (tick & mark);
       wheelBuckets[index].trigger(
           tick / wheelBuckets.length,
@@ -285,8 +278,8 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     while ((defaultDelayedTask = taskQueue.poll()) != null) {
       if (defaultDelayedTask.getState() == DelayedTask.State.READY) {
         long tickCount = defaultDelayedTask.deadLine / tickNs;
-        defaultDelayedTask.rounds = tickCount / wheelBuckets.length;
         long maxTick = Math.max(tick, tickCount);
+        defaultDelayedTask.rounds = maxTick / wheelBuckets.length;
         int index = (int) (maxTick & mark);
         wheelBuckets[index].add(defaultDelayedTask);
       } else {
