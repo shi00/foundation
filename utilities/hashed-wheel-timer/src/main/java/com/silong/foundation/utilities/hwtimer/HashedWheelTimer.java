@@ -221,7 +221,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     }
 
     // 启动定时器
-    if (start()) {
+    if (!start()) {
       throw new IllegalStateException(String.format("Failed to start %s.", clockThread.getName()));
     }
 
@@ -233,7 +233,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     defaultDelayedTask.name = name;
     defaultDelayedTask.callable = callable;
     defaultDelayedTask.wheelTimer = this;
-    taskQueue.add(defaultDelayedTask);
+    taskQueue.offer(defaultDelayedTask);
     return defaultDelayedTask;
   }
 
