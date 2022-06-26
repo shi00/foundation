@@ -18,9 +18,8 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * 单元测试
@@ -33,11 +32,10 @@ public class HashedWheelTimerTests {
 
   @Test
   public void test1() {
-    long l1 = System.nanoTime();
-    long l = Long.MAX_VALUE - Long.MIN_VALUE;
-    System.out.println( Long.MAX_VALUE);
-    System.out.println( Long.MIN_VALUE);
-    System.out.println( TimeUnit.MILLISECONDS.toDays(9223372036854L)/365);
-    System.out.println( -Long.MAX_VALUE);
+    HashedWheelTimer timer = new HashedWheelTimer();
+    boolean start = timer.start();
+    Assertions.assertTrue(start);
+    boolean stop = timer.stop();
+    Assertions.assertTrue(stop);
   }
 }

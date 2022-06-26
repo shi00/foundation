@@ -269,7 +269,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
 
       tick++;
     } while (isClockRunning.get());
-    startedFlag.countDown();
+    stoppedFlag.countDown();
     log.info("{} has been stopped.", clockThread.getName());
   }
 
