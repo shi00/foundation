@@ -21,7 +21,9 @@ package com.silong.foundation.utilities.hwtimer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 单元测试
@@ -35,10 +37,38 @@ public class HashedWheelTimerTests {
   @Test
   public void test1() throws Exception {
     HashedWheelTimer timer = new HashedWheelTimer();
-    try (DelayedTask a = timer.submit("A", () -> 1, 0, TimeUnit.HOURS)) {
-      int num = (int) a.getResult().get();
-      Assertions.assertEquals(1, num);
+    int result = 1;
+    try (DelayedTask a = timer.submit("A", () -> result, 0, TimeUnit.HOURS)) {
+      int num = (int) a.getResult();
+      Assertions.assertEquals(result, num);
     }
+    Assertions.assertTrue(timer.stop());
+  }
+
+  @Test
+  public void test2() throws Exception {
+    HashedWheelTimer timer = new HashedWheelTimer();
+    AtomicInteger count = new AtomicInteger(0);
+    int value = 100;
+    CountDownLatch countDownLatch = new CountDownLatch(value);
+    for (int i = 0; i < value; i++) {
+      String name = "" + i;
+      new Thread(
+              () -> {
+                try (DelayedTask delayedTask =
+                    timer.submit(
+                        name, (Runnable) count::getAndIncrement, 1, TimeUnit.MILLISECONDS)) {
+                  delayedTask.getResult();
+                  countDownLatch.countDown();
+                } catch (Exception e) {
+                  throw new RuntimeException(e);
+                }
+              })
+          .start();
+    }
+
+    countDownLatch.await();
+    Assertions.assertEquals(value, count.get());
     Assertions.assertTrue(timer.stop());
   }
 }

@@ -40,7 +40,9 @@ public class CountDownLatch2 {
    * @throws IllegalArgumentException if {@code count} is negative
    */
   public CountDownLatch2(int count) {
-    if (count < 0) throw new IllegalArgumentException("count < 0");
+    if (count < 0) {
+      throw new IllegalArgumentException("count must be greater than or equals to 0.");
+    }
     this.sync = new Sync(count);
   }
 
@@ -175,9 +177,13 @@ public class CountDownLatch2 {
       // Decrement count; signal when transition to zero
       for (; ; ) {
         int c = getState();
-        if (c == 0) return false;
+        if (c == 0) {
+          return false;
+        }
         int nextc = c - 1;
-        if (compareAndSetState(c, nextc)) return nextc == 0;
+        if (compareAndSetState(c, nextc)) {
+          return nextc == 0;
+        }
       }
     }
 

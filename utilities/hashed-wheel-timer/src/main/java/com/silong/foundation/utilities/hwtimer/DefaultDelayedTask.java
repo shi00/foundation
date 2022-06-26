@@ -18,14 +18,13 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
+import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -37,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Slf4j
 @ToString
-@EqualsAndHashCode
 @NoArgsConstructor
 class DefaultDelayedTask implements DelayedTask, Closeable {
 
@@ -47,54 +45,51 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
   /** 任务触发时间 */
   long deadLine;
 
-  /** 任务逻辑 */
-  @ToString.Exclude Callable callable;
-
   /** 任务名 */
   String name;
-
-  /** 任务执行异常 */
-  @ToString.Exclude Exception exception;
-
-  /** 任务执行结果 */
-  @ToString.Exclude Future result;
-
-  /** 任务归属定时器 */
-  @ToString.Exclude HashedWheelTimer wheelTimer;
 
   /** 任务状态 */
   AtomicReference<State> stateRef = new AtomicReference<>(State.READY);
 
   /** 任务执行结束信号 */
-  CountDownLatch2 signal = new CountDownLatch2(1);
+  @ToString.Exclude CountDownLatch2 signal = new CountDownLatch2(1);
+
+  /** 任务逻辑 */
+  @ToString.Exclude Callable<?> callable;
+
+  /** 任务执行异常 */
+  @ToString.Exclude Exception exception;
+
+  /** 任务执行结果 */
+  @ToString.Exclude Object result;
+
+  /** 任务归属定时器 */
+  @ToString.Exclude HashedWheelTimer wheelTimer;
 
   /**
    * 包裹延时任务执行逻辑
    *
    * @return 执行逻辑
    */
-  public <R> Callable<R> wrap() {
+  public Runnable wrap() {
     return () -> {
       try {
         if (stateRef.compareAndSet(State.READY, State.RUNNING)) {
           try {
             log.debug("Start executing DelayTask:{}.", name);
-            R call = (R) callable.call();
+            result = callable.call();
             log.debug("DelayTask:{} has been successfully executed.", name);
             stateRef.compareAndSet(State.RUNNING, State.FINISH);
-            return call;
           } catch (Exception e) {
-            log.error("Failed to execute DelayTask:{}.", name, exception = e);
             stateRef.compareAndSet(State.RUNNING, State.EXCEPTION);
-            return null;
+            log.error("Failed to execute DelayTask:{}.", name, exception = e);
           }
         } else {
           log.debug(
               "DelayTask:{} is ignored, because its {} is not {}.",
-              getName(),
+              name,
               getState(),
               DelayedTask.State.READY);
-          return null;
         }
       } finally {
         signal.countDown();
@@ -108,23 +103,15 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
   }
 
   @Override
-  public Exception getException() {
-    try {
-      signal.await();
-      return exception;
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+  public Exception getException() throws InterruptedException {
+    signal.await();
+    return exception;
   }
 
   @Override
-  public <R> Future<R> getResult() {
-    try {
-      signal.await();
-      return result;
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+  public <R> R getResult() throws InterruptedException {
+    signal.await();
+    return (R) result;
   }
 
   @Override
@@ -135,6 +122,20 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
   @Override
   public String getName() {
     return name;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o instanceof DefaultDelayedTask task) {
+      return Objects.equals(name, task.name) && signal == task.signal && stateRef == task.stateRef;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        rounds, deadLine, name, stateRef, signal, callable, exception, result, wheelTimer);
   }
 
   /** 归还对象至对象池 */

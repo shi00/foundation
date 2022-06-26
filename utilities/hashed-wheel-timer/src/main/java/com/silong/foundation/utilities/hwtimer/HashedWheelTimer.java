@@ -257,7 +257,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     startedFlag.countDown();
     log.info("{} has been started.", clockThread.getName());
 
-    Consumer<DefaultDelayedTask> scheduler = task -> task.result = executor.submit(task.wrap());
+    Consumer<DefaultDelayedTask> scheduler = task -> executor.submit(task.wrap());
 
     do {
       // 延迟任务插入时间轮

@@ -19,7 +19,6 @@
 package com.silong.foundation.utilities.hwtimer;
 
 import java.io.Closeable;
-import java.util.concurrent.Future;
 
 /**
  * 延时任务接口
@@ -56,7 +55,8 @@ public interface DelayedTask extends Closeable {
   boolean cancel();
 
   /**
-   * 获取任务执行异常，如果有异常的话
+   * 获取任务执行异常，如果有异常的话<br>
+   * 本方法会阻塞至任务执行完毕
    *
    * @return 异常，可能为null
    * @throws InterruptedException 线程被中断
@@ -64,13 +64,14 @@ public interface DelayedTask extends Closeable {
   Exception getException() throws InterruptedException;
 
   /**
-   * 任务执行结果，如果任务未执行成功返回null
+   * 任务执行结果，Runnable任务返回null，Callable任务返回值依赖其自身的业务逻辑<br>
+   * 本方法会阻塞至任务执行完毕
    *
    * @return 任务执行结果
    * @param <R> 任务执行结果
    * @throws InterruptedException 线程被中断
    */
-  <R> Future<R> getResult() throws InterruptedException;
+  <R> R getResult() throws InterruptedException;
 
   /**
    * 任务状态
