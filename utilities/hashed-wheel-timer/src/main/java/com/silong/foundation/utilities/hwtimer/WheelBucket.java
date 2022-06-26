@@ -18,6 +18,8 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -31,6 +33,7 @@ import java.util.function.Consumer;
  * @version 1.0.0
  * @since 2022-06-25 12:14
  */
+@Slf4j
 class WheelBucket implements Closeable {
   /** 分层任务列表 */
   Map<Long, LinkedList<DefaultDelayedTask>> roundTasks;
@@ -83,6 +86,12 @@ class WheelBucket implements Closeable {
           throw new IllegalStateException(
               String.format("task.deadline (%d) > currentTime (%d)", task.deadLine, currentTime));
         }
+      } else {
+        log.debug(
+            "DelayTask:{} is ignored, because its {} is not {}.",
+            task.getName(),
+            task.getState(),
+            DelayedTask.State.READY);
       }
     }
 
@@ -90,8 +99,9 @@ class WheelBucket implements Closeable {
   }
 
   private void removeLastRounds(long rounds) {
-    if (rounds >= 1 && roundTasks.containsKey(rounds - 1)) {
-      LinkedList<DefaultDelayedTask> deleted = roundTasks.remove(rounds - 1);
+    long lastRounds = rounds - 1;
+    if (lastRounds >= 0 && roundTasks.containsKey(lastRounds)) {
+      LinkedList<DefaultDelayedTask> deleted = roundTasks.remove(lastRounds);
       if (deleted != null && !deleted.isEmpty()) {
         throw new IllegalStateException(
             String.format("Discover %s that were not triggered for execution.", deleted));
