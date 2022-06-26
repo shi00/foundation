@@ -39,7 +39,7 @@ public class HashedWheelTimerTests {
     HashedWheelTimer timer = new HashedWheelTimer();
     int result = 1;
     try (DelayedTask a = timer.submit("A", () -> result, 0, TimeUnit.HOURS)) {
-      int num = (int) a.getResult();
+      int num = a.getResult();
       Assertions.assertEquals(result, num);
     }
     Assertions.assertTrue(timer.stop());
