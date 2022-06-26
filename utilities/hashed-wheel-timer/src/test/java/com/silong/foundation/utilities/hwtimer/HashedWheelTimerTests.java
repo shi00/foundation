@@ -88,7 +88,27 @@ public class HashedWheelTimerTests {
       Assertions.assertEquals(npe, exception);
     }
     Assertions.assertTrue(timer.stop());
+  }
 
-    System.out.println();
+  @Test
+  public void test4() throws Exception {
+    HashedWheelTimer timer = new HashedWheelTimer();
+    NullPointerException npe = new NullPointerException();
+    try (DelayedTask c =
+        timer.submit(
+            "C",
+            () -> {
+              throw npe;
+            },
+            0,
+            TimeUnit.DAYS)) {
+      Exception expected = npe;
+      if (c.cancel()) {
+        expected = null;
+      }
+      Exception exception = c.getException();
+      Assertions.assertEquals(expected, exception);
+    }
+    Assertions.assertTrue(timer.stop());
   }
 }

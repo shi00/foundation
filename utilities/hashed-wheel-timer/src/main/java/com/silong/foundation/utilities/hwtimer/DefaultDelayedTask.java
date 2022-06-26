@@ -99,7 +99,12 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
 
   @Override
   public boolean cancel() {
-    return stateRef.compareAndSet(State.READY, State.CANCELLED);
+    boolean result = stateRef.compareAndSet(State.READY, State.CANCELLED);
+    // 如果任务被取消执行，需要考虑等待执行结果或者异常的阻塞线程可以正常被唤醒
+    if (result) {
+      signal.countDown();
+    }
+    return result;
   }
 
   @Override
