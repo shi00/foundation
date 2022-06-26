@@ -20,7 +20,6 @@ package com.silong.foundation.utilities.hwtimer;
 
 import java.io.Closeable;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Consumer;
