@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * 时间轮定时器实现
@@ -75,7 +76,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   private long tick;
 
   /** 时钟格单位间隔，单位：纳秒 */
-  private final long tickNs;
+  private final long tickDurationNs;
 
   /** 起始时间，纳秒 */
   private long startedTime;
@@ -144,7 +145,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     }
 
     this.tick = 0;
-    this.tickNs = tickIntervalUnit.toNanos(tickInterval);
+    this.tickDurationNs = tickIntervalUnit.toNanos(tickInterval);
     this.executor = executor;
     this.wheelBuckets = new WheelBucket[powerOf2(wheelSize)];
     for (int i = 0; i < wheelBuckets.length; i++) {
@@ -239,7 +240,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   }
 
   private long waitForNextTick() {
-    long nextTick = tickNs * (tick + 1);
+    long nextTick = tickDurationNs * (tick + 1);
     while (true) {
       long currentTime = System.nanoTime() - startedTime;
       if (nextTick > currentTime) {
@@ -255,16 +256,18 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     startedTime = System.nanoTime();
     startedFlag.countDown();
     log.info("{} has been started.", clockThread.getName());
+
+    Consumer<DefaultDelayedTask> scheduler = task -> task.result = executor.submit(task.wrap());
+
     do {
-      // 获取下一个触发时间，如果需要会sleep
+      // 延迟任务插入时间轮
+      alocateTasks();
+
+      // 确保当前时间与下一个tick时间对齐，即当前时间>=下一个tick时间
       long deadLine = waitForNextTick();
 
-      // 延迟任务插入时间轮
-      appendTasks();
-
       int index = (int) (tick & mark);
-      wheelBuckets[index].trigger(
-          tick / wheelBuckets.length, deadLine, task -> task.result = executor.submit(task.wrap()));
+      wheelBuckets[index].trigger(tick / wheelBuckets.length, deadLine, scheduler);
 
       tick++;
     } while (isClockRunning.get());
@@ -272,21 +275,16 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     log.info("{} has been stopped.", clockThread.getName());
   }
 
-  private void appendTasks() {
+  private void alocateTasks() {
     DefaultDelayedTask defaultDelayedTask;
     while ((defaultDelayedTask = taskQueue.poll()) != null) {
-      if (defaultDelayedTask.getState() == DelayedTask.State.READY) {
-        long tickCount = defaultDelayedTask.deadLine / tickNs;
-        long maxTick = Math.max(tick, tickCount);
-        defaultDelayedTask.rounds = maxTick / wheelBuckets.length;
-        int index = (int) (maxTick & mark);
-        wheelBuckets[index].add(defaultDelayedTask);
-      } else {
-        log.debug(
-            "DelayTask:{} is ignored because its status is not {}",
-            defaultDelayedTask.getName(),
-            DelayedTask.State.READY);
-      }
+      long tickCount = defaultDelayedTask.deadLine / tickDurationNs;
+
+      // 确保已经过去时间的任务可以被触发
+      long maxTick = Math.max(tick, tickCount);
+      defaultDelayedTask.rounds = maxTick / wheelBuckets.length;
+      int index = (int) (maxTick & mark);
+      wheelBuckets[index].add(defaultDelayedTask);
     }
   }
 

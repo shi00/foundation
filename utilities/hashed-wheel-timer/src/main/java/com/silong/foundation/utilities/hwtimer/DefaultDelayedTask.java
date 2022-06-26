@@ -90,10 +90,10 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
           }
         } else {
           log.debug(
-              "DelayTask:[{}:{}] is not in the {} state and cannot be executed.",
-              name,
+              "DelayTask:{} is ignored, because its {} is not {}.",
+              getName(),
               getState(),
-              State.READY);
+              DelayedTask.State.READY);
           return null;
         }
       } finally {
