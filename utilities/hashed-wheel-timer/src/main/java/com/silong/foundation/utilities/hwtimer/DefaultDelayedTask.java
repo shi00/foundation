@@ -132,7 +132,11 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
   @Override
   public boolean equals(Object o) {
     if (o instanceof DefaultDelayedTask task) {
-      return Objects.equals(name, task.name) && signal == task.signal && stateRef == task.stateRef;
+      return Objects.equals(name, task.name)
+          && signal == task.signal
+          && stateRef == task.stateRef
+          && rounds == task.rounds
+          && deadLine == task.deadLine;
     }
     return false;
   }
