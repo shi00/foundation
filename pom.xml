@@ -55,6 +55,7 @@
     </licenses>
 
     <modules>
+        <module>utilities/hashed-wheel-timer</module>
         <module>reactive-webclient</module>
         <!--        <module>okhttp3-webclient</module>-->
         <module>distributed-job/scheduler</module>
@@ -121,7 +122,7 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>2.7.0</spring-boot.version>
+        <spring-boot.version>2.7.1</spring-boot.version>
         <spring-cloud.version>2021.0.3</spring-cloud.version>
         <spring-native.version>0.12.0</spring-native.version>
         <guava.version>31.1-jre</guava.version>
@@ -129,7 +130,7 @@
         <zxcvbn.version>1.7.0</zxcvbn.version>
         <spotbugs.version>4.7.0</spotbugs.version>
         <disruptor.version>3.4.4</disruptor.version>
-        <jctools.version>3.3.0</jctools.version>
+        <jctools.version>3.3.1-ea</jctools.version>
         <jetcd.version>0.7.1</jetcd.version>
         <jmh.version>1.35</jmh.version>
         <jaxb-impl.version>3.0.2</jaxb-impl.version>
@@ -142,7 +143,7 @@
         <plexus-utils.version>3.4.1</plexus-utils.version>
         <plexus-archiver.version>4.2.7</plexus-archiver.version>
         <cron-utils.version>9.1.6</cron-utils.version>
-        <jooq.version>3.14.15</jooq.version>
+        <jooq.version>3.14.16</jooq.version>
         <jgroups.version>5.2.2.Final</jgroups.version>
         <protobuf-java.version>3.21.1</protobuf-java.version>
         <jgroups-kubernetes.version>2.0.1.Final</jgroups-kubernetes.version>
@@ -654,6 +655,7 @@
                         <exclude>local-snapshots-dir/**</exclude>
                         <!-- JSON can't contain comments and therefore no Apache header -->
                         <exclude>*.json</exclude>
+                        <exclude>*.bak</exclude>
                         <!-- json does not support comments-->
                         <exclude>**/*.json</exclude>
                         <!-- Java SPI uses files in resources/META-INF/services-->
