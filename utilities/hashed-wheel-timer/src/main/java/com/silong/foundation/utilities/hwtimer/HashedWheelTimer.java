@@ -234,7 +234,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
 
     // 计算任务触发时间，可能出现负数，表示当前定时器启动时间到任务提交时间之差超过了最大值
     // 需要处理这种特殊情况，出现负值则按最大值处理
-    long deadLine = System.nanoTime() - startedTime + timeUnit.toNanos(delay);
+    long deadLine = currentTime() + timeUnit.toNanos(delay);
     DefaultDelayedTask defaultDelayedTask = delayedTaskObjectPool.borrowObject();
     defaultDelayedTask.deadLine = deadLine < 0 ? Long.MAX_VALUE : deadLine;
     defaultDelayedTask.name = name;
@@ -244,16 +244,8 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     return defaultDelayedTask;
   }
 
-  private long waitForNextTick() {
-    long nextTick = tickDurationNs * (tick + 1);
-    while (true) {
-      long currentTime = System.nanoTime() - startedTime;
-      if (nextTick > currentTime) {
-        Thread.onSpinWait();
-      } else {
-        return currentTime;
-      }
-    }
+  private long currentTime() {
+    return System.nanoTime() - startedTime;
   }
 
   @Override
@@ -265,32 +257,42 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     Consumer<DefaultDelayedTask> scheduler = task -> executor.submit(task.wrap());
 
     do {
-      // 延迟任务插入时间轮
-      alocateTasks();
-
       // 确保当前时间与下一个tick时间对齐，即当前时间>=下一个tick时间
-      long deadLine = waitForNextTick();
+      long deadLine;
+      long nextTick = tickDurationNs * (tick + 1);
+      while (true) {
+        deadLine = currentTime();
+        if (nextTick > deadLine) {
+          Thread.onSpinWait();
+        } else {
+          break;
+        }
+      }
 
-      int index = (int) (tick & mark);
-      wheelBuckets[index].trigger(tick / wheelBuckets.length, deadLine, scheduler);
+      // 延迟任务插入时间轮
+      int index;
+      long rounds = tick / wheelBuckets.length;
+      DefaultDelayedTask defaultDelayedTask;
+      while ((defaultDelayedTask = taskQueue.poll()) != null) {
+        long tickCount = defaultDelayedTask.deadLine / tickDurationNs;
+        long roundsTask = tickCount / wheelBuckets.length;
+        if (roundsTask <= rounds) {
+          // 确保已经过去时间的任务可以被触发
+          index = (int) (Math.max(tick, tickCount) & mark);
+          defaultDelayedTask.rounds = rounds;
+        } else {
+          index = (int) (tickCount & mark);
+          defaultDelayedTask.rounds = roundsTask;
+        }
+        wheelBuckets[index].add(defaultDelayedTask);
+      }
 
-      tick++;
+      // 计算当前tick对应的bucket索引
+      index = (int) (tick++ & mark);
+      wheelBuckets[index].trigger(rounds, deadLine, scheduler);
     } while (isClockRunning.get());
     stoppedFlag.countDown();
     log.info("{} has been stopped.", clockThread.getName());
-  }
-
-  private void alocateTasks() {
-    DefaultDelayedTask defaultDelayedTask;
-    while ((defaultDelayedTask = taskQueue.poll()) != null) {
-      long tickCount = defaultDelayedTask.deadLine / tickDurationNs;
-
-      // 确保已经过去时间的任务可以被触发
-      long maxTick = Math.max(tick, tickCount);
-      defaultDelayedTask.rounds = maxTick / wheelBuckets.length;
-      int index = (int) (maxTick & mark);
-      wheelBuckets[index].add(defaultDelayedTask);
-    }
   }
 
   /** 释放定时器资源 */

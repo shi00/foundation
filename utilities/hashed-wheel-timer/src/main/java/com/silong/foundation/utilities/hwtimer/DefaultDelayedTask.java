@@ -151,6 +151,7 @@ class DefaultDelayedTask implements DelayedTask, Closeable {
   @Override
   public void close() {
     try {
+      signal.await();
       wheelTimer.delayedTaskObjectPool.returnObject(this);
     } catch (Exception e) {
       log.error("Failed to return {} to delayedTaskObjectPool.", this, e);
