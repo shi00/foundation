@@ -318,9 +318,9 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     }
   }
 
-  /** Returns a power of two size for the given target capacity. */
-  private static int powerOf2(int cap) {
-    int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+  /** Returns a power of two size for the given target size. */
+  private static int powerOf2(int size) {
+    int n = -1 >>> Integer.numberOfLeadingZeros(size - 1);
     return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
   }
 
