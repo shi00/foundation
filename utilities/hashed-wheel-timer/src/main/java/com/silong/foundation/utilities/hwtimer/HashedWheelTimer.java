@@ -19,13 +19,8 @@
 package com.silong.foundation.utilities.hwtimer;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.pool2.ObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,7 +56,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   private static final int DEFAULT_TICK_MS = 1;
 
   /** 默认定时器内的最大任务数 */
-  private static final int DEFAULT_MAX_TASK_COUNT = 1024 * 100;
+  private static final int DEFAULT_MAX_TASK_COUNT = 1024;
 
   /**
    * The maximum capacity, used if a higher value is implicitly specified by either of the
@@ -69,7 +64,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
    */
   private static final int MAXIMUM_CAPACITY = 1 << 30;
 
-  ObjectPool<DefaultDelayedTask> delayedTaskObjectPool;
+  BaseObjectPool<DefaultDelayedTask> delayedTaskObjectPool;
 
   /** 时间轮 */
   private WheelBucket[] wheelBuckets;
@@ -154,15 +149,13 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
       wheelBuckets[i] = new WheelBucket();
     }
     this.mark = calculateMask(wheelBuckets.length);
-    GenericObjectPoolConfig<DefaultDelayedTask> objectPoolConfig = new GenericObjectPoolConfig<>();
-    objectPoolConfig.setMaxTotal(maxTaskCount);
-    objectPoolConfig.setMaxIdle(16);
-    objectPoolConfig.setMinIdle(8);
-    objectPoolConfig.setTimeBetweenEvictionRuns(Duration.of(3, ChronoUnit.SECONDS));
-    objectPoolConfig.setNumTestsPerEvictionRun(8);
-    objectPoolConfig.setMinEvictableIdleTime(Duration.of(1, ChronoUnit.MINUTES));
     this.delayedTaskObjectPool =
-        new GenericObjectPool<>(new DelayedTaskFactory(), objectPoolConfig);
+        new BaseObjectPool<>(true, maxTaskCount) {
+          @Override
+          protected DefaultDelayedTask create() {
+            return new DefaultDelayedTask();
+          }
+        };
   }
 
   @Override
@@ -194,8 +187,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   }
 
   @Override
-  public DelayedTask submit(String name, Runnable runnable, long delay, TimeUnit timeUnit)
-      throws Exception {
+  public DelayedTask submit(String name, Runnable runnable, long delay, TimeUnit timeUnit) {
     return submit(
         name,
         () -> {
@@ -207,8 +199,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   }
 
   @Override
-  public <R> DelayedTask submit(String name, Callable<R> callable, long delay, TimeUnit timeUnit)
-      throws Exception {
+  public <R> DelayedTask submit(String name, Callable<R> callable, long delay, TimeUnit timeUnit) {
     if (name == null || name.isEmpty()) {
       throw new IllegalArgumentException("name must not be null or empty.");
     }
@@ -235,7 +226,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     // 计算任务触发时间，可能出现负数，表示当前定时器启动时间到任务提交时间之差超过了最大值
     // 需要处理这种特殊情况，出现负值则按最大值处理
     long deadLine = currentTime() + timeUnit.toNanos(delay);
-    DefaultDelayedTask defaultDelayedTask = delayedTaskObjectPool.borrowObject();
+    DefaultDelayedTask defaultDelayedTask = delayedTaskObjectPool.obtain();
     defaultDelayedTask.deadLine = deadLine < 0 ? Long.MAX_VALUE : deadLine;
     defaultDelayedTask.name = name;
     defaultDelayedTask.callable = callable;
@@ -313,7 +304,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     }
 
     if (delayedTaskObjectPool != null) {
-      delayedTaskObjectPool.close();
+      delayedTaskObjectPool.clear();
       delayedTaskObjectPool = null;
     }
   }

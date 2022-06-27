@@ -29,7 +29,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * @version 1.0.0
  * @since 2022-06-26 16:06
  */
-public class CountDownLatch2 {
+class CountDownLatch2 {
   private final Sync sync;
 
   /**
