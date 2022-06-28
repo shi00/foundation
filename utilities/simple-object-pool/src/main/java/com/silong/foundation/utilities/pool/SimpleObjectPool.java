@@ -29,6 +29,32 @@ package com.silong.foundation.utilities.pool;
 public interface SimpleObjectPool<T extends ObjectPoolable<T>> {
 
   /**
+   * 构建支持软引用的线程安全对象池
+   *
+   * @param maxCapacity 对象池最大容量
+   * @param poolableObjectFactory 对象构建工厂
+   * @return 对象池
+   * @param <T> 缓存对象类型
+   */
+  static <T extends ObjectPoolable<T>> SimpleObjectPool<T> buildSoftRefObjectPool(
+      int maxCapacity, PoolableObjectFactory<T> poolableObjectFactory) {
+    return new DefaultSoftRefObjectPool<>(poolableObjectFactory, maxCapacity);
+  }
+
+  /**
+   * 构建线程安全的对象池
+   *
+   * @param maxCapacity 对象池最大容量
+   * @param poolableObjectFactory 对象构建工厂
+   * @return 对象池
+   * @param <T> 缓存对象类型
+   */
+  static <T extends ObjectPoolable<T>> SimpleObjectPool<T> buildSimpleObjectPool(
+      int maxCapacity, PoolableObjectFactory<T> poolableObjectFactory) {
+    return new DefaultSimpleObjectPool<>(poolableObjectFactory, maxCapacity);
+  }
+
+  /**
    * 对象池容量
    *
    * @return 对象池容量
