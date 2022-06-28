@@ -22,7 +22,7 @@ import com.silong.foundation.utilities.pool.AbstractSoftRefObjectPool;
 import com.silong.foundation.utilities.pool.SimpleObjectPool;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.MpmcArrayQueue;
-import org.jctools.queues.MpscUnboundedArrayQueue;
+import org.jctools.queues.MpscLinkedQueue;
 
 import java.util.Arrays;
 import java.util.concurrent.*;
@@ -85,8 +85,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   private final Thread clockThread = CLOCK_THREAD_FACTORY.newThread(this);
 
   /** 任务提交队列 */
-  private MpscUnboundedArrayQueue<DefaultDelayedTask> taskQueue =
-      new MpscUnboundedArrayQueue<>(DEFAULT_WHEEL_SIZE);
+  private MpscLinkedQueue<DefaultDelayedTask> taskQueue = new MpscLinkedQueue<>();
 
   /** 定时器启动标识 */
   private final CountDownLatch startedFlag = new CountDownLatch(1);
