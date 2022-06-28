@@ -256,8 +256,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
       long deadLine;
       long nextTick = tickDurationNs * (tick + 1);
       while (true) {
-        deadLine = currentTime();
-        if (nextTick > deadLine) {
+        if (nextTick > (deadLine = currentTime())) {
           Thread.onSpinWait();
         } else {
           break;
