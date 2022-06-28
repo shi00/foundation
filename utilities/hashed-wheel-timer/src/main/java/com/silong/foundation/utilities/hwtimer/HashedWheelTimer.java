@@ -53,13 +53,13 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
       };
 
   /** 默认时间轮长度 */
-  private static final int DEFAULT_WHEEL_SIZE = 64;
+  private static final int DEFAULT_WHEEL_SIZE = 1024;
 
   /** 默认单位时间间隔，毫秒 */
   private static final int DEFAULT_TICK_MS = 1;
 
-  /** 默认定时器内的最大任务数 */
-  private static final int DEFAULT_MAX_TASK_COUNT = 1024;
+  /** 默认定时器内的缓存的最大任务数 */
+  private static final int DEFAULT_MAX_POOL_TASK_COUNT = 1024;
 
   /**
    * The maximum capacity, used if a higher value is implicitly specified by either of the
@@ -109,7 +109,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
         DEFAULT_WHEEL_SIZE,
         DEFAULT_TICK_MS,
         TimeUnit.MILLISECONDS,
-        DEFAULT_MAX_TASK_COUNT,
+        DEFAULT_MAX_POOL_TASK_COUNT,
         Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
   }
 
