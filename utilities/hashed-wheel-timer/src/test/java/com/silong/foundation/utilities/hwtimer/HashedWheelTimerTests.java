@@ -35,6 +35,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HashedWheelTimerTests {
 
   @Test
+  public void test6() {
+    HashedWheelTimer timer = new HashedWheelTimer();
+    Assertions.assertTrue(timer.start());
+    int delay = 1;
+    Runnable r = Thread::onSpinWait;
+    try (DelayedTask a = timer.submit("a", r, delay, TimeUnit.SECONDS)) {
+      Assertions.assertTrue(a.cancel());
+      Assertions.assertEquals(DelayedTask.State.CANCELLED, a.getState());
+    }
+    Assertions.assertTrue(timer.stop());
+  }
+
+  @Test
   public void test5() throws Exception {
     HashedWheelTimer timer = new HashedWheelTimer();
     Assertions.assertTrue(timer.start());
