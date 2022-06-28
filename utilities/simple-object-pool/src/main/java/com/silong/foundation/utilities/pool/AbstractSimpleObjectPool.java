@@ -70,4 +70,8 @@ public abstract class AbstractSimpleObjectPool<T extends ObjectPoolable<T>>
     T obj = queue.poll();
     return obj == null ? poolableObjectFactory.create() : obj;
   }
+
+  public void close() {
+    queue.clear();
+  }
 }

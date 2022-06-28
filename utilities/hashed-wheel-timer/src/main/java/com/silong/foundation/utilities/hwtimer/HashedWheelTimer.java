@@ -18,7 +18,10 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
+import com.silong.foundation.utilities.pool.AbstractSoftRefObjectPool;
+import com.silong.foundation.utilities.pool.SimpleObjectPool;
 import lombok.extern.slf4j.Slf4j;
+import org.jctools.queues.MpmcArrayQueue;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 
 import java.util.Arrays;
@@ -64,7 +67,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
    */
   private static final int MAXIMUM_CAPACITY = 1 << 30;
 
-  BaseObjectPool<DefaultDelayedTask> delayedTaskObjectPool;
+  SimpleObjectPool<DefaultDelayedTask> delayedTaskObjectPool;
 
   /** 时间轮 */
   private WheelBucket[] wheelBuckets;
@@ -150,10 +153,11 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     }
     this.mark = calculateMask(wheelBuckets.length);
     this.delayedTaskObjectPool =
-        new BaseObjectPool<>(true, maxTaskCount) {
+        new AbstractSoftRefObjectPool<>(
+            new MpmcArrayQueue<>(maxTaskCount), DefaultDelayedTask::new) {
           @Override
-          protected DefaultDelayedTask create() {
-            return new DefaultDelayedTask();
+          public int capcity() {
+            return maxTaskCount;
           }
         };
   }

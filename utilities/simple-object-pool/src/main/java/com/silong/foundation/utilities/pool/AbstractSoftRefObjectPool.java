@@ -82,4 +82,9 @@ public abstract class AbstractSoftRefObjectPool<T extends ObjectPoolable<T>>
         ? poolableObjectFactory.create()
         : (obj = ref.get()) == null ? poolableObjectFactory.create() : obj;
   }
+
+  @Override
+  public void close() {
+    queue.clear();
+  }
 }

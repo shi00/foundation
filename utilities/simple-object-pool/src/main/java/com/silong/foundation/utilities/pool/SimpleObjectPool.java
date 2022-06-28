@@ -26,7 +26,7 @@ package com.silong.foundation.utilities.pool;
  * @since 2022-06-28 21:08
  * @param <T> 缓存对象类型
  */
-public interface SimpleObjectPool<T extends ObjectPoolable<T>> {
+public interface SimpleObjectPool<T extends ObjectPoolable<T>> extends AutoCloseable {
 
   /**
    * 构建支持软引用的线程安全对象池
@@ -81,4 +81,7 @@ public interface SimpleObjectPool<T extends ObjectPoolable<T>> {
    * @param obj 对象
    */
   void returns(T obj);
+
+  /** 释放对象池资源 */
+  default void close() {}
 }

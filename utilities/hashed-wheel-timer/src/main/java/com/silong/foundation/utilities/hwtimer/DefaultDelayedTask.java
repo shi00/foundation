@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
+import com.silong.foundation.utilities.pool.ObjectPoolable;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 @ToString
 @NoArgsConstructor
-class DefaultDelayedTask implements DelayedTask, Closeable, BaseObjectPool.Poolable {
+class DefaultDelayedTask implements DelayedTask, Closeable, ObjectPoolable<DefaultDelayedTask> {
 
   /** 时钟轮数，由于任务延时时间大于时间轮刻度表示范围，需要引入轮数表示触发时间 */
   long rounds;
@@ -159,7 +160,7 @@ class DefaultDelayedTask implements DelayedTask, Closeable, BaseObjectPool.Poola
   }
 
   @Override
-  public void reset() {
+  public DefaultDelayedTask reset() {
     this.deadLine = this.rounds = 0;
     this.callable = null;
     this.result = null;
@@ -168,5 +169,6 @@ class DefaultDelayedTask implements DelayedTask, Closeable, BaseObjectPool.Poola
     this.wheelTimer = null;
     this.signal.reset();
     this.stateRef.set(DelayedTask.State.READY);
+    return this;
   }
 }
