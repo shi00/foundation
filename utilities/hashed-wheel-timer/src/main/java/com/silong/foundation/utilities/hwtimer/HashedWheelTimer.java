@@ -323,6 +323,6 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     if ((wheels & (wheels - 1)) == 0) {
       return wheels - 1;
     }
-    throw new IllegalStateException();
+    throw new IllegalStateException("wheels must be power of two.");
   }
 }
