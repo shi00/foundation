@@ -153,7 +153,7 @@ class DefaultDelayedTask implements DelayedTask, Closeable, ObjectPoolable<Defau
   public void close() {
     try {
       signal.await();
-      wheelTimer.delayedTaskObjectPool.free(this);
+      wheelTimer.delayedTaskObjectPool.returns(this);
     } catch (InterruptedException e) {
       log.error("Task:{} was interrupted and could not be returned to the object pool.", this, e);
     }

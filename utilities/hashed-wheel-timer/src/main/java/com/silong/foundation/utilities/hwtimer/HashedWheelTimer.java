@@ -308,7 +308,7 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     }
 
     if (delayedTaskObjectPool != null) {
-      delayedTaskObjectPool.clear();
+      delayedTaskObjectPool.close();
       delayedTaskObjectPool = null;
     }
   }
@@ -320,6 +320,9 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   }
 
   private static int calculateMask(int wheels) {
-    return (wheels & (wheels - 1)) == 0 ? wheels - 1 : -1;
+    if ((wheels & (wheels - 1)) == 0) {
+      return wheels - 1;
+    }
+    throw new IllegalStateException();
   }
 }
