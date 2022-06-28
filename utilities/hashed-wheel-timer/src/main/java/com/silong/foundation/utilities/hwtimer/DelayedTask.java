@@ -18,8 +18,6 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
-import java.io.Closeable;
-
 /**
  * 延时任务接口
  *
@@ -27,7 +25,7 @@ import java.io.Closeable;
  * @version 1.0.0
  * @since 2022-06-24 21:53
  */
-public interface DelayedTask extends Closeable {
+public interface DelayedTask extends AutoCloseable {
 
   /** 延时任务状态 */
   enum State {
@@ -46,6 +44,9 @@ public interface DelayedTask extends Closeable {
     /** 任务执行期间异常 */
     EXCEPTION
   }
+
+  /** 释放任务资源 */
+  default void close() {}
 
   /**
    * 取消任务执行，只有State.READY状态的任务可以被取消

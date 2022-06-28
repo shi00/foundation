@@ -18,9 +18,10 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
+import org.jctools.queues.MpmcArrayQueue;
+
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * 对象池基类，类似Kryo自带的Pool
@@ -34,8 +35,6 @@ abstract class BaseObjectPool<T> {
 
   private final Queue<T> freeObjects;
 
-  private int peak;
-
   /**
    * 构造方法
    *
@@ -44,13 +43,7 @@ abstract class BaseObjectPool<T> {
    */
   public BaseObjectPool(boolean threadSafe, final int maximumCapacity) {
     if (threadSafe) {
-      freeObjects =
-          new LinkedBlockingQueue<>(maximumCapacity) {
-            @Override
-            public boolean add(T o) {
-              return super.offer(o);
-            }
-          };
+      freeObjects = new MpmcArrayQueue<>(maximumCapacity);
     } else {
       freeObjects =
           new ArrayDeque<>() {
@@ -92,7 +85,6 @@ abstract class BaseObjectPool<T> {
     }
     reset(object);
     freeObjects.offer(object);
-    peak = Math.max(peak, freeObjects.size());
   }
 
   /**
@@ -113,20 +105,6 @@ abstract class BaseObjectPool<T> {
   /** The number of objects available to be obtained. */
   public int getFree() {
     return freeObjects.size();
-  }
-
-  /**
-   * The all-time highest number of free objects. This can help determine if a pool's maximum
-   * capacity is set appropriately. It can be reset any time with {@link #resetPeak()}.
-   *
-   * <p>If using soft references, this number may include objects that have been garbage collected.
-   */
-  public int getPeak() {
-    return peak;
-  }
-
-  public void resetPeak() {
-    peak = 0;
   }
 
   /** 缓存对象实现 */

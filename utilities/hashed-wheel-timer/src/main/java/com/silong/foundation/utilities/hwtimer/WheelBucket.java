@@ -20,7 +20,6 @@ package com.silong.foundation.utilities.hwtimer;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.Closeable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -34,7 +33,7 @@ import java.util.function.Consumer;
  * @since 2022-06-25 12:14
  */
 @Slf4j
-class WheelBucket implements Closeable {
+class WheelBucket implements AutoCloseable {
   /** 分层任务列表 */
   Map<Long, LinkedList<DefaultDelayedTask>> roundTasks;
 
