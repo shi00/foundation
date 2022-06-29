@@ -18,6 +18,8 @@
  */
 package com.silong.foundation.utilities.pool;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.Queue;
 
@@ -37,6 +39,9 @@ public abstract class AbstractSoftRefObjectPool<T extends ObjectPoolable<T>>
 
   final PoolableObjectFactory<T> poolableObjectFactory;
 
+  /** 引用队列 */
+  final ReferenceQueue<T> referenceQueue;
+
   /**
    * 构造方法
    *
@@ -53,6 +58,7 @@ public abstract class AbstractSoftRefObjectPool<T extends ObjectPoolable<T>>
     }
     this.queue = queue;
     this.poolableObjectFactory = poolableObjectFactory;
+    this.referenceQueue = new ReferenceQueue<>();
   }
 
   private boolean valid(SoftReference<?> softReference) {
@@ -67,8 +73,12 @@ public abstract class AbstractSoftRefObjectPool<T extends ObjectPoolable<T>>
   @Override
   public void returns(T obj) {
     if (obj != null) {
-      SoftReference<T> ref = new SoftReference<>(obj.reset());
-      if (!queue.offer(ref) && queue.removeIf(softReference -> !valid(softReference))) {
+      SoftReference<T> ref = new SoftReference<>(obj.reset(), referenceQueue);
+      // 先插入一次，如果失败则检查引用队列是否有被释放掉的对象，如果有则从缓存队列中移除后重试一次
+      Reference<?> reference;
+      if (!queue.offer(ref)
+          && (reference = referenceQueue.poll()) != null
+          && queue.remove(reference)) {
         queue.offer(ref);
       }
     }

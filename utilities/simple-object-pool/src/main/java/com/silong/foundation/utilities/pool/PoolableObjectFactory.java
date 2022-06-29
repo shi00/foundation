@@ -27,7 +27,7 @@ package com.silong.foundation.utilities.pool;
  * @param <T> 对象类型
  */
 @FunctionalInterface
-public interface PoolableObjectFactory<T> {
+public interface PoolableObjectFactory<T extends ObjectPoolable<T>> {
 
   /**
    * 创建缓存对象
