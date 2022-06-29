@@ -18,17 +18,17 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
-import com.silong.foundation.utilities.pool.AbstractSoftRefObjectPool;
 import com.silong.foundation.utilities.pool.SimpleObjectPool;
 import lombok.extern.slf4j.Slf4j;
-import org.jctools.queues.MpmcArrayQueue;
-import org.jctools.queues.MpscLinkedQueue;
+import org.jctools.queues.MpscUnboundedArrayQueue;
 
 import java.util.Arrays;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
+import static com.silong.foundation.utilities.pool.SimpleObjectPool.buildSoftRefObjectPool;
 
 /**
  * 时间轮定时器实现
@@ -54,6 +54,9 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
 
   /** 默认时间轮长度 */
   private static final int DEFAULT_WHEEL_SIZE = 1024;
+
+  /** 提交任务队列初始长度 */
+  private static final int MPSC_CHUNK_SIZE = 1024;
 
   /** 默认单位时间间隔，毫秒 */
   private static final int DEFAULT_TICK_MS = 1;
@@ -85,7 +88,8 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   private final Thread clockThread = CLOCK_THREAD_FACTORY.newThread(this);
 
   /** 任务提交队列 */
-  private MpscLinkedQueue<DefaultDelayedTask> taskQueue = new MpscLinkedQueue<>();
+  private MpscUnboundedArrayQueue<DefaultDelayedTask> taskQueue =
+      new MpscUnboundedArrayQueue<>(MPSC_CHUNK_SIZE);
 
   /** 定时器启动标识 */
   private final CountDownLatch startedFlag = new CountDownLatch(1);
@@ -118,14 +122,14 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
    * @param wheelSize 时间轮长度
    * @param tickInterval 时间轮最小刻度
    * @param tickIntervalUnit 时间轮最小刻度时间单位
-   * @param maxTaskCount 定时器可接受的最大任务数
+   * @param maxPoolTaskSize 缓存任务对象最大数
    * @param executor 任务执行器
    */
   public HashedWheelTimer(
       int wheelSize,
       long tickInterval,
       TimeUnit tickIntervalUnit,
-      int maxTaskCount,
+      int maxPoolTaskSize,
       ExecutorService executor) {
     if (wheelSize <= 0) {
       throw new IllegalArgumentException("wheelSize must be greater than 0.");
@@ -136,8 +140,8 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     if (tickIntervalUnit == null) {
       throw new IllegalArgumentException("tickIntervalUnit must not be null.");
     }
-    if (maxTaskCount <= 0) {
-      throw new IllegalArgumentException("maxTaskCount must be greater than 0.");
+    if (maxPoolTaskSize <= 0) {
+      throw new IllegalArgumentException("maxPoolTaskSize must be greater than 0.");
     }
     if (executor == null) {
       throw new IllegalArgumentException("executor must not be null.");
@@ -150,15 +154,8 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     for (int i = 0; i < wheelBuckets.length; i++) {
       wheelBuckets[i] = new WheelBucket();
     }
-    this.mark = calculateMask(wheelBuckets.length);
-    this.delayedTaskObjectPool =
-        new AbstractSoftRefObjectPool<>(
-            new MpmcArrayQueue<>(maxTaskCount), DefaultDelayedTask::new) {
-          @Override
-          public int capcity() {
-            return maxTaskCount;
-          }
-        };
+    this.mark = wheelBuckets.length - 1;
+    this.delayedTaskObjectPool = buildSoftRefObjectPool(maxPoolTaskSize, DefaultDelayedTask::new);
   }
 
   @Override
@@ -315,12 +312,5 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   private static int powerOf2(int size) {
     int n = -1 >>> Integer.numberOfLeadingZeros(size - 1);
     return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
-  }
-
-  private static int calculateMask(int wheels) {
-    if ((wheels & (wheels - 1)) == 0) {
-      return wheels - 1;
-    }
-    throw new IllegalStateException("wheels must be power of two.");
   }
 }

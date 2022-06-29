@@ -18,11 +18,44 @@
  */
 package com.silong.foundation.utilities.pool;
 
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import static com.silong.foundation.utilities.pool.SimpleSoftRefObjectPoolTests.SIZE;
+
 /**
- * 单元测试
+ * 测试缓存对象
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-02-28 10:03
+ * @since 2022-06-29 22:22
  */
-public class SimpleObjectPoolTests {}
+public class TestObj implements ObjectPoolable<TestObj> {
+
+  private final String useless = RandomStringUtils.random(SIZE);
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    TestObj testObj = (TestObj) o;
+    return new EqualsBuilder().append(useless, testObj.useless).isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37).append(useless).toHashCode();
+  }
+
+  @Override
+  public TestObj reset() {
+    return this;
+  }
+}
