@@ -31,6 +31,15 @@ import java.util.concurrent.TimeUnit;
 public interface DelayedTaskTimer {
 
   /**
+   * 获取延时任务定时器
+   *
+   * @return 定时器
+   */
+  static DelayedTaskTimer getInstance() {
+    return new HashedWheelTimer();
+  }
+
+  /**
    * 启动定时器
    *
    * @return true or false
