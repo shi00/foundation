@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static com.silong.foundation.utilities.pool.SimpleObjectPool.buildLinkedListSoftRefObjectPool;
 import static com.silong.foundation.utilities.pool.SimpleObjectPool.buildSoftRefObjectPool;
 
 /**
@@ -153,10 +154,13 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
       wheelBuckets[i] = new WheelBucket(this);
     }
     this.mark = wheelBuckets.length - 1;
+    // 存在并发因此使用线程安全的对象池
     this.delayedTaskObjectPool =
         buildSoftRefObjectPool(DEFAULT_MAX_POOL_TASK_COUNT, DefaultDelayedTask::new);
+    // 单线程访问使用基于LinkedList构建的对象池
     this.taskLinkedListObjectPool =
-        buildSoftRefObjectPool(DEFAULT_MAX_POOL_TASK_LINKED_LIST_COUNT, TaskLinkedList::new);
+        buildLinkedListSoftRefObjectPool(
+            DEFAULT_MAX_POOL_TASK_LINKED_LIST_COUNT, TaskLinkedList::new);
   }
 
   @Override
