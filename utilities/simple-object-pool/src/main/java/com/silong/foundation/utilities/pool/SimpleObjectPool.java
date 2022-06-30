@@ -29,6 +29,19 @@ package com.silong.foundation.utilities.pool;
 public interface SimpleObjectPool<T extends ObjectPoolable<T>> extends AutoCloseable {
 
   /**
+   * 构建非线程安全的对象池
+   *
+   * @param maxCapacity 对象池最大容量
+   * @param poolableObjectFactory 对象构建工厂
+   * @return 对象池
+   * @param <T> 缓存对象类型
+   */
+  static <T extends ObjectPoolable<T>> SimpleObjectPool<T> buildLinkedListSimpleObjectPool(
+      int maxCapacity, PoolableObjectFactory<T> poolableObjectFactory) {
+    return new LinkedListSimpleObjectPool<>(poolableObjectFactory, maxCapacity);
+  }
+
+  /**
    * 构建支持软引用的对象池，非线程安全
    *
    * @param maxCapacity 对象池最大容量
@@ -72,7 +85,7 @@ public interface SimpleObjectPool<T extends ObjectPoolable<T>> extends AutoClose
    *
    * @return 对象池容量
    */
-  int capcity();
+  int capacity();
 
   /**
    * 对象池内的可用对象数

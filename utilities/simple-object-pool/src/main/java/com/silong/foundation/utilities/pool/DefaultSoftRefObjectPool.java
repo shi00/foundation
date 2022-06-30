@@ -44,7 +44,7 @@ class DefaultSoftRefObjectPool<T extends ObjectPoolable<T>> extends AbstractSoft
   }
 
   @Override
-  public int capcity() {
+  public int capacity() {
     return capacity;
   }
 }

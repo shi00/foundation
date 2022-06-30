@@ -18,17 +18,16 @@
  */
 package com.silong.foundation.utilities.pool;
 
-import java.util.LinkedList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * 线程不安全的软引用对象池，基于{@link LinkedList}实现，高并发下性能更佳
+ * 线程安全的对象池，基于{@link LinkedBlockingQueue}实现，高并发下性能更佳
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-06-28 21:19
  */
-class LinkedListSoftRefObjectPool<T extends ObjectPoolable<T>>
-    extends AbstractSoftRefObjectPool<T> {
+class LinkedListSimpleObjectPool<T extends ObjectPoolable<T>> extends AbstractSimpleObjectPool<T> {
 
   /**
    * 构造方法
@@ -36,7 +35,7 @@ class LinkedListSoftRefObjectPool<T extends ObjectPoolable<T>>
    * @param poolableObjectFactory 对象工厂
    * @param maxCapcity 对象池最大容量
    */
-  public LinkedListSoftRefObjectPool(
+  public LinkedListSimpleObjectPool(
       PoolableObjectFactory<T> poolableObjectFactory, int maxCapcity) {
     super(new BoundedLinkedList<>(maxCapcity), poolableObjectFactory);
   }

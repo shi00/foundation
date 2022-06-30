@@ -44,7 +44,7 @@ class DefaultSimpleObjectPool<T extends ObjectPoolable<T>> extends AbstractSimpl
   }
 
   @Override
-  public int capcity() {
+  public int capacity() {
     return capacity;
   }
 }
