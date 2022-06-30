@@ -64,13 +64,20 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
   /** 默认定时器内的缓存的最大任务数 */
   private static final int DEFAULT_MAX_POOL_TASK_COUNT = 1024;
 
+  /** 默认定时器内的缓存的最大任务队列数 */
+  private static final int DEFAULT_MAX_POOL_TASK_LINKED_LIST_COUNT = 1024;
+
   /**
    * The maximum capacity, used if a higher value is implicitly specified by either of the
    * constructors with arguments. MUST be a power of two <= 1<<30.
    */
   private static final int MAXIMUM_CAPACITY = 1 << 30;
 
+  /** 任务对象池 */
   SimpleObjectPool<DefaultDelayedTask> delayedTaskObjectPool;
+
+  /** 任务列表对象池 */
+  SimpleObjectPool<TaskLinkedList<DefaultDelayedTask>> taskLinkedListObjectPool;
 
   /** 时间轮 */
   private WheelBucket[] wheelBuckets;
@@ -112,7 +119,6 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
         DEFAULT_WHEEL_SIZE,
         DEFAULT_TICK_MS,
         TimeUnit.MILLISECONDS,
-        DEFAULT_MAX_POOL_TASK_COUNT,
         Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
   }
 
@@ -122,15 +128,10 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
    * @param wheelSize 时间轮长度
    * @param tickInterval 时间轮最小刻度
    * @param tickIntervalUnit 时间轮最小刻度时间单位
-   * @param maxPoolTaskSize 缓存任务对象最大数
    * @param executor 任务执行器
    */
   public HashedWheelTimer(
-      int wheelSize,
-      long tickInterval,
-      TimeUnit tickIntervalUnit,
-      int maxPoolTaskSize,
-      ExecutorService executor) {
+      int wheelSize, long tickInterval, TimeUnit tickIntervalUnit, ExecutorService executor) {
     if (wheelSize <= 0) {
       throw new IllegalArgumentException("wheelSize must be greater than 0.");
     }
@@ -139,9 +140,6 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     }
     if (tickIntervalUnit == null) {
       throw new IllegalArgumentException("tickIntervalUnit must not be null.");
-    }
-    if (maxPoolTaskSize <= 0) {
-      throw new IllegalArgumentException("maxPoolTaskSize must be greater than 0.");
     }
     if (executor == null) {
       throw new IllegalArgumentException("executor must not be null.");
@@ -152,10 +150,13 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     this.executor = executor;
     this.wheelBuckets = new WheelBucket[powerOf2(wheelSize)];
     for (int i = 0; i < wheelBuckets.length; i++) {
-      wheelBuckets[i] = new WheelBucket();
+      wheelBuckets[i] = new WheelBucket(this);
     }
     this.mark = wheelBuckets.length - 1;
-    this.delayedTaskObjectPool = buildSoftRefObjectPool(maxPoolTaskSize, DefaultDelayedTask::new);
+    this.delayedTaskObjectPool =
+        buildSoftRefObjectPool(DEFAULT_MAX_POOL_TASK_COUNT, DefaultDelayedTask::new);
+    this.taskLinkedListObjectPool =
+        buildSoftRefObjectPool(DEFAULT_MAX_POOL_TASK_LINKED_LIST_COUNT, TaskLinkedList::new);
   }
 
   @Override
@@ -305,6 +306,11 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
     if (delayedTaskObjectPool != null) {
       delayedTaskObjectPool.close();
       delayedTaskObjectPool = null;
+    }
+
+    if (taskLinkedListObjectPool != null) {
+      taskLinkedListObjectPool.close();
+      taskLinkedListObjectPool = null;
     }
   }
 

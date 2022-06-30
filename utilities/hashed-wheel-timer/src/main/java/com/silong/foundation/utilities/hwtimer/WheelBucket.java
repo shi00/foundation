@@ -35,10 +35,21 @@ import java.util.function.Consumer;
 @Slf4j
 class WheelBucket implements AutoCloseable {
   /** 分层任务列表 */
-  Map<Long, LinkedList<DefaultDelayedTask>> roundTasks;
+  Map<Long, TaskLinkedList<DefaultDelayedTask>> roundTasks;
 
-  /** 构造方法 */
-  public WheelBucket() {
+  /** bucket归属的定时器 */
+  HashedWheelTimer timer;
+
+  /**
+   * 构造方法
+   *
+   * @param timer 定时器
+   */
+  public WheelBucket(HashedWheelTimer timer) {
+    if (timer == null) {
+      throw new IllegalArgumentException("timer must not be null.");
+    }
+    this.timer = timer;
     roundTasks = new HashMap<>();
   }
 
@@ -51,7 +62,7 @@ class WheelBucket implements AutoCloseable {
     if (task == null) {
       throw new IllegalArgumentException("task must not be null.");
     }
-    roundTasks.computeIfAbsent(task.rounds, k -> new LinkedList<>()).add(task);
+    roundTasks.computeIfAbsent(task.rounds, k -> timer.taskLinkedListObjectPool.obtain()).add(task);
   }
 
   /**
@@ -100,11 +111,12 @@ class WheelBucket implements AutoCloseable {
   private void removeLastRounds(long rounds) {
     long lastRounds = rounds - 1;
     if (lastRounds >= 0 && roundTasks.containsKey(lastRounds)) {
-      LinkedList<DefaultDelayedTask> deleted = roundTasks.remove(lastRounds);
-      if (deleted != null && !deleted.isEmpty()) {
+      TaskLinkedList<DefaultDelayedTask> taskLinkedList = roundTasks.remove(lastRounds);
+      if (taskLinkedList != null && !taskLinkedList.isEmpty()) {
         throw new IllegalStateException(
-            String.format("Discover %s that were not triggered for execution.", deleted));
+            String.format("Discover %s that were not triggered for execution.", taskLinkedList));
       }
+      timer.taskLinkedListObjectPool.returns(taskLinkedList);
     }
   }
 
@@ -114,5 +126,6 @@ class WheelBucket implements AutoCloseable {
       roundTasks.clear();
       roundTasks = null;
     }
+    timer = null;
   }
 }
