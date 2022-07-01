@@ -53,29 +53,35 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
         }
       };
 
-  /** 纳秒转毫秒 */
-  private static final long MILLI_SCALE = 1000L * 1000L;
-
   /** 默认时间轮长度 */
-  private static final int DEFAULT_WHEEL_SIZE = 1024;
+  private static final int DEFAULT_WHEEL_SIZE =
+      Integer.parseInt(System.getProperty("hwtimer.default.wheel.size", "1024"));
 
   /** 提交任务队列初始长度 */
-  private static final int MPSC_CHUNK_SIZE = 1024;
+  private static final int MPSC_CHUNK_SIZE =
+      Integer.parseInt(System.getProperty("hwtimer.default.mpsc.chunk.size", "1024"));
 
   /** 默认单位时间间隔，毫秒 */
-  private static final int DEFAULT_TICK_MS = 1;
+  private static final int DEFAULT_TICK_MS =
+      Integer.parseInt(System.getProperty("hwtimer.default.tick.ms", "1"));
 
   /** 默认定时器内的缓存的最大任务数 */
-  private static final int DEFAULT_MAX_POOL_TASK_COUNT = 1024;
+  private static final int DEFAULT_MAX_POOL_TASK_COUNT =
+      Integer.parseInt(System.getProperty("hwtimer.default.max.pool.task.count", "1024"));
 
   /** 默认定时器内的缓存的最大任务队列数 */
-  private static final int DEFAULT_MAX_POOL_TASK_LINKED_LIST_COUNT = 1024;
+  private static final int DEFAULT_MAX_POOL_TASK_LINKED_LIST_COUNT =
+      Integer.parseInt(
+          System.getProperty("hwtimer.default.max.pool.task.linked.list.count", "1024"));
 
   /**
    * The maximum capacity, used if a higher value is implicitly specified by either of the
    * constructors with arguments. MUST be a power of two <= 1<<30.
    */
   private static final int MAXIMUM_CAPACITY = 1 << 30;
+
+  /** 纳秒转毫秒 */
+  private static final long MILLI_SCALE = 1000L * 1000L;
 
   /** 任务对象池 */
   SimpleObjectPool<DefaultDelayedTask> delayedTaskObjectPool;
