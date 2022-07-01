@@ -102,9 +102,6 @@ public class CircularQueueDuuidGenerator extends Thread implements DuuidGenerato
     /** 默认环状队列容量，为确保队列性能必须为2的次方，默认值：2的13次方 */
     int DEFAULT_QUEUE_CAPACITY = 8192;
 
-    /** 默认的服务QPS */
-    int DEFAULT_SERVICE_QPS = 100000;
-
     /** 以2020-01-01 00:00:00为起始时间距1970-01-01 00:00:00的天数差，默认值：18261 */
     long EPOCH = 18261;
 
