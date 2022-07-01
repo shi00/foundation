@@ -53,6 +53,9 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
         }
       };
 
+  /** 纳秒转毫秒 */
+  private static final long MILLI_SCALE = 1000L * 1000L;
+
   /** 默认时间轮长度 */
   private static final int DEFAULT_WHEEL_SIZE = 1024;
 
@@ -258,7 +261,17 @@ public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
       long nextTick = tickDurationNs * (tick + 1);
       while (true) {
         if (nextTick > (deadLine = currentTime())) {
-          Thread.onSpinWait();
+          long sleepTime = nextTick - deadLine;
+          // 如果休眠时间超过1ms则直接休眠，否则使用onSpinWait()休眠
+          if (sleepTime >= MILLI_SCALE) {
+            try {
+              Thread.sleep(TimeUnit.NANOSECONDS.toMillis(sleepTime));
+            } catch (InterruptedException e) {
+              throw new IllegalStateException(e);
+            }
+          } else {
+            Thread.onSpinWait();
+          }
         } else {
           break;
         }
