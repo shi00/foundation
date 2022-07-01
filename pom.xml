@@ -137,18 +137,18 @@
         <jaxb-impl.version>3.0.2</jaxb-impl.version>
         <testcontainers.version>1.17.2</testcontainers.version>
         <springdoc.version>1.6.9</springdoc.version>
-        <libphonenumber.version>8.12.49</libphonenumber.version>
+        <libphonenumber.version>8.12.51</libphonenumber.version>
         <javafaker.version>1.0.2</javafaker.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <maven.version>3.8.5</maven.version>
-        <plexus-utils.version>3.4.1</plexus-utils.version>
-        <plexus-archiver.version>4.2.7</plexus-archiver.version>
+        <maven.version>3.8.6</maven.version>
+        <plexus-utils.version>3.4.2</plexus-utils.version>
+        <plexus-archiver.version>4.4.0</plexus-archiver.version>
         <cron-utils.version>9.1.6</cron-utils.version>
         <jooq.version>3.14.16</jooq.version>
         <jgroups.version>5.2.2.Final</jgroups.version>
-        <protobuf-java.version>3.21.1</protobuf-java.version>
+        <protobuf-java.version>3.21.2</protobuf-java.version>
         <jgroups-kubernetes.version>2.0.1.Final</jgroups-kubernetes.version>
-        <rocksdbjni.version>7.2.2</rocksdbjni.version>
+        <rocksdbjni.version>7.3.1</rocksdbjni.version>
         <wildfly-openssl.version>2.2.0.Final</wildfly-openssl.version>
         <snappy-java.version>1.1.8.4</snappy-java.version>
         <zstd-jni.version>1.5.2-3</zstd-jni.version>
