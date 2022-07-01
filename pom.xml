@@ -55,8 +55,6 @@
     </licenses>
 
     <modules>
-        <module>utilities/simple-object-pool</module>
-        <module>utilities/hashed-wheel-timer</module>
         <module>reactive-webclient</module>
         <!--        <module>okhttp3-webclient</module>-->
         <module>distributed-job/scheduler</module>
@@ -76,6 +74,8 @@
         <module>plugins/maven/mysql</module>
         <module>plugins/maven/props-writer</module>
         <module>utilities/random-password</module>
+        <module>utilities/simple-object-pool</module>
+        <module>utilities/hashed-wheel-timer</module>
     </modules>
 
     <properties>
