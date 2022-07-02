@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  */
 public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 3638468545900864098L;
 
   /** 节点处理能力级别属性key， */
   public static final String CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY =
@@ -51,12 +51,12 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
 
   private double getNodePowerWeight(Address address, String key) {
     ClusterNodeUUID uuid = (ClusterNodeUUID) address;
-    String weight = uuid.clusterNodeInfo().getAttributesMap().get(key);
+    String weight = uuid.getClusterNodeInfo().getAttributesMap().get(key);
     return weight != null ? Double.parseDouble(weight) : 0;
   }
 
   private int getRole(ClusterNodeUUID uuid) {
-    return uuid.clusterNodeInfo().getRole();
+    return uuid.getClusterNodeInfo().getRole();
   }
 
   @Override
