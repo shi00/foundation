@@ -89,7 +89,7 @@ class DefaultDistributedEngine
   private RocksDbPersistStorage persistStorage;
 
   /** 集群视图变更处理器 */
-  private ViewChangedHandler viewChangedHandler;
+  private DefaultViewChangedHandler defaultViewChangedHandler;
 
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
   private Map<Integer, List<SimpleClusterNode>> partition2ClusterNodes;
@@ -121,7 +121,7 @@ class DefaultDistributedEngine
       this.uuid2Partitions = new ConcurrentHashMap<>((int) KB);
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
-      this.viewChangedHandler = new ViewChangedHandler(this);
+      this.defaultViewChangedHandler = new DefaultViewChangedHandler(this);
       configureDistributedEngine(this.jChannel = buildDistributedEngine(config.configFile()));
 
       // 启动引擎
@@ -431,7 +431,7 @@ class DefaultDistributedEngine
     }
     try {
       // 异步处理集群视图变更
-      viewChangedHandler.handle(lastView, newView);
+      defaultViewChangedHandler.handle(lastView, newView);
     } finally {
       // 更新视图
       lastView = newView;
@@ -565,9 +565,9 @@ class DefaultDistributedEngine
       this.uuid2Partitions = null;
     }
 
-    if (this.viewChangedHandler != null) {
-      this.viewChangedHandler.close();
-      this.viewChangedHandler = null;
+    if (this.defaultViewChangedHandler != null) {
+      this.defaultViewChangedHandler.close();
+      this.defaultViewChangedHandler = null;
     }
 
     if (this.partition2ClusterNodes != null) {

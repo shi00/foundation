@@ -44,7 +44,8 @@ import static com.lmax.disruptor.dsl.ProducerType.MULTI;
  * @since 2022-04-29 23:40
  */
 @Slf4j
-class ViewChangedHandler implements EventHandler<ViewChangedEvent>, AutoCloseable, Serializable {
+class DefaultViewChangedHandler
+    implements EventHandler<ViewChangedEvent>, AutoCloseable, Serializable {
 
   @Serial private static final long serialVersionUID = 7601624347424402665L;
 
@@ -71,7 +72,7 @@ class ViewChangedHandler implements EventHandler<ViewChangedEvent>, AutoCloseabl
    *
    * @param engine 分布式引擎
    */
-  public ViewChangedHandler(DefaultDistributedEngine engine) {
+  public DefaultViewChangedHandler(DefaultDistributedEngine engine) {
     if (engine == null) {
       throw new IllegalArgumentException("engine must not be null.");
     }
