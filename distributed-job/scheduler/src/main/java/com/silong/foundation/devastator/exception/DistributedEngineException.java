@@ -29,7 +29,7 @@ import java.io.Serial;
  */
 public class DistributedEngineException extends RuntimeException {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = -5533345409691275786L;
 
   /** 构造方法 */
   public DistributedEngineException() {
