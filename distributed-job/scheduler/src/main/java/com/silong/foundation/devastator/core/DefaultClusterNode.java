@@ -40,13 +40,13 @@ import java.util.Objects;
  */
 public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = -7941438801250879713L;
 
   /** 集群节点信息 */
-  private final ClusterNodeUUID clusterNode;
+  private ClusterNodeUUID clusterNode;
 
   /** 本地地址 */
-  private final Address localAddress;
+  private Address localAddress;
 
   /**
    * 构造方法
@@ -66,7 +66,7 @@ public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   }
 
   private ClusterNodeInfo getClusterNodeInfo() {
-    return clusterNode.clusterNodeInfo();
+    return clusterNode.getClusterNodeInfo();
   }
 
   @Override
@@ -139,5 +139,11 @@ public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   @Override
   public String toString() {
     return clusterNode.toString();
+  }
+
+  @Override
+  public void close() {
+    this.clusterNode = null;
+    this.localAddress = null;
   }
 }
