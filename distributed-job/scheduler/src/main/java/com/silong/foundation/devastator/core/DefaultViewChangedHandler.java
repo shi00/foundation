@@ -53,7 +53,7 @@ class DefaultViewChangedHandler
    * The maximum capacity, used if a higher value is implicitly specified by either of the
    * constructors with arguments. MUST be a power of two <= 1<<30.
    */
-  private static final int MAXIMUM_CAPACITY = 1 << 30;
+  static final int MAXIMUM_CAPACITY = 1 << 30;
 
   /** 视图变更事件处理器线程名 */
   public static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor";
@@ -136,9 +136,13 @@ class DefaultViewChangedHandler
    * @param newView 新视图
    */
   public void handle(View oldView, View newView) {
+    if (oldView == null && newView == null) {
+      log.error("oldView and newView cannot be null at the same time.");
+      return;
+    }
     long sequence = ringBuffer.next();
     try {
-      ViewChangedEvent event = ringBuffer.get(sequence).oldView(oldView).newview(newView);
+      ViewChangedEvent event = ringBuffer.get(sequence).oldView(oldView).newView(newView);
       if (log.isDebugEnabled()) {
         log.debug("Enqueue {} with sequence:{}.", event, sequence);
       }
@@ -162,7 +166,7 @@ class DefaultViewChangedHandler
     View newView = null;
     View oldView = null;
     try (event) {
-      newView = event.newview();
+      newView = event.newView();
       oldView = event.oldView();
       if (isCoordinatorChanged(oldView, newView)) {
         // 1.节点首次加入集群
@@ -179,12 +183,13 @@ class DefaultViewChangedHandler
       log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
     } finally {
       if (log.isDebugEnabled()) {
-        log.debug("End processing {}.", event);
+        log.debug(
+            "End processing {} with sequence:{} and endOfBatch:{}.", event, sequence, endOfBatch);
       }
     }
   }
 
-  public static int powerOf2(int size) {
+  static int powerOf2(int size) {
     int n = -1 >>> Integer.numberOfLeadingZeros(size - 1);
     return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
   }

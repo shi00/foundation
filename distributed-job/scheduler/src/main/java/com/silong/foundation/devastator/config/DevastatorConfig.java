@@ -65,6 +65,9 @@ public class DevastatorConfig implements Serializable {
   /** 默认集群视图变化事件处理队列长度 */
   public static final int DEFAULT_VIEW_CHANGED_EVENT_QUEUE_SIZE = 16;
 
+  /** 默认消息事件处理队列长度 */
+  public static final int DEFAULT_MESSAGE_EVENT_QUEUE_SIZE = 1024;
+
   /** 实例名，不指定则随机生成一个uuid */
   @NotEmpty private String instanceName = UUID.randomUUID().toString();
 
@@ -90,6 +93,9 @@ public class DevastatorConfig implements Serializable {
 
   /** 集群视图变化事件处理队列长度，必须是2的指数。默认：16。 */
   @Positive private int viewChangedEventQueueSize = DEFAULT_VIEW_CHANGED_EVENT_QUEUE_SIZE;
+
+  /** 集群消息处理队列长度，必须是2的指数。默认：1024。 */
+  @Positive private int messageEventQueueSize = DEFAULT_MESSAGE_EVENT_QUEUE_SIZE;
 
   /** 节点属性 */
   @Valid @NotNull

@@ -45,13 +45,13 @@ public class ViewChangedEvent implements AutoCloseable, Serializable {
   @Serial private static final long serialVersionUID = 6449957024410638303L;
 
   /** 当前视图 */
-  private View newview;
+  private View newView;
 
   /** 上一个视图 */
   private View oldView;
 
   @Override
   public void close() {
-    oldView = newview = null;
+    oldView = newView = null;
   }
 }

@@ -37,7 +37,7 @@ import java.io.Serializable;
 @Accessors(fluent = true)
 public class ScheduledExecutorConfig implements Serializable {
 
-  @Serial private static final long serialVersionUID = 2068058518911534353L;
+  @Serial private static final long serialVersionUID = 9169316777157006138L;
 
   /** 默认线程池线程名前缀 */
   public static final String DEFAULT_THREAD_PREFIX = "devastator-scheduler-";
@@ -45,14 +45,11 @@ public class ScheduledExecutorConfig implements Serializable {
   /** 默认调度器名 */
   public static final String DEFAULT_NAME = "devastator-scheduler";
 
-  /** 默认线程池核心线程数 */
-  public static final int DEFAULT_THREAD_CORE_SIZE = 10;
-
   /** 任务调度器名字，默认： devastator-scheduler */
   @NotEmpty private String name = DEFAULT_NAME;
 
   /** 核心线程数，默认：10 */
-  @Positive private int threadCoreSize = DEFAULT_THREAD_CORE_SIZE;
+  @Positive private int threadCoreSize = Runtime.getRuntime().availableProcessors();
 
   /** 线程池线程名字前缀，默认： devastator-scheduler- */
   @NotEmpty private String threadNamePrefix = DEFAULT_THREAD_PREFIX;

@@ -20,6 +20,7 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
+import com.silong.foundation.devastator.config.ScheduledExecutorConfig;
 import com.silong.foundation.devastator.exception.DistributedEngineException;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.message.PooledNioMessage;
@@ -30,6 +31,7 @@ import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.Tuple;
 import com.silong.foundation.devastator.utils.KryoUtils;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
@@ -39,15 +41,20 @@ import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
 import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.util.ByteArrayDataOutputStream;
+import org.jgroups.util.MessageBatch;
 
 import java.io.*;
+import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static com.silong.foundation.devastator.DistributedJobScheduler.INTERFACES;
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 import static java.lang.System.lineSeparator;
@@ -72,12 +79,18 @@ class DefaultDistributedEngine
 
   @Serial private static final long serialVersionUID = 1258279194145465487L;
 
+  /** 线程计数器 */
+  private static final AtomicInteger SCHEDULER_THREAD_COUNT = new AtomicInteger(0);
+
+  /** 分布式任务调度器 */
+  private final Map<String, DistributedJobScheduler> distributedJobSchedulerMap;
+
   /** address缓存 */
   private static final ThreadLocal<ByteArrayDataOutputStream> ADDRESS_BUFFER =
       withInitial(() -> new ByteArrayDataOutputStream(LONG_SIZE * 2));
 
   /** 集群通信信道 */
-  private JChannel jChannel;
+  private final JChannel jChannel;
 
   /** 配置 */
   private final DevastatorConfig config;
@@ -86,16 +99,19 @@ class DefaultDistributedEngine
   private final RendezvousPartitionMapping partitionMapping;
 
   /** 持久化存储 */
-  private RocksDbPersistStorage persistStorage;
+  final RocksDbPersistStorage persistStorage;
 
   /** 集群视图变更处理器 */
-  private DefaultViewChangedHandler defaultViewChangedHandler;
+  private final DefaultViewChangedHandler defaultViewChangedHandler;
+
+  /** 集群胸袭处理器 */
+  private final DefaultMessageHandler defaultMessageHandler;
 
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
   private Map<Integer, List<SimpleClusterNode>> partition2ClusterNodes;
 
   /** 数据uuid到分区的映射关系 */
-  private Map<Object, Integer> uuid2Partitions;
+  private final Map<Object, Integer> uuid2Partitions;
 
   /** 对象分区映射器 */
   private DefaultObjectPartitionMapping objectPartitionMapping;
@@ -119,9 +135,12 @@ class DefaultDistributedEngine
     try {
       this.config = config;
       this.uuid2Partitions = new ConcurrentHashMap<>((int) KB);
+      this.distributedJobSchedulerMap =
+          new ConcurrentHashMap<>(config.scheduledExecutorConfigs().size());
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
       this.defaultViewChangedHandler = new DefaultViewChangedHandler(this);
+      this.defaultMessageHandler = new DefaultMessageHandler(this);
       configureDistributedEngine(this.jChannel = buildDistributedEngine(config.configFile()));
 
       // 启动引擎
@@ -408,26 +427,25 @@ class DefaultDistributedEngine
    * @return {@code this}
    * @exception Exception thrown if the channel is disconnected or closed
    */
-  public DistributedEngine send(Message message) throws Exception {
+  public DistributedEngine send(@NonNull Message message) throws Exception {
     jChannel.send(message);
     return this;
   }
 
   @Override
-  public void receive(Message message) {
-    if (message instanceof BytesMessage) {
-
-    } else if (message instanceof NioMessage) {
-
-    } else if (message instanceof ObjectMessage) {
-
+  public void receive(@NonNull MessageBatch batch) {
+    for (Message message : batch) {
+      if (log.isDebugEnabled()) {
+        log.debug("A message received {}.", message);
+      }
+      defaultMessageHandler.handle(message);
     }
   }
 
   @Override
   public void viewAccepted(View newView) {
     if (log.isDebugEnabled()) {
-      log.debug("A new view is received {}.", newView);
+      log.debug("A newView is received {}.", newView);
     }
     try {
       // 异步处理集群视图变更
@@ -508,7 +526,35 @@ class DefaultDistributedEngine
 
   @Override
   public DistributedJobScheduler scheduler(String name) {
-    return null;
+    if (name == null || name.isEmpty()) {
+      throw new IllegalArgumentException("name must not be null.");
+    }
+    return distributedJobSchedulerMap.computeIfAbsent(
+        name,
+        key -> {
+          ScheduledExecutorConfig seConfig =
+              config.scheduledExecutorConfigs().stream()
+                  .filter(c -> Objects.equals(c.name(), name))
+                  .findAny()
+                  .orElse(null);
+          if (seConfig == null) {
+            return null;
+          }
+          return (DistributedJobScheduler)
+              Proxy.newProxyInstance(
+                  getClass().getClassLoader(),
+                  INTERFACES,
+                  new DistributedJobSchedulerHandler(
+                      this,
+                      Executors.newScheduledThreadPool(
+                          seConfig.threadCoreSize(),
+                          r ->
+                              new Thread(
+                                  r,
+                                  seConfig.threadNamePrefix()
+                                      + DefaultDistributedEngine.SCHEDULER_THREAD_COUNT
+                                          .getAndIncrement()))));
+        });
   }
 
   private String localIdentity() {
@@ -552,27 +598,30 @@ class DefaultDistributedEngine
   public void close() {
     if (this.jChannel != null) {
       this.jChannel.close();
-      this.jChannel = null;
     }
 
     if (this.persistStorage != null) {
       this.persistStorage.close();
-      this.persistStorage = null;
     }
 
     if (this.uuid2Partitions != null) {
       this.uuid2Partitions.clear();
-      this.uuid2Partitions = null;
     }
 
     if (this.defaultViewChangedHandler != null) {
       this.defaultViewChangedHandler.close();
-      this.defaultViewChangedHandler = null;
+    }
+
+    if (this.defaultMessageHandler != null) {
+      this.defaultMessageHandler.close();
     }
 
     if (this.partition2ClusterNodes != null) {
       this.partition2ClusterNodes.clear();
-      this.partition2ClusterNodes = null;
+    }
+
+    if (this.distributedJobSchedulerMap != null) {
+      this.distributedJobSchedulerMap.clear();
     }
 
     ADDRESS_BUFFER.remove();

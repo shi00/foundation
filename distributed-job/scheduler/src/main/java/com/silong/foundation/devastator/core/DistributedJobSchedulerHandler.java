@@ -16,8 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator;
+package com.silong.foundation.devastator.core;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -25,10 +27,30 @@ import java.util.concurrent.ScheduledExecutorService;
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-10 01:19
+ * @since 2022-07-02 22:31
  */
-public interface DistributedJobScheduler extends ScheduledExecutorService {
+class DistributedJobSchedulerHandler implements InvocationHandler {
 
-  /** 动态代理接口列表 */
-  Class<?>[] INTERFACES = {DistributedJobScheduler.class};
+  /** 调度器 */
+  private final ScheduledExecutorService executorService;
+
+  /** 引擎 */
+  private final DefaultDistributedEngine engine;
+
+  public DistributedJobSchedulerHandler(
+      DefaultDistributedEngine engine, ScheduledExecutorService executorService) {
+    if (executorService == null) {
+      throw new IllegalArgumentException("executorService must not be null.");
+    }
+    if (engine == null) {
+      throw new IllegalArgumentException("engine must not be null.");
+    }
+    this.engine = engine;
+    this.executorService = executorService;
+  }
+
+  @Override
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    return method.invoke(executorService, args);
+  }
 }

@@ -16,32 +16,39 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.utils;
+package com.silong.foundation.devastator.event;
 
-import com.silong.foundation.devastator.config.DevastatorProperties.Version;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+import org.jgroups.Message;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
- * 版本兼容性工具
+ * 消息事件
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-07-02 10:28
+ * @since 2022-04-29 22:38
  */
-public interface VersionUtils {
-  /**
-   * 版本是否兼容，version1是否兼容version2
-   *
-   * @param version1 版本1
-   * @param version2 版本2
-   * @return true or false
-   */
-  static boolean isCompatible(Version version1, Version version2) {
-    if (version1 == null || version2 == null) {
-      throw new IllegalArgumentException("version1 or version2 must not be null.");
-    }
-    if (version1.equals(version2)) {
-      return true;
-    }
-    return false;
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Accessors(fluent = true)
+public class MessageEvent implements AutoCloseable, Serializable {
+
+  @Serial private static final long serialVersionUID = -7116214943078749514L;
+
+  /** 当前视图 */
+  private Message message;
+
+  @Override
+  public void close() {
+    message = null;
   }
 }
