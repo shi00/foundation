@@ -29,7 +29,7 @@ import java.io.Serial;
  */
 public class DataAccessException extends RuntimeException {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 8765046106324470702L;
 
   /** 构造方法 */
   public DataAccessException() {
