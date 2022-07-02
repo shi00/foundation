@@ -33,7 +33,7 @@ import java.util.function.BiConsumer;
  * @version 1.0.0
  * @since 2022-04-10 17:14
  */
-public interface PersistStorage extends AutoCloseable, Serializable {
+public interface PersistStorage extends AutoCloseable {
 
   /**
    * 创建列族
