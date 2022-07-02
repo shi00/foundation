@@ -21,7 +21,7 @@ package com.silong.foundation.devastator.exception;
 import java.io.Serial;
 
 /**
- * 初始化异常
+ * 系统初始化异常
  *
  * @author louis sin
  * @version 1.0.0
@@ -29,7 +29,7 @@ import java.io.Serial;
  */
 public class InitializationException extends RuntimeException {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 4534279510495013207L;
 
   /** 构造方法 */
   public InitializationException() {
