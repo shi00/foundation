@@ -127,7 +127,9 @@ public class PooledBytesMessage extends RefcountedBytesMessage {
    * @param messageFactory 消息工厂
    */
   public static void register(MessageFactory messageFactory) {
-    assert messageFactory != null;
+    if (messageFactory == null) {
+      throw new IllegalArgumentException("messageFactory must not be null.");
+    }
     messageFactory.register(MSG_TYPE, PooledBytesMessage::new);
   }
 

@@ -56,7 +56,7 @@ public class DefaultCluster implements Cluster, Serializable {
   @NonNull
   @Override
   public String version() {
-    return null;
+    return localNode().version();
   }
 
   @Override

@@ -27,6 +27,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Properties;
 import java.util.StringJoiner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 软件包配置
@@ -38,7 +40,7 @@ import java.util.StringJoiner;
 @SuppressWarnings("URLCONNECTION_SSRF_FD")
 public final class DevastatorProperties implements Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = -582920829207838110L;
 
   /** 软件包配置 */
   private static final Properties DEVASTATOR;
@@ -105,7 +107,23 @@ public final class DevastatorProperties implements Serializable {
   @EqualsAndHashCode
   public static final class Version implements Serializable {
 
-    @Serial private static final long serialVersionUID = 0L;
+    @Serial private static final long serialVersionUID = -5038509713401088943L;
+
+    /** 版本字符串正则表达式 */
+    private static final Pattern VERSION_REGEXP = Pattern.compile("((\\d+)\\.(\\d+)\\.(\\d+).*)");
+
+    private static final int MAJOR_SHIFT = 11;
+
+    private static final int MINOR_SHIFT = 6;
+
+    /** 1111100000000000 bit mask */
+    private static final int MAJOR_MASK = 0x00f800;
+
+    /** 11111000000 bit mask */
+    private static final int MINOR_MASK = 0x0007c0;
+
+    /** 111111 bit mask */
+    private static final int MICRO_MASK = 0x00003f;
 
     /** 版本key */
     public static final String VERSION = "version";
@@ -113,8 +131,28 @@ public final class DevastatorProperties implements Serializable {
     /** 版本 */
     private final short version;
 
-    Version(String version) {
-      this.version = org.jgroups.Version.parse(version);
+    private Version(String version) {
+      this.version = parseVerStr(version);
+    }
+
+    private static short parseVerStr(String ver) {
+      try {
+        Matcher versionMatcher = VERSION_REGEXP.matcher(ver);
+        if (versionMatcher.find()) {
+          short maj = Short.parseShort(versionMatcher.group(2));
+          short min = Short.parseShort(versionMatcher.group(3));
+          short mic = Short.parseShort(versionMatcher.group(4));
+          return encode(maj, min, mic);
+        }
+      } catch (Throwable t) {
+        throw new IllegalArgumentException(
+            String.format("Failed to parse version '%s': %s.", ver, t));
+      }
+      throw new IllegalArgumentException(String.format("Failed to parse version '%s'.", ver));
+    }
+
+    private static short encode(int major, int minor, int micro) {
+      return (short) ((major << MAJOR_SHIFT) + (minor << MINOR_SHIFT) + micro);
     }
 
     /**
@@ -144,10 +182,17 @@ public final class DevastatorProperties implements Serializable {
      */
     public static Version parse(short version) {
       StringJoiner joiner = new StringJoiner(".");
-      for (short i : org.jgroups.Version.decode(version)) {
+      for (short i : decode(version)) {
         joiner.add(String.valueOf(i));
       }
       return new Version(joiner.toString());
+    }
+
+    private static short[] decode(short version) {
+      short major = (short) ((version & MAJOR_MASK) >> MAJOR_SHIFT);
+      short minor = (short) ((version & MINOR_MASK) >> MINOR_SHIFT);
+      short micro = (short) (version & MICRO_MASK);
+      return new short[] {major, minor, micro};
     }
 
     @Override

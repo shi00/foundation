@@ -16,30 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.model;
-
-import com.silong.foundation.devastator.Identity;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import org.jgroups.Address;
-
-import java.io.Serial;
-import java.io.Serializable;
+package com.silong.foundation.devastator;
 
 /**
- * 简单节点
+ * 对象版本接口
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-05-03 00:15
+ * @since 2022-05-01 15:57
  */
-public record SimpleClusterNode(Address address) implements Identity<Address>, Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -322139656973686555L;
-
-    @Override
-    @NonNull
-    public Address uuid() {
-        return address;
-    }
+public interface ObjectVersion {
+  /**
+   * 对象版本，MVCC
+   *
+   * @return 对象版本
+   */
+  long objectVersion();
 }

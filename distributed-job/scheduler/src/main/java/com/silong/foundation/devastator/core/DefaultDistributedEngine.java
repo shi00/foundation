@@ -122,8 +122,7 @@ public class DefaultDistributedEngine
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
       this.viewChangedHandler = new ViewChangedHandler(this);
-      configureDistributedEngine(
-          this.jChannel = buildDistributedEngine(config.configFile()), config, persistStorage);
+      configureDistributedEngine(this.jChannel = buildDistributedEngine(config.configFile()));
 
       // 启动引擎
       this.jChannel.connect(config.clusterName());
@@ -132,8 +131,8 @@ public class DefaultDistributedEngine
     }
   }
 
-  private void configureDistributedEngine(
-      JChannel jChannel, DevastatorConfig config, PersistStorage persistStorage) {
+  private void configureDistributedEngine(JChannel jChannel) {
+    Objects.requireNonNull(jChannel, "jChannel must not be null.");
     jChannel.setReceiver(this);
     jChannel.addAddressGenerator(new DefaultAddressGenerator(config, persistStorage));
     jChannel.setDiscardOwnMessages(true);
@@ -155,6 +154,13 @@ public class DefaultDistributedEngine
     PooledBytesMessage.register(messageFactory);
   }
 
+  /**
+   * 加载jgroups配置文件给jchannel使用
+   *
+   * @param configFile 配置文件路径
+   * @return jchannel
+   * @throws Exception 异常
+   */
   private JChannel buildDistributedEngine(String configFile) throws Exception {
     URL configUrl;
     try {
@@ -228,7 +234,7 @@ public class DefaultDistributedEngine
    * @return 对象映射分区
    */
   @SneakyThrows
-  public synchronized int partitionAndPersistence(ObjectIdentity<Address> obj) {
+  public synchronized int partitionAndPersistence(Identity<Address> obj) {
     if (obj == null) {
       throw new IllegalArgumentException("obj must not be null.");
     }

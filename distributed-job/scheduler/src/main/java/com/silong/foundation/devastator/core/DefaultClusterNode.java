@@ -19,9 +19,9 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterNode;
-import com.silong.foundation.devastator.ObjectIdentity;
 import com.silong.foundation.devastator.config.DevastatorProperties.Version;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.jgroups.Address;
 
@@ -40,7 +40,7 @@ import java.util.Objects;
  */
 public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
 
-  @Serial private static final long serialVersionUID = -7941438801250879713L;
+  @Serial private static final long serialVersionUID = 4756251708772289039L;
 
   /** 集群节点信息 */
   private ClusterNodeUUID clusterNode;
@@ -70,21 +70,25 @@ public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   }
 
   @Override
+  @NonNull
   public ClusterNodeRole role() {
     return ClusterNodeRole.find(getClusterNodeInfo().getRole());
   }
 
   @Override
+  @NonNull
   public String version() {
     return Version.parse((short) getClusterNodeInfo().getDevastatorVersion()).toString();
   }
 
   @Override
+  @NonNull
   public String hostName() {
     return getClusterNodeInfo().getHostName();
   }
 
   @Override
+  @NonNull
   public Collection<String> addresses() {
     return getClusterNodeInfo().getIpAddressesList().stream().toList();
   }
@@ -95,18 +99,9 @@ public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   }
 
   @Override
+  @NonNull
   public ClusterNodeUUID uuid() {
     return clusterNode;
-  }
-
-  @Override
-  public long objectVersion() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean verify(ObjectIdentity<Address> obj) {
-    throw new UnsupportedOperationException();
   }
 
   @Nullable
@@ -116,6 +111,7 @@ public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   }
 
   @Override
+  @NonNull
   public Map<String, String> attributes() {
     return getClusterNodeInfo().getAttributesMap();
   }
@@ -138,12 +134,6 @@ public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
 
   @Override
   public String toString() {
-    return clusterNode.toString();
-  }
-
-  @Override
-  public void close() {
-    this.clusterNode = null;
-    this.localAddress = null;
+    return clusterNode == null ? "" : clusterNode.toString();
   }
 }

@@ -18,40 +18,19 @@
  */
 package com.silong.foundation.devastator;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
- * 对象唯一标识接口
+ * 唯一标识接口
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-05-01 15:57
+ * @since 2022-07-02 15:43
  * @param <T> 唯一标识类型
  */
-public interface ObjectIdentity<T extends Comparable<T>> extends AutoCloseable {
-  /** 释放资源 */
-  default void close() {}
-
+public interface Identity<T extends Comparable<T>> {
   /**
-   * 获取唯一标识
+   * 对象唯一标识
    *
    * @return 唯一标识
    */
-  @NonNull
   T uuid();
-
-  /**
-   * 对象版本，MVCC
-   *
-   * @return 对象版本
-   */
-  long objectVersion();
-
-  /**
-   * 校验对象是否变化
-   *
-   * @param obj 对象
-   * @return true对象发送变化，否则false
-   */
-  boolean verify(@NonNull ObjectIdentity<T> obj);
 }

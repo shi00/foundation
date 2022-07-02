@@ -19,7 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.google.protobuf.TextFormat;
-import com.silong.foundation.devastator.ObjectIdentity;
+import com.silong.foundation.devastator.Identity;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -43,19 +43,12 @@ import static org.jgroups.util.Util.writeByteBuffer;
  * @version 1.0.0
  * @since 2022-04-11 22:49
  */
-public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address>, Serializable {
+public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializable {
 
-  @Serial private static final long serialVersionUID = -2485031812036504917L;
-
-  static {
-    // it will need to get registered with the ClassConfigurator in order to marshal it correctly
-    // Note that the ID should be chosen such that it doesn’t collide with any IDs defined in
-    // jg-magic-map.xml
-    ClassConfigurator.add((short) 5674, ClusterNodeUUID.class);
-  }
+  @Serial private static final long serialVersionUID = 8271975008899099415L;
 
   /** 类型转换器 */
-  public static final TypeConverter<ClusterNodeUUID, byte[]> INSTANCE =
+  private static final TypeConverter<ClusterNodeUUID, byte[]> INSTANCE =
       new TypeConverter<>() {
 
         @Serial private static final long serialVersionUID = -1910864152755748200L;
@@ -82,6 +75,13 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address>, Se
         }
       };
 
+  static {
+    // it will need to get registered with the ClassConfigurator in order to marshal it correctly
+    // Note that the ID should be chosen such that it doesn’t collide with any IDs defined in
+    // jg-magic-map.xml
+    ClassConfigurator.add((short) 5674, ClusterNodeUUID.class);
+  }
+
   /** 节点信息 */
   @Getter private ClusterNodeInfo clusterNodeInfo;
 
@@ -103,16 +103,6 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address>, Se
   @NonNull
   public ClusterNodeUUID uuid() {
     return this;
-  }
-
-  @Override
-  public long objectVersion() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean verify(@NonNull ObjectIdentity<Address> obj) {
-    throw new UnsupportedOperationException();
   }
 
   /**
@@ -181,16 +171,11 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address>, Se
   }
 
   /**
-   * 获取节点打印信息
+   * 获取节点描述信息
    *
-   * @return 打印信息
+   * @return 描述信息
    */
-  public String printClusterNodeInfo() {
+  public String getClusterNodeInfoDesc() {
     return TextFormat.printer().printToString(this.clusterNodeInfo);
-  }
-
-  @Override
-  public void close() {
-    this.clusterNodeInfo = null;
   }
 }

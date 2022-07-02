@@ -23,7 +23,6 @@ import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.config.DevastatorProperties;
 import com.silong.foundation.devastator.exception.DistributedEngineException;
 import com.silong.foundation.devastator.model.Devastator;
-import com.silong.foundation.devastator.utils.TypeConverter;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 import org.jgroups.Version;
@@ -40,6 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo.newBuilder;
+import static com.silong.foundation.devastator.utils.TypeConverter.String2Bytes.INSTANCE;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
 
 /**
@@ -141,7 +141,7 @@ public class DefaultAddressGenerator implements AddressGenerator {
   public Address generateAddress() {
     try {
       ClusterNodeUUID uuid;
-      byte[] key = TypeConverter.String2Bytes.INSTANCE.to(buildClusterNodeUuidKey());
+      byte[] key = INSTANCE.to(buildClusterNodeUuidKey());
       byte[] value = persistStorage.get(key);
       if (value != null) {
         uuid = ClusterNodeUUID.deserialize(value);
@@ -151,6 +151,7 @@ public class DefaultAddressGenerator implements AddressGenerator {
         // 保存uuid
         persistStorage.put(key, uuid.serialize());
       }
+
       // 更新节点附加信息
       return uuid.setClusterNodeInfo(buildClusterNodeInfo());
     } catch (Exception e) {

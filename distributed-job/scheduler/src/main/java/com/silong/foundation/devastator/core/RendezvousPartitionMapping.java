@@ -18,11 +18,12 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.silong.foundation.devastator.ObjectIdentity;
+import com.silong.foundation.devastator.Identity;
 import com.silong.foundation.devastator.PartitionClusterNodeMapping;
 import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.WeightNodeTuple;
 import com.silong.foundation.devastator.utils.SerializableBiPredicate;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
@@ -150,7 +151,7 @@ public class RendezvousPartitionMapping
 
     // 是否排除邻居节点
     boolean exclNeighbors = neighborhood != null && !neighborhood.isEmpty();
-    Collection<ObjectIdentity<Address>> allNeighbors = exclNeighbors ? new HashSet<>() : null;
+    Collection<Identity<Address>> allNeighbors = exclNeighbors ? new HashSet<>() : null;
 
     // 选取备份节点
     if (backupNum > 0) {
@@ -235,6 +236,7 @@ public class RendezvousPartitionMapping
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     public Iterator<SimpleClusterNode> iterator() {
       return new LazyLinearSortedContainer.SortIterator();
     }
