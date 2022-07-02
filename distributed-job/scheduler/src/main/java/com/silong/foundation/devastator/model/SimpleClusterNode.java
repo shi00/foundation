@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator.model;
 
 import com.silong.foundation.devastator.ObjectIdentity;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jgroups.Address;
 
 import java.io.Serial;
@@ -36,6 +37,7 @@ public record SimpleClusterNode(Address address) implements ObjectIdentity<Addre
     private static final long serialVersionUID = 655289082556457884L;
 
     @Override
+    @NonNull
     public Address uuid() {
         return address;
     }
@@ -46,7 +48,7 @@ public record SimpleClusterNode(Address address) implements ObjectIdentity<Addre
     }
 
     @Override
-    public boolean verify(ObjectIdentity<Address> obj) {
+    public boolean verify(@NonNull ObjectIdentity<Address> obj) {
         throw new UnsupportedOperationException();
     }
 
