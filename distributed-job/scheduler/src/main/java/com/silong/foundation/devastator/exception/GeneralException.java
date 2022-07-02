@@ -29,7 +29,7 @@ import java.io.Serial;
  */
 public class GeneralException extends RuntimeException {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 1814457301838968148L;
 
   /** 构造方法 */
   public GeneralException() {
