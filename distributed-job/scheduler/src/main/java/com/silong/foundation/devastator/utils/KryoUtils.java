@@ -39,7 +39,7 @@ import static org.rocksdb.util.SizeUnit.KB;
  */
 public final class KryoUtils implements Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 4808808739609644424L;
 
   /** kryo对象池容量，默认：8 */
   public static final int KRYO_POOL_CAPACITY =
