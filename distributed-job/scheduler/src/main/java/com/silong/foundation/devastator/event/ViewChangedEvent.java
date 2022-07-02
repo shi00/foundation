@@ -25,7 +25,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jgroups.View;
 
-import java.io.Closeable;
 import java.io.Serial;
 import java.io.Serializable;
 
@@ -41,9 +40,9 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(fluent = true)
-public class ViewChangedEvent implements Closeable, Serializable {
+public class ViewChangedEvent implements AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 6449957024410638303L;
 
   /** 当前视图 */
   private View newview;
