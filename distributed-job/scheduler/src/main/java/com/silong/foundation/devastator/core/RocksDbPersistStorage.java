@@ -29,6 +29,7 @@ import org.rocksdb.*;
 
 import java.io.File;
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
@@ -47,7 +48,7 @@ import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
  * @since 2022-04-10 17:52
  */
 @SuppressFBWarnings({"PATH_TRAVERSAL_IN"})
-public class RocksDbPersistStorage implements PersistStorage {
+public class RocksDbPersistStorage implements PersistStorage, Serializable {
 
   @Serial private static final long serialVersionUID = 0L;
 
