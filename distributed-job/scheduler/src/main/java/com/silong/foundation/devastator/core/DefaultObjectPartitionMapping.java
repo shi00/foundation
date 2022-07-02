@@ -22,6 +22,9 @@ import com.silong.foundation.devastator.ObjectPartitionMapping;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 import static com.silong.foundation.devastator.config.DevastatorConfig.*;
 
 /**
@@ -33,7 +36,9 @@ import static com.silong.foundation.devastator.config.DevastatorConfig.*;
  */
 @ToString
 @EqualsAndHashCode
-public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
+public class DefaultObjectPartitionMapping implements ObjectPartitionMapping, Serializable {
+
+  @Serial private static final long serialVersionUID = -5332104253133327573L;
 
   /** 分区数量 */
   private int partitions;
