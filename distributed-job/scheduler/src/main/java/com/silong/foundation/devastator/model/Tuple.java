@@ -32,5 +32,5 @@ import java.io.Serializable;
  */
 public record Tuple<T1, T2> (T1 t1, T2 t2) implements Serializable {
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 1616633062868069934L;
 }

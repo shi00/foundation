@@ -33,7 +33,7 @@ import static com.silong.foundation.devastator.model.WeightNodeTuple.WeightNodeT
  */
 public record WeightNodeTuple(long weight, SimpleClusterNode node) implements Comparable<WeightNodeTuple>, Serializable {
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = -5468679374325846351L;
 
     /**
      * 节点权重比较器

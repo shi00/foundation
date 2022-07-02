@@ -33,7 +33,7 @@ import java.io.Serializable;
 public record KvPair <K, V> (K key, V value) implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = -263188620675495564L;
 
     /**
      * key or value is null

@@ -23,6 +23,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jgroups.Address;
 
 import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * 简单节点
@@ -31,10 +32,10 @@ import java.io.Serial;
  * @version 1.0.0
  * @since 2022-05-03 00:15
  */
-public record SimpleClusterNode(Address address) implements ObjectIdentity<Address> {
+public record SimpleClusterNode(Address address) implements ObjectIdentity<Address>, Serializable {
 
     @Serial
-    private static final long serialVersionUID = 655289082556457884L;
+    private static final long serialVersionUID = 8535963317618060665L;
 
     @Override
     @NonNull
