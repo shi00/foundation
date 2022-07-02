@@ -37,6 +37,12 @@ class DistributedJobSchedulerHandler implements InvocationHandler {
   /** 引擎 */
   private final DefaultDistributedEngine engine;
 
+  /**
+   * 构造方法
+   *
+   * @param engine 分布式引擎
+   * @param executorService 调度器
+   */
   public DistributedJobSchedulerHandler(
       DefaultDistributedEngine engine, ScheduledExecutorService executorService) {
     if (executorService == null) {
