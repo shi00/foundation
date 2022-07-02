@@ -55,6 +55,8 @@ public class SimpleSoftRefObjectPoolTests {
       pool.returns(obj1);
       var obj2 = pool.obtain();
       Assertions.assertSame(obj1, obj2);
+      Assertions.assertEquals(0, pool.freeObjects());
+      Assertions.assertEquals(1, pool.capacity());
     }
   }
 
