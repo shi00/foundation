@@ -141,7 +141,7 @@ public interface TypeConverter<T, R> extends Serializable {
       @NonNull Class<T> tClass) {
     return new TypeConverter<>() {
 
-      @Serial private static final long serialVersionUID = 0L;
+      @Serial private static final long serialVersionUID = -6337268992117190766L;
 
       @Override
       public byte[] to(T t) {
@@ -166,61 +166,71 @@ public interface TypeConverter<T, R> extends Serializable {
     };
   }
 
+  /** long和byte数组互转 */
+  class Long2Bytes implements TypeConverter<Long, byte[]> {
+
+    @Serial private static final long serialVersionUID = 6490991487711684382L;
+
+    /** 单例 */
+    public static final Long2Bytes INSTANCE = new Long2Bytes();
+
+    /** 构造方法 */
+    private Long2Bytes() {}
+
+    @Override
+    public byte[] to(Long value) {
+      if (value == null) {
+        return null;
+      }
+      byte[] result = new byte[Long.BYTES];
+      for (int i = Long.BYTES - 1; i >= 0; i--) {
+        result[i] = (byte) (value & 0xffL);
+        value >>= Long.BYTES;
+      }
+      return result;
+    }
+
+    @Override
+    public Long from(byte[] bytes) {
+      if (bytes == null || bytes.length != Long.BYTES) {
+        return null;
+      }
+      return (bytes[0] & 0xFFL) << 56
+          | (bytes[1] & 0xFFL) << 48
+          | (bytes[2] & 0xFFL) << 40
+          | (bytes[3] & 0xFFL) << 32
+          | (bytes[4] & 0xFFL) << 24
+          | (bytes[5] & 0xFFL) << 16
+          | (bytes[6] & 0xFFL) << 8
+          | (bytes[7] & 0xFFL);
+    }
+  }
+
   /** 字符串和byte数组互转，使用UTF8编码 */
-  TypeConverter<Long, byte[]> LONG_TO_BYTES =
-      new TypeConverter<>() {
+  class String2Bytes implements TypeConverter<String, byte[]> {
 
-        @Serial private static final long serialVersionUID = 0L;
+    @Serial private static final long serialVersionUID = 6439047775288488254L;
 
-        @Override
-        public byte[] to(Long value) {
-          if (value == null) {
-            return null;
-          }
-          byte[] result = new byte[Long.BYTES];
-          for (int i = Long.BYTES - 1; i >= 0; i--) {
-            result[i] = (byte) (value & 0xffL);
-            value >>= Long.BYTES;
-          }
-          return result;
-        }
+    /** 单例 */
+    public static final String2Bytes INSTANCE = new String2Bytes();
 
-        @Override
-        public Long from(byte[] bytes) {
-          if (bytes == null || bytes.length != Long.BYTES) {
-            return null;
-          }
-          return (bytes[0] & 0xFFL) << 56
-              | (bytes[1] & 0xFFL) << 48
-              | (bytes[2] & 0xFFL) << 40
-              | (bytes[3] & 0xFFL) << 32
-              | (bytes[4] & 0xFFL) << 24
-              | (bytes[5] & 0xFFL) << 16
-              | (bytes[6] & 0xFFL) << 8
-              | (bytes[7] & 0xFFL);
-        }
-      };
+    /** 构造方法 */
+    private String2Bytes() {}
 
-  /** 字符串和byte数组互转，使用UTF8编码 */
-  TypeConverter<String, byte[]> STRING_TO_BYTES =
-      new TypeConverter<>() {
+    @Override
+    public byte[] to(String str) {
+      if (str == null) {
+        return null;
+      }
+      return str.getBytes(UTF_8);
+    }
 
-        @Serial private static final long serialVersionUID = 0L;
-
-        @Override
-        public byte[] to(String str) {
-          if (str == null) {
-            return null;
-          }
-          return str.getBytes(UTF_8);
-        }
-
-        @Override
-        public String from(byte[] bytes) {
-          if (bytes == null) {
-            return null;
-          }
-          return new String(bytes, UTF_8);
-        }
-      };
+    @Override
+    public String from(byte[] bytes) {
+      if (bytes == null) {
+        return null;
+      }
+      return new String(bytes, UTF_8);
+    }
+  }
 }
