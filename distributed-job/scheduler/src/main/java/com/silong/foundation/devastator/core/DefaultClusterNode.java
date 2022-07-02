@@ -38,15 +38,15 @@ import java.util.Objects;
  * @version 1.0.0
  * @since 2022-04-07 22:49
  */
-public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
+class DefaultClusterNode implements ClusterNode<Address>, Serializable {
 
   @Serial private static final long serialVersionUID = 4756251708772289039L;
 
   /** 集群节点信息 */
-  private ClusterNodeUUID clusterNode;
+  private final ClusterNodeUUID clusterNode;
 
   /** 本地地址 */
-  private Address localAddress;
+  private final Address localAddress;
 
   /**
    * 构造方法
@@ -126,14 +126,14 @@ public class DefaultClusterNode implements ClusterNode<Address>, Serializable {
     if (obj == this) {
       return true;
     }
-    if (obj instanceof DefaultClusterNode) {
-      return Objects.equals(clusterNode, ((DefaultClusterNode) obj).clusterNode);
+    if (obj instanceof DefaultClusterNode node) {
+      return Objects.equals(clusterNode, node.clusterNode);
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return clusterNode == null ? "" : clusterNode.toString();
+    return clusterNode.toString();
   }
 }

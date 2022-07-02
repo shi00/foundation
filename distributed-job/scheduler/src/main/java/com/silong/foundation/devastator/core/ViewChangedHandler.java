@@ -16,14 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.handler;
+package com.silong.foundation.devastator.core;
 
+import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.LiteBlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.silong.foundation.devastator.core.ClusterNodeUUID;
-import com.silong.foundation.devastator.core.DefaultDistributedEngine;
 import com.silong.foundation.devastator.event.ViewChangedEvent;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +34,6 @@ import java.io.Serializable;
 import java.util.concurrent.ThreadFactory;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
-import static com.silong.foundation.devastator.core.DefaultObjectPartitionMapping.calculateMask;
 
 /**
  * 集群视图变化事件处理器
@@ -46,22 +43,27 @@ import static com.silong.foundation.devastator.core.DefaultObjectPartitionMappin
  * @since 2022-04-29 23:40
  */
 @Slf4j
-public class ViewChangedHandler
-    implements EventHandler<ViewChangedEvent>, AutoCloseable, Serializable {
+class ViewChangedHandler implements EventHandler<ViewChangedEvent>, AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = -2779732752319031430L;
+  @Serial private static final long serialVersionUID = 7601624347424402665L;
+
+  /**
+   * The maximum capacity, used if a higher value is implicitly specified by either of the
+   * constructors with arguments. MUST be a power of two <= 1<<30.
+   */
+  private static final int MAXIMUM_CAPACITY = 1 << 30;
 
   /** 视图变更事件处理器线程名 */
   public static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor";
 
   /** 分布式引擎 */
-  private final DefaultDistributedEngine engine;
+  private DefaultDistributedEngine engine;
 
   /** 事件处理器 */
-  private final Disruptor<ViewChangedEvent> disruptor;
+  private Disruptor<ViewChangedEvent> disruptor;
 
   /** 环状队列 */
-  private final RingBuffer<ViewChangedEvent> ringBuffer;
+  private RingBuffer<ViewChangedEvent> ringBuffer;
 
   /**
    * 事件处理器
@@ -78,16 +80,13 @@ public class ViewChangedHandler
   }
 
   private Disruptor<ViewChangedEvent> buildViewChangedEventDisruptor(int queueSize) {
-    if (calculateMask(queueSize) < 0) {
-      throw new IllegalArgumentException("queueSize must be power of 2.");
-    }
     Disruptor<ViewChangedEvent> disruptor =
         new Disruptor<>(
             ViewChangedEvent::new,
-            queueSize,
+            powerOf2(queueSize),
             (ThreadFactory) r -> new Thread(r, VIEW_CHANGED_EVENT_PROCESSOR),
             MULTI,
-            new LiteBlockingWaitStrategy());
+            new BusySpinWaitStrategy());
     disruptor.handleEventsWith(this);
     return disruptor;
   }
@@ -96,6 +95,13 @@ public class ViewChangedHandler
     return ((ClusterNodeUUID) address).getClusterNodeInfo();
   }
 
+  /**
+   * 比较两个集群视图是否发生了集群coordinator变化
+   *
+   * @param oldView old view of cluster
+   * @param newView new view of cluster
+   * @return true or false
+   */
   private boolean isCoordinatorChanged(View oldView, View newView) {
     Address newCoord = newView.getCoord();
     ClusterNodeInfo newClusterNodeInfo = getClusterNodeInfo(newCoord);
@@ -176,8 +182,18 @@ public class ViewChangedHandler
     }
   }
 
+  public static int powerOf2(int size) {
+    int n = -1 >>> Integer.numberOfLeadingZeros(size - 1);
+    return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+  }
+
   @Override
   public void close() {
-    disruptor.shutdown();
+    if (this.disruptor != null) {
+      this.disruptor.shutdown();
+      this.disruptor = null;
+    }
+    this.ringBuffer = null;
+    this.engine = null;
   }
 }

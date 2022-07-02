@@ -16,10 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator;
+package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.config.PersistStorageConfig;
-import com.silong.foundation.devastator.core.RocksDbPersistStorage;
 import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -43,7 +42,7 @@ public class PersistStorageTests {
 
   private static final PersistStorageConfig config;
 
-  private static final PersistStorage persistStorage;
+  private static final RocksDbPersistStorage persistStorage;
 
   private static final String JOBS = "jobs";
 
@@ -60,7 +59,7 @@ public class PersistStorageTests {
   }
 
   @AfterAll
-  static void cleanUp() throws Exception {
+  static void cleanUp() {
     persistStorage.close();
   }
 

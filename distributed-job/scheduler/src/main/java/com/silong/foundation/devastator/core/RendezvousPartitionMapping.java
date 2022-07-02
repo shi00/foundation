@@ -56,7 +56,7 @@ import static com.silong.foundation.devastator.utils.HashUtils.mixHash;
  * @since 2022-04-06 22:29
  */
 @Slf4j
-public class RendezvousPartitionMapping
+class RendezvousPartitionMapping
     implements PartitionClusterNodeMapping<SimpleClusterNode>, Serializable {
 
   @Serial private static final long serialVersionUID = -5940041940626753044L;
@@ -206,12 +206,6 @@ public class RendezvousPartitionMapping
 
   private boolean disableBackupNodeFilter() {
     return affinityBackupFilter == null && backupFilter == null;
-  }
-
-  @Override
-  public void close() {
-    this.affinityBackupFilter = null;
-    this.backupFilter = null;
   }
 
   /** Sorts the initial array with linear sort algorithm array */

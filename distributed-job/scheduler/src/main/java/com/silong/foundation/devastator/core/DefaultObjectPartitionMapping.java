@@ -36,7 +36,7 @@ import static com.silong.foundation.devastator.config.DevastatorConfig.*;
  */
 @ToString
 @EqualsAndHashCode
-public class DefaultObjectPartitionMapping implements ObjectPartitionMapping, Serializable {
+class DefaultObjectPartitionMapping implements ObjectPartitionMapping, Serializable {
 
   @Serial private static final long serialVersionUID = -5332104253133327573L;
 
@@ -120,7 +120,4 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping, Se
   public int partitions() {
     return partitions;
   }
-
-  @Override
-  public void close() {}
 }

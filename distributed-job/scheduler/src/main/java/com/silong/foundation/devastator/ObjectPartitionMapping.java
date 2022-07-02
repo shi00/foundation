@@ -18,8 +18,6 @@
  */
 package com.silong.foundation.devastator;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * 对象到分区映射器
  *
@@ -27,10 +25,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * @version 1.0.0
  * @since 2022-05-01 10:39
  */
-public interface ObjectPartitionMapping extends AutoCloseable {
-
-  /** 释放资源 */
-  default void close() {}
+public interface ObjectPartitionMapping {
 
   /**
    * 集群内的分区总数量
@@ -52,5 +47,5 @@ public interface ObjectPartitionMapping extends AutoCloseable {
    * @param key 数据key
    * @return 分区编号
    */
-  int partition(@NonNull Object key);
+  int partition(Object key);
 }

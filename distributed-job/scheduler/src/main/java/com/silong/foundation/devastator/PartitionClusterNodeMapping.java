@@ -41,10 +41,7 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2022-04-09 19:01
  */
-public interface PartitionClusterNodeMapping<T extends Identity<Address>> extends AutoCloseable {
-
-  /** 释放资源 */
-  default void close() {}
+public interface PartitionClusterNodeMapping<T extends Identity<Address>> {
 
   /**
    * 分区到集群节点映射

@@ -28,18 +28,18 @@ import java.io.Serializable;
 import java.util.Collection;
 
 /**
- * 集群
+ * 默认集群
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-25 22:50
  */
-public class DefaultCluster implements Cluster, Serializable {
+class DefaultCluster implements Cluster, Serializable {
 
   @Serial private static final long serialVersionUID = -7010520114270523339L;
 
   /** 分布式引擎 */
-  private DefaultDistributedEngine engine;
+  private final DefaultDistributedEngine engine;
 
   /**
    * 构造方法
@@ -75,10 +75,5 @@ public class DefaultCluster implements Cluster, Serializable {
   @NonNull
   public ClusterNode<Address> localNode() {
     return engine.getLocalNode();
-  }
-
-  @Override
-  public void close() {
-    this.engine = null;
   }
 }

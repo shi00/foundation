@@ -48,9 +48,9 @@ import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
  * @since 2022-04-10 17:52
  */
 @SuppressFBWarnings({"PATH_TRAVERSAL_IN"})
-public class RocksDbPersistStorage implements PersistStorage, Serializable {
+class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 9093583267970822772L;
 
   /** 默认列族 */
   public static final String DEFAULT_COLUMN_FAMILY_NAME = "default";

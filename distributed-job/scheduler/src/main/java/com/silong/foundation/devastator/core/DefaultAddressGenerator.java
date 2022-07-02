@@ -50,7 +50,7 @@ import static org.apache.commons.lang3.SystemUtils.getHostName;
  * @since 2022-05-01 09:16
  */
 @Slf4j
-public class DefaultAddressGenerator implements AddressGenerator {
+class DefaultAddressGenerator implements AddressGenerator {
 
   /** 持久化存储 */
   private final PersistStorage persistStorage;
@@ -146,9 +146,8 @@ public class DefaultAddressGenerator implements AddressGenerator {
       if (value != null) {
         uuid = ClusterNodeUUID.deserialize(value);
       } else {
-        uuid = ClusterNodeUUID.random();
-
         // 保存uuid
+        uuid = ClusterNodeUUID.random();
         persistStorage.put(key, uuid.serialize());
       }
 

@@ -16,14 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator;
+package com.silong.foundation.devastator.core;
 
 import com.github.javafaker.Animal;
 import com.github.javafaker.Faker;
+import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
 import com.silong.foundation.devastator.config.DevastatorConfig;
-import com.silong.foundation.devastator.core.ClusterNodeUUID;
-import com.silong.foundation.devastator.core.DefaultDistributedEngine;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +58,7 @@ public class UdpEngineTests {
   @Test
   void test1() throws Exception {
     String name1 = animal.name();
-    DistributedEngine distributedEngine1 =
+    DefaultDistributedEngine distributedEngine1 =
         buildEngine(
             "test-cluster",
             name1,
@@ -68,7 +67,7 @@ public class UdpEngineTests {
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
     String name2 = animal.name();
-    DistributedEngine distributedEngine2 =
+    DefaultDistributedEngine distributedEngine2 =
         buildEngine(
             "test-cluster",
             name2,
@@ -76,7 +75,7 @@ public class UdpEngineTests {
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.1"));
 
-    ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
+    ClusterNode<?> coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
     String instanceName = uuid.getClusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
@@ -87,7 +86,7 @@ public class UdpEngineTests {
   @Test
   void test2() throws Exception {
     String name1 = animal.name();
-    DistributedEngine distributedEngine1 =
+    DefaultDistributedEngine distributedEngine1 =
         buildEngine(
             "test-cluster1",
             name1,
@@ -96,7 +95,7 @@ public class UdpEngineTests {
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
     String name2 = animal.name();
-    DistributedEngine distributedEngine2 =
+    DefaultDistributedEngine distributedEngine2 =
         buildEngine(
             "test-cluster1",
             name2,
@@ -104,7 +103,7 @@ public class UdpEngineTests {
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
-    ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
+    ClusterNode<?> coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
     String instanceName = uuid.getClusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
@@ -115,7 +114,7 @@ public class UdpEngineTests {
   @Test
   void test3() throws Exception {
     String name1 = "bee";
-    DistributedEngine distributedEngine1 =
+    DefaultDistributedEngine distributedEngine1 =
         buildEngine(
             "test-cluster2",
             name1,
@@ -124,7 +123,7 @@ public class UdpEngineTests {
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
     String name2 = "butterfly";
-    DistributedEngine distributedEngine2 =
+    DefaultDistributedEngine distributedEngine2 =
         buildEngine(
             "test-cluster2",
             name2,
@@ -132,7 +131,7 @@ public class UdpEngineTests {
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
-    ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
+    ClusterNode<?> coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
     String instanceName = uuid.getClusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
@@ -140,7 +139,7 @@ public class UdpEngineTests {
     distributedEngine2.close();
   }
 
-  private DistributedEngine buildEngine(
+  private DefaultDistributedEngine buildEngine(
       String clusterName,
       String instanceName,
       ClusterNodeRole role,

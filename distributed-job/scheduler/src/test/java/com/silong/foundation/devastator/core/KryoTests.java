@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator;
+package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.utils.TypeConverter;

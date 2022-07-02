@@ -29,10 +29,7 @@ import java.util.Collection;
  * @version 1.0.0
  * @since 2022-04-10 09:28
  */
-public interface Cluster extends AutoCloseable {
-
-  /** 释放资源 */
-  default void close() {}
+public interface Cluster {
 
   /**
    * 集群版本

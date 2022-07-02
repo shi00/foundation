@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * @version 1.0.0
  * @since 2022-04-25 23:30
  */
-public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializable {
+class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializable {
 
   @Serial private static final long serialVersionUID = 3638468545900864098L;
 
@@ -120,7 +120,6 @@ public class DefaultMembershipChangePolicy implements MembershipChangePolicy, Se
 
   @Override
   public List<Address> getNewMembership(Collection<Collection<Address>> subviews) {
-
     // 从各子视图中挑选当前作为coordinator的节点进行排序，选择新coordinator
     Address coordinator =
         subviews.stream()

@@ -21,7 +21,6 @@ package com.silong.foundation.devastator.core;
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.DistributedEngineException;
-import com.silong.foundation.devastator.handler.ViewChangedHandler;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.message.PooledNioMessage;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
@@ -30,7 +29,6 @@ import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.Tuple;
 import com.silong.foundation.devastator.utils.KryoUtils;
-import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
@@ -50,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
+import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 import static java.lang.System.lineSeparator;
 import static java.lang.ThreadLocal.withInitial;
 import static java.util.stream.Collectors.joining;
@@ -67,8 +66,8 @@ import static org.rocksdb.util.SizeUnit.KB;
 @Slf4j
 @Accessors(fluent = true)
 @SuppressFBWarnings({"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"})
-public class DefaultDistributedEngine
-    implements DistributedEngine, Receiver, ChannelListener, Serializable {
+class DefaultDistributedEngine
+    implements DistributedEngine, Receiver, ChannelListener, Serializable, AutoCloseable {
 
   @Serial private static final long serialVersionUID = 1258279194145465487L;
 
@@ -80,13 +79,13 @@ public class DefaultDistributedEngine
   private JChannel jChannel;
 
   /** 配置 */
-  private DevastatorConfig config;
+  private final DevastatorConfig config;
 
   /** 分区节点映射器 */
-  private RendezvousPartitionMapping partitionMapping;
+  private final RendezvousPartitionMapping partitionMapping;
 
   /** 持久化存储 */
-  private PersistStorage persistStorage;
+  private RocksDbPersistStorage persistStorage;
 
   /** 集群视图变更处理器 */
   private ViewChangedHandler viewChangedHandler;
@@ -98,7 +97,7 @@ public class DefaultDistributedEngine
   private Map<Object, Integer> uuid2Partitions;
 
   /** 对象分区映射器 */
-  private ObjectPartitionMapping objectPartitionMapping;
+  private DefaultObjectPartitionMapping objectPartitionMapping;
 
   /** 集群状态 */
   private volatile ClusterState clusterState;
@@ -248,13 +247,14 @@ public class DefaultDistributedEngine
     if (isPartition2LocalNode(partition)) {
       byte[] keyBytes = address2Bytes(key);
       byte[] versionBytes = persistStorage.get(keyBytes);
-      long version = obj.objectVersion();
-      if (versionBytes == null || TypeConverter.Long2Bytes.INSTANCE.from(versionBytes) < version) {
+      long version =
+          //              obj.objectVersion()
+          1;
+      if (versionBytes == null || INSTANCE.from(versionBytes) < version) {
         persistStorage.putAllWith(
             List.of(
                 new Tuple<>(
-                    DEFAULT_COLUMN_FAMILY_NAME,
-                    new KvPair<>(keyBytes, TypeConverter.Long2Bytes.INSTANCE.to(version))),
+                    DEFAULT_COLUMN_FAMILY_NAME, new KvPair<>(keyBytes, INSTANCE.to(version))),
                 new Tuple<>(
                     String.valueOf(partition), new KvPair<>(keyBytes, KryoUtils.serialize(obj)))));
       }
@@ -408,14 +408,12 @@ public class DefaultDistributedEngine
    * @exception Exception thrown if the channel is disconnected or closed
    */
   public DistributedEngine send(Message message) throws Exception {
-    assert message != null;
     jChannel.send(message);
     return this;
   }
 
   @Override
   public void receive(Message message) {
-    assert message != null;
     if (message instanceof BytesMessage) {
 
     } else if (message instanceof NioMessage) {
@@ -427,7 +425,6 @@ public class DefaultDistributedEngine
 
   @Override
   public void viewAccepted(View newView) {
-    assert newView != null;
     if (log.isDebugEnabled()) {
       log.debug("A new view is received {}.", newView);
     }
@@ -447,7 +444,9 @@ public class DefaultDistributedEngine
    * @return 集群节点列表
    */
   public List<ClusterNode<Address>> getClusterNodes(View view) {
-    assert view != null;
+    if (view == null) {
+      throw new IllegalArgumentException("view must not be null.");
+    }
     return view.getMembers().stream().map(this::buildClusterNode).toList();
   }
 
@@ -511,44 +510,6 @@ public class DefaultDistributedEngine
     return null;
   }
 
-  @Override
-  public void close() {
-    if (this.jChannel != null) {
-      this.jChannel.close();
-      this.jChannel = null;
-    }
-
-    if (this.persistStorage != null) {
-      this.persistStorage.close();
-      this.persistStorage = null;
-    }
-
-    if (this.uuid2Partitions != null) {
-      this.uuid2Partitions.clear();
-      this.uuid2Partitions = null;
-    }
-
-    if (this.viewChangedHandler != null) {
-      this.viewChangedHandler.close();
-      this.viewChangedHandler = null;
-    }
-
-    if (this.partition2ClusterNodes != null) {
-      this.partition2ClusterNodes.clear();
-      this.partition2ClusterNodes = null;
-    }
-
-    if (this.objectPartitionMapping != null) {
-      this.objectPartitionMapping.close();
-      this.objectPartitionMapping = null;
-    }
-    if (this.partitionMapping != null) {
-      this.partitionMapping.close();
-      this.partitionMapping = null;
-    }
-    this.config = null;
-  }
-
   private String localIdentity() {
     return String.format(
         "(%s:%s|%s:%d)",
@@ -584,18 +545,35 @@ public class DefaultDistributedEngine
   @SneakyThrows
   public void channelClosed(JChannel channel) {
     log.info("The node{} has been shutdown.", localIdentity());
-    if (viewChangedHandler != null) {
-      viewChangedHandler.close();
+  }
+
+  @Override
+  public void close() {
+    if (this.jChannel != null) {
+      this.jChannel.close();
+      this.jChannel = null;
     }
-    if (uuid2Partitions != null) {
-      uuid2Partitions.clear();
+
+    if (this.persistStorage != null) {
+      this.persistStorage.close();
+      this.persistStorage = null;
     }
-    if (partition2ClusterNodes != null) {
-      partition2ClusterNodes.clear();
+
+    if (this.uuid2Partitions != null) {
+      this.uuid2Partitions.clear();
+      this.uuid2Partitions = null;
     }
-    if (persistStorage != null) {
-      persistStorage.close();
+
+    if (this.viewChangedHandler != null) {
+      this.viewChangedHandler.close();
+      this.viewChangedHandler = null;
     }
+
+    if (this.partition2ClusterNodes != null) {
+      this.partition2ClusterNodes.clear();
+      this.partition2ClusterNodes = null;
+    }
+
     ADDRESS_BUFFER.remove();
   }
 }
