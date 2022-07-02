@@ -31,6 +31,9 @@ import java.util.Collection;
  */
 public interface Cluster extends AutoCloseable {
 
+  /** 释放资源 */
+  default void close() {}
+
   /**
    * 集群版本
    *

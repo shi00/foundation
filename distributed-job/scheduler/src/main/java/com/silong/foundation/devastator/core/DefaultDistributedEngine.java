@@ -20,7 +20,7 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
-import com.silong.foundation.devastator.exception.InitializationException;
+import com.silong.foundation.devastator.exception.DistributedEngineException;
 import com.silong.foundation.devastator.handler.ViewChangedHandler;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.message.PooledNioMessage;
@@ -77,25 +77,25 @@ public class DefaultDistributedEngine
       withInitial(() -> new ByteArrayDataOutputStream(LONG_SIZE * 2));
 
   /** 集群通信信道 */
-  private final JChannel jChannel;
+  private JChannel jChannel;
 
   /** 配置 */
-  private final DevastatorConfig config;
+  private DevastatorConfig config;
 
   /** 分区节点映射器 */
-  private final RendezvousPartitionMapping partitionMapping;
+  private RendezvousPartitionMapping partitionMapping;
 
   /** 持久化存储 */
-  private final PersistStorage persistStorage;
+  private PersistStorage persistStorage;
 
   /** 集群视图变更处理器 */
-  private final ViewChangedHandler viewChangedHandler;
+  private ViewChangedHandler viewChangedHandler;
 
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
   private Map<Integer, List<SimpleClusterNode>> partition2ClusterNodes;
 
   /** 数据uuid到分区的映射关系 */
-  private final Map<Object, Integer> uuid2Partitions;
+  private Map<Object, Integer> uuid2Partitions;
 
   /** 对象分区映射器 */
   private ObjectPartitionMapping objectPartitionMapping;
@@ -128,7 +128,7 @@ public class DefaultDistributedEngine
       // 启动引擎
       this.jChannel.connect(config.clusterName());
     } catch (Exception e) {
-      throw new InitializationException("Failed to start distributed engine.", e);
+      throw new DistributedEngineException("Failed to start distributed engine.", e);
     }
   }
 
@@ -507,9 +507,40 @@ public class DefaultDistributedEngine
 
   @Override
   public void close() {
-    if (jChannel != null) {
-      jChannel.close();
+    if (this.jChannel != null) {
+      this.jChannel.close();
+      this.jChannel = null;
     }
+
+    if (this.persistStorage != null) {
+      this.persistStorage.close();
+      this.persistStorage = null;
+    }
+
+    if (this.uuid2Partitions != null) {
+      this.uuid2Partitions.clear();
+      this.uuid2Partitions = null;
+    }
+
+    if (this.viewChangedHandler != null) {
+      this.viewChangedHandler.close();
+      this.viewChangedHandler = null;
+    }
+
+    if (this.partition2ClusterNodes != null) {
+      this.partition2ClusterNodes.clear();
+      this.partition2ClusterNodes = null;
+    }
+
+    if (this.objectPartitionMapping != null) {
+      this.objectPartitionMapping.close();
+      this.objectPartitionMapping = null;
+    }
+    if (this.partitionMapping != null) {
+      this.partitionMapping.close();
+      this.partitionMapping = null;
+    }
+    this.config = null;
   }
 
   private String localIdentity() {

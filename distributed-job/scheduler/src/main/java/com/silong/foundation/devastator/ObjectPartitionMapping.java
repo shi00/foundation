@@ -29,6 +29,9 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  */
 public interface ObjectPartitionMapping extends AutoCloseable {
 
+  /** 释放资源 */
+  default void close() {}
+
   /**
    * 集群内的分区总数量
    *

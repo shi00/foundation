@@ -44,6 +44,9 @@ import java.util.Map;
 public interface PartitionClusterNodeMapping<T extends ObjectIdentity<Address>>
     extends AutoCloseable {
 
+  /** 释放资源 */
+  default void close() {}
+
   /**
    * 分区到集群节点映射
    *

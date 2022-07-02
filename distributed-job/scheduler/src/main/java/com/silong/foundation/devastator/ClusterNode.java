@@ -37,6 +37,9 @@ import java.util.Map;
  */
 public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>, AutoCloseable {
 
+  /** 释放资源 */
+  default void close() {}
+
   /**
    * 集群节点角色
    *

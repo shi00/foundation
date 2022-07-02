@@ -35,6 +35,9 @@ import java.util.function.BiConsumer;
  */
 public interface PersistStorage extends AutoCloseable {
 
+  /** 关闭持久化存储，释放资源 */
+  default void close() {}
+
   /**
    * 创建列族
    *

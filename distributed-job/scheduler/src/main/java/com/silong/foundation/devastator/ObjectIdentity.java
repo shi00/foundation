@@ -29,6 +29,9 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * @param <T> 唯一标识类型
  */
 public interface ObjectIdentity<T extends Comparable<T>> extends AutoCloseable {
+  /** 释放资源 */
+  default void close() {}
+
   /**
    * 获取唯一标识
    *

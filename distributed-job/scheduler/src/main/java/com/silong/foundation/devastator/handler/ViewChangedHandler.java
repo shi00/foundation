@@ -31,7 +31,6 @@ import org.jgroups.Address;
 import org.jgroups.MergeView;
 import org.jgroups.View;
 
-import java.io.Closeable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.ThreadFactory;
@@ -47,7 +46,8 @@ import static com.silong.foundation.devastator.core.DefaultObjectPartitionMappin
  * @since 2022-04-29 23:40
  */
 @Slf4j
-public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Closeable, Serializable {
+public class ViewChangedHandler
+    implements EventHandler<ViewChangedEvent>, AutoCloseable, Serializable {
 
   @Serial private static final long serialVersionUID = -2779732752319031430L;
 

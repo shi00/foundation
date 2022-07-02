@@ -27,6 +27,9 @@ package com.silong.foundation.devastator;
  */
 public interface DistributedEngine extends AutoCloseable {
 
+  /** 释放资源 */
+  default void close() {}
+
   /**
    * 获取集群
    *
