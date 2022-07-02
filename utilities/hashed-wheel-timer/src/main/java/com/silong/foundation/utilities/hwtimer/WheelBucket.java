@@ -20,7 +20,7 @@ package com.silong.foundation.utilities.hwtimer;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -50,7 +50,7 @@ class WheelBucket implements AutoCloseable {
       throw new IllegalArgumentException("timer must not be null.");
     }
     this.timer = timer;
-    roundTasks = new HashMap<>();
+    roundTasks = new LinkedHashMap<>();
   }
 
   /**
