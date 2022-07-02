@@ -83,6 +83,9 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
    */
   @Override
   public int partition(Object key) {
+    if (key == null) {
+      throw new IllegalArgumentException("key must not be null.");
+    }
     if (mask >= 0) {
       int h;
       return ((h = key.hashCode()) ^ (h >>> 16)) & mask;
@@ -112,4 +115,7 @@ public class DefaultObjectPartitionMapping implements ObjectPartitionMapping {
   public int partitions() {
     return partitions;
   }
+
+  @Override
+  public void close() {}
 }
