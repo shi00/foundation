@@ -20,10 +20,10 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.Cluster;
 import com.silong.foundation.devastator.ClusterNode;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jgroups.Address;
 
 import java.io.Serial;
-import java.io.Serializable;
 import java.util.Collection;
 
 /**
@@ -33,12 +33,12 @@ import java.util.Collection;
  * @version 1.0.0
  * @since 2022-04-25 22:50
  */
-public class DefaultCluster implements Cluster, Serializable {
+public class DefaultCluster implements Cluster {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 4756724428522073939L;
 
   /** 分布式引擎 */
-  private final DefaultDistributedEngine engine;
+  private DefaultDistributedEngine engine;
 
   /**
    * 构造方法
@@ -52,18 +52,32 @@ public class DefaultCluster implements Cluster, Serializable {
     this.engine = engine;
   }
 
+  @NonNull
   @Override
+  public String version() {
+    return null;
+  }
+
+  @Override
+  @NonNull
   public String name() {
     return engine.clusterName();
   }
 
   @Override
+  @NonNull
   public Collection<ClusterNode<Address>> clusterNodes() {
     return engine.getClusterNodes(engine.currentView());
   }
 
   @Override
+  @NonNull
   public ClusterNode<Address> localNode() {
     return engine.getLocalNode();
+  }
+
+  @Override
+  public void close() {
+    this.engine = null;
   }
 }
