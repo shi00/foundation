@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.*;
 
 import static com.silong.foundation.devastator.model.WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR;
@@ -54,9 +55,10 @@ import static com.silong.foundation.devastator.utils.HashUtils.mixHash;
  * @since 2022-04-06 22:29
  */
 @Slf4j
-public class RendezvousPartitionMapping implements PartitionClusterNodeMapping<SimpleClusterNode> {
+public class RendezvousPartitionMapping
+    implements PartitionClusterNodeMapping<SimpleClusterNode>, Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = -5940041940626753044L;
 
   /** 最高随机权重分区节点映射器 */
   public static final RendezvousPartitionMapping INSTANCE = new RendezvousPartitionMapping();
