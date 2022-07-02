@@ -57,7 +57,7 @@ public class UdpEngineTests {
   }
 
   @Test
-  void test1() throws IOException {
+  void test1() throws Exception {
     String name1 = animal.name();
     DistributedEngine distributedEngine1 =
         buildEngine(
@@ -78,14 +78,14 @@ public class UdpEngineTests {
 
     ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
-    String instanceName = uuid.clusterNodeInfo().getInstanceName();
+    String instanceName = uuid.getClusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
     distributedEngine1.close();
     distributedEngine2.close();
   }
 
   @Test
-  void test2() throws IOException {
+  void test2() throws Exception {
     String name1 = animal.name();
     DistributedEngine distributedEngine1 =
         buildEngine(
@@ -106,14 +106,14 @@ public class UdpEngineTests {
 
     ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
-    String instanceName = uuid.clusterNodeInfo().getInstanceName();
+    String instanceName = uuid.getClusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
     distributedEngine1.close();
     distributedEngine2.close();
   }
 
   @Test
-  void test3() throws IOException {
+  void test3() throws Exception {
     String name1 = "bee";
     DistributedEngine distributedEngine1 =
         buildEngine(
@@ -134,7 +134,7 @@ public class UdpEngineTests {
 
     ClusterNode coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
-    String instanceName = uuid.clusterNodeInfo().getInstanceName();
+    String instanceName = uuid.getClusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
     distributedEngine1.close();
     distributedEngine2.close();

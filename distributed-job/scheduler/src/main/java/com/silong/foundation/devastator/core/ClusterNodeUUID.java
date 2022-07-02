@@ -22,18 +22,15 @@ import com.google.protobuf.TextFormat;
 import com.silong.foundation.devastator.ObjectIdentity;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.utils.TypeConverter;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 import org.jgroups.Address;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.util.ByteArrayDataInputStream;
 import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.UUID;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
 import java.util.function.Supplier;
 
 import static org.jgroups.util.Util.readByteBuffer;
@@ -46,11 +43,23 @@ import static org.jgroups.util.Util.writeByteBuffer;
  * @version 1.0.0
  * @since 2022-04-11 22:49
  */
-public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
+public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address>, Serializable {
+
+  @Serial private static final long serialVersionUID = -2485031812036504917L;
+
+  static {
+    // it will need to get registered with the ClassConfigurator in order to marshal it correctly
+    // Note that the ID should be chosen such that it doesn’t collide with any IDs defined in
+    // jg-magic-map.xml
+    ClassConfigurator.add((short) 5674, ClusterNodeUUID.class);
+  }
 
   /** 类型转换器 */
-  public static final TypeConverter<ClusterNodeUUID, byte[]> CONVERTER =
+  public static final TypeConverter<ClusterNodeUUID, byte[]> INSTANCE =
       new TypeConverter<>() {
+
+        @Serial private static final long serialVersionUID = -1910864152755748200L;
+
         @Override
         public byte[] to(ClusterNodeUUID clusterNodeUUID) throws IOException {
           if (clusterNodeUUID == null) {
@@ -73,18 +82,8 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
         }
       };
 
-  static {
-    // it will need to get registered with the ClassConfigurator in order to marshal it correctly
-    // Note that the ID should be chosen such that it doesn’t collide with any IDs defined in
-    // jg-magic-map.xml
-    ClassConfigurator.add((short) 5674, ClusterNodeUUID.class);
-  }
-
   /** 节点信息 */
-  @Getter
-  @Setter
-  @Accessors(fluent = true)
-  private ClusterNodeInfo clusterNodeInfo;
+  @Getter private ClusterNodeInfo clusterNodeInfo;
 
   /** 默认构造方法 */
   public ClusterNodeUUID() {
@@ -101,6 +100,7 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
   }
 
   @Override
+  @NonNull
   public ClusterNodeUUID uuid() {
     return this;
   }
@@ -111,7 +111,7 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
   }
 
   @Override
-  public boolean verify(ObjectIdentity<Address> obj) {
+  public boolean verify(@NonNull ObjectIdentity<Address> obj) {
     throw new UnsupportedOperationException();
   }
 
@@ -161,7 +161,7 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
    * @throws IOException 异常
    */
   public byte[] serialize() throws IOException {
-    return CONVERTER.to(this);
+    return INSTANCE.to(this);
   }
 
   /**
@@ -172,7 +172,12 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
    * @throws IOException 异常
    */
   public static ClusterNodeUUID deserialize(byte[] bytes) throws IOException {
-    return CONVERTER.from(bytes);
+    return INSTANCE.from(bytes);
+  }
+
+  public ClusterNodeUUID setClusterNodeInfo(ClusterNodeInfo clusterNodeInfo) {
+    this.clusterNodeInfo = clusterNodeInfo;
+    return this;
   }
 
   /**
@@ -182,5 +187,10 @@ public class ClusterNodeUUID extends UUID implements ObjectIdentity<Address> {
    */
   public String printClusterNodeInfo() {
     return TextFormat.printer().printToString(this.clusterNodeInfo);
+  }
+
+  @Override
+  public void close() {
+    this.clusterNodeInfo = null;
   }
 }

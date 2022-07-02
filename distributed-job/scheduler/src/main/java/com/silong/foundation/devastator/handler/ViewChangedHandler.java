@@ -49,7 +49,7 @@ import static com.silong.foundation.devastator.core.DefaultObjectPartitionMappin
 @Slf4j
 public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Closeable, Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = -2779732752319031430L;
 
   /** 视图变更事件处理器线程名 */
   public static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor";
@@ -93,7 +93,7 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
   }
 
   private ClusterNodeInfo getClusterNodeInfo(Address address) {
-    return ((ClusterNodeUUID) address).clusterNodeInfo();
+    return ((ClusterNodeUUID) address).getClusterNodeInfo();
   }
 
   private boolean isCoordinatorChanged(View oldView, View newView) {
@@ -164,9 +164,7 @@ public class ViewChangedHandler implements EventHandler<ViewChangedEvent>, Close
       }
 
       // 脑裂恢复
-      if (newView instanceof MergeView) {
-
-      }
+      if (newView instanceof MergeView) {}
 
       engine.repartition(oldView, newView);
     } catch (Exception e) {

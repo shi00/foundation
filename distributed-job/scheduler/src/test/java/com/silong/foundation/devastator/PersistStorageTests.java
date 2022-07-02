@@ -21,16 +21,15 @@ package com.silong.foundation.devastator;
 import com.silong.foundation.devastator.config.PersistStorageConfig;
 import com.silong.foundation.devastator.core.RocksDbPersistStorage;
 import com.silong.foundation.devastator.model.KvPair;
+import com.silong.foundation.devastator.utils.TypeConverter;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
-import static com.silong.foundation.devastator.utils.TypeConverter.LONG_TO_BYTES;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -61,7 +60,7 @@ public class PersistStorageTests {
   }
 
   @AfterAll
-  static void cleanUp() throws IOException {
+  static void cleanUp() throws Exception {
     persistStorage.close();
   }
 
@@ -270,14 +269,8 @@ public class PersistStorageTests {
   void test8() {
     List<byte[]> keys =
         IntStream.range(0, 1000)
-            .mapToObj(
-                i -> {
-                  try {
-                    return LONG_TO_BYTES.to((long) i);
-                  } catch (IOException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
+            .mapToObj(i -> TypeConverter.Long2Bytes.INSTANCE.to((long) i))
+            .filter(Objects::nonNull)
             .toList();
     keys.forEach(key -> persistStorage.put(key, RandomStringUtils.random(100).getBytes(UTF_8)));
     persistStorage.deleteRange(keys.get(0), keys.get(keys.size() - 1));
@@ -294,14 +287,8 @@ public class PersistStorageTests {
   void test88() {
     List<byte[]> keys =
         IntStream.range(0, 1000)
-            .mapToObj(
-                i -> {
-                  try {
-                    return LONG_TO_BYTES.to((long) i);
-                  } catch (IOException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
+            .mapToObj(i -> TypeConverter.Long2Bytes.INSTANCE.to((long) i))
+            .filter(Objects::nonNull)
             .toList();
     keys.forEach(
         key -> persistStorage.put(JOBS, key, RandomStringUtils.random(100).getBytes(UTF_8)));
