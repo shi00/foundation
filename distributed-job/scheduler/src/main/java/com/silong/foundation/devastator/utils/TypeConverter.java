@@ -20,6 +20,7 @@ package com.silong.foundation.devastator.utils;
 
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.Any;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.NonNull;
 
 import java.io.IOException;
@@ -46,7 +47,8 @@ public interface TypeConverter<T, R> extends Serializable {
    * @return 转换结果
    * @throws IOException 异常
    */
-  R to(T t) throws IOException;
+  @Nullable
+  R to(@Nullable T t) throws IOException;
 
   /**
    * 类型转换
@@ -55,17 +57,23 @@ public interface TypeConverter<T, R> extends Serializable {
    * @return 转换结果
    * @throws IOException 异常
    */
-  T from(R r) throws IOException;
+  @Nullable
+  T from(@Nullable R r) throws IOException;
 
   /**
-   * 转换反转
+   * 类型转换反转
    *
    * @return 参数类型反转
    */
   default TypeConverter<R, T> reverse() {
     return new TypeConverter<>() {
 
-      @Serial private static final long serialVersionUID = 1687175614584336363L;
+      @Serial private static final long serialVersionUID = -6423640296487346575L;
+
+      @Override
+      public TypeConverter<T, R> reverse() {
+        return TypeConverter.this;
+      }
 
       @Override
       public T to(R r) throws IOException {
@@ -88,7 +96,7 @@ public interface TypeConverter<T, R> extends Serializable {
   static <S> TypeConverter<S, S> identity() {
     return new TypeConverter<>() {
 
-      @Serial private static final long serialVersionUID = 6686819767930541707L;
+      @Serial private static final long serialVersionUID = -1746990172736078038L;
 
       @Override
       public S to(S s) {
@@ -205,7 +213,7 @@ public interface TypeConverter<T, R> extends Serializable {
    * @param <T> 消息类型
    * @return 类型转换器
    */
-  static <T extends AbstractMessage> TypeConverter<T, byte[]> getProtobufTypeConver(
+  static <T extends AbstractMessage> TypeConverter<T, byte[]> getProtobufTypeConverter(
       @NonNull Class<T> tClass) {
     return new TypeConverter<>() {
 
