@@ -24,6 +24,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.jgroups.Address;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.Collection;
 
 /**
@@ -33,9 +34,9 @@ import java.util.Collection;
  * @version 1.0.0
  * @since 2022-04-25 22:50
  */
-public class DefaultCluster implements Cluster {
+public class DefaultCluster implements Cluster, Serializable {
 
-  @Serial private static final long serialVersionUID = 4756724428522073939L;
+  @Serial private static final long serialVersionUID = -7010520114270523339L;
 
   /** 分布式引擎 */
   private DefaultDistributedEngine engine;
