@@ -43,7 +43,7 @@ import java.util.Map;
  * @since 2022-04-09 19:01
  */
 public interface PartitionClusterNodeMapping<T extends ObjectIdentity<Address>>
-    extends Serializable {
+    extends Serializable, AutoCloseable {
 
   /**
    * 分区到集群节点映射

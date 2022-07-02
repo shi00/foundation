@@ -18,6 +18,8 @@
  */
 package com.silong.foundation.devastator;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -28,26 +30,39 @@ import java.util.Collection;
  * @version 1.0.0
  * @since 2022-04-10 09:28
  */
-public interface Cluster extends Serializable {
+public interface Cluster extends Serializable, AutoCloseable {
+
+  /**
+   * 集群版本
+   *
+   * @return 版本
+   */
+  @NonNull
+  String version();
 
   /**
    * 集群名称
    *
    * @return 集群名
    */
+  @NonNull
   String name();
 
   /**
    * 获取集群节点列表
    *
    * @return 集群节点列表
+   * @param <T> 唯一标识类型
    */
+  @NonNull
   <T extends Comparable<T>> Collection<ClusterNode<T>> clusterNodes();
 
   /**
    * 获取本地节点
    *
    * @return 本地节点
+   * @param <T> 唯一标识类型
    */
+  @NonNull
   <T extends Comparable<T>> ClusterNode<T> localNode();
 }

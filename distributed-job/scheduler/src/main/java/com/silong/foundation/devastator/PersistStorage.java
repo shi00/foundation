@@ -21,7 +21,6 @@ package com.silong.foundation.devastator;
 import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.Tuple;
 
-import java.io.Closeable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +33,7 @@ import java.util.function.BiConsumer;
  * @version 1.0.0
  * @since 2022-04-10 17:14
  */
-public interface PersistStorage extends Closeable, Serializable {
+public interface PersistStorage extends AutoCloseable, Serializable {
 
   /**
    * 创建列族

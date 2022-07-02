@@ -28,4 +28,5 @@ import java.util.concurrent.ScheduledExecutorService;
  * @version 1.0.0
  * @since 2022-04-10 01:19
  */
-public interface DistributedJobScheduler extends ScheduledExecutorService, Serializable {}
+public interface DistributedJobScheduler
+    extends ScheduledExecutorService, Serializable, AutoCloseable {}

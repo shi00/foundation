@@ -22,7 +22,6 @@ import com.silong.foundation.devastator.ObjectIdentity;
 import org.jgroups.Address;
 
 import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * 简单节点
@@ -31,10 +30,10 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2022-05-03 00:15
  */
-public record SimpleClusterNode(Address address) implements ObjectIdentity<Address>, Serializable {
+public record SimpleClusterNode(Address address) implements ObjectIdentity<Address> {
 
     @Serial
-    private static final long serialVersionUID = 0L;
+    private static final long serialVersionUID = 655289082556457884L;
 
     @Override
     public Address uuid() {
@@ -49,5 +48,10 @@ public record SimpleClusterNode(Address address) implements ObjectIdentity<Addre
     @Override
     public boolean verify(ObjectIdentity<Address> obj) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void close()  {
+
     }
 }

@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.devastator;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.Getter;
 
@@ -32,8 +33,10 @@ import java.util.Map;
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-07 21:33
+ * @param <T> 唯一标识类型
  */
-public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>, Serializable {
+public interface ClusterNode<T extends Comparable<T>>
+    extends ObjectIdentity<T>, Serializable, AutoCloseable {
 
   /**
    * 集群节点角色
@@ -79,10 +82,11 @@ public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>,
   }
 
   /**
-   * 节点角色列表
+   * 节点角色
    *
-   * @return 角色列表
+   * @return 角色
    */
+  @NonNull
   ClusterNodeRole role();
 
   /**
@@ -90,6 +94,7 @@ public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>,
    *
    * @return 版本描述
    */
+  @NonNull
   String version();
 
   /**
@@ -97,6 +102,7 @@ public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>,
    *
    * @return 节点主机名
    */
+  @NonNull
   String hostName();
 
   /**
@@ -104,6 +110,7 @@ public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>,
    *
    * @return 节点地址列表
    */
+  @NonNull
   Collection<String> addresses();
 
   /**
@@ -118,6 +125,7 @@ public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>,
    *
    * @return id
    */
+  @NonNull
   T uuid();
 
   /**
@@ -134,5 +142,6 @@ public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>,
    *
    * @return 属性集合
    */
+  @NonNull
   Map<String, String> attributes();
 }
