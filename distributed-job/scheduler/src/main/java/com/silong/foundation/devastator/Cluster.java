@@ -20,7 +20,6 @@ package com.silong.foundation.devastator;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.io.Serializable;
 import java.util.Collection;
 
 /**
@@ -30,7 +29,7 @@ import java.util.Collection;
  * @version 1.0.0
  * @since 2022-04-10 09:28
  */
-public interface Cluster extends Serializable, AutoCloseable {
+public interface Cluster extends AutoCloseable {
 
   /**
    * 集群版本

@@ -21,7 +21,6 @@ package com.silong.foundation.devastator;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.jgroups.Address;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +42,7 @@ import java.util.Map;
  * @since 2022-04-09 19:01
  */
 public interface PartitionClusterNodeMapping<T extends ObjectIdentity<Address>>
-    extends Serializable, AutoCloseable {
+    extends AutoCloseable {
 
   /**
    * 分区到集群节点映射

@@ -18,7 +18,6 @@
  */
 package com.silong.foundation.devastator;
 
-import java.io.Serializable;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -28,5 +27,4 @@ import java.util.concurrent.ScheduledExecutorService;
  * @version 1.0.0
  * @since 2022-04-10 01:19
  */
-public interface DistributedJobScheduler
-    extends ScheduledExecutorService, Serializable, AutoCloseable {}
+public interface DistributedJobScheduler extends ScheduledExecutorService, AutoCloseable {}

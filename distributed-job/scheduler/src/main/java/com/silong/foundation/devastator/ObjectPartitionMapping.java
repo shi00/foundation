@@ -20,8 +20,6 @@ package com.silong.foundation.devastator;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.io.Serializable;
-
 /**
  * 对象到分区映射器
  *
@@ -29,7 +27,7 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2022-05-01 10:39
  */
-public interface ObjectPartitionMapping extends AutoCloseable, Serializable {
+public interface ObjectPartitionMapping extends AutoCloseable {
 
   /**
    * 集群内的分区总数量

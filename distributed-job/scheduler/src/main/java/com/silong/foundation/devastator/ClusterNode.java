@@ -35,8 +35,7 @@ import java.util.Map;
  * @since 2022-04-07 21:33
  * @param <T> 唯一标识类型
  */
-public interface ClusterNode<T extends Comparable<T>>
-    extends ObjectIdentity<T>, Serializable, AutoCloseable {
+public interface ClusterNode<T extends Comparable<T>> extends ObjectIdentity<T>, AutoCloseable {
 
   /**
    * 集群节点角色

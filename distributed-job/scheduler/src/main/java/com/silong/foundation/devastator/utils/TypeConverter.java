@@ -65,7 +65,7 @@ public interface TypeConverter<T, R> extends Serializable {
   default TypeConverter<R, T> reverse() {
     return new TypeConverter<>() {
 
-      @Serial private static final long serialVersionUID = 0L;
+      @Serial private static final long serialVersionUID = 1687175614584336363L;
 
       @Override
       public T to(R r) throws IOException {
@@ -80,29 +80,6 @@ public interface TypeConverter<T, R> extends Serializable {
   }
 
   /**
-   * kryo类型转换器
-   *
-   * @return 对象转换器
-   * @param <T> 对象类型
-   */
-  static <T> TypeConverter<T, byte[]> getKryoTypeConverter() {
-    return new TypeConverter<>() {
-
-      @Serial private static final long serialVersionUID = 0L;
-
-      @Override
-      public byte[] to(T t) {
-        return KryoUtils.serialize(t);
-      }
-
-      @Override
-      public T from(byte[] bytes) {
-        return KryoUtils.deserialize(bytes);
-      }
-    };
-  }
-
-  /**
    * 输出即输入
    *
    * @param <S> 类型
@@ -111,7 +88,7 @@ public interface TypeConverter<T, R> extends Serializable {
   static <S> TypeConverter<S, S> identity() {
     return new TypeConverter<>() {
 
-      @Serial private static final long serialVersionUID = 0L;
+      @Serial private static final long serialVersionUID = 6686819767930541707L;
 
       @Override
       public S to(S s) {
@@ -126,42 +103,6 @@ public interface TypeConverter<T, R> extends Serializable {
       @Override
       public TypeConverter<S, S> reverse() {
         return this;
-      }
-    };
-  }
-
-  /**
-   * 获取protobuf消息与byte数组之间的类型转换器，使用Any类型实现，二进制信息中包含类型编码，效率较低，不推荐使用
-   *
-   * @param tClass protobuf消息类型
-   * @param <T> 消息类型
-   * @return 类型转换器
-   */
-  static <T extends AbstractMessage> TypeConverter<T, byte[]> getProtobufTypeConver(
-      @NonNull Class<T> tClass) {
-    return new TypeConverter<>() {
-
-      @Serial private static final long serialVersionUID = -6337268992117190766L;
-
-      @Override
-      public byte[] to(T t) {
-        if (t == null) {
-          return null;
-        }
-        return Any.pack(t).toByteArray();
-      }
-
-      @Override
-      public T from(byte[] bytes) throws IOException {
-        if (bytes == null) {
-          return null;
-        }
-        Any any = Any.parseFrom(bytes);
-        if (any.is(tClass)) {
-          return any.unpack(tClass);
-        }
-        throw new IllegalStateException(
-            String.format("Failed to convert bytes to %s", tClass.getName()));
       }
     };
   }
@@ -232,5 +173,64 @@ public interface TypeConverter<T, R> extends Serializable {
       }
       return new String(bytes, UTF_8);
     }
+  }
+
+  /**
+   * kryo类型转换器
+   *
+   * @return 对象转换器
+   * @param <T> 对象类型
+   */
+  static <T> TypeConverter<T, byte[]> getKryoTypeConverter() {
+    return new TypeConverter<>() {
+
+      @Serial private static final long serialVersionUID = 2530266719542325967L;
+
+      @Override
+      public byte[] to(T t) {
+        return KryoUtils.serialize(t);
+      }
+
+      @Override
+      public T from(byte[] bytes) {
+        return KryoUtils.deserialize(bytes);
+      }
+    };
+  }
+
+  /**
+   * 获取protobuf消息与byte数组之间的类型转换器，使用Any类型实现，二进制信息中包含类型编码，效率较低，不推荐使用
+   *
+   * @param tClass protobuf消息类型
+   * @param <T> 消息类型
+   * @return 类型转换器
+   */
+  static <T extends AbstractMessage> TypeConverter<T, byte[]> getProtobufTypeConver(
+      @NonNull Class<T> tClass) {
+    return new TypeConverter<>() {
+
+      @Serial private static final long serialVersionUID = -6337268992117190766L;
+
+      @Override
+      public byte[] to(T t) {
+        if (t == null) {
+          return null;
+        }
+        return Any.pack(t).toByteArray();
+      }
+
+      @Override
+      public T from(byte[] bytes) throws IOException {
+        if (bytes == null) {
+          return null;
+        }
+        Any any = Any.parseFrom(bytes);
+        if (any.is(tClass)) {
+          return any.unpack(tClass);
+        }
+        throw new IllegalStateException(
+            String.format("Failed to convert bytes to %s", tClass.getName()));
+      }
+    };
   }
 }

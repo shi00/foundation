@@ -20,8 +20,6 @@ package com.silong.foundation.devastator;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.io.Serializable;
-
 /**
  * 对象唯一标识接口
  *
@@ -30,7 +28,7 @@ import java.io.Serializable;
  * @since 2022-05-01 15:57
  * @param <T> 唯一标识类型
  */
-public interface ObjectIdentity<T extends Comparable<T>> extends Serializable, AutoCloseable {
+public interface ObjectIdentity<T extends Comparable<T>> extends AutoCloseable {
   /**
    * 获取唯一标识
    *

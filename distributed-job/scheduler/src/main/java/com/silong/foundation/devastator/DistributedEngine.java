@@ -18,8 +18,6 @@
  */
 package com.silong.foundation.devastator;
 
-import java.io.Serializable;
-
 /**
  * Devastator分布式引擎
  *
@@ -27,7 +25,7 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2022-04-10 09:01
  */
-public interface DistributedEngine extends Serializable, AutoCloseable {
+public interface DistributedEngine extends AutoCloseable {
 
   /**
    * 获取集群
