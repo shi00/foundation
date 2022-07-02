@@ -21,7 +21,6 @@ package com.silong.foundation.devastator;
 import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.Tuple;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
