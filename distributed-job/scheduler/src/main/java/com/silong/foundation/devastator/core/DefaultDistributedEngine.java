@@ -30,6 +30,7 @@ import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.Tuple;
 import com.silong.foundation.devastator.utils.KryoUtils;
+import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
@@ -48,9 +49,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
-import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.INSTANCE;
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
-import static com.silong.foundation.devastator.utils.TypeConverter.LONG_TO_BYTES;
 import static java.lang.System.lineSeparator;
 import static java.lang.ThreadLocal.withInitial;
 import static java.util.stream.Collectors.joining;
@@ -71,7 +70,7 @@ import static org.rocksdb.util.SizeUnit.KB;
 public class DefaultDistributedEngine
     implements DistributedEngine, Receiver, ChannelListener, Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 1258279194145465487L;
 
   /** address缓存 */
   private static final ThreadLocal<ByteArrayDataOutputStream> ADDRESS_BUFFER =
@@ -145,7 +144,8 @@ public class DefaultDistributedEngine
     registerMessages(jChannel);
 
     // 自定义集群节点策略
-    ((GMS) jChannel.getProtocolStack().findProtocol(GMS.class)).setMembershipChangePolicy(INSTANCE);
+    ((GMS) jChannel.getProtocolStack().findProtocol(GMS.class))
+        .setMembershipChangePolicy(DefaultMembershipChangePolicy.INSTANCE);
   }
 
   /** 注册自定义消息类型 */
@@ -243,11 +243,12 @@ public class DefaultDistributedEngine
       byte[] keyBytes = address2Bytes(key);
       byte[] versionBytes = persistStorage.get(keyBytes);
       long version = obj.objectVersion();
-      if (versionBytes == null || LONG_TO_BYTES.from(versionBytes) < version) {
+      if (versionBytes == null || TypeConverter.Long2Bytes.INSTANCE.from(versionBytes) < version) {
         persistStorage.putAllWith(
             List.of(
                 new Tuple<>(
-                    DEFAULT_COLUMN_FAMILY_NAME, new KvPair<>(keyBytes, LONG_TO_BYTES.to(version))),
+                    DEFAULT_COLUMN_FAMILY_NAME,
+                    new KvPair<>(keyBytes, TypeConverter.Long2Bytes.INSTANCE.to(version))),
                 new Tuple<>(
                     String.valueOf(partition), new KvPair<>(keyBytes, KryoUtils.serialize(obj)))));
       }
@@ -481,7 +482,6 @@ public class DefaultDistributedEngine
         clusterState);
   }
 
-  @Override
   public DevastatorConfig config() {
     return config;
   }
@@ -522,7 +522,7 @@ public class DefaultDistributedEngine
     return channel.getView().getMembers().stream()
         .map(
             address -> {
-              ClusterNodeInfo clusterNodeInfo = ((ClusterNodeUUID) address).clusterNodeInfo();
+              ClusterNodeInfo clusterNodeInfo = ((ClusterNodeUUID) address).getClusterNodeInfo();
               return String.format(
                   "(%s:%s)", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
             })
