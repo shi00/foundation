@@ -20,6 +20,7 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.config.DevastatorProperties.Version;
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;

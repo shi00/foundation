@@ -23,6 +23,7 @@ import com.github.javafaker.Faker;
 import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
 import com.silong.foundation.devastator.config.DevastatorConfig;
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

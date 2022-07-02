@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import org.jgroups.Address;
 import org.jgroups.stack.MembershipChangePolicy;
 

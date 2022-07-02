@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.core;
+package com.silong.foundation.devastator.model;
 
 import com.google.protobuf.TextFormat;
 import com.silong.foundation.devastator.Identity;
@@ -29,12 +29,10 @@ import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.util.ByteArrayDataInputStream;
 import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.UUID;
+import org.jgroups.util.Util;
 
 import java.io.*;
 import java.util.function.Supplier;
-
-import static org.jgroups.util.Util.readByteBuffer;
-import static org.jgroups.util.Util.writeByteBuffer;
 
 /**
  * 扩展UUID，作为节点信息
@@ -134,13 +132,13 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   public void writeTo(DataOutput out) throws IOException {
     super.writeTo(out);
     byte[] buf = clusterNodeInfo != null ? clusterNodeInfo.toByteArray() : null;
-    writeByteBuffer(buf, 0, buf != null ? buf.length : -1, out);
+    Util.writeByteBuffer(buf, 0, buf != null ? buf.length : -1, out);
   }
 
   @Override
   public void readFrom(DataInput in) throws IOException {
     super.readFrom(in);
-    byte[] bytes = readByteBuffer(in);
+    byte[] bytes = Util.readByteBuffer(in);
     clusterNodeInfo = bytes == null ? null : ClusterNodeInfo.parseFrom(bytes);
   }
 

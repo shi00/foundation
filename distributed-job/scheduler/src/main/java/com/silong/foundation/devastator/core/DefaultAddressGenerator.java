@@ -22,6 +22,7 @@ import com.silong.foundation.devastator.PersistStorage;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.config.DevastatorProperties;
 import com.silong.foundation.devastator.exception.DistributedEngineException;
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;

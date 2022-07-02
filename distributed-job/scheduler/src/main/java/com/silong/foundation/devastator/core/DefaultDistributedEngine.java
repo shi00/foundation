@@ -23,6 +23,7 @@ import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.exception.DistributedEngineException;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.message.PooledNioMessage;
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
 import com.silong.foundation.devastator.model.KvPair;
