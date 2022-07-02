@@ -42,7 +42,7 @@ import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.WORKE
 @Accessors(fluent = true)
 public class DevastatorConfig implements Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = -7838316722959995558L;
 
   /** 默认分区数. */
   public static final int DEFAULT_PARTITION_SIZE = 1024;

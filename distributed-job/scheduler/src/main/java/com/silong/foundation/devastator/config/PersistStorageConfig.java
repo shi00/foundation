@@ -48,7 +48,7 @@ import static org.rocksdb.util.SizeUnit.MB;
 @Accessors(fluent = true)
 public class PersistStorageConfig implements Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 2589946416585154817L;
 
   /** 默认持久化数据保存路径 */
   public static final String DEFAULT_PERSIST_DATA_PATH =

@@ -37,7 +37,7 @@ import java.io.Serializable;
 @Accessors(fluent = true)
 public class ScheduledExecutorConfig implements Serializable {
 
-  @Serial private static final long serialVersionUID = 0L;
+  @Serial private static final long serialVersionUID = 2068058518911534353L;
 
   /** 默认线程池线程名前缀 */
   public static final String DEFAULT_THREAD_PREFIX = "devastator-scheduler-";
