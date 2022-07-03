@@ -21,7 +21,10 @@ package com.silong.foundation.utilities.concurrent;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * 单元测试
@@ -55,5 +58,30 @@ public class ResettableCountDownLatchTests {
         .start();
     latch.await();
     Assertions.assertEquals(2, count.get());
+  }
+
+  @Test
+  public void test2() throws InterruptedException {
+    ResettableCountDownLatch latch = new ResettableCountDownLatch(1);
+    AtomicInteger count = new AtomicInteger(0);
+    new Thread(
+            () -> {
+              count.getAndIncrement();
+              latch.countDown();
+            })
+        .start();
+
+    latch.await();
+    latch.reset();
+    Assertions.assertEquals(1, latch.getCount());
+  }
+
+  @Test
+  public void test3() throws InterruptedException {
+    ResettableCountDownLatch latch = new ResettableCountDownLatch(1);
+    AtomicInteger count = new AtomicInteger(0);
+    new Thread(count::getAndIncrement).start();
+    Assertions.assertFalse(latch.await(3, MILLISECONDS));
+    Assertions.assertEquals(1, count.get());
   }
 }
