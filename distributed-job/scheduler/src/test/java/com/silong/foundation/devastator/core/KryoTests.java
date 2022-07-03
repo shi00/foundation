@@ -142,10 +142,16 @@ public class KryoTests {
   @Test
   @DisplayName("kryo-Runnable")
   void test6() throws IOException {
-    AtomicInteger i = new AtomicInteger(0);
 
-    SerializableRunnable r =
+    Runnable r =
         new SerializableRunnable() {
+          AtomicInteger i = new AtomicInteger(0);
+
+          @Override
+          public int hashCode() {
+            return i.get();
+          }
+
           @Override
           public void run() {
             i.getAndIncrement();
@@ -161,6 +167,6 @@ public class KryoTests {
 
     runnable.run();
 
-    Assertions.assertEquals(2, i.get());
+    Assertions.assertEquals(r.hashCode(), runnable.hashCode());
   }
 }

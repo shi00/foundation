@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator.utils;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
@@ -30,6 +31,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import java.io.*;
 import java.net.URI;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,7 +49,7 @@ import static org.apache.commons.lang3.ArrayUtils.isEmpty;
  */
 public final class KryoUtils implements Serializable {
 
-  @Serial private static final long serialVersionUID = -1423099862137538111L;
+  @Serial private static final long serialVersionUID = -6504480543473495562L;
 
   /** kryo对象池容量，默认：8 */
   public static final int KRYO_POOL_CAPACITY =
@@ -65,10 +67,121 @@ public final class KryoUtils implements Serializable {
   public static final int DEFAULT_BUFFER_SIZE =
       Integer.parseInt(System.getProperty("devastator.kryo.buffer.size", "8192"));
 
+  private static final JavaSerializer DEFAULT_JAVA_SERIALIZER = new JavaSerializer();
+
+  private static final Serializer<URI> URI_SERIALIZER =
+      new Serializer<>() {
+        {
+          setImmutable(true);
+          setAcceptsNull(true);
+        }
+
+        @Override
+        public void write(final Kryo kryo, final Output output, final URI uri) {
+          output.writeString(uri.toString());
+        }
+
+        @Override
+        public URI read(final Kryo kryo, final Input input, final Class<? extends URI> uriClass) {
+          return URI.create(input.readString());
+        }
+      };
+
+  private static final Serializer<UUID> UUID_SERIALIZER =
+      new Serializer<>() {
+        {
+          setImmutable(true);
+          setAcceptsNull(true);
+        }
+
+        @Override
+        public void write(final Kryo kryo, final Output output, final UUID uuid) {
+          output.writeLong(uuid.getMostSignificantBits());
+          output.writeLong(uuid.getLeastSignificantBits());
+        }
+
+        @Override
+        public UUID read(
+            final Kryo kryo, final Input input, final Class<? extends UUID> uuidClass) {
+          return new UUID(input.readLong(), input.readLong());
+        }
+      };
+
+  private static final Serializer<Pattern> PATTERN_SERIALIZER =
+      new Serializer<>() {
+        {
+          setImmutable(true);
+          setAcceptsNull(true);
+        }
+
+        @Override
+        public void write(final Kryo kryo, final Output output, final Pattern pattern) {
+          output.writeString(pattern.pattern());
+          output.writeInt(pattern.flags());
+        }
+
+        @Override
+        public Pattern read(
+            final Kryo kryo, final Input input, final Class<? extends Pattern> patternClass) {
+          String regex = input.readString();
+          int flags = input.readInt();
+          return Pattern.compile(regex, flags);
+        }
+      };
+
+  private static final Serializer<AtomicBoolean> ATOMIC_BOOLEAN_SERIALIZER =
+      new Serializer<>() {
+        @Override
+        public void write(Kryo kryo, Output output, AtomicBoolean atomicBoolean) {
+          output.writeBoolean(atomicBoolean.get());
+        }
+
+        @Override
+        public AtomicBoolean read(Kryo kryo, Input input, Class<? extends AtomicBoolean> type) {
+          return new AtomicBoolean(input.readBoolean());
+        }
+
+        {
+          setAcceptsNull(true);
+        }
+      };
+
+  private static final Serializer<AtomicInteger> ATOMIC_INTEGER_SERIALIZER =
+      new Serializer<>() {
+        @Override
+        public void write(Kryo kryo, Output output, AtomicInteger atomicInteger) {
+          output.writeInt(atomicInteger.get());
+        }
+
+        @Override
+        public AtomicInteger read(Kryo kryo, Input input, Class<? extends AtomicInteger> type) {
+          return new AtomicInteger(input.readInt());
+        }
+
+        {
+          setAcceptsNull(true);
+        }
+      };
+
+  private static final Serializer<AtomicLong> ATOMIC_LONG_SERIALIZER =
+      new Serializer<>() {
+        @Override
+        public void write(Kryo kryo, Output output, AtomicLong atomicLong) {
+          output.writeLong(atomicLong.get());
+        }
+
+        @Override
+        public AtomicLong read(Kryo kryo, Input input, Class<? extends AtomicLong> type) {
+          return new AtomicLong(input.readLong());
+        }
+
+        {
+          setAcceptsNull(true);
+        }
+      };
+
   private static final Pool<Kryo> KRYO_POOL =
       new Pool<>(true, false, KRYO_POOL_CAPACITY) {
-
-        private static final JavaSerializer DEFAULT = new JavaSerializer();
 
         @Override
         protected Kryo create() {
@@ -78,14 +191,27 @@ public final class KryoUtils implements Serializable {
           kryo.setClassLoader(KryoUtils.class.getClassLoader());
           kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
           kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+
+          kryo.register(Runnable.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(Callable.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(LambdaSerializable.SerializableBiPredicate.class);
+          kryo.register(LambdaSerializable.SerializableBiConsumer.class);
+          kryo.register(LambdaSerializable.SerializableBiFunction.class);
+          kryo.register(LambdaSerializable.SerializableCallable.class);
+          kryo.register(LambdaSerializable.SerializableConsumer.class);
+          kryo.register(LambdaSerializable.SerializablePredicate.class);
+          kryo.register(LambdaSerializable.SerializableRunnable.class);
+          kryo.register(LambdaSerializable.SerializableSupplier.class);
+          kryo.register(LambdaSerializable.SerializableBinaryOperator.class);
+          kryo.register(LambdaSerializable.SerializableFunction.class);
           // kryo5没有内置以下几种类型的默认序列化实现，因此使用java序列化
-          kryo.register(AtomicInteger.class, DEFAULT);
-          kryo.register(AtomicBoolean.class, DEFAULT);
-          kryo.register(AtomicReference.class, DEFAULT);
-          kryo.register(AtomicLong.class, DEFAULT);
-          kryo.register(Pattern.class, DEFAULT);
-          kryo.register(UUID.class, DEFAULT);
-          kryo.register(URI.class, DEFAULT);
+          kryo.register(AtomicInteger.class, ATOMIC_INTEGER_SERIALIZER);
+          kryo.register(AtomicBoolean.class, ATOMIC_BOOLEAN_SERIALIZER);
+          kryo.register(AtomicReference.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(AtomicLong.class, ATOMIC_LONG_SERIALIZER);
+          kryo.register(Pattern.class, PATTERN_SERIALIZER);
+          kryo.register(UUID.class, UUID_SERIALIZER);
+          kryo.register(URI.class, URI_SERIALIZER);
           return kryo;
         }
       };
