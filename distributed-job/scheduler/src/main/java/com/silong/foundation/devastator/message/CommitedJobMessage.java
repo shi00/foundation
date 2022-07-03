@@ -30,6 +30,6 @@ public class CommitedJobMessage extends PooledNioMessage{
     /**
      * 任务类型，class全限定名，例如：java.lang.Runnable
      */
-    private String jobTypeFQDN;
+    private String jobTypeFqdn;
 
 }
