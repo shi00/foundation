@@ -94,7 +94,7 @@ class DefaultViewChangedHandler
   }
 
   private ClusterNodeInfo getClusterNodeInfo(Address address) {
-    return ((ClusterNodeUUID) address).getClusterNodeInfo();
+    return ((ClusterNodeUUID) address).clusterNodeInfo();
   }
 
   /**

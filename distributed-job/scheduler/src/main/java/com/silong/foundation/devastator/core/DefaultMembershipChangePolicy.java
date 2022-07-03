@@ -52,12 +52,12 @@ class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializa
 
   private double getNodePowerWeight(Address address, String key) {
     ClusterNodeUUID uuid = (ClusterNodeUUID) address;
-    String weight = uuid.getClusterNodeInfo().getAttributesMap().get(key);
+    String weight = uuid.clusterNodeInfo().getAttributesMap().get(key);
     return weight != null ? Double.parseDouble(weight) : 0;
   }
 
   private int getRole(ClusterNodeUUID uuid) {
-    return uuid.getClusterNodeInfo().getRole();
+    return uuid.clusterNodeInfo().getRole();
   }
 
   @Override

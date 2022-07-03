@@ -78,7 +78,7 @@ public class UdpEngineTests {
 
     ClusterNode<?> coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
-    String instanceName = uuid.getClusterNodeInfo().getInstanceName();
+    String instanceName = uuid.clusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
     distributedEngine1.close();
     distributedEngine2.close();
@@ -106,7 +106,7 @@ public class UdpEngineTests {
 
     ClusterNode<?> coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
-    String instanceName = uuid.getClusterNodeInfo().getInstanceName();
+    String instanceName = uuid.clusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
     distributedEngine1.close();
     distributedEngine2.close();
@@ -134,7 +134,7 @@ public class UdpEngineTests {
 
     ClusterNode<?> coord = distributedEngine1.cluster().clusterNodes().iterator().next();
     ClusterNodeUUID uuid = (ClusterNodeUUID) coord.uuid();
-    String instanceName = uuid.getClusterNodeInfo().getInstanceName();
+    String instanceName = uuid.clusterNodeInfo().getInstanceName();
     Assertions.assertEquals(name1, instanceName);
     distributedEngine1.close();
     distributedEngine2.close();

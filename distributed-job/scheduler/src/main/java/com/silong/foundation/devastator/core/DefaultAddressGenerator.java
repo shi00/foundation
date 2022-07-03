@@ -153,7 +153,7 @@ class DefaultAddressGenerator implements AddressGenerator {
       }
 
       // 更新节点附加信息
-      return uuid.setClusterNodeInfo(buildClusterNodeInfo());
+      return uuid.clusterNodeInfo(buildClusterNodeInfo());
     } catch (Exception e) {
       throw new DistributedEngineException(
           "Failed to generate ClusterNodeUUID for node"

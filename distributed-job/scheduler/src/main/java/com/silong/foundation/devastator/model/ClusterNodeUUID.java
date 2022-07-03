@@ -24,6 +24,8 @@ import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.jgroups.Address;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.util.ByteArrayDataInputStream;
@@ -81,7 +83,10 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   }
 
   /** 节点信息 */
-  @Getter private ClusterNodeInfo clusterNodeInfo;
+  @Setter
+  @Getter
+  @Accessors(fluent = true)
+  private ClusterNodeInfo clusterNodeInfo;
 
   /** 默认构造方法 */
   public ClusterNodeUUID() {
@@ -161,11 +166,6 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
    */
   public static ClusterNodeUUID deserialize(byte[] bytes) throws IOException {
     return INSTANCE.from(bytes);
-  }
-
-  public ClusterNodeUUID setClusterNodeInfo(ClusterNodeInfo clusterNodeInfo) {
-    this.clusterNodeInfo = clusterNodeInfo;
-    return this;
   }
 
   /**

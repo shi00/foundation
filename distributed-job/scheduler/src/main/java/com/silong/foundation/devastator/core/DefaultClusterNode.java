@@ -67,7 +67,7 @@ class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   }
 
   private ClusterNodeInfo getClusterNodeInfo() {
-    return clusterNode.getClusterNodeInfo();
+    return clusterNode.clusterNodeInfo();
   }
 
   @Override

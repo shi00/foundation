@@ -567,7 +567,7 @@ class DefaultDistributedEngine
     return channel.getView().getMembers().stream()
         .map(
             address -> {
-              ClusterNodeInfo clusterNodeInfo = ((ClusterNodeUUID) address).getClusterNodeInfo();
+              ClusterNodeInfo clusterNodeInfo = ((ClusterNodeUUID) address).clusterNodeInfo();
               return String.format(
                   "(%s:%s)", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
             })
