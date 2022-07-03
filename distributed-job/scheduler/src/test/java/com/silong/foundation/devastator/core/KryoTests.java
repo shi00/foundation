@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.model.KvPair;
+import com.silong.foundation.devastator.utils.LambdaSerializable;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -168,5 +170,28 @@ public class KryoTests {
     runnable.run();
 
     Assertions.assertEquals(r.hashCode(), runnable.hashCode());
+  }
+
+  @Test
+  @DisplayName("kryo-Callable")
+  void test7() throws Exception {
+
+    Callable<Integer> c =
+            new LambdaSerializable.SerializableCallable<>() {
+                AtomicInteger i = new AtomicInteger(0);
+
+                @Override
+                public Integer call() {
+                    return i.getAndIncrement();
+                }
+            };
+
+    TypeConverter<Callable<Integer>, byte[]> typeConverter = TypeConverter.getKryoTypeConverter();
+
+    byte[] to = typeConverter.to(c);
+
+    Callable<Integer> cc = typeConverter.from(to);
+
+    Assertions.assertEquals(c.call(), cc.call());
   }
 }
