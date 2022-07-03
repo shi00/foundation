@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.model.KvPair;
+import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -135,5 +137,30 @@ public class KryoTests {
             Assertions.assertArrayEquals(v.get(i), bytes1.get(i));
           }
         });
+  }
+
+  @Test
+  @DisplayName("kryo-Runnable")
+  void test6() throws IOException {
+    AtomicInteger i = new AtomicInteger(0);
+
+    SerializableRunnable r =
+        new SerializableRunnable() {
+          @Override
+          public void run() {
+            i.getAndIncrement();
+          }
+        };
+
+    TypeConverter<Runnable, byte[]> typeConverter = TypeConverter.getKryoTypeConverter();
+
+    byte[] to = typeConverter.to(r);
+    r.run();
+
+    Runnable runnable = typeConverter.from(to);
+
+    runnable.run();
+
+    Assertions.assertEquals(2, i.get());
   }
 }

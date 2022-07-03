@@ -16,19 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.utils;
-
-import java.io.Serializable;
-import java.util.function.BiPredicate;
+package com.silong.foundation.devastator.message;
 
 /**
- * 可序列化BiPredicate
+ * 已提交任务消息
  *
- * @param <T> the type of the first argument to the predicate
- * @param <U> the type of the second argument the predicate
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-09 23:59
+ * @since 2022-07-03 17:49
  */
-@FunctionalInterface
-public interface SerializableBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {}
+public class CommitedJobMessage extends PooledNioMessage{
+
+    /**
+     * 任务类型，class全限定名，例如：java.lang.Runnable
+     */
+    private String jobTypeFQDN;
+
+}

@@ -22,7 +22,7 @@ import com.silong.foundation.devastator.Identity;
 import com.silong.foundation.devastator.PartitionClusterNodeMapping;
 import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.WeightNodeTuple;
-import com.silong.foundation.devastator.utils.SerializableBiPredicate;
+import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.extern.slf4j.Slf4j;
