@@ -45,11 +45,26 @@ public class SimpleThreadFactory implements ThreadFactory {
     if (prefix == null || prefix.isEmpty()) {
       throw new IllegalArgumentException("prefix must not be null or empty.");
     }
-    this.prefix = prefix;
+    this.prefix = trim(prefix.trim()) + "-";
+  }
+
+  private String trim(String prefix) {
+    return prefix.endsWith("-")
+            || prefix.endsWith("_")
+            || prefix.endsWith("@")
+            || prefix.endsWith("$")
+            || prefix.endsWith("|")
+        ? prefix.substring(0, prefix.length() - 1)
+        : prefix;
   }
 
   @Override
   public Thread newThread(Runnable r) {
     return new Thread(r, prefix + NUM.getAndIncrement());
+  }
+
+  /** 重置线程编号 */
+  static void reset() {
+    NUM.set(0);
   }
 }
