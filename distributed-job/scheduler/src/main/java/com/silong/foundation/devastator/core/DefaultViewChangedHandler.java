@@ -18,13 +18,14 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.LiteBlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.silong.foundation.devastator.event.ViewChangedEvent;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
+import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 import org.jgroups.MergeView;
@@ -32,7 +33,6 @@ import org.jgroups.View;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.concurrent.ThreadFactory;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 
@@ -47,7 +47,7 @@ import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 class DefaultViewChangedHandler
     implements EventHandler<ViewChangedEvent>, AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = 7601624347424402665L;
+  @Serial private static final long serialVersionUID = 408091865064908530L;
 
   /**
    * The maximum capacity, used if a higher value is implicitly specified by either of the
@@ -56,7 +56,7 @@ class DefaultViewChangedHandler
   static final int MAXIMUM_CAPACITY = 1 << 30;
 
   /** 视图变更事件处理器线程名 */
-  public static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor";
+  private static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor-";
 
   /** 分布式引擎 */
   private DefaultDistributedEngine engine;
@@ -86,9 +86,9 @@ class DefaultViewChangedHandler
         new Disruptor<>(
             ViewChangedEvent::new,
             powerOf2(queueSize),
-            (ThreadFactory) r -> new Thread(r, VIEW_CHANGED_EVENT_PROCESSOR),
+            new SimpleThreadFactory(VIEW_CHANGED_EVENT_PROCESSOR),
             MULTI,
-            new BusySpinWaitStrategy());
+            new LiteBlockingWaitStrategy());
     disruptor.handleEventsWith(this);
     return disruptor;
   }

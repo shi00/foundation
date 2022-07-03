@@ -18,11 +18,12 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.LiteBlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.silong.foundation.devastator.event.MessageEvent;
+import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.BytesMessage;
 import org.jgroups.Message;
@@ -30,7 +31,6 @@ import org.jgroups.NioMessage;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.concurrent.ThreadFactory;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.powerOf2;
@@ -45,10 +45,10 @@ import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.po
 @Slf4j
 class DefaultMessageHandler implements EventHandler<MessageEvent>, AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = -6920712570507377414L;
+  @Serial private static final long serialVersionUID = 5687637299110748013L;
 
   /** 消息事件处理器线程名 */
-  public static final String MESSAGE_EVENT_PROCESSOR = "message-processor";
+  private static final String MESSAGE_EVENT_PROCESSOR = "cluster-message-processor-";
 
   /** 分布式引擎 */
   private DefaultDistributedEngine engine;
@@ -69,18 +69,18 @@ class DefaultMessageHandler implements EventHandler<MessageEvent>, AutoCloseable
       throw new IllegalArgumentException("engine must not be null.");
     }
     this.engine = engine;
-    this.disruptor = buildMessaageEventDisruptor(engine.config().messageEventQueueSize());
+    this.disruptor = buildMessageEventDisruptor(engine.config().messageEventQueueSize());
     this.ringBuffer = disruptor.start();
   }
 
-  private Disruptor<MessageEvent> buildMessaageEventDisruptor(int queueSize) {
+  private Disruptor<MessageEvent> buildMessageEventDisruptor(int queueSize) {
     Disruptor<MessageEvent> disruptor =
         new Disruptor<>(
             MessageEvent::new,
             powerOf2(queueSize),
-            (ThreadFactory) r -> new Thread(r, MESSAGE_EVENT_PROCESSOR),
+                new SimpleThreadFactory(MESSAGE_EVENT_PROCESSOR),
             MULTI,
-            new BusySpinWaitStrategy());
+            new LiteBlockingWaitStrategy());
     disruptor.handleEventsWith(this);
     return disruptor;
   }
