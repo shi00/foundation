@@ -26,10 +26,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <version>1.0.0</version>
-    <artifactId>hashed-wheel-timer</artifactId>
-    <description>HashedWheelTimer maintains a data structure called 'wheel'. To put simply, a wheel is a hash table of
-        TimerTasks whose hash function is 'dead line of the task'.
-    </description>
+    <artifactId>concurrent-extends</artifactId>
+    <description>Concurrency Extends Tool.</description>
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
@@ -37,36 +35,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.silong</groupId>
-            <artifactId>simple-object-pool</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silong</groupId>
-            <artifactId>concurrent-extends</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jctools</groupId>
-            <artifactId>jctools-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

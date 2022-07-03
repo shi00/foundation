@@ -75,6 +75,7 @@
         <module>utilities/random-password</module>
         <module>utilities/simple-object-pool</module>
         <module>utilities/hashed-wheel-timer</module>
+        <module>utilities/concurrent-extends</module>
         <module>common-objects</module>
     </modules>
 

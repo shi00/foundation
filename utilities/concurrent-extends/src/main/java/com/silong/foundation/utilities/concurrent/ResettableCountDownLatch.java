@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.utilities.hwtimer;
+package com.silong.foundation.utilities.concurrent;
 
 import java.io.Serial;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +29,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * @version 1.0.0
  * @since 2022-06-26 16:06
  */
-class CountDownLatch2 {
+public class ResettableCountDownLatch {
   private final Sync sync;
 
   /**
@@ -39,7 +39,7 @@ class CountDownLatch2 {
    *     through {@link #await}
    * @throws IllegalArgumentException if {@code count} is negative
    */
-  public CountDownLatch2(int count) {
+  public ResettableCountDownLatch(int count) {
     if (count < 0) {
       throw new IllegalArgumentException("count must be greater than or equals to 0.");
     }
@@ -156,7 +156,8 @@ class CountDownLatch2 {
 
   /** Synchronization control For CountDownLatch2. Uses AQS state to represent count. */
   private static final class Sync extends AbstractQueuedSynchronizer {
-    @Serial private static final long serialVersionUID = 0L;
+
+    @Serial private static final long serialVersionUID = -573277477165086720L;
 
     private final int startCount;
 

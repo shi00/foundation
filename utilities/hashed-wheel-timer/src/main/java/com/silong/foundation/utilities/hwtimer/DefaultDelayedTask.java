@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
+import com.silong.foundation.utilities.concurrent.ResettableCountDownLatch;
 import com.silong.foundation.utilities.pool.ObjectPoolable;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -53,7 +54,8 @@ class DefaultDelayedTask implements DelayedTask, Closeable, ObjectPoolable<Defau
   AtomicReference<State> stateRef = new AtomicReference<>(State.READY);
 
   /** 任务执行结束信号 */
-  @ToString.Exclude CountDownLatch2 signal = new CountDownLatch2(1);
+  @ToString.Exclude
+  ResettableCountDownLatch signal = new ResettableCountDownLatch(1);
 
   /** 任务逻辑 */
   @ToString.Exclude Callable<?> callable;
