@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.devastator;
 
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * 分布式任务调度器
@@ -27,8 +27,16 @@ import java.util.concurrent.ScheduledExecutorService;
  * @version 1.0.0
  * @since 2022-04-10 01:19
  */
-public interface DistributedJobScheduler extends ScheduledExecutorService {
+public interface DistributedJobScheduler {
 
-  /** 动态代理接口列表 */
-  Class<?>[] INTERFACES = {DistributedJobScheduler.class};
+  /**
+   * Executes the given command at some time in the future. The command may execute in a new thread,
+   * in a pooled thread, or in the calling thread, at the discretion of the {@code Executor}
+   * implementation.
+   *
+   * @param command the runnable task
+   * @throws RejectedExecutionException if this task cannot be accepted for execution
+   * @throws NullPointerException if command is null
+   */
+  void execute(Runnable command);
 }

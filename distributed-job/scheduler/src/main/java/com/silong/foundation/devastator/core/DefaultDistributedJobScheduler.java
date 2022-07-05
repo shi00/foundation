@@ -18,8 +18,10 @@
  */
 package com.silong.foundation.devastator.core;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
+import com.silong.foundation.devastator.DistributedJobScheduler;
+import com.silong.foundation.devastator.utils.LambdaSerializable.RunnableJob;
+import edu.umd.cs.findbugs.annotations.NonNull;
+
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -29,13 +31,13 @@ import java.util.concurrent.ScheduledExecutorService;
  * @version 1.0.0
  * @since 2022-07-02 22:31
  */
-class DistributedJobSchedulerHandler implements InvocationHandler {
+class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoCloseable {
 
   /** 调度器 */
-  private final ScheduledExecutorService executorService;
+  private ScheduledExecutorService executorService;
 
   /** 引擎 */
-  private final DefaultDistributedEngine engine;
+  private DefaultDistributedEngine engine;
 
   /**
    * 构造方法
@@ -43,7 +45,7 @@ class DistributedJobSchedulerHandler implements InvocationHandler {
    * @param engine 分布式引擎
    * @param executorService 调度器
    */
-  public DistributedJobSchedulerHandler(
+  public DefaultDistributedJobScheduler(
       DefaultDistributedEngine engine, ScheduledExecutorService executorService) {
     if (executorService == null) {
       throw new IllegalArgumentException("executorService must not be null.");
@@ -56,7 +58,16 @@ class DistributedJobSchedulerHandler implements InvocationHandler {
   }
 
   @Override
-  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    return method.invoke(executorService, args);
+  public void close() {
+    if (executorService != null) {
+      this.executorService.shutdown();
+      this.executorService = null;
+    }
+    this.engine = null;
+  }
+
+  @Override
+  public void execute(@NonNull Runnable command) {
+    executorService.execute(new RunnableJob(command));
   }
 }

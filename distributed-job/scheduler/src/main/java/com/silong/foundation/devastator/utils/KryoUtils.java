@@ -25,6 +25,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import com.esotericsoftware.kryo.util.Pool;
+import com.silong.foundation.devastator.utils.LambdaSerializable.*;
 import org.jgroups.util.Util;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -192,16 +193,18 @@ public final class KryoUtils implements Serializable {
           kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
 
           // 注册实现了Serializable接口的函数式接口
-          kryo.register(LambdaSerializable.SerializableBiPredicate.class);
-          kryo.register(LambdaSerializable.SerializableBiConsumer.class);
-          kryo.register(LambdaSerializable.SerializableBiFunction.class);
-          kryo.register(LambdaSerializable.SerializableCallable.class);
-          kryo.register(LambdaSerializable.SerializableConsumer.class);
-          kryo.register(LambdaSerializable.SerializablePredicate.class);
-          kryo.register(LambdaSerializable.SerializableRunnable.class);
-          kryo.register(LambdaSerializable.SerializableSupplier.class);
-          kryo.register(LambdaSerializable.SerializableBinaryOperator.class);
-          kryo.register(LambdaSerializable.SerializableFunction.class);
+          kryo.register(SerializableBiPredicate.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializableBiConsumer.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializableBiFunction.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializableCallable.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializableConsumer.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializablePredicate.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializableRunnable.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializableSupplier.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializableBinaryOperator.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(SerializableFunction.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(RunnableJob.class, DEFAULT_JAVA_SERIALIZER);
+          kryo.register(CallableJob.class, DEFAULT_JAVA_SERIALIZER);
 
           // kryo5没有内置以下几种类型的默认序列化实现，因此使用java序列化
           kryo.register(AtomicInteger.class, ATOMIC_INTEGER_SERIALIZER);

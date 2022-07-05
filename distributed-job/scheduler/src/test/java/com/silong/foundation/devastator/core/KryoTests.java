@@ -20,6 +20,9 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.utils.LambdaSerializable;
+import com.silong.foundation.devastator.utils.LambdaSerializable.CallableJob;
+import com.silong.foundation.devastator.utils.LambdaSerializable.RunnableJob;
+import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableCallable;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -29,6 +32,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -174,7 +178,7 @@ public class KryoTests {
   @DisplayName("kryo-SerializableCallable")
   void test7() throws Exception {
     Callable<Integer> c =
-        new LambdaSerializable.SerializableCallable<>() {
+        new SerializableCallable<>() {
           AtomicInteger i = new AtomicInteger(0);
 
           @Override
@@ -190,5 +194,67 @@ public class KryoTests {
     Callable<Integer> cc = typeConverter.from(to);
 
     Assertions.assertEquals(c.call(), cc.call());
+  }
+
+  @Test
+  @DisplayName("kryo-CallableJob")
+  void test8() throws Exception {
+    AtomicInteger i = new AtomicInteger(0);
+    CallableJob<Integer> job =
+        new CallableJob<>((Callable<Integer> & Serializable) i::getAndIncrement);
+
+    TypeConverter<CallableJob<Integer>, byte[]> typeConverter = getKryoTypeConverter();
+
+    byte[] to = typeConverter.to(job);
+
+    CallableJob<Integer> rr = typeConverter.from(to);
+
+    Assertions.assertEquals(job.call(), rr.call());
+  }
+
+  @Test
+  @DisplayName("kryo-CallableJob")
+  void test9() throws Exception {
+    AtomicInteger i = new AtomicInteger(0);
+    CallableJob<Integer> job =
+        new CallableJob<>((SerializableCallable<Integer>) i::getAndIncrement);
+
+    TypeConverter<CallableJob<Integer>, byte[]> typeConverter = getKryoTypeConverter();
+
+    byte[] to = typeConverter.to(job);
+
+    CallableJob<Integer> rr = typeConverter.from(to);
+
+    Assertions.assertEquals(job.call(), rr.call());
+  }
+
+  @Test
+  @DisplayName("kryo-RunnableJob")
+  void test10() throws Exception {
+    AtomicInteger i = new AtomicInteger(0);
+    RunnableJob job = new RunnableJob((SerializableRunnable) i::getAndIncrement);
+
+    TypeConverter<RunnableJob, byte[]> typeConverter = getKryoTypeConverter();
+
+    byte[] to = typeConverter.to(job);
+
+    RunnableJob rr = typeConverter.from(to);
+
+    Assertions.assertDoesNotThrow(() -> rr.run());
+  }
+
+  @Test
+  @DisplayName("kryo-RunnableJob")
+  void test11() throws Exception {
+    AtomicInteger i = new AtomicInteger(0);
+    RunnableJob job = new RunnableJob((Runnable & Serializable) i::getAndIncrement);
+
+    TypeConverter<RunnableJob, byte[]> typeConverter = getKryoTypeConverter();
+
+    byte[] to = typeConverter.to(job);
+
+    RunnableJob rr = typeConverter.from(to);
+
+    Assertions.assertDoesNotThrow(() -> rr.run());
   }
 }

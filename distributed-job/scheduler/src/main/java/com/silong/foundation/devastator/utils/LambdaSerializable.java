@@ -18,7 +18,13 @@
  */
 package com.silong.foundation.devastator.utils;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.Serial;
 import java.io.Serializable;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.*;
 
@@ -110,4 +116,86 @@ public interface LambdaSerializable {
    */
   @FunctionalInterface
   interface SerializableBiPredicate<T, U> extends BiPredicate<T, U>, Serializable {}
+
+  /** 任务 */
+  @Slf4j
+  class CallableJob<R> implements SerializableCallable<R> {
+
+    @Serial private static final long serialVersionUID = -2480034640278739865L;
+
+    private final Callable<R> callable;
+
+    /**
+     * 构造方法
+     *
+     * @param callable callable
+     */
+    public CallableJob(Callable<R> callable) {
+      if (callable == null) {
+        throw new IllegalArgumentException("callable must not be null.");
+      }
+      this.callable = callable;
+    }
+
+    /**
+     * 任务唯一标识
+     *
+     * @return 唯一标识
+     */
+    @NonNull
+    public UUID uuid() {
+      return UUID.randomUUID();
+    }
+
+    @Override
+    @Nullable
+    public R call() {
+      try {
+        return callable.call();
+      } catch (Throwable t) {
+        log.error("Failed to execute {}", callable, t);
+        return null;
+      }
+    }
+  }
+
+  /** 任务 */
+  @Slf4j
+  class RunnableJob implements SerializableRunnable {
+
+    @Serial private static final long serialVersionUID = 683157098978953951L;
+
+    private final Runnable runnable;
+
+    /**
+     * 构造方法
+     *
+     * @param runnable runnable
+     */
+    public RunnableJob(Runnable runnable) {
+      if (runnable == null) {
+        throw new IllegalArgumentException("runnable must not be null.");
+      }
+      this.runnable = runnable;
+    }
+
+    /**
+     * 任务唯一标识
+     *
+     * @return 唯一标识
+     */
+    @NonNull
+    public UUID uuid() {
+      return UUID.randomUUID();
+    }
+
+    @Override
+    public void run() {
+      try {
+        runnable.run();
+      } catch (Throwable t) {
+        log.error("Failed to execute {}", runnable, t);
+      }
+    }
+  }
 }

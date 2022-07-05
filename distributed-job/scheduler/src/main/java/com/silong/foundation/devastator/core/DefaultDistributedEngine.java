@@ -37,6 +37,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jgroups.*;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
@@ -45,7 +46,6 @@ import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.MessageBatch;
 
 import java.io.*;
-import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -54,12 +54,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
-import static com.silong.foundation.devastator.DistributedJobScheduler.INTERFACES;
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 import static java.lang.System.lineSeparator;
 import static java.lang.ThreadLocal.withInitial;
 import static java.util.stream.Collectors.joining;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
 import static org.jgroups.Global.LONG_SIZE;
 import static org.rocksdb.util.SizeUnit.KB;
@@ -86,32 +86,32 @@ class DefaultDistributedEngine
   private static final ThreadLocal<ByteArrayDataOutputStream> ADDRESS_BUFFER =
       withInitial(() -> new ByteArrayDataOutputStream(LONG_SIZE * 2));
 
-  /** 集群通信信道 */
-  private final JChannel jChannel;
-
-  /** 配置 */
-  private final DevastatorConfig config;
-
-  /** 分区节点映射器 */
-  private final RendezvousPartitionMapping partitionMapping;
-
-  /** 持久化存储 */
-  final RocksDbPersistStorage persistStorage;
-
   /** 集群视图变更处理器 */
   private final DefaultViewChangedHandler defaultViewChangedHandler;
 
   /** 集群胸袭处理器 */
   private final DefaultMessageHandler defaultMessageHandler;
 
+  /** 集群通信信道 */
+  final JChannel jChannel;
+
+  /** 配置 */
+  final DevastatorConfig config;
+
+  /** 分区节点映射器 */
+  final RendezvousPartitionMapping partitionMapping;
+
+  /** 持久化存储 */
+  final RocksDbPersistStorage persistStorage;
+
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
-  private Map<Integer, List<SimpleClusterNode>> partition2ClusterNodes;
+  Map<Integer, List<SimpleClusterNode>> partition2ClusterNodes;
 
   /** 数据uuid到分区的映射关系 */
-  private final Map<Object, Integer> uuid2Partitions;
+  final Map<Object, Integer> uuid2Partitions;
 
   /** 对象分区映射器 */
-  private DefaultObjectPartitionMapping objectPartitionMapping;
+  DefaultObjectPartitionMapping objectPartitionMapping;
 
   /** 集群状态 */
   private volatile ClusterState clusterState;
@@ -523,7 +523,7 @@ class DefaultDistributedEngine
 
   @Override
   public DistributedJobScheduler scheduler(String name) {
-    if (name == null || name.isEmpty()) {
+    if (isEmpty(name)) {
       throw new IllegalArgumentException("name must not be null.");
     }
     return distributedJobSchedulerMap.computeIfAbsent(
@@ -531,21 +531,16 @@ class DefaultDistributedEngine
         key -> {
           ScheduledExecutorConfig seConfig =
               config.scheduledExecutorConfigs().stream()
-                  .filter(c -> Objects.equals(c.name(), name))
+                  .filter(c -> StringUtils.equals(c.name(), name))
                   .findAny()
                   .orElse(null);
           if (seConfig == null) {
             return null;
           }
-          return (DistributedJobScheduler)
-              Proxy.newProxyInstance(
-                  getClass().getClassLoader(),
-                  INTERFACES,
-                  new DistributedJobSchedulerHandler(
-                      this,
-                      Executors.newScheduledThreadPool(
-                          seConfig.threadCoreSize(),
-                          new SimpleThreadFactory(seConfig.threadNamePrefix()))));
+          return new DefaultDistributedJobScheduler(
+              this,
+              Executors.newScheduledThreadPool(
+                  seConfig.threadCoreSize(), new SimpleThreadFactory(seConfig.threadNamePrefix())));
         });
   }
 
