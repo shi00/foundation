@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.silong.foundation.devastator.utils.TypeConverter.getKryoTypeConverter;
 import static java.lang.Long.valueOf;
 
 /**
@@ -52,7 +53,7 @@ public class KryoTests {
     List<String> list =
         IntStream.range(0, 10).mapToObj(i -> RandomStringUtils.random(100)).toList();
 
-    TypeConverter<List<String>, byte[]> typeConverter = TypeConverter.getKryoTypeConverter();
+    TypeConverter<List<String>, byte[]> typeConverter = getKryoTypeConverter();
 
     byte[] bytes = typeConverter.to(list);
     List<String> list1 = typeConverter.from(bytes);
@@ -66,7 +67,7 @@ public class KryoTests {
     List<Integer> list =
         IntStream.range(0, 11).boxed().collect(Collectors.toCollection(ArrayList::new));
 
-    TypeConverter<List<Integer>, byte[]> typeConverter = TypeConverter.getKryoTypeConverter();
+    TypeConverter<List<Integer>, byte[]> typeConverter = getKryoTypeConverter();
 
     byte[] bytes = typeConverter.to(list);
     List<Integer> list1 = typeConverter.from(bytes);
@@ -82,8 +83,7 @@ public class KryoTests {
             .mapToObj(i -> new KvPair<>(RandomStringUtils.random(100), i))
             .collect(Collectors.toCollection(LinkedList::new));
 
-    TypeConverter<List<KvPair<String, Integer>>, byte[]> typeConverter =
-        TypeConverter.getKryoTypeConverter();
+    TypeConverter<List<KvPair<String, Integer>>, byte[]> typeConverter = getKryoTypeConverter();
 
     byte[] bytes = typeConverter.to(list);
     List<KvPair<String, Integer>> list1 = typeConverter.from(bytes);
@@ -99,7 +99,7 @@ public class KryoTests {
             .mapToObj(i -> new AbstractMap.SimpleEntry<>(RandomStringUtils.random(100), i))
             .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, e -> valueOf(e.getValue())));
 
-    TypeConverter<Map<String, Long>, byte[]> typeConverter = TypeConverter.getKryoTypeConverter();
+    TypeConverter<Map<String, Long>, byte[]> typeConverter = getKryoTypeConverter();
 
     byte[] bytes = typeConverter.to(map);
     Map<String, Long> map1 = typeConverter.from(bytes);
@@ -122,8 +122,7 @@ public class KryoTests {
                 Collectors.toUnmodifiableMap(
                     AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
 
-    TypeConverter<Map<String, List<byte[]>>, byte[]> typeConverter =
-        TypeConverter.getKryoTypeConverter();
+    TypeConverter<Map<String, List<byte[]>>, byte[]> typeConverter = getKryoTypeConverter();
 
     byte[] bytes = typeConverter.to(map);
     Map<String, List<byte[]>> map1 = typeConverter.from(bytes);
@@ -142,9 +141,8 @@ public class KryoTests {
   }
 
   @Test
-  @DisplayName("kryo-Runnable")
+  @DisplayName("kryo-SerializableRunnable")
   void test6() throws IOException {
-
     Runnable r =
         new SerializableRunnable() {
           AtomicInteger i = new AtomicInteger(0);
@@ -160,7 +158,7 @@ public class KryoTests {
           }
         };
 
-    TypeConverter<Runnable, byte[]> typeConverter = TypeConverter.getKryoTypeConverter();
+    TypeConverter<Runnable, byte[]> typeConverter = getKryoTypeConverter();
 
     byte[] to = typeConverter.to(r);
     r.run();
@@ -173,20 +171,19 @@ public class KryoTests {
   }
 
   @Test
-  @DisplayName("kryo-Callable")
+  @DisplayName("kryo-SerializableCallable")
   void test7() throws Exception {
-
     Callable<Integer> c =
-            new LambdaSerializable.SerializableCallable<>() {
-                AtomicInteger i = new AtomicInteger(0);
+        new LambdaSerializable.SerializableCallable<>() {
+          AtomicInteger i = new AtomicInteger(0);
 
-                @Override
-                public Integer call() {
-                    return i.getAndIncrement();
-                }
-            };
+          @Override
+          public Integer call() {
+            return i.getAndIncrement();
+          }
+        };
 
-    TypeConverter<Callable<Integer>, byte[]> typeConverter = TypeConverter.getKryoTypeConverter();
+    TypeConverter<Callable<Integer>, byte[]> typeConverter = getKryoTypeConverter();
 
     byte[] to = typeConverter.to(c);
 

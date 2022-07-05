@@ -31,6 +31,7 @@ import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.Tuple;
 import com.silong.foundation.devastator.utils.KryoUtils;
+import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
@@ -51,7 +52,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.DistributedJobScheduler.INTERFACES;
@@ -78,9 +78,6 @@ class DefaultDistributedEngine
     implements DistributedEngine, Receiver, ChannelListener, Serializable, AutoCloseable {
 
   @Serial private static final long serialVersionUID = 1258279194145465487L;
-
-  /** 线程计数器 */
-  private static final AtomicInteger SCHEDULER_THREAD_COUNT = new AtomicInteger(0);
 
   /** 分布式任务调度器 */
   private final Map<String, DistributedJobScheduler> distributedJobSchedulerMap;
@@ -548,12 +545,7 @@ class DefaultDistributedEngine
                       this,
                       Executors.newScheduledThreadPool(
                           seConfig.threadCoreSize(),
-                          r ->
-                              new Thread(
-                                  r,
-                                  seConfig.threadNamePrefix()
-                                      + DefaultDistributedEngine.SCHEDULER_THREAD_COUNT
-                                          .getAndIncrement()))));
+                          new SimpleThreadFactory(seConfig.threadNamePrefix()))));
         });
   }
 

@@ -31,7 +31,6 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import java.io.*;
 import java.net.URI;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -192,8 +191,7 @@ public final class KryoUtils implements Serializable {
           kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
           kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
 
-          kryo.register(Runnable.class, DEFAULT_JAVA_SERIALIZER);
-          kryo.register(Callable.class, DEFAULT_JAVA_SERIALIZER);
+          // 注册实现了Serializable接口的函数式接口
           kryo.register(LambdaSerializable.SerializableBiPredicate.class);
           kryo.register(LambdaSerializable.SerializableBiConsumer.class);
           kryo.register(LambdaSerializable.SerializableBiFunction.class);
@@ -204,6 +202,7 @@ public final class KryoUtils implements Serializable {
           kryo.register(LambdaSerializable.SerializableSupplier.class);
           kryo.register(LambdaSerializable.SerializableBinaryOperator.class);
           kryo.register(LambdaSerializable.SerializableFunction.class);
+
           // kryo5没有内置以下几种类型的默认序列化实现，因此使用java序列化
           kryo.register(AtomicInteger.class, ATOMIC_INTEGER_SERIALIZER);
           kryo.register(AtomicBoolean.class, ATOMIC_BOOLEAN_SERIALIZER);
@@ -240,8 +239,9 @@ public final class KryoUtils implements Serializable {
    *
    * @param object 对象
    * @return 二进制结果
+   * @param <T> 对象类型
    */
-  public static byte[] serialize(Object object) {
+  public static <T> byte[] serialize(T object) {
     if (object == null) {
       throw new IllegalArgumentException("object must not be null.");
     }
