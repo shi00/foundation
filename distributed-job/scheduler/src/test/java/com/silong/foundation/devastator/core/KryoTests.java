@@ -19,7 +19,6 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.model.KvPair;
-import com.silong.foundation.devastator.utils.LambdaSerializable;
 import com.silong.foundation.devastator.utils.LambdaSerializable.CallableJob;
 import com.silong.foundation.devastator.utils.LambdaSerializable.RunnableJob;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableCallable;

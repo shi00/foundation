@@ -28,15 +28,29 @@ message HardwareInfo{
 
 //集群节点运行时信息
 message JvmInfo{
-  string vmVersion = 1; //jvm版本
-  string vmVendor = 2;  //jvm厂商
-  string vmName = 3;    //jvm名
-  string classPath = 4; //classpath
-  string vmArgs = 5;    //jvm启动参数
+  string vm_version = 1; //jvm版本
+  string vm_vendor = 2;  //jvm厂商
+  string vm_name = 3;    //jvm名
+  string class_path = 4; //classpath
+  string vm_args = 5;    //jvm启动参数
 }
 
 //集群状态
 message ClusterState {
-  uint32 partitions = 1 ; //集群数据分区总数
+  uint32 partitions = 1; //集群数据分区总数
   uint32 backupNums = 2; //数据备份数
+}
+
+//集群消息类型
+enum ClusterMsgType {
+  JOB = 0; // 任务
+  SYNC = 1; // 数据同步
+}
+
+//集群消息载荷
+message ClusterMsgPayload {
+  ClusterMsgType type = 1; //消息类型
+  optional string job_class_fqdn = 2; //如果消息类型为JOB，此字段为job类型FQDN
+  optional bytes clazz = 3; //job class文件内容
+  optional bytes job_data = 4; //序列化任务数据
 }
