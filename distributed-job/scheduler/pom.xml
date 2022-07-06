@@ -128,6 +128,20 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.build.sourceDirectory}/../resources/META-INF</directory>
+                            <includes>
+                                <include>*.properties</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>com.silong</groupId>
                 <artifactId>properties-writer-maven-plugin</artifactId>
                 <version>1.0.0</version>
@@ -144,7 +158,7 @@
                 <executions>
                     <execution>
                         <id>generate-properties</id>
-                        <phase>compile</phase>
+                        <phase>validate</phase>
                         <goals>
                             <goal>write-properties-file</goal>
                         </goals>

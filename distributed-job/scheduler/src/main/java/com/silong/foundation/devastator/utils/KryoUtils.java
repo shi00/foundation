@@ -171,10 +171,10 @@ public final class KryoUtils implements Serializable {
   }
 
   /** URI Serializer */
-  private static class URISerializer extends Serializer<URI> {
+  private static class UriSerializer extends Serializer<URI> {
 
     /** 构造方法 */
-    public URISerializer() {
+    public UriSerializer() {
       setImmutable(true);
       setAcceptsNull(true);
     }
@@ -224,7 +224,7 @@ public final class KryoUtils implements Serializable {
           kryo.register(AtomicLong.class, new AtomicLongSerializer());
           kryo.register(Pattern.class, new PatternSerializer());
           kryo.register(UUID.class, new UUIDSerializer());
-          kryo.register(URI.class, new URISerializer());
+          kryo.register(URI.class, new UriSerializer());
           return kryo;
         }
       };
