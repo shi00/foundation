@@ -19,8 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.DistributedJobScheduler;
-import com.silong.foundation.devastator.utils.LambdaSerializable.RunnableJob;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -67,7 +66,11 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
   }
 
   @Override
-  public void execute(@NonNull Runnable command) {
-    executorService.execute(new RunnableJob(command));
+  public void execute(Runnable command) {
+    if (command == null) {
+      throw new IllegalArgumentException("command must not be null.");
+    }
+    SerializableRunnable runnable = command::run;
+    executorService.execute(runnable);
   }
 }
