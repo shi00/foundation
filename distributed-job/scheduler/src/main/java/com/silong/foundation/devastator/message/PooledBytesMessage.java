@@ -19,10 +19,13 @@
 package com.silong.foundation.devastator.message;
 
 import com.esotericsoftware.kryo.util.Pool;
+import com.esotericsoftware.kryo.util.Pool.Poolable;
 import org.jgroups.Address;
 import org.jgroups.MessageFactory;
 import org.jgroups.RefcountedBytesMessage;
 import org.jgroups.util.ByteArray;
+
+import java.util.Arrays;
 
 import static com.silong.foundation.devastator.message.PooledNioMessage.MESSAGE_POOL_CAPACITY;
 
@@ -33,7 +36,7 @@ import static com.silong.foundation.devastator.message.PooledNioMessage.MESSAGE_
  * @version 1.0.0
  * @since 2022-05-01 21:30
  */
-public class PooledBytesMessage extends RefcountedBytesMessage {
+public class PooledBytesMessage extends RefcountedBytesMessage implements Poolable {
 
   /** 消息类型 */
   public static final short MSG_TYPE = 680;
@@ -136,5 +139,17 @@ public class PooledBytesMessage extends RefcountedBytesMessage {
   @Override
   public short getType() {
     return MSG_TYPE;
+  }
+
+  @Override
+  public void reset() {
+    if (headers != null) {
+      Arrays.fill(headers, null);
+    }
+    this.transient_flags = 0;
+    this.flags = 0;
+    this.dest = this.sender = null;
+    this.array = null;
+    this.length = this.offset = 0;
   }
 }

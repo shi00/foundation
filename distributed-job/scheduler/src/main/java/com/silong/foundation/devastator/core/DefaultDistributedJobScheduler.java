@@ -18,10 +18,22 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.DistributedJobScheduler;
+import com.silong.foundation.devastator.message.PooledBytesMessage;
+import com.silong.foundation.devastator.model.Devastator.ClusterMsgPayload;
+import com.silong.foundation.devastator.model.SimpleClusterNode;
+import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
+import lombok.SneakyThrows;
+import org.jgroups.Address;
 
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
+
+import static com.silong.foundation.devastator.model.Devastator.ClusterMsgType.JOB;
 
 /**
  * 分布式任务调度器
@@ -31,6 +43,10 @@ import java.util.concurrent.ScheduledExecutorService;
  * @since 2022-07-02 22:31
  */
 class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoCloseable {
+
+  /** sha256 */
+  private static final ThreadLocal<MessageDigest> SHA256 =
+      ThreadLocal.withInitial(DefaultDistributedJobScheduler::newSha256Digest);
 
   /** 调度器 */
   private ScheduledExecutorService executorService;
@@ -56,21 +72,61 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     this.executorService = executorService;
   }
 
-  @Override
-  public void close() {
-    if (executorService != null) {
-      this.executorService.shutdown();
-      this.executorService = null;
-    }
-    this.engine = null;
+  @SneakyThrows
+  private static MessageDigest newSha256Digest() {
+    return MessageDigest.getInstance("SHA-256");
   }
 
   @Override
-  public void execute(Runnable command) {
+  public void close() {
+    if (executorService != null) {
+      executorService.shutdown();
+      executorService = null;
+    }
+    engine = null;
+    SHA256.remove();
+  }
+
+  @Override
+  public void execute(Runnable command) throws Exception {
     if (command == null) {
       throw new IllegalArgumentException("command must not be null.");
     }
+
+    // 包裹为可序列化Runnable
     SerializableRunnable runnable = command::run;
-    executorService.execute(runnable);
+    byte[] bytes = KryoUtils.serialize(runnable);
+    byte[] key = SHA256.get().digest(bytes);
+
+    // 任务映射的分区编号
+    int partition = engine.objectPartitionMapping.partition(Arrays.hashCode(key));
+
+    // 根据分区号获取其映射的节点列表
+    List<SimpleClusterNode> nodes = engine.partition2ClusterNodes.get(partition);
+
+    ClusterMsgPayload msgPayload =
+        ClusterMsgPayload.newBuilder().setJobData(ByteString.copyFrom(bytes)).setType(JOB).build();
+    byte[] payload = msgPayload.toByteArray();
+
+    Address localAddress = getLocalAddress();
+
+    // 任务分发至分区对应的各节点
+    for (SimpleClusterNode node : nodes) {
+      Address dest = node.address();
+      if (localAddress.equals(dest)) {
+        continue;
+      }
+      engine.send(PooledBytesMessage.obtain().dest(dest).setArray(payload));
+    }
+
+    // 如果本地节点为主分区则持久化，并触发任务执行
+    if (nodes.get(0).address().equals(localAddress)) {
+      engine.persistStorage.put(String.valueOf(partition), key, bytes);
+      executorService.execute(runnable);
+    }
+  }
+
+  private Address getLocalAddress() {
+    return ((DefaultClusterNode) engine.getLocalNode()).getLocalAddress();
   }
 }

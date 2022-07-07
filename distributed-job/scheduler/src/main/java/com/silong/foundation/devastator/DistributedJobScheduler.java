@@ -18,8 +18,6 @@
  */
 package com.silong.foundation.devastator;
 
-import java.util.concurrent.RejectedExecutionException;
-
 /**
  * 分布式任务调度器
  *
@@ -35,8 +33,7 @@ public interface DistributedJobScheduler {
    * implementation.
    *
    * @param command the runnable task
-   * @throws RejectedExecutionException if this task cannot be accepted for execution
-   * @throws NullPointerException if command is null
+   * @throws Exception Failed to execute command
    */
-  void execute(Runnable command);
+  void execute(Runnable command) throws Exception;
 }
