@@ -24,7 +24,6 @@ import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import lombok.Getter;
 import org.jgroups.Address;
 
 import java.io.Serial;
@@ -48,7 +47,6 @@ class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   private final ClusterNodeUUID clusterNode;
 
   /** 本地地址 */
-  @Getter
   private final Address localAddress;
 
   /**

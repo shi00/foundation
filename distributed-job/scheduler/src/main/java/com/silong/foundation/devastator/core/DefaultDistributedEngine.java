@@ -28,7 +28,6 @@ import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
 import com.silong.foundation.devastator.model.KvPair;
-import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.model.Tuple;
 import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
@@ -105,7 +104,7 @@ class DefaultDistributedEngine
   final RocksDbPersistStorage persistStorage;
 
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
-  Map<Integer, List<SimpleClusterNode>> partition2ClusterNodes;
+  Map<Integer, List<DefaultClusterNode>> partition2ClusterNodes;
 
   /** 数据uuid到分区的映射关系 */
   final Map<Object, Integer> uuid2Partitions;
@@ -279,10 +278,11 @@ class DefaultDistributedEngine
     return partition;
   }
 
-  private boolean isPartition2LocalNode(int partition) {
+  boolean isPartition2LocalNode(int partition) {
     Address local = jChannel.address();
-    for (SimpleClusterNode node : partition2ClusterNodes.get(partition)) {
-      if (local.equals(node.address())) {
+    for (DefaultClusterNode node :
+        partition2ClusterNodes.computeIfAbsent(partition, k -> new LinkedList<>())) {
+      if (local.equals(node.uuid())) {
         return true;
       }
     }
@@ -304,7 +304,7 @@ class DefaultDistributedEngine
   public synchronized void repartition(View oldView, View newView) {
     assert newView != null;
 
-    Map<Integer, List<SimpleClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
+    Map<Integer, List<DefaultClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
     int partitionCount = getPartitionCount();
     if (partition2ClusterNodes == null) {
       // 分区表key数量在没有集群节点变化时是固定的，并且每个分区号都不同，此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
@@ -317,14 +317,17 @@ class DefaultDistributedEngine
       partition2ClusterNodes = new ConcurrentHashMap<>(partitionCount, 1.0f);
     }
 
+    Address localAddress = jChannel.getAddress();
+
     // 获取集群节点列表
-    List<SimpleClusterNode> newClusterNodes =
-        newView.getMembers().stream().map(SimpleClusterNode::new).toList();
+    List<DefaultClusterNode> newClusterNodes =
+        newView.getMembers().stream()
+            .map(address -> new DefaultClusterNode((ClusterNodeUUID) address, localAddress))
+            .toList();
 
     // 根据集群节点调整分区分布
     refreshPartitionTable(partitionCount, newClusterNodes);
 
-    Address localAddress = jChannel.getAddress();
     List<Tuple<Integer, Boolean>> oldLocalPartitions = null;
     if (oldPartition2ClusterNodes != null) {
       oldLocalPartitions = getLocalPartitions(localAddress, oldPartition2ClusterNodes);
@@ -334,7 +337,7 @@ class DefaultDistributedEngine
         getLocalPartitions(localAddress, partition2ClusterNodes);
   }
 
-  private void refreshPartitionTable(int partitionCount, List<SimpleClusterNode> clusterNodes) {
+  private void refreshPartitionTable(int partitionCount, List<DefaultClusterNode> clusterNodes) {
     IntStream.range(0, partitionCount)
         .parallel()
         .forEach(
@@ -346,7 +349,7 @@ class DefaultDistributedEngine
   }
 
   private List<Tuple<Integer, Boolean>> getLocalPartitions(
-      Address local, Map<Integer, List<SimpleClusterNode>> p2n) {
+      Address local, Map<Integer, List<DefaultClusterNode>> p2n) {
     if (p2n == null) {
       return List.of();
     }
@@ -364,10 +367,10 @@ class DefaultDistributedEngine
     return list;
   }
 
-  private int indexOf(Collection<SimpleClusterNode> nodes, Address address) {
+  private int indexOf(Collection<DefaultClusterNode> nodes, Address address) {
     int i = 0;
-    for (SimpleClusterNode node : nodes) {
-      if (node.address().equals(address)) {
+    for (DefaultClusterNode node : nodes) {
+      if (node.uuid().equals(address)) {
         return i;
       }
     }

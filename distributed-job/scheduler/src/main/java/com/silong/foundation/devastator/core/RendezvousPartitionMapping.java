@@ -20,8 +20,6 @@ package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.Identity;
 import com.silong.foundation.devastator.PartitionClusterNodeMapping;
-import com.silong.foundation.devastator.model.SimpleClusterNode;
-import com.silong.foundation.devastator.model.WeightNodeTuple;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -32,7 +30,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 
-import static com.silong.foundation.devastator.model.WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR;
+import static com.silong.foundation.devastator.core.WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR;
 import static com.silong.foundation.devastator.utils.HashUtils.mixHash;
 
 /**
@@ -57,7 +55,7 @@ import static com.silong.foundation.devastator.utils.HashUtils.mixHash;
  */
 @Slf4j
 class RendezvousPartitionMapping
-    implements PartitionClusterNodeMapping<SimpleClusterNode>, Serializable {
+    implements PartitionClusterNodeMapping<DefaultClusterNode>, Serializable {
 
   @Serial private static final long serialVersionUID = -5940041940626753044L;
 
@@ -65,10 +63,10 @@ class RendezvousPartitionMapping
   public static final RendezvousPartitionMapping INSTANCE = new RendezvousPartitionMapping();
 
   /** 备份节点过滤器，第一个参数为Primary节点, 第二个参数为被测试节点. */
-  private SerializableBiPredicate<SimpleClusterNode, SimpleClusterNode> backupFilter;
+  private SerializableBiPredicate<DefaultClusterNode, DefaultClusterNode> backupFilter;
 
   /** 第一个参数为被测试节点，第二个参数为当前partition已经分配的节点列表 (列表中的第一个节点为Primary) */
-  private SerializableBiPredicate<SimpleClusterNode, Collection<SimpleClusterNode>>
+  private SerializableBiPredicate<DefaultClusterNode, Collection<DefaultClusterNode>>
       affinityBackupFilter;
 
   /** 默认构造方法 */
@@ -81,7 +79,7 @@ class RendezvousPartitionMapping
    * @return @{@code this}
    */
   public RendezvousPartitionMapping setBackupFilter(
-      SerializableBiPredicate<SimpleClusterNode, SimpleClusterNode> backupFilter) {
+      SerializableBiPredicate<DefaultClusterNode, DefaultClusterNode> backupFilter) {
     this.backupFilter = backupFilter;
     return this;
   }
@@ -93,28 +91,28 @@ class RendezvousPartitionMapping
    * @return @{@code this}
    */
   public RendezvousPartitionMapping setAffinityBackupFilter(
-      SerializableBiPredicate<SimpleClusterNode, Collection<SimpleClusterNode>>
+      SerializableBiPredicate<DefaultClusterNode, Collection<DefaultClusterNode>>
           affinityBackupFilter) {
     this.affinityBackupFilter = affinityBackupFilter;
     return this;
   }
 
   private WeightNodeTuple[] calculateNodeWeight(
-      int partitionNum, Collection<SimpleClusterNode> clusterNodes) {
+      int partitionNum, Collection<DefaultClusterNode> clusterNodes) {
     int i = 0;
     WeightNodeTuple[] array = new WeightNodeTuple[clusterNodes.size()];
-    for (SimpleClusterNode node : clusterNodes) {
+    for (DefaultClusterNode node : clusterNodes) {
       array[i++] = new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node);
     }
     return array;
   }
 
   @Override
-  public List<SimpleClusterNode> allocatePartition(
+  public List<DefaultClusterNode> allocatePartition(
       int partitionNo,
       int backupNum,
-      Collection<SimpleClusterNode> clusterNodes,
-      @Nullable Map<SimpleClusterNode, Collection<SimpleClusterNode>> neighborhood) {
+      Collection<DefaultClusterNode> clusterNodes,
+      @Nullable Map<DefaultClusterNode, Collection<DefaultClusterNode>> neighborhood) {
     if (partitionNo < 0) {
       throw new IllegalArgumentException("partitionNo must be greater than or equal to 0.");
     }
@@ -140,13 +138,13 @@ class RendezvousPartitionMapping
 
     // 延迟排序优化
     WeightNodeTuple[] weightNodeTuples = calculateNodeWeight(partitionNo, clusterNodes);
-    Iterable<SimpleClusterNode> sortedNodes =
+    Iterable<DefaultClusterNode> sortedNodes =
         new LazyLinearSortedContainer(weightNodeTuples, primaryAndBackups);
 
     // 先添加主(最高随机权重)
-    Iterator<SimpleClusterNode> it = sortedNodes.iterator();
-    SimpleClusterNode primary = it.next();
-    List<SimpleClusterNode> res = new ArrayList<>(primaryAndBackups);
+    Iterator<DefaultClusterNode> it = sortedNodes.iterator();
+    DefaultClusterNode primary = it.next();
+    List<DefaultClusterNode> res = new ArrayList<>(primaryAndBackups);
     res.add(primary);
 
     // 是否排除邻居节点
@@ -156,7 +154,7 @@ class RendezvousPartitionMapping
     // 选取备份节点
     if (backupNum > 0) {
       while (it.hasNext() && res.size() < primaryAndBackups) {
-        SimpleClusterNode node = it.next();
+        DefaultClusterNode node = it.next();
         if (disableBackupNodeFilter()
             || isPassedBackupNodeFilter(primary, node)
             || isPassedAffinityBackupNodeFilter(node, res)) {
@@ -182,7 +180,7 @@ class RendezvousPartitionMapping
       it.next();
 
       while (it.hasNext() && res.size() < primaryAndBackups) {
-        SimpleClusterNode node = it.next();
+        DefaultClusterNode node = it.next();
         if (!res.contains(node)) {
           res.add(node);
         }
@@ -196,11 +194,11 @@ class RendezvousPartitionMapping
   }
 
   private boolean isPassedAffinityBackupNodeFilter(
-      SimpleClusterNode node, List<SimpleClusterNode> res) {
+      DefaultClusterNode node, List<DefaultClusterNode> res) {
     return affinityBackupFilter != null && affinityBackupFilter.test(node, res);
   }
 
-  private boolean isPassedBackupNodeFilter(SimpleClusterNode primary, SimpleClusterNode node) {
+  private boolean isPassedBackupNodeFilter(DefaultClusterNode primary, DefaultClusterNode node) {
     return backupFilter != null && backupFilter.test(primary, node);
   }
 
@@ -209,7 +207,7 @@ class RendezvousPartitionMapping
   }
 
   /** Sorts the initial array with linear sort algorithm array */
-  private static class LazyLinearSortedContainer implements Iterable<SimpleClusterNode> {
+  private static class LazyLinearSortedContainer implements Iterable<DefaultClusterNode> {
     /** Initial node-hash array. */
     private final WeightNodeTuple[] arr;
 
@@ -231,12 +229,12 @@ class RendezvousPartitionMapping
     /** {@inheritDoc} */
     @Override
     @NonNull
-    public Iterator<SimpleClusterNode> iterator() {
+    public Iterator<DefaultClusterNode> iterator() {
       return new LazyLinearSortedContainer.SortIterator();
     }
 
     /** */
-    private class SortIterator implements Iterator<SimpleClusterNode> {
+    private class SortIterator implements Iterator<DefaultClusterNode> {
       /** Index of the first unsorted element. */
       private int cur;
 
@@ -248,7 +246,7 @@ class RendezvousPartitionMapping
 
       /** {@inheritDoc} */
       @Override
-      public SimpleClusterNode next() {
+      public DefaultClusterNode next() {
         if (!hasNext()) {
           throw new NoSuchElementException();
         }

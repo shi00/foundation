@@ -22,18 +22,18 @@ import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.DistributedJobScheduler;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.model.Devastator.ClusterMsgPayload;
-import com.silong.foundation.devastator.model.SimpleClusterNode;
 import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
-import lombok.SneakyThrows;
+import net.jpountz.xxhash.XXHash64;
+import net.jpountz.xxhash.XXHashFactory;
 import org.jgroups.Address;
 
-import java.security.MessageDigest;
-import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static com.silong.foundation.devastator.model.Devastator.ClusterMsgType.JOB;
+import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 
 /**
  * 分布式任务调度器
@@ -44,9 +44,12 @@ import static com.silong.foundation.devastator.model.Devastator.ClusterMsgType.J
  */
 class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoCloseable {
 
-  /** sha256 */
-  private static final ThreadLocal<MessageDigest> SHA256 =
-      ThreadLocal.withInitial(DefaultDistributedJobScheduler::newSha256Digest);
+  /** xxhash64 */
+  private static final XXHash64 XX_HASH_64 = XXHashFactory.fastestInstance().hash64();
+
+  /** xxhash64 seed */
+  private static final long XX_HASH_64_SEED =
+      Long.parseLong(System.getProperty("devastator.xxhash64.seed", "0xcafebabe"));
 
   /** 调度器 */
   private ScheduledExecutorService executorService;
@@ -72,9 +75,8 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     this.executorService = executorService;
   }
 
-  @SneakyThrows
-  private static MessageDigest newSha256Digest() {
-    return MessageDigest.getInstance("SHA-256");
+  private long xxhash64(byte[] val) {
+    return XX_HASH_64.hash(val, 0, val.length, XX_HASH_64_SEED);
   }
 
   @Override
@@ -84,7 +86,6 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
       executorService = null;
     }
     engine = null;
-    SHA256.remove();
   }
 
   @Override
@@ -96,37 +97,46 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     // 包裹为可序列化Runnable
     SerializableRunnable runnable = command::run;
     byte[] bytes = KryoUtils.serialize(runnable);
-    byte[] key = SHA256.get().digest(bytes);
+    long key = xxhash64(bytes);
 
     // 任务映射的分区编号
-    int partition = engine.objectPartitionMapping.partition(Arrays.hashCode(key));
-
-    // 根据分区号获取其映射的节点列表
-    List<SimpleClusterNode> nodes = engine.partition2ClusterNodes.get(partition);
+    int partition = engine.objectPartitionMapping.partition(key);
 
     ClusterMsgPayload msgPayload =
         ClusterMsgPayload.newBuilder().setJobData(ByteString.copyFrom(bytes)).setType(JOB).build();
     byte[] payload = msgPayload.toByteArray();
 
-    Address localAddress = getLocalAddress();
+    Address localAddress = engine.jChannel.address();
+
+    // 根据分区号获取其映射的节点列表
+    List<DefaultClusterNode> nodes =
+        engine.partition2ClusterNodes.computeIfAbsent(partition, k -> new LinkedList<>());
+
+    boolean isPrimaryPart = false;
+    boolean isBackupPart = false;
 
     // 任务分发至分区对应的各节点
-    for (SimpleClusterNode node : nodes) {
-      Address dest = node.address();
+    for (int i = 0; i < nodes.size(); i++) {
+      DefaultClusterNode node = nodes.get(i);
+      Address dest = node.uuid();
       if (localAddress.equals(dest)) {
+        if (i == 0) {
+          isPrimaryPart = true;
+        } else {
+          isBackupPart = true;
+        }
         continue;
       }
       engine.send(PooledBytesMessage.obtain().dest(dest).setArray(payload));
     }
 
+    if (isPrimaryPart || isBackupPart) {
+      engine.persistStorage.put(String.valueOf(partition), INSTANCE.to(key), bytes);
+    }
+
     // 如果本地节点为主分区则持久化，并触发任务执行
-    if (nodes.get(0).address().equals(localAddress)) {
-      engine.persistStorage.put(String.valueOf(partition), key, bytes);
+    if (isPrimaryPart) {
       executorService.execute(runnable);
     }
-  }
-
-  private Address getLocalAddress() {
-    return ((DefaultClusterNode) engine.getLocalNode()).getLocalAddress();
   }
 }

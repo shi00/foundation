@@ -78,6 +78,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.lz4</groupId>
+            <artifactId>lz4-java</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.silong</groupId>
             <artifactId>concurrent-extends</artifactId>
             <version>1.0.0</version>

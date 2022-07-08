@@ -156,6 +156,7 @@
         <kryo.version>5.3.0</kryo.version>
         <!--开源组件-->
 
+        <lz4-java.version>1.8.0</lz4-java.version>
     </properties>
 
     <dependencyManagement>
@@ -250,6 +251,14 @@
                 <version>${jctools.version}</version>
             </dependency>
             <!-- 高性能队列 -->
+
+            <!-- xxhash -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4-java.version}</version>
+            </dependency>
+            <!-- xxhash -->
 
             <!-- etcd -->
             <dependency>

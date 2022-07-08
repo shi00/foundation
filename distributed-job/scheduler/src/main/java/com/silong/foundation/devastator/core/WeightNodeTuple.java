@@ -16,13 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.devastator.model;
+package com.silong.foundation.devastator.core;
+
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Comparator;
 
-import static com.silong.foundation.devastator.model.WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR;
+import static com.silong.foundation.devastator.core.WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR;
 
 /**
  * 节点权重二元组
@@ -31,7 +33,7 @@ import static com.silong.foundation.devastator.model.WeightNodeTuple.WeightNodeT
  * @version 1.0.0
  * @since 2022-04-30 09:35
  */
-public record WeightNodeTuple(long weight, SimpleClusterNode node) implements Comparable<WeightNodeTuple>, Serializable {
+record WeightNodeTuple(long weight, DefaultClusterNode node) implements Comparable<WeightNodeTuple>, Serializable {
     @Serial
     private static final long serialVersionUID = -5468679374325846351L;
 
@@ -62,7 +64,7 @@ public record WeightNodeTuple(long weight, SimpleClusterNode node) implements Co
     }
 
     @Override
-    public int compareTo(WeightNodeTuple o) {
+    public int compareTo(@NonNull WeightNodeTuple o) {
         return COMPARATOR.compare(this, o);
     }
 }
