@@ -127,16 +127,20 @@ public interface TypeConverter<T, R> extends Serializable {
     private Long2Bytes() {}
 
     @Override
-    public byte[] to(Long value) {
-      if (value == null) {
+    public byte[] to(Long data) {
+      if (data == null) {
         return null;
       }
-      byte[] result = new byte[Long.BYTES];
-      for (int i = Long.BYTES - 1; i >= 0; i--) {
-        result[i] = (byte) (value & 0xffL);
-        value >>= Long.BYTES;
-      }
-      return result;
+      return new byte[] {
+        (byte) ((data >> 56) & 0xff),
+        (byte) ((data >> 48) & 0xff),
+        (byte) ((data >> 40) & 0xff),
+        (byte) ((data >> 32) & 0xff),
+        (byte) ((data >> 24) & 0xff),
+        (byte) ((data >> 16) & 0xff),
+        (byte) ((data >> 8) & 0xff),
+        (byte) (data & 0xff),
+      };
     }
 
     @Override
