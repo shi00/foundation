@@ -31,7 +31,6 @@ import java.io.Serializable;
 import java.util.*;
 
 import static com.silong.foundation.devastator.core.WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR;
-import static com.silong.foundation.devastator.utils.HashUtils.mixHash;
 
 /**
  *
@@ -105,6 +104,28 @@ class RendezvousPartitionMapping
       array[i++] = new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node);
     }
     return array;
+  }
+
+  /**
+   * 把两个int类型hash值组合成一个long型hash。<br>
+   * 基于Wang/Jenkins hash
+   *
+   * @param val1 Hash1
+   * @param val2 Hash2
+   * @see <a href="https://gist.github.com/badboy/6267743#64-bit-mix-functions">64 bit mix
+   *     functions</a>
+   * @return long hash
+   */
+  private static long mixHash(int val1, int val2) {
+    long key = (val1 & 0xFFFFFFFFL) | ((val2 & 0xFFFFFFFFL) << 32);
+    key = (~key) + (key << 21);
+    key ^= (key >>> 24);
+    key += (key << 3) + (key << 8);
+    key ^= (key >>> 14);
+    key += (key << 2) + (key << 4);
+    key ^= (key >>> 28);
+    key += (key << 31);
+    return key;
   }
 
   @Override
