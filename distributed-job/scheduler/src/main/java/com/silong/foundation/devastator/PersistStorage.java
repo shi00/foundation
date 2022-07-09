@@ -35,14 +35,14 @@ import java.util.function.BiConsumer;
 public interface PersistStorage {
 
   /**
-   * 创建列族
+   * 创建列族，如果已经存在则直接返回
    *
    * @param columnFamilyName 列族名
    */
   void createColumnFamily(String columnFamilyName);
 
   /**
-   * 删除列族以及其数据
+   * 删除列族以及其数据，如果列族不存在则直接返回
    *
    * @param columnFamilyName 列族名
    */

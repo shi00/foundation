@@ -36,6 +36,7 @@ public interface DistributedEngine {
    * @param msg 消息字节数组
    * @param dest 目标地址
    * @param <T> 地址类型
+   * @return this
    * @throws Exception 当前节点为连接集群或已关闭时抛出，参数异常时抛出
    */
   <T extends Comparable<T>> DistributedEngine send(
@@ -48,6 +49,7 @@ public interface DistributedEngine {
    * @param offset 消息偏移位置
    * @param length 消息长度
    * @param dest 目标地址
+   * @return this
    * @param <T> 地址类型
    * @throws Exception 当前节点为连接集群或已关闭时抛出，参数异常时抛出
    */

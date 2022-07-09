@@ -42,13 +42,17 @@ import java.io.Serializable;
 @Accessors(fluent = true)
 public class JobMsgPayloadEvent implements AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = 1166820128260099486L;
+  @Serial private static final long serialVersionUID = -8375488221362284221L;
 
-  /** 当前视图 */
+  /** 任务消息 */
   private JobMsgPayload jobMsgPayload;
+
+  /** 原始数据 */
+  private byte[] rawData;
 
   @Override
   public void close() {
     jobMsgPayload = null;
+    rawData = null;
   }
 }

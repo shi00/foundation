@@ -23,15 +23,25 @@ import com.lmax.disruptor.LiteBlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.silong.foundation.devastator.event.JobMsgPayloadEvent;
+import com.silong.foundation.devastator.model.Devastator.Job;
+import com.silong.foundation.devastator.model.Devastator.JobClass;
 import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
+import com.silong.foundation.devastator.utils.KryoUtils;
+import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableCallable;
+import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
 import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
+import static com.silong.foundation.devastator.core.DefaultDistributedJobScheduler.xxhash64;
 import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.powerOf2;
+import static com.silong.foundation.devastator.model.Devastator.JobClass.CALLABLE;
+import static com.silong.foundation.devastator.model.Devastator.JobClass.RUNNABLE;
+import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 
 /**
  * 消息事件处理器
@@ -44,7 +54,7 @@ import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.po
 class DefaultMessageHandler
     implements EventHandler<JobMsgPayloadEvent>, AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = 5687637299110748013L;
+  @Serial private static final long serialVersionUID = -1336687878210405788L;
 
   /** 消息事件处理器线程名 */
   private static final String MESSAGE_EVENT_PROCESSOR = "cluster-message-processor";
@@ -84,6 +94,15 @@ class DefaultMessageHandler
     return disruptor;
   }
 
+  private boolean isPrimaryPartition2LocalNode(int partition) {
+    return engine
+        .partition2ClusterNodes
+        .get(partition)
+        .get(0)
+        .uuid()
+        .equals(engine.jChannel.address());
+  }
+
   @Override
   public void onEvent(JobMsgPayloadEvent event, long sequence, boolean endOfBatch) {
     if (log.isDebugEnabled()) {
@@ -92,8 +111,42 @@ class DefaultMessageHandler
     }
 
     try {
-      JobMsgPayload payload = event.jobMsgPayload();
+      JobMsgPayload jobMsgPayload = event.jobMsgPayload();
+      Job job = jobMsgPayload.getJob();
+      byte[] jobBytes = job.getJobBytes().toByteArray();
 
+      long jobId = job.getJobId();
+      if (jobId != xxhash64(jobBytes)) {
+        throw new IllegalStateException("Inconsistent jobId:" + jobId);
+      }
+
+      // 持久化数据
+      int partition = engine.objectPartitionMapping.partition(jobId);
+      String partCf = engine.getPartitionCf(partition);
+      byte[] jobKey = INSTANCE.to(jobId);
+      engine.persistStorage.put(partCf, jobKey, event.rawData());
+
+      // 根据分区号获取其映射的节点列表
+      List<DefaultClusterNode> nodes = engine.partition2ClusterNodes.get(partition);
+
+      // 如果本地节点是主分区，则触发任务执行
+      if (isPrimaryPartition2LocalNode(partition)) {
+        DefaultDistributedJobScheduler scheduler =
+            (DefaultDistributedJobScheduler) engine.scheduler(job.getSchedulerName());
+        JobClass jobClass = job.getJobClass();
+        JobMsgPayload.Builder jobMsgPayloadBuilder = JobMsgPayload.newBuilder(jobMsgPayload);
+        Job.Builder jobBuilder = Job.newBuilder(job);
+        if (jobClass == RUNNABLE) {
+          SerializableRunnable command = KryoUtils.deserialize(jobBytes);
+          scheduler.executeInternal(
+              new WrapRunnable(
+                  engine, partCf, jobKey, command, nodes, jobMsgPayloadBuilder, jobBuilder));
+        } else if (jobClass == CALLABLE) {
+          SerializableCallable<?> c = KryoUtils.deserialize(jobBytes);
+        } else {
+          throw new UnsupportedOperationException("Unknown jobClass:" + jobClass);
+        }
+      }
     } finally {
       if (log.isDebugEnabled()) {
         log.debug(
@@ -106,15 +159,16 @@ class DefaultMessageHandler
    * 处理收到的任务消息
    *
    * @param payload 任务消息
+   * @param rawData 原始数据
    */
-  public void handle(JobMsgPayload payload) {
+  public void handle(JobMsgPayload payload, byte[] rawData) {
     if (payload == null) {
       log.error("payload must not be null.");
       return;
     }
     long sequence = ringBuffer.next();
     try {
-      JobMsgPayloadEvent event = ringBuffer.get(sequence).jobMsgPayload(payload);
+      JobMsgPayloadEvent event = ringBuffer.get(sequence).jobMsgPayload(payload).rawData(rawData);
       if (log.isDebugEnabled()) {
         log.debug("Enqueue {} with sequence:{}.", event, sequence);
       }
@@ -125,11 +179,11 @@ class DefaultMessageHandler
 
   @Override
   public void close() {
-    if (this.disruptor != null) {
-      this.disruptor.shutdown();
-      this.disruptor = null;
+    if (disruptor != null) {
+      disruptor.shutdown();
+      disruptor = null;
     }
-    this.ringBuffer = null;
-    this.engine = null;
+    ringBuffer = null;
+    engine = null;
   }
 }

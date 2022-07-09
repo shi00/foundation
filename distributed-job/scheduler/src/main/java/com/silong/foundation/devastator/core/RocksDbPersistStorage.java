@@ -25,12 +25,17 @@ import com.silong.foundation.devastator.exception.InitializationException;
 import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.Tuple;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.*;
 
 import java.io.File;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
@@ -47,6 +52,7 @@ import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
  * @version 1.0.0
  * @since 2022-04-10 17:52
  */
+@Slf4j
 @SuppressFBWarnings({"PATH_TRAVERSAL_IN"})
 class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializable {
 
@@ -73,7 +79,7 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
 
   private final Statistics statistics;
 
-  private final Map<String, ColumnFamilyHandle> columnFamilyHandlesMap = new HashMap<>();
+  private final Map<String, ColumnFamilyHandle> columnFamilyHandlesMap = new ConcurrentHashMap<>();
 
   /**
    * 构造方法
@@ -117,6 +123,7 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
         config.columnFamilyNames().stream()
             .map(name -> new ColumnFamilyDescriptor(name.getBytes(), cfOpts))
             .toList());
+
     options =
         new DBOptions()
             .setRateLimiter(rateLimiter)
@@ -232,9 +239,13 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
 
   @Override
   public void deleteColumnFamily(String columnFamilyName) {
-    validateColumnFamily(columnFamilyName);
+    validate(isEmpty(columnFamilyName), "columnFamilyName must not be null or empty.");
     try {
       ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
+      if (columnFamilyHandle == null) {
+        log.warn("{} does not exist and cannot be deleted.", columnFamilyName);
+        return;
+      }
       rocksDB.dropColumnFamily(columnFamilyHandle);
       columnFamilyHandlesMap.remove(columnFamilyName).close();
     } catch (RocksDBException e) {
@@ -246,7 +257,7 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
   public void createColumnFamily(String columnFamilyName) {
     validate(isEmpty(columnFamilyName), "columnFamilyName must not be null or empty.");
     try {
-      columnFamilyHandlesMap.put(
+      columnFamilyHandlesMap.putIfAbsent(
           columnFamilyName,
           rocksDB.createColumnFamily(
               new ColumnFamilyDescriptor(columnFamilyName.getBytes(), cfOpts)));
@@ -366,6 +377,7 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
 
   @Override
   public void put(String columnFamilyName, byte[] key, byte[] value) {
+    validateColumnFamily(columnFamilyName);
     validate(key == null, "key must not be null.");
     validate(value == null, "value must not be null.");
     try {

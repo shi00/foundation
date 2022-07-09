@@ -57,7 +57,6 @@ import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.config.DevastatorConfig.DEFAULT_PARTITION_SIZE;
-import static com.silong.foundation.devastator.core.DefaultDistributedJobScheduler.xxhash64;
 import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.powerOf2;
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
@@ -83,9 +82,6 @@ class DefaultDistributedEngine
 
   @Serial private static final long serialVersionUID = 1258279194145465487L;
 
-  /** 分布式任务调度器 */
-  private final Map<String, DistributedJobScheduler> distributedJobSchedulerMap;
-
   /** address缓存 */
   private static final ThreadLocal<ByteArrayDataOutputStream> ADDRESS_BUFFER =
       withInitial(() -> new ByteArrayDataOutputStream(LONG_SIZE * 2));
@@ -95,6 +91,9 @@ class DefaultDistributedEngine
 
   /** 集群胸袭处理器 */
   private final DefaultMessageHandler[] defaultMessageHandlers;
+
+  /** 分布式任务调度器 */
+  private final Map<String, DistributedJobScheduler> distributedJobSchedulerMap;
 
   /** 集群通信信道 */
   final JChannel jChannel;
@@ -250,6 +249,21 @@ class DefaultDistributedEngine
   }
 
   /**
+   * 根据分区号生成存储列族名称
+   *
+   * @param partitionNo 分区号
+   * @return 保存任务数据使用的列族名
+   */
+  String getPartitionCf(int partitionNo) {
+    if (partitionNo > 0) {
+      throw new IllegalArgumentException("partitionNo must be greater than or equals 0.");
+    }
+    String cf = clusterName() + partitionNo;
+    persistStorage.createColumnFamily(cf);
+    return cf;
+  }
+
+  /**
    * 获取消息工厂
    *
    * @return 消息工程
@@ -299,7 +313,7 @@ class DefaultDistributedEngine
     return partition;
   }
 
-  boolean isPartition2LocalNode(int partition) {
+  private boolean isPartition2LocalNode(int partition) {
     Address local = jChannel.address();
     for (DefaultClusterNode node : partition2ClusterNodes.get(partition)) {
       if (local.equals(node.uuid())) {
@@ -402,7 +416,7 @@ class DefaultDistributedEngine
    *
    * @return 绑定地址
    */
-  public InetAddress bindAddress() {
+  InetAddress bindAddress() {
     TP transport = getTransport();
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastAddress()
@@ -414,7 +428,7 @@ class DefaultDistributedEngine
    *
    * @return 绑定端口
    */
-  public int bindPort() {
+  int bindPort() {
     TP transport = getTransport();
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastPort()
@@ -447,7 +461,7 @@ class DefaultDistributedEngine
    * @return {@code this}
    * @exception Exception thrown if the channel is disconnected or closed
    */
-  public DistributedEngine send(@NonNull Message message) throws Exception {
+  DistributedEngine send(@NonNull Message message) throws Exception {
     jChannel.send(message);
     return this;
   }
@@ -479,12 +493,12 @@ class DefaultDistributedEngine
       // 处理任务消息
       if (message instanceof PooledBytesMessage msg) {
         try {
-          JobMsgPayload jobMsgPayload = JobMsgPayload.parseFrom(msg.getArray());
+          byte[] bytes = msg.getArray();
+          JobMsgPayload jobMsgPayload = JobMsgPayload.parseFrom(bytes);
 
           // 根据任务计算其归属的任务消息处理队列
-          long key = xxhash64(jobMsgPayload.getJob().getJobBytes().toByteArray());
-          int index = (int) (key & messageEventQueueMark);
-          defaultMessageHandlers[index].handle(jobMsgPayload);
+          int index = (int) (jobMsgPayload.getJob().getJobId() & messageEventQueueMark);
+          defaultMessageHandlers[index].handle(jobMsgPayload, bytes);
         } catch (InvalidProtocolBufferException e) {
           log.error("Unknown job.", e);
         }
@@ -596,6 +610,7 @@ class DefaultDistributedEngine
           }
           return new DefaultDistributedJobScheduler(
               this,
+              name,
               Executors.newScheduledThreadPool(
                   seConfig.threadCoreSize(), new SimpleThreadFactory(seConfig.threadNamePrefix())));
         });

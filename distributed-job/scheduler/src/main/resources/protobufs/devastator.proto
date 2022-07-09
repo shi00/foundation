@@ -69,9 +69,11 @@ message Job{
   JobClass job_class = 1; //任务class
   JobState job_state = 2; //任务状态
   JobType job_type = 3; //任务类型
-  bytes job_bytes = 4; //任务序列化数据
-  optional bytes class_bytes = 5; //job class文件内容
-  optional string job_class_fqdn = 6; //如果消息类型为JOB，此字段为job类型FQDN
+  int64 job_id = 4; //任务id
+  string scheduler_name = 5; //执行任务的调度器名称
+  bytes job_bytes = 6; //任务序列化数据
+  optional bytes class_bytes = 7; //job class文件内容
+  optional string job_class_fqdn = 8; //如果消息类型为JOB，此字段为job类型FQDN
 }
 
 //消息类型
