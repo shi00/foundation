@@ -21,18 +21,25 @@ package com.silong.foundation.devastator.core;
 import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.DistributedJobScheduler;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
-import com.silong.foundation.devastator.model.Devastator.ClusterMsgPayload;
+import com.silong.foundation.devastator.model.Devastator.Job;
+import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
+import com.silong.foundation.devastator.model.Devastator.JobMsgType;
+import com.silong.foundation.devastator.model.Devastator.JobState;
 import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
+import lombok.extern.slf4j.Slf4j;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 import org.jgroups.Address;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.silong.foundation.devastator.model.Devastator.ClusterMsgType.JOB;
+import static com.silong.foundation.devastator.model.Devastator.JobClass.RUNNABLE;
+import static com.silong.foundation.devastator.model.Devastator.JobMsgType.CREATE_JOB;
+import static com.silong.foundation.devastator.model.Devastator.JobMsgType.UPDATE_JOB;
+import static com.silong.foundation.devastator.model.Devastator.JobState.*;
+import static com.silong.foundation.devastator.model.Devastator.JobType.ONE_SHOT;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 
 /**
@@ -42,6 +49,7 @@ import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.IN
  * @version 1.0.0
  * @since 2022-07-02 22:31
  */
+@Slf4j
 class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoCloseable {
 
   /** xxhash64 */
@@ -99,44 +107,103 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     byte[] bytes = KryoUtils.serialize(runnable);
     long key = xxhash64(bytes);
 
+    Job.Builder jobBuilder =
+        Job.newBuilder()
+            .setJobType(ONE_SHOT)
+            .setJobClass(RUNNABLE)
+            .setJobState(INIT)
+            .setJobBytes(ByteString.copyFrom(bytes));
+    JobMsgPayload.Builder jobMsgPayloadBuilder =
+        JobMsgPayload.newBuilder().setJob(jobBuilder).setType(CREATE_JOB);
+    byte[] jobPayload = jobMsgPayloadBuilder.build().toByteArray();
+
     // 任务映射的分区编号
     int partition = engine.objectPartitionMapping.partition(key);
 
-    ClusterMsgPayload msgPayload =
-        ClusterMsgPayload.newBuilder().setJobData(ByteString.copyFrom(bytes)).setType(JOB).build();
-    byte[] payload = msgPayload.toByteArray();
-
-    Address localAddress = engine.jChannel.address();
-
     // 根据分区号获取其映射的节点列表
-    List<DefaultClusterNode> nodes =
-        engine.partition2ClusterNodes.computeIfAbsent(partition, k -> new LinkedList<>());
-
-    boolean isPrimaryPart = false;
-    boolean isBackupPart = false;
+    List<DefaultClusterNode> nodes = engine.partition2ClusterNodes.get(partition);
+    Address localAddress = engine.jChannel.address();
 
     // 任务分发至分区对应的各节点
     for (int i = 0; i < nodes.size(); i++) {
-      DefaultClusterNode node = nodes.get(i);
-      Address dest = node.uuid();
+      Address dest = nodes.get(i).uuid();
       if (localAddress.equals(dest)) {
+        byte[] jobKey = INSTANCE.to(key);
+        String part = String.valueOf(partition);
+        engine.persistStorage.put(part, jobKey, jobPayload);
+
+        // 如果是主分区，则持久化任务并触发执行，否则仅持久化
         if (i == 0) {
-          isPrimaryPart = true;
-        } else {
-          isBackupPart = true;
+          executorService.execute(
+              () -> {
+                try {
+                  // 更新任务状态为运行中
+                  syncJob(
+                      part,
+                      jobKey,
+                      buildJobMsgPayload(jobBuilder, jobMsgPayloadBuilder, RUNNING, UPDATE_JOB),
+                      localAddress,
+                      nodes);
+
+                  try {
+                    command.run();
+                  } catch (Throwable t) {
+                    log.error("Failed to execute {}.", command, t);
+                    syncJob(
+                        part,
+                        jobKey,
+                        buildJobMsgPayload(jobBuilder, jobMsgPayloadBuilder, EXCEPTION, UPDATE_JOB),
+                        localAddress,
+                        nodes);
+                    return;
+                  }
+
+                  // 更新任务状态为正常完成
+                  syncJob(
+                      part,
+                      jobKey,
+                      buildJobMsgPayload(jobBuilder, jobMsgPayloadBuilder, FINISH, UPDATE_JOB),
+                      localAddress,
+                      nodes);
+                } catch (Exception e) {
+                  log.error("Failed to update state of {}.", command, e);
+                }
+              });
         }
-        continue;
+      } else {
+        engine.send(PooledBytesMessage.obtain().dest(dest).setArray(jobPayload));
       }
-      engine.send(PooledBytesMessage.obtain().dest(dest).setArray(payload));
     }
+  }
 
-    if (isPrimaryPart || isBackupPart) {
-      engine.persistStorage.put(String.valueOf(partition), INSTANCE.to(key), bytes);
-    }
+  private byte[] buildJobMsgPayload(
+      Job.Builder jobBuilder,
+      JobMsgPayload.Builder jobMsgPayloadBuilder,
+      JobState state,
+      JobMsgType jobMsgType) {
+    return jobMsgPayloadBuilder
+        .setJob(jobBuilder.setJobState(state))
+        .setType(jobMsgType)
+        .build()
+        .toByteArray();
+  }
 
-    // 如果本地节点为主分区则持久化，并触发任务执行
-    if (isPrimaryPart) {
-      executorService.execute(runnable);
+  private void syncJob(
+      String columnFamilyName,
+      byte[] jobKey,
+      byte[] jobPayload,
+      Address localAddress,
+      List<DefaultClusterNode> nodes)
+      throws Exception {
+    for (DefaultClusterNode node : nodes) {
+      Address dest = node.uuid();
+      // 本地节点持久化
+      if (localAddress.equals(dest)) {
+        engine.persistStorage.put(columnFamilyName, jobKey, jobPayload);
+      } else {
+        // 远程节点消息同步
+        engine.send(PooledBytesMessage.obtain().dest(dest).setArray(jobPayload));
+      }
     }
   }
 }

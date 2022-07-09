@@ -41,16 +41,49 @@ message ClusterState {
   uint32 backupNums = 2; //数据备份数
 }
 
-//集群消息类型
-enum ClusterMsgType {
-  JOB = 0; // 任务
-  SYNC = 1; // 数据同步
+//任务class类型
+enum JobClass{
+  RUNNABLE = 0; //runnable
+  CALLABLE = 1; //callable
 }
 
-//集群消息载荷
-message ClusterMsgPayload {
-  ClusterMsgType type = 1; //消息类型
-  optional string job_class_fqdn = 2; //如果消息类型为JOB，此字段为job类型FQDN
-  optional bytes clazz = 3; //job class文件内容
-  optional bytes job_data = 4; //序列化任务数据
+//任务类型
+enum JobType{
+  ONE_SHOT = 0; //立即执行的一次性任务
+  DELAY = 1; //延时执行一次的任务
+  PERIODIC_FIXED_DELAY = 2; //周期性固定延时任务
+  PERIODIC_FIXED_PERIOD = 3; //周期性固定延时任务
+}
+
+//任务状态
+enum JobState{
+  INIT = 0; //任务初始化
+  RUNNING = 1; //任务运行中
+  FINISH = 2; //任务正常执行完毕
+  EXCEPTION = 3; //任务异常
+  CANCELLED = 4; //任务被取消
+}
+
+//任务消息
+message Job{
+  JobClass job_class = 1; //任务class
+  JobState job_state = 2; //任务状态
+  JobType job_type = 3; //任务类型
+  bytes job_bytes = 4; //任务序列化数据
+  optional bytes class_bytes = 5; //job class文件内容
+  optional string job_class_fqdn = 6; //如果消息类型为JOB，此字段为job类型FQDN
+}
+
+//消息类型
+enum JobMsgType {
+  CREATE_JOB = 0; // 新增任务
+  DELETE_JOB = 1; // 删除任务
+  UPDATE_JOB = 2; // 更新任务
+  QUERY_JOB = 3; // 查询任务
+}
+
+//消息载荷
+message JobMsgPayload {
+  JobMsgType type = 1; //消息类型
+  Job job = 2; //任务
 }

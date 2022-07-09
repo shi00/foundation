@@ -53,6 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
+import static com.silong.foundation.devastator.config.DevastatorConfig.DEFAULT_PARTITION_SIZE;
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 import static java.lang.System.lineSeparator;
@@ -61,7 +62,6 @@ import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.SystemUtils.getHostName;
 import static org.jgroups.Global.LONG_SIZE;
-import static org.rocksdb.util.SizeUnit.KB;
 
 /**
  * 基于jgroups的分布式任务引擎
@@ -130,7 +130,7 @@ class DefaultDistributedEngine
 
     try {
       this.config = config;
-      this.uuid2Partitions = new ConcurrentHashMap<>((int) KB);
+      this.uuid2Partitions = new ConcurrentHashMap<>(DEFAULT_PARTITION_SIZE + 1, 1.0f);
       this.distributedJobSchedulerMap =
           new ConcurrentHashMap<>(config.scheduledExecutorConfigs().size());
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
@@ -158,8 +158,7 @@ class DefaultDistributedEngine
     registerMessages(jChannel);
 
     // 自定义集群节点策略
-    ((GMS) jChannel.getProtocolStack().findProtocol(GMS.class))
-        .setMembershipChangePolicy(DefaultMembershipChangePolicy.INSTANCE);
+    getGmsProtocol(jChannel).setMembershipChangePolicy(DefaultMembershipChangePolicy.INSTANCE);
   }
 
   /** 注册自定义消息类型 */
@@ -229,6 +228,16 @@ class DefaultDistributedEngine
   }
 
   /**
+   * 获取GMS协议
+   *
+   * @param jChannel jchannel
+   * @return GMS
+   */
+  private GMS getGmsProtocol(JChannel jChannel) {
+    return jChannel.getProtocolStack().findProtocol(GMS.class);
+  }
+
+  /**
    * 获取消息工厂
    *
    * @return 消息工程
@@ -280,8 +289,7 @@ class DefaultDistributedEngine
 
   boolean isPartition2LocalNode(int partition) {
     Address local = jChannel.address();
-    for (DefaultClusterNode node :
-        partition2ClusterNodes.computeIfAbsent(partition, k -> new LinkedList<>())) {
+    for (DefaultClusterNode node : partition2ClusterNodes.get(partition)) {
       if (local.equals(node.uuid())) {
         return true;
       }
