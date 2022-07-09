@@ -26,8 +26,6 @@ import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
 import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
 import lombok.extern.slf4j.Slf4j;
-import net.jpountz.xxhash.XXHash64;
-import net.jpountz.xxhash.XXHashFactory;
 import org.jgroups.Address;
 
 import java.util.List;
@@ -38,6 +36,7 @@ import static com.silong.foundation.devastator.model.Devastator.JobMsgType.CREAT
 import static com.silong.foundation.devastator.model.Devastator.JobState.INIT;
 import static com.silong.foundation.devastator.model.Devastator.JobType.ONE_SHOT;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
+import static com.silong.foundation.devastator.utils.Utilities.xxhash64;
 
 /**
  * 分布式任务调度器
@@ -48,13 +47,6 @@ import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.IN
  */
 @Slf4j
 class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoCloseable {
-
-  /** xxhash64 */
-  private static final XXHash64 XX_HASH_64 = XXHashFactory.fastestInstance().hash64();
-
-  /** xxhash64 seed */
-  private static final long XX_HASH_64_SEED =
-      Long.parseLong(System.getProperty("devastator.xxhash64.seed", "0xcafebabe"));
 
   /** 调度器 */
   private ScheduledExecutorService executorService;
@@ -86,10 +78,6 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     this.engine = engine;
     this.name = name;
     this.executorService = executorService;
-  }
-
-  static long xxhash64(byte[] val) {
-    return XX_HASH_64.hash(val, 0, val.length, XX_HASH_64_SEED);
   }
 
   @Override
