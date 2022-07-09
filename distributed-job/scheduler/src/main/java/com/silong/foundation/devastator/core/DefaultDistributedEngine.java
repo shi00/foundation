@@ -57,9 +57,9 @@ import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.config.DevastatorConfig.DEFAULT_PARTITION_SIZE;
-import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.powerOf2;
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
+import static com.silong.foundation.devastator.utils.Utilities.powerOf2;
 import static java.lang.System.lineSeparator;
 import static java.lang.ThreadLocal.withInitial;
 import static java.util.stream.Collectors.joining;

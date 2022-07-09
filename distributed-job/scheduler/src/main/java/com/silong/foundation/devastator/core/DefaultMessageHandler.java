@@ -38,10 +38,10 @@ import java.util.List;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 import static com.silong.foundation.devastator.core.DefaultDistributedJobScheduler.xxhash64;
-import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.powerOf2;
 import static com.silong.foundation.devastator.model.Devastator.JobClass.CALLABLE;
 import static com.silong.foundation.devastator.model.Devastator.JobClass.RUNNABLE;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
+import static com.silong.foundation.devastator.utils.Utilities.powerOf2;
 
 /**
  * 消息事件处理器

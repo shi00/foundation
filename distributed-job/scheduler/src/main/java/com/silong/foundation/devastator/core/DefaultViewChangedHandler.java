@@ -35,6 +35,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
+import static com.silong.foundation.devastator.utils.Utilities.powerOf2;
 
 /**
  * 集群视图变化事件处理器
@@ -48,12 +49,6 @@ class DefaultViewChangedHandler
     implements EventHandler<ViewChangedEvent>, AutoCloseable, Serializable {
 
   @Serial private static final long serialVersionUID = 408091865064908530L;
-
-  /**
-   * The maximum capacity, used if a higher value is implicitly specified by either of the
-   * constructors with arguments. MUST be a power of two <= 1<<30.
-   */
-  static final int MAXIMUM_CAPACITY = 1 << 30;
 
   /** 视图变更事件处理器线程名 */
   private static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor";
@@ -187,11 +182,6 @@ class DefaultViewChangedHandler
             "End processing {} with sequence:{} and endOfBatch:{}.", event, sequence, endOfBatch);
       }
     }
-  }
-
-  static int powerOf2(int size) {
-    int n = -1 >>> Integer.numberOfLeadingZeros(size - 1);
-    return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
   }
 
   @Override
