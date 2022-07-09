@@ -32,6 +32,7 @@ import com.silong.foundation.devastator.model.Tuple;
 import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
@@ -437,6 +438,23 @@ class DefaultDistributedEngine
    */
   public DistributedEngine send(@NonNull Message message) throws Exception {
     jChannel.send(message);
+    return this;
+  }
+
+  @Override
+  public <T extends Comparable<T>> DistributedEngine send(
+      @NonNull byte[] msg, @Nullable ClusterNode<T> dest) throws Exception {
+    return send(msg, 0, msg.length, dest);
+  }
+
+  @Override
+  public <T extends Comparable<T>> DistributedEngine send(
+      @NonNull byte[] msg, int offset, int length, @Nullable ClusterNode<T> dest) throws Exception {
+    if (dest == null) {
+      jChannel.send(null, msg, offset, length);
+    } else {
+      jChannel.send((Address) dest.uuid(), msg, offset, length);
+    }
     return this;
   }
 

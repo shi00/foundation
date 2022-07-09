@@ -18,6 +18,9 @@
  */
 package com.silong.foundation.devastator;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+
 /**
  * Devastator分布式引擎
  *
@@ -26,6 +29,30 @@ package com.silong.foundation.devastator;
  * @since 2022-04-10 09:01
  */
 public interface DistributedEngine {
+
+  /**
+   * 发送集群消息
+   *
+   * @param msg 消息字节数组
+   * @param dest 目标地址
+   * @param <T> 地址类型
+   * @throws Exception 当前节点为连接集群或已关闭时抛出，参数异常时抛出
+   */
+  <T extends Comparable<T>> DistributedEngine send(
+      @NonNull byte[] msg, @Nullable ClusterNode<T> dest) throws Exception;
+
+  /**
+   * 发送集群消息
+   *
+   * @param msg 消息字节数组
+   * @param offset 消息偏移位置
+   * @param length 消息长度
+   * @param dest 目标地址
+   * @param <T> 地址类型
+   * @throws Exception 当前节点为连接集群或已关闭时抛出，参数异常时抛出
+   */
+  <T extends Comparable<T>> DistributedEngine send(
+      @NonNull byte[] msg, int offset, int length, @Nullable ClusterNode<T> dest) throws Exception;
 
   /**
    * 获取集群
