@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.silong.foundation.devastator.*;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.config.ScheduledExecutorConfig;
@@ -27,6 +28,7 @@ import com.silong.foundation.devastator.message.PooledNioMessage;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
+import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
 import com.silong.foundation.devastator.model.KvPair;
 import com.silong.foundation.devastator.model.Tuple;
 import com.silong.foundation.devastator.utils.KryoUtils;
@@ -55,6 +57,8 @@ import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.config.DevastatorConfig.DEFAULT_PARTITION_SIZE;
+import static com.silong.foundation.devastator.core.DefaultDistributedJobScheduler.xxhash64;
+import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.powerOf2;
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 import static java.lang.System.lineSeparator;
@@ -90,7 +94,7 @@ class DefaultDistributedEngine
   private final DefaultViewChangedHandler defaultViewChangedHandler;
 
   /** 集群胸袭处理器 */
-  private final DefaultMessageHandler defaultMessageHandler;
+  private final DefaultMessageHandler[] defaultMessageHandlers;
 
   /** 集群通信信道 */
   final JChannel jChannel;
@@ -119,6 +123,8 @@ class DefaultDistributedEngine
   /** 最后一个集群视图 */
   private volatile View lastView;
 
+  private final int messageEventQueueMark;
+
   /**
    * 构造方法
    *
@@ -131,13 +137,18 @@ class DefaultDistributedEngine
 
     try {
       this.config = config;
-      this.uuid2Partitions = new ConcurrentHashMap<>(DEFAULT_PARTITION_SIZE + 1, 1.0f);
+      this.uuid2Partitions = new ConcurrentHashMap<>(DEFAULT_PARTITION_SIZE);
       this.distributedJobSchedulerMap =
           new ConcurrentHashMap<>(config.scheduledExecutorConfigs().size());
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
       this.persistStorage = new RocksDbPersistStorage(config.persistStorageConfig());
       this.defaultViewChangedHandler = new DefaultViewChangedHandler(this);
-      this.defaultMessageHandler = new DefaultMessageHandler(this);
+      this.defaultMessageHandlers =
+          new DefaultMessageHandler[powerOf2(config.messageEventQueueCount())];
+      this.messageEventQueueMark = defaultMessageHandlers.length - 1;
+      for (int i = 0; i < defaultMessageHandlers.length; i++) {
+        defaultMessageHandlers[i] = new DefaultMessageHandler(this);
+      }
       configureDistributedEngine(this.jChannel = buildDistributedEngine(config.configFile()));
 
       // 启动引擎
@@ -464,7 +475,24 @@ class DefaultDistributedEngine
       if (log.isDebugEnabled()) {
         log.debug("A message received {}.", message);
       }
-      defaultMessageHandler.handle(message);
+
+      // 处理任务消息
+      if (message instanceof PooledBytesMessage msg) {
+        try {
+          JobMsgPayload jobMsgPayload = JobMsgPayload.parseFrom(msg.getArray());
+
+          // 根据任务计算其归属的任务消息处理队列
+          long key = xxhash64(jobMsgPayload.getJob().getJobBytes().toByteArray());
+          int index = (int) (key & messageEventQueueMark);
+          defaultMessageHandlers[index].handle(jobMsgPayload);
+        } catch (InvalidProtocolBufferException e) {
+          log.error("Unknown job.", e);
+        }
+      } else {
+        if (log.isDebugEnabled()) {
+          log.debug("Ignores received message {}.", message);
+        }
+      }
     }
   }
 
@@ -628,8 +656,12 @@ class DefaultDistributedEngine
       this.defaultViewChangedHandler.close();
     }
 
-    if (this.defaultMessageHandler != null) {
-      this.defaultMessageHandler.close();
+    if (this.defaultMessageHandlers != null) {
+      for (DefaultMessageHandler handler : defaultMessageHandlers) {
+        if (handler != null) {
+          handler.close();
+        }
+      }
     }
 
     if (this.partition2ClusterNodes != null) {

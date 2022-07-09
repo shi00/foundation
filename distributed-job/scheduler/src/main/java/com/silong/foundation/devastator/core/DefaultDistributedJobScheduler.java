@@ -83,7 +83,7 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     this.executorService = executorService;
   }
 
-  private long xxhash64(byte[] val) {
+  static long xxhash64(byte[] val) {
     return XX_HASH_64.hash(val, 0, val.length, XX_HASH_64_SEED);
   }
 

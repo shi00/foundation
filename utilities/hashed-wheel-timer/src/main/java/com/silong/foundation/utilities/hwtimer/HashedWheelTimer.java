@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.utilities.hwtimer;
 
+import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import com.silong.foundation.utilities.pool.SimpleObjectPool;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.MpscUnboundedArrayQueue;
@@ -25,7 +26,6 @@ import org.jctools.queues.MpscUnboundedArrayQueue;
 import java.util.Arrays;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static com.silong.foundation.utilities.pool.SimpleObjectPool.buildLinkedListSoftRefObjectPool;
@@ -42,16 +42,7 @@ import static com.silong.foundation.utilities.pool.SimpleObjectPool.buildSoftRef
 public class HashedWheelTimer implements DelayedTaskTimer, Runnable {
 
   private static final ThreadFactory CLOCK_THREAD_FACTORY =
-      new ThreadFactory() {
-
-        private static final AtomicInteger COUNT = new AtomicInteger(0);
-
-        @Override
-        public Thread newThread(Runnable r) {
-          return new Thread(
-              r, HashedWheelTimer.class.getSimpleName() + "-" + COUNT.getAndIncrement());
-        }
-      };
+      new SimpleThreadFactory(HashedWheelTimer.class.getSimpleName());
 
   /** 默认时间轮长度 */
   private static final int DEFAULT_WHEEL_SIZE =

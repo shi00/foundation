@@ -18,18 +18,18 @@
  */
 package com.silong.foundation.devastator.event;
 
+import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.jgroups.Message;
 
 import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 消息事件
+ * 任务消息事件
  *
  * @author louis sin
  * @version 1.0.0
@@ -40,15 +40,15 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(fluent = true)
-public class MessageEvent implements AutoCloseable, Serializable {
+public class JobMsgPayloadEvent implements AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = -7116214943078749514L;
+  @Serial private static final long serialVersionUID = 1166820128260099486L;
 
   /** 当前视图 */
-  private Message message;
+  private JobMsgPayload jobMsgPayload;
 
   @Override
   public void close() {
-    message = null;
+    jobMsgPayload = null;
   }
 }

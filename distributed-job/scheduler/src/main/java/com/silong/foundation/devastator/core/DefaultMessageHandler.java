@@ -22,12 +22,10 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LiteBlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.silong.foundation.devastator.event.MessageEvent;
+import com.silong.foundation.devastator.event.JobMsgPayloadEvent;
+import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
 import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.jgroups.BytesMessage;
-import org.jgroups.Message;
-import org.jgroups.NioMessage;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -43,7 +41,8 @@ import static com.silong.foundation.devastator.core.DefaultViewChangedHandler.po
  * @since 2022-04-29 23:40
  */
 @Slf4j
-class DefaultMessageHandler implements EventHandler<MessageEvent>, AutoCloseable, Serializable {
+class DefaultMessageHandler
+    implements EventHandler<JobMsgPayloadEvent>, AutoCloseable, Serializable {
 
   @Serial private static final long serialVersionUID = 5687637299110748013L;
 
@@ -54,10 +53,10 @@ class DefaultMessageHandler implements EventHandler<MessageEvent>, AutoCloseable
   private DefaultDistributedEngine engine;
 
   /** 事件处理器 */
-  private Disruptor<MessageEvent> disruptor;
+  private Disruptor<JobMsgPayloadEvent> disruptor;
 
   /** 环状队列 */
-  private RingBuffer<MessageEvent> ringBuffer;
+  private RingBuffer<JobMsgPayloadEvent> ringBuffer;
 
   /**
    * 事件处理器
@@ -73,12 +72,12 @@ class DefaultMessageHandler implements EventHandler<MessageEvent>, AutoCloseable
     this.ringBuffer = disruptor.start();
   }
 
-  private Disruptor<MessageEvent> buildMessageEventDisruptor(int queueSize) {
-    Disruptor<MessageEvent> disruptor =
+  private Disruptor<JobMsgPayloadEvent> buildMessageEventDisruptor(int queueSize) {
+    Disruptor<JobMsgPayloadEvent> disruptor =
         new Disruptor<>(
-            MessageEvent::new,
+            JobMsgPayloadEvent::new,
             powerOf2(queueSize),
-                new SimpleThreadFactory(MESSAGE_EVENT_PROCESSOR),
+            new SimpleThreadFactory(MESSAGE_EVENT_PROCESSOR),
             MULTI,
             new LiteBlockingWaitStrategy());
     disruptor.handleEventsWith(this);
@@ -86,21 +85,15 @@ class DefaultMessageHandler implements EventHandler<MessageEvent>, AutoCloseable
   }
 
   @Override
-  public void onEvent(MessageEvent event, long sequence, boolean endOfBatch) {
+  public void onEvent(JobMsgPayloadEvent event, long sequence, boolean endOfBatch) {
     if (log.isDebugEnabled()) {
       log.debug(
           "Start processing {} with sequence:{} and endOfBatch:{}.", event, sequence, endOfBatch);
     }
 
     try {
-      Message message = event.message();
-      if (message instanceof BytesMessage playload) {
 
-        byte[] array = playload.getArray();
-
-      } else if (message instanceof NioMessage) {
-
-      }
+      JobMsgPayload payload = event.jobMsgPayload();
 
     } finally {
       if (log.isDebugEnabled()) {
@@ -111,18 +104,18 @@ class DefaultMessageHandler implements EventHandler<MessageEvent>, AutoCloseable
   }
 
   /**
-   * 处理收到的集群消息
+   * 处理收到的任务消息
    *
-   * @param message 消息
+   * @param payload 任务消息
    */
-  public void handle(Message message) {
-    if (message == null) {
-      log.error("message must not be null.");
+  public void handle(JobMsgPayload payload) {
+    if (payload == null) {
+      log.error("payload must not be null.");
       return;
     }
     long sequence = ringBuffer.next();
     try {
-      MessageEvent event = ringBuffer.get(sequence).message(message);
+      JobMsgPayloadEvent event = ringBuffer.get(sequence).jobMsgPayload(payload);
       if (log.isDebugEnabled()) {
         log.debug("Enqueue {} with sequence:{}.", event, sequence);
       }
