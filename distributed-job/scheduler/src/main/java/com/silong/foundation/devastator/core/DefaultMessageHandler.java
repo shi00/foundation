@@ -47,7 +47,7 @@ class DefaultMessageHandler
   @Serial private static final long serialVersionUID = 5687637299110748013L;
 
   /** 消息事件处理器线程名 */
-  private static final String MESSAGE_EVENT_PROCESSOR = "cluster-message-processor-";
+  private static final String MESSAGE_EVENT_PROCESSOR = "cluster-message-processor";
 
   /** 分布式引擎 */
   private DefaultDistributedEngine engine;
@@ -92,7 +92,6 @@ class DefaultMessageHandler
     }
 
     try {
-
       JobMsgPayload payload = event.jobMsgPayload();
 
     } finally {

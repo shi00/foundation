@@ -56,7 +56,7 @@ class DefaultViewChangedHandler
   static final int MAXIMUM_CAPACITY = 1 << 30;
 
   /** 视图变更事件处理器线程名 */
-  private static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor-";
+  private static final String VIEW_CHANGED_EVENT_PROCESSOR = "view-changed-processor";
 
   /** 分布式引擎 */
   private DefaultDistributedEngine engine;
