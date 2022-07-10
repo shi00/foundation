@@ -67,13 +67,12 @@ public class JwtAuthToken extends AuthToken {
     String clusterName = config.clusterName();
     this.config = config;
     this.verifier = JWT.require(algorithm).withIssuer(clusterName).build();
-    this.jwtToken =
-        JWT.create()
-            .withIssuer(clusterName)
-            .withPayload(
-                Map.of(PARTITIONS, config.partitionCount(), BACKUP_NUM, config.backupNums()))
-            .sign(algorithm);
-    return jwtToken;
+    return this.jwtToken =
+            JWT.create()
+                    .withIssuer(clusterName)
+                    .withPayload(
+                            Map.of(PARTITIONS, config.partitionCount(), BACKUP_NUM, config.backupNums()))
+                    .sign(algorithm);
   }
 
   @Override
