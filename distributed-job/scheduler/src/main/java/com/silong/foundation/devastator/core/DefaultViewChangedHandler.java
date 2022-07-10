@@ -176,7 +176,10 @@ class DefaultViewChangedHandler
     List<DefaultClusterNode> newClusterNodes = engine.getClusterNodes(newView);
 
     // 如果是首次加入集群则只需从新计算数据分布映射表，等待数据同步
-    if (oldView == null) {}
+    if (oldView == null) {
+      engine.metadata.initialize(newClusterNodes);
+      return;
+    }
 
     // 根据集群节点调整分区分布
     //    rebalancePartitionTable(newClusterNodes);

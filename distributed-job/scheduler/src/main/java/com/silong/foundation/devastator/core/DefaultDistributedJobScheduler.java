@@ -134,7 +134,7 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     // 任务分发至分区对应的各节点
     for (int i = 0; i < nodes.size(); i++) {
       Address dest = nodes.get(i).uuid();
-      if (localAddress.equals(dest)) {
+      if (dest.equals(localAddress)) {
         byte[] jobKey = INSTANCE.to(jobId);
         String partCf = engine.getPartitionCf(partition);
         engine.persistStorage.put(partCf, jobKey, jobPayload);

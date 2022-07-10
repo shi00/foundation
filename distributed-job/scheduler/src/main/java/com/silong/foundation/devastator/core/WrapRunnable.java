@@ -91,7 +91,7 @@ class WrapRunnable implements Runnable {
     for (DefaultClusterNode node : nodes) {
       Address dest = node.uuid();
       // 本地节点持久化
-      if (localAddress.equals(dest)) {
+      if (dest.equals(localAddress)) {
         engine.persistStorage.put(partCf, jobKey, jobPayload);
       } else {
         // 远程节点消息同步
