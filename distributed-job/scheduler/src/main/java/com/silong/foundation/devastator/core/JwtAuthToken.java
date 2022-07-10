@@ -63,6 +63,11 @@ public class JwtAuthToken extends AuthToken {
     this.jwtToken = generate(config);
   }
 
+  /**
+   * 根据配置生成jwt token
+   * @param config 配置
+   * @return token
+   */
   private String generate(DevastatorConfig config) {
     Algorithm algorithm = switch (config.authTokenConfig().algorithm()) {
       case HMAC_SHA256 -> Algorithm.HMAC256(config.authTokenConfig().authKey());
