@@ -128,7 +128,7 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     int partition = engine.objectPartitionMapping.partition(jobId);
 
     // 根据分区号获取其映射的节点列表
-    List<DefaultClusterNode> nodes = engine.partition2ClusterNodes.get(partition);
+    List<DefaultClusterNode> nodes = engine.partition2Nodes.get(partition);
     Address localAddress = engine.jChannel.address();
 
     // 任务分发至分区对应的各节点

@@ -56,7 +56,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
-import java.util.stream.IntStream;
 
 import static com.silong.foundation.devastator.config.DevastatorConfig.DEFAULT_PARTITION_SIZE;
 import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
@@ -110,13 +109,18 @@ class DefaultDistributedEngine
   final RocksDbPersistStorage persistStorage;
 
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
-  Map<Integer, List<DefaultClusterNode>> partition2ClusterNodes;
+  final Map<Integer, List<DefaultClusterNode>> partition2Nodes;
 
-  /** 数据uuid到分区的映射关系 */
-  final Map<Object, Integer> uuid2Partitions;
+  /**
+   * 节点到分区列表的映射表
+   */
+  final Map<DefaultClusterNode,List<Integer>> node2Partitions;
+
+  /** 任务uuid到分区的映射关系 */
+  final Map<Object, Integer> jobId2Partitions;
 
   /** 对象分区映射器 */
-  DefaultObjectPartitionMapping objectPartitionMapping;
+  final DefaultObjectPartitionMapping objectPartitionMapping;
 
   /** 集群状态 */
   private volatile ClusterState clusterState;
@@ -138,7 +142,11 @@ class DefaultDistributedEngine
 
     try {
       this.config = config;
-      this.uuid2Partitions = new ConcurrentHashMap<>(DEFAULT_PARTITION_SIZE);
+      this.objectPartitionMapping = new DefaultObjectPartitionMapping(config.partitionCount());
+      // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
+      this.jobId2Partitions = new ConcurrentHashMap<>(DEFAULT_PARTITION_SIZE);
+      this.partition2Nodes = new ConcurrentHashMap<>(config.partitionCount() + 1, 1.0f);
+      this.node2Partitions = new ConcurrentHashMap<>();
       this.distributedJobSchedulerMap =
           new ConcurrentHashMap<>(config.scheduledExecutorConfigs().size());
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
@@ -220,24 +228,6 @@ class DefaultDistributedEngine
   }
 
   /**
-   * 获取分区数，优先从集群状态取
-   *
-   * @return 分区数
-   */
-  public int getPartitionCount() {
-    return clusterState == null ? config.partitionCount() : clusterState.getPartitions();
-  }
-
-  /**
-   * 获取数据备份数
-   *
-   * @return 数据备份数
-   */
-  public int getBackupNums() {
-    return clusterState == null ? config.backupNums() : clusterState.getBackupNums();
-  }
-
-  /**
    * 获取传输协议
    *
    * @return 传输协议
@@ -310,7 +300,7 @@ class DefaultDistributedEngine
     // 计算对象对应的分区
     Address key = obj.uuid();
     int partition = objectPartitionMapping.partition(key);
-    uuid2Partitions.put(key, partition);
+    jobId2Partitions.put(key, partition);
 
     // 从默认列族查询key对应的版本，如果新数据版本大于当前已有版本则更新数据到partition对应的列族
     if (isPartition2LocalNode(partition)) {
@@ -333,7 +323,7 @@ class DefaultDistributedEngine
 
   private boolean isPartition2LocalNode(int partition) {
     Address local = jChannel.address();
-    for (DefaultClusterNode node : partition2ClusterNodes.get(partition)) {
+    for (DefaultClusterNode node : partition2Nodes.get(partition)) {
       if (local.equals(node.uuid())) {
         return true;
       }
@@ -347,58 +337,8 @@ class DefaultDistributedEngine
     return outputStream.buffer();
   }
 
-  /**
-   * 根据新的集群视图调整分区表
-   *
-   * @param oldView 旧集群视图
-   * @param newView 新集群视图
-   */
-  public synchronized void repartition(View oldView, View newView) {
-    assert newView != null;
 
-    Map<Integer, List<DefaultClusterNode>> oldPartition2ClusterNodes = partition2ClusterNodes;
-    int partitionCount = getPartitionCount();
-    if (partition2ClusterNodes == null) {
-      // 分区表key数量在没有集群节点变化时是固定的，并且每个分区号都不同，此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
-      objectPartitionMapping = new DefaultObjectPartitionMapping(partitionCount);
-      partition2ClusterNodes = new ConcurrentHashMap<>(partitionCount, 1.0f);
-    }
-    // 如果分区数变化则重置分区映射器
-    else if (objectPartitionMapping.partitions() != partitionCount) {
-      objectPartitionMapping.partitions(partitionCount);
-      partition2ClusterNodes = new ConcurrentHashMap<>(partitionCount, 1.0f);
-    }
 
-    Address localAddress = jChannel.getAddress();
-
-    // 获取集群节点列表
-    List<DefaultClusterNode> newClusterNodes =
-        newView.getMembers().stream()
-            .map(address -> new DefaultClusterNode((ClusterNodeUUID) address, localAddress))
-            .toList();
-
-    // 根据集群节点调整分区分布
-    refreshPartitionTable(partitionCount, newClusterNodes);
-
-    List<Tuple<Integer, Boolean>> oldLocalPartitions = null;
-    if (oldPartition2ClusterNodes != null) {
-      oldLocalPartitions = getLocalPartitions(localAddress, oldPartition2ClusterNodes);
-    }
-
-    List<Tuple<Integer, Boolean>> newLocalPartitions =
-        getLocalPartitions(localAddress, partition2ClusterNodes);
-  }
-
-  private void refreshPartitionTable(int partitionCount, List<DefaultClusterNode> clusterNodes) {
-    IntStream.range(0, partitionCount)
-        .parallel()
-        .forEach(
-            partitionNo ->
-                partition2ClusterNodes.put(
-                    partitionNo,
-                    partitionMapping.allocatePartition(
-                        partitionNo, getBackupNums(), clusterNodes, null)));
-  }
 
   private List<Tuple<Integer, Boolean>> getLocalPartitions(
       Address local, Map<Integer, List<DefaultClusterNode>> p2n) {
@@ -406,7 +346,7 @@ class DefaultDistributedEngine
       return List.of();
     }
     List<Tuple<Integer, Boolean>> list = new ArrayList<>(p2n.size());
-    partition2ClusterNodes.forEach(
+    partition2Nodes.forEach(
         (k, v) -> {
           int index = indexOf(v, local);
           if (index > 0) {
@@ -681,8 +621,8 @@ class DefaultDistributedEngine
       this.persistStorage.close();
     }
 
-    if (this.uuid2Partitions != null) {
-      this.uuid2Partitions.clear();
+    if (this.jobId2Partitions != null) {
+      this.jobId2Partitions.clear();
     }
 
     if (this.defaultViewChangedHandler != null) {
@@ -697,8 +637,8 @@ class DefaultDistributedEngine
       }
     }
 
-    if (this.partition2ClusterNodes != null) {
-      this.partition2ClusterNodes.clear();
+    if (this.partition2Nodes != null) {
+      this.partition2Nodes.clear();
     }
 
     if (this.distributedJobSchedulerMap != null) {

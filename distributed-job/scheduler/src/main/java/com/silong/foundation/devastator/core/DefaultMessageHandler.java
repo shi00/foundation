@@ -95,12 +95,7 @@ class DefaultMessageHandler
   }
 
   private boolean isPrimaryPartition2LocalNode(int partition) {
-    return engine
-        .partition2ClusterNodes
-        .get(partition)
-        .get(0)
-        .uuid()
-        .equals(engine.jChannel.address());
+    return engine.partition2Nodes.get(partition).get(0).uuid().equals(engine.jChannel.address());
   }
 
   @Override
@@ -127,7 +122,7 @@ class DefaultMessageHandler
       engine.persistStorage.put(partCf, jobKey, event.rawData());
 
       // 根据分区号获取其映射的节点列表
-      List<DefaultClusterNode> nodes = engine.partition2ClusterNodes.get(partition);
+      List<DefaultClusterNode> nodes = engine.partition2Nodes.get(partition);
 
       // 如果本地节点是主分区，则触发任务执行
       if (isPrimaryPartition2LocalNode(partition)) {
@@ -143,6 +138,7 @@ class DefaultMessageHandler
                   engine, partCf, jobKey, command, nodes, jobMsgPayloadBuilder, jobBuilder));
         } else if (jobClass == CALLABLE) {
           SerializableCallable<?> c = KryoUtils.deserialize(jobBytes);
+          // TODO develop late
         } else {
           throw new UnsupportedOperationException("Unknown jobClass:" + jobClass);
         }
