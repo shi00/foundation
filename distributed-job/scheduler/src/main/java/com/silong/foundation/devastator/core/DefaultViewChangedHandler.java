@@ -172,7 +172,7 @@ class DefaultViewChangedHandler
    */
   private void repartition(View oldView, View newView) {
 
-    // 获取集群节点列表
+    // 获取新集群节点列表
     List<DefaultClusterNode> newClusterNodes = engine.getClusterNodes(newView);
 
     // 如果是首次加入集群则只需从新计算数据分布映射表，等待数据同步
@@ -180,6 +180,11 @@ class DefaultViewChangedHandler
       engine.metadata.initialize(newClusterNodes);
       return;
     }
+
+    // 获取新集群节点列表
+    List<DefaultClusterNode> oldClusterNodes = engine.getClusterNodes(oldView);
+
+    boolean join = oldView.getMembers().retainAll(newView.getMembers());
 
     // 根据集群节点调整分区分布
     //    rebalancePartitionTable(newClusterNodes);
