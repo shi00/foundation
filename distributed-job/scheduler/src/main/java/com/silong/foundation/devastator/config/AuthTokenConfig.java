@@ -22,8 +22,11 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
+
+import static com.silong.foundation.devastator.config.AuthTokenConfig.Algorithm.HMAC_SHA256;
 
 /**
  * 集群节点加入集群鉴权配置
@@ -36,7 +39,20 @@ import java.io.Serializable;
 @Accessors(fluent = true)
 public class AuthTokenConfig implements Serializable {
 
-  @Serial private static final long serialVersionUID = 3271025812673401123L;
+  @Serial private static final long serialVersionUID = -2658224355125878427L;
+
+  /** 鉴权算法 */
+  public enum Algorithm {
+    /** HMAC-ShA256 */
+    HMAC_SHA256,
+    /** HMAC-ShA512 */
+    HMAC_SHA512,
+    /** HMAC-ShA384 */
+    HMAC_SHA384
+  }
+
+  /** 鉴权算法，默认： HMAC_SHA256 */
+  @NotNull private Algorithm algorithm = HMAC_SHA256;
 
   /** 鉴权密钥 */
   @NotEmpty private String authKey;

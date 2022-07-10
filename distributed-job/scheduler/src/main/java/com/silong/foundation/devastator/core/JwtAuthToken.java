@@ -47,6 +47,7 @@ import java.util.Map;
 public class JwtAuthToken extends AuthToken {
 
   public static final String PARTITIONS = "partitions";
+
   public static final String BACKUP_NUM = "backupNum";
 
   /** jwt token payload */
@@ -63,7 +64,12 @@ public class JwtAuthToken extends AuthToken {
   }
 
   private String generate(DevastatorConfig config) {
-    var algorithm = Algorithm.HMAC256(config.authTokenConfig().authKey());
+    Algorithm algorithm = switch (config.authTokenConfig().algorithm()) {
+      case HMAC_SHA256 -> Algorithm.HMAC256(config.authTokenConfig().authKey());
+      case HMAC_SHA384 -> Algorithm.HMAC384(config.authTokenConfig().authKey());
+      case HMAC_SHA512 -> Algorithm.HMAC512(config.authTokenConfig().authKey());
+    };
+
     String clusterName = config.clusterName();
     this.config = config;
     this.verifier = JWT.require(algorithm).withIssuer(clusterName).build();
