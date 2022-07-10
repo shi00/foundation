@@ -23,6 +23,8 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.silong.foundation.devastator.config.DevastatorConfig;
+import com.silong.foundation.devastator.config.DevastatorProperties.Version;
+import com.silong.foundation.devastator.utils.VersionUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -34,6 +36,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Map;
+
+import static com.silong.foundation.devastator.config.DevastatorProperties.version;
 
 /**
  * 基于JWT的集群加入鉴权token
@@ -49,6 +53,8 @@ public class JwtAuthToken extends AuthToken {
   public static final String PARTITIONS = "partitions";
 
   public static final String BACKUP_NUM = "backupNum";
+
+  public static final String VERSION = "version";
 
   /** jwt token payload */
   private String jwtToken;
@@ -82,7 +88,9 @@ public class JwtAuthToken extends AuthToken {
             JWT.create()
                     .withIssuer(clusterName)
                     .withPayload(
-                            Map.of(PARTITIONS, config.partitionCount(), BACKUP_NUM, config.backupNums()))
+                            Map.of(PARTITIONS, config.partitionCount(),
+                                   BACKUP_NUM, config.backupNums(),
+                                   VERSION, (int) version().getVersion()))
                     .sign(algorithm);
   }
 
@@ -102,6 +110,7 @@ public class JwtAuthToken extends AuthToken {
       try {
         DecodedJWT jwt = verifier.verify(jwtAuthToken.jwtToken);
         return config.clusterName().equals(jwt.getIssuer())
+            && VersionUtils.isCompatible(version(), Version.parse(jwt.getClaim(VERSION).as(Integer.class).shortValue()))
             && config.backupNums() == jwt.getClaim(BACKUP_NUM).as(Integer.class)
             && config.partitionCount() == jwt.getClaim(PARTITIONS).as(Integer.class);
       } catch (Exception e) {
