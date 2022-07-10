@@ -50,11 +50,12 @@ import static com.silong.foundation.devastator.config.DevastatorProperties.versi
 @NoArgsConstructor
 public class JwtAuthToken extends AuthToken {
 
+  public static final String VERSION = "version";
+
   public static final String PARTITIONS = "partitions";
 
   public static final String BACKUP_NUM = "backupNum";
 
-  public static final String VERSION = "version";
 
   /** jwt token payload */
   private String jwtToken;
