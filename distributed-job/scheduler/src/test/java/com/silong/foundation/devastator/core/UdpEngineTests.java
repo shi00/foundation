@@ -24,12 +24,14 @@ import com.silong.foundation.devastator.ClusterNode;
 import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
+import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Map;
 
 import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.CLIENT;
@@ -47,9 +49,14 @@ public class UdpEngineTests {
 
   private final String udpConfigFile;
 
+  private final String authKey;
+
   private final Animal animal = new Faker().animal();
 
   public UdpEngineTests() throws Exception {
+    byte[] bytes = RandomUtils.nextBytes(256 / 8);
+    authKey = Base64.getEncoder().encodeToString(bytes);
+
     udpConfigFile =
         Paths.get(UdpEngineTests.class.getClassLoader().getResource("fast.xml").toURI())
             .toFile()
@@ -163,6 +170,7 @@ public class UdpEngineTests {
             .instanceName(instanceName);
     config.persistStorageConfig().persistDataPath(absolutePath);
     config.clusterNodeAttributes().putAll(attributes);
+    config.authTokenConfig().authKey(authKey);
     return new DefaultDistributedEngine(config);
   }
 }

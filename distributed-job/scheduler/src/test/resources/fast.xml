@@ -27,6 +27,7 @@
     <UNICAST3 xmit_interval="500"/>
     <pbcast.STABLE desired_avg_gossip="50000"
                    max_bytes="8m"/>
+    <AUTH auth_class="com.silong.foundation.devastator.core.JwtAuthToken"/>
     <pbcast.GMS print_local_addr="true" join_timeout="3000"/>
     <pbcast.STATE_TRANSFER/>
     <UFC max_credits="2M"

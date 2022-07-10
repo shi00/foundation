@@ -41,6 +41,8 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jgroups.*;
+import org.jgroups.auth.AuthToken;
+import org.jgroups.protocols.AUTH;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
 import org.jgroups.protocols.pbcast.GMS;
@@ -170,6 +172,12 @@ class DefaultDistributedEngine
 
     // 自定义集群节点策略
     getGmsProtocol(jChannel).setMembershipChangePolicy(DefaultMembershipChangePolicy.INSTANCE);
+
+    // 自定义鉴权token已经鉴权方式
+    AuthToken at = getAuthProtocol(jChannel).getAuthToken();
+    if (at != null) {
+      ((JwtAuthToken) at).setConfig(config);
+    }
   }
 
   /** 注册自定义消息类型 */
@@ -236,6 +244,16 @@ class DefaultDistributedEngine
    */
   private TP getTransport() {
     return jChannel.getProtocolStack().getTransport();
+  }
+
+  /**
+   * 获取AUTH协议
+   *
+   * @param jChannel jchannel
+   * @return AUTH
+   */
+  private AUTH getAuthProtocol(JChannel jChannel) {
+    return jChannel.getProtocolStack().findProtocol(AUTH.class);
   }
 
   /**

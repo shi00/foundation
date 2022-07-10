@@ -57,6 +57,9 @@ public class DevastatorConfig implements Serializable {
   public static final String DEFAULT_JGTCP_CONFIG_FILE = "default-tcp.xml";
 
   /** 默认jgroups配置文件名 */
+  public static final String DEFAULT_K8S_CONFIG_FILE = "default-k8s.xml";
+
+  /** 默认jgroups配置文件名 */
   public static final String DEFAULT_JGUDP_CONFIG_FILE = "default-udp.xml";
 
   /** 默认集群名 */
@@ -109,6 +112,9 @@ public class DevastatorConfig implements Serializable {
 
   /** 持久化存储配置 */
   @Valid @NotNull private PersistStorageConfig persistStorageConfig = new PersistStorageConfig();
+
+  /** 鉴权配置 */
+  @Valid @NotNull private AuthTokenConfig authTokenConfig = new AuthTokenConfig();
 
   /** 任务调度器配置 */
   @Valid @NotEmpty
