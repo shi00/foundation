@@ -35,8 +35,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Map;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * 基于JWT的集群加入鉴权token
  *
@@ -51,9 +49,6 @@ public class JwtAuthToken extends AuthToken {
   public static final String PARTITIONS = "partitions";
   public static final String BACKUP_NUM = "backupNum";
 
-  /** JWT token payload */
-  private byte[] tokenPayload;
-
   /** jwt token payload */
   private String jwtToken;
 
@@ -64,10 +59,10 @@ public class JwtAuthToken extends AuthToken {
   private JWTVerifier verifier;
 
   public void setConfig(@NonNull DevastatorConfig config) {
-    this.tokenPayload = generate(config);
+    this.jwtToken = generate(config);
   }
 
-  private byte[] generate(DevastatorConfig config) {
+  private String generate(DevastatorConfig config) {
     var algorithm = Algorithm.HMAC256(config.authTokenConfig().authKey());
     String clusterName = config.clusterName();
     this.config = config;
@@ -78,7 +73,7 @@ public class JwtAuthToken extends AuthToken {
             .withPayload(
                 Map.of(PARTITIONS, config.partitionCount(), BACKUP_NUM, config.backupNums()))
             .sign(algorithm);
-    return jwtToken.getBytes(UTF_8);
+    return jwtToken;
   }
 
   @Override
@@ -88,7 +83,7 @@ public class JwtAuthToken extends AuthToken {
 
   @Override
   public int size() {
-    return Util.size(tokenPayload);
+    return Util.size(jwtToken);
   }
 
   @Override
@@ -108,12 +103,11 @@ public class JwtAuthToken extends AuthToken {
 
   @Override
   public void writeTo(DataOutput out) throws IOException {
-    Util.writeByteBuffer(this.tokenPayload, out);
+    Util.writeString(this.jwtToken, out);
   }
 
   @Override
   public void readFrom(DataInput in) throws IOException {
-    this.tokenPayload = Util.readByteBuffer(in);
-    this.jwtToken = new String(tokenPayload, UTF_8);
+    this.jwtToken = Util.readString(in);
   }
 }
