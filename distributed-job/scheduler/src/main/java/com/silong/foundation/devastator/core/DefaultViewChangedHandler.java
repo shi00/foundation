@@ -33,6 +33,8 @@ import org.jgroups.View;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
+import java.util.stream.IntStream;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 import static com.silong.foundation.devastator.utils.Utilities.powerOf2;
@@ -88,8 +90,129 @@ class DefaultViewChangedHandler
     return disruptor;
   }
 
-  private ClusterNodeInfo getClusterNodeInfo(Address address) {
-    return ((ClusterNodeUUID) address).clusterNodeInfo();
+  /**
+   * 处理集群视图变化
+   *
+   * @param oldView 旧视图
+   * @param newView 新视图
+   */
+  public void handle(View oldView, View newView) {
+    if (oldView == null && newView == null) {
+      log.error("oldView and newView cannot be null at the same time.");
+      return;
+    }
+    long sequence = ringBuffer.next();
+    try {
+      ViewChangedEvent event = ringBuffer.get(sequence).oldView(oldView).newView(newView);
+      if (log.isDebugEnabled()) {
+        log.debug("Enqueue {} with sequence:{}.", event, sequence);
+      }
+    } finally {
+      ringBuffer.publish(sequence);
+    }
+  }
+
+  @Override
+  public void onEvent(ViewChangedEvent event, long sequence, boolean endOfBatch) {
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Start processing {} with sequence:{} and endOfBatch:{}.", event, sequence, endOfBatch);
+    }
+
+    View newView = null;
+    View oldView = null;
+    try (event) {
+      newView = event.newView();
+      oldView = event.oldView();
+
+      // 脑裂恢复
+      if (newView instanceof MergeView) {
+        recoverySplitBrain(oldView, (MergeView) newView);
+      } else {
+        handleChangedView(oldView, newView);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
+    } finally {
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "End processing {} with sequence:{} and endOfBatch:{}.", event, sequence, endOfBatch);
+      }
+    }
+  }
+
+  /**
+   * 脑裂恢复
+   *
+   * @param oldView old view of cluster
+   * @param newView new view of cluster
+   */
+  private void recoverySplitBrain(View oldView, MergeView newView) {}
+
+  /**
+   * 处理视图变更
+   *
+   * @param oldView old view of cluster
+   * @param newView new view of cluster
+   */
+  private void handleChangedView(View oldView, View newView) throws Exception {
+    // 集群coordinator变化时重新同步集群信息
+    boolean isCoordinatorChanged = isCoordinatorChanged(oldView, newView);
+    if (isCoordinatorChanged) {
+      engine.syncClusterState();
+    }
+
+    repartition(oldView, newView);
+  }
+
+  /**
+   * 根据新的集群视图调整分区表
+   *
+   * @param oldView 旧集群视图
+   * @param newView 新集群视图
+   */
+  private void repartition(View oldView, View newView) {
+
+    // 获取集群节点列表
+    List<DefaultClusterNode> newClusterNodes = getClusterNodesFromView(newView);
+
+    // 根据集群节点调整分区分布
+    rebalancePartitionTable(newClusterNodes);
+
+    //    List<Tuple<Integer, Boolean>> oldLocalPartitions = null;
+    //    if (oldPartition2ClusterNodes != null) {
+    //      oldLocalPartitions = getLocalPartitions(localAddress, oldPartition2ClusterNodes);
+    //    }
+    //
+    //    List<Tuple<Integer, Boolean>> newLocalPartitions =
+    //        getLocalPartitions(localAddress, partition2ClusterNodes);
+  }
+
+  /**
+   * 从视图获取集群节点
+   *
+   * @param view 视图
+   * @return 集群节点列表
+   */
+  private List<DefaultClusterNode> getClusterNodesFromView(View view) {
+    Address localAddress = engine.jChannel.getAddress();
+    return view.getMembers().stream()
+        .map(address -> new DefaultClusterNode((ClusterNodeUUID) address, localAddress))
+        .toList();
+  }
+
+  private void rebalancePartitionTable(List<DefaultClusterNode> clusterNodes) {
+    IntStream.range(0, engine.config.partitionCount())
+        .parallel()
+        .forEach(
+            partitionNo -> {
+              List<DefaultClusterNode> newMapping =
+                  engine.partitionMapping.allocatePartition(
+                      partitionNo, engine.config.backupNums(), clusterNodes, null);
+              List<DefaultClusterNode> oldMapping = engine.partition2Nodes.get(partitionNo);
+
+              engine.partition2Nodes.put(partitionNo, newMapping);
+            });
   }
 
   /**
@@ -124,73 +247,22 @@ class DefaultViewChangedHandler
     return isChanged;
   }
 
-  /**
-   * 处理集群视图变化
-   *
-   * @param oldView 旧视图
-   * @param newView 新视图
-   */
-  public void handle(View oldView, View newView) {
-    if (oldView == null && newView == null) {
-      log.error("oldView and newView cannot be null at the same time.");
-      return;
+  private ClusterNodeInfo getClusterNodeInfo(Address address) {
+    return ((ClusterNodeUUID) address).clusterNodeInfo();
+  }
+
+  @Override
+  public void close() {
+    if (disruptor != null) {
+      disruptor.shutdown();
+      disruptor = null;
     }
-    long sequence = ringBuffer.next();
-    try {
-      ViewChangedEvent event = ringBuffer.get(sequence).oldView(oldView).newView(newView);
-      if (log.isDebugEnabled()) {
-        log.debug("Enqueue {} with sequence:{}.", event, sequence);
-      }
-    } finally {
-      ringBuffer.publish(sequence);
-    }
+    ringBuffer = null;
+    engine = null;
   }
 
   private String nodeIdentity(ClusterNodeInfo clusterNodeInfo) {
     return String.format(
         "[%s:%s]", clusterNodeInfo.getHostName(), clusterNodeInfo.getInstanceName());
-  }
-
-  @Override
-  public void onEvent(ViewChangedEvent event, long sequence, boolean endOfBatch) {
-    if (log.isDebugEnabled()) {
-      log.debug(
-          "Start processing {} with sequence:{} and endOfBatch:{}.", event, sequence, endOfBatch);
-    }
-
-    View newView = null;
-    View oldView = null;
-    try (event) {
-      newView = event.newView();
-      oldView = event.oldView();
-      if (isCoordinatorChanged(oldView, newView)) {
-        // 1.节点首次加入集群
-        // 2.集群coord变更
-        // 以上两情况同步集群状态
-        engine.syncClusterState();
-      }
-
-      // 脑裂恢复
-      if (newView instanceof MergeView) {}
-
-      engine.repartition(oldView, newView);
-    } catch (Exception e) {
-      log.warn("Failed to process ViewChangedEvent:{oldView:{}, newView:{}}.", oldView, newView, e);
-    } finally {
-      if (log.isDebugEnabled()) {
-        log.debug(
-            "End processing {} with sequence:{} and endOfBatch:{}.", event, sequence, endOfBatch);
-      }
-    }
-  }
-
-  @Override
-  public void close() {
-    if (this.disruptor != null) {
-      this.disruptor.shutdown();
-      this.disruptor = null;
-    }
-    this.ringBuffer = null;
-    this.engine = null;
   }
 }

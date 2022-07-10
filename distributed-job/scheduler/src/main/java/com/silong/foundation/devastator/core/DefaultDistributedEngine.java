@@ -19,7 +19,10 @@
 package com.silong.foundation.devastator.core;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.silong.foundation.devastator.*;
+import com.silong.foundation.devastator.Cluster;
+import com.silong.foundation.devastator.ClusterNode;
+import com.silong.foundation.devastator.DistributedEngine;
+import com.silong.foundation.devastator.DistributedJobScheduler;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.config.ScheduledExecutorConfig;
 import com.silong.foundation.devastator.exception.DistributedEngineException;
@@ -29,9 +32,6 @@ import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
 import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
-import com.silong.foundation.devastator.model.KvPair;
-import com.silong.foundation.devastator.model.Tuple;
-import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -53,13 +53,12 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
-import static com.silong.foundation.devastator.config.DevastatorConfig.DEFAULT_PARTITION_SIZE;
-import static com.silong.foundation.devastator.core.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
-import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 import static com.silong.foundation.devastator.utils.Utilities.powerOf2;
 import static java.lang.System.lineSeparator;
 import static java.lang.ThreadLocal.withInitial;
@@ -111,13 +110,8 @@ class DefaultDistributedEngine
   /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
   final Map<Integer, List<DefaultClusterNode>> partition2Nodes;
 
-  /**
-   * 节点到分区列表的映射表
-   */
-  final Map<DefaultClusterNode,List<Integer>> node2Partitions;
-
-  /** 任务uuid到分区的映射关系 */
-  final Map<Object, Integer> jobId2Partitions;
+  /** 节点到分区列表的映射表 */
+  final Map<DefaultClusterNode, List<Integer>> node2Partitions;
 
   /** 对象分区映射器 */
   final DefaultObjectPartitionMapping objectPartitionMapping;
@@ -144,7 +138,6 @@ class DefaultDistributedEngine
       this.config = config;
       this.objectPartitionMapping = new DefaultObjectPartitionMapping(config.partitionCount());
       // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
-      this.jobId2Partitions = new ConcurrentHashMap<>(DEFAULT_PARTITION_SIZE);
       this.partition2Nodes = new ConcurrentHashMap<>(config.partitionCount() + 1, 1.0f);
       this.node2Partitions = new ConcurrentHashMap<>();
       this.distributedJobSchedulerMap =
@@ -283,90 +276,6 @@ class DefaultDistributedEngine
   /** 向coordinator请求，同步集群状态 */
   public void syncClusterState() throws Exception {
     jChannel.getState(null, config.clusterStateSyncTimeout());
-  }
-
-  /**
-   * 数据到分区映射并持久化
-   *
-   * @param obj 数据对象
-   * @return 对象映射分区
-   */
-  @SneakyThrows
-  public synchronized int partitionAndPersistence(Identity<Address> obj) {
-    if (obj == null) {
-      throw new IllegalArgumentException("obj must not be null.");
-    }
-
-    // 计算对象对应的分区
-    Address key = obj.uuid();
-    int partition = objectPartitionMapping.partition(key);
-    jobId2Partitions.put(key, partition);
-
-    // 从默认列族查询key对应的版本，如果新数据版本大于当前已有版本则更新数据到partition对应的列族
-    if (isPartition2LocalNode(partition)) {
-      byte[] keyBytes = address2Bytes(key);
-      byte[] versionBytes = persistStorage.get(keyBytes);
-      long version =
-          //              obj.objectVersion()
-          1;
-      if (versionBytes == null || INSTANCE.from(versionBytes) < version) {
-        persistStorage.putAllWith(
-            List.of(
-                new Tuple<>(
-                    DEFAULT_COLUMN_FAMILY_NAME, new KvPair<>(keyBytes, INSTANCE.to(version))),
-                new Tuple<>(
-                    String.valueOf(partition), new KvPair<>(keyBytes, KryoUtils.serialize(obj)))));
-      }
-    }
-    return partition;
-  }
-
-  private boolean isPartition2LocalNode(int partition) {
-    Address local = jChannel.address();
-    for (DefaultClusterNode node : partition2Nodes.get(partition)) {
-      if (local.equals(node.uuid())) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private byte[] address2Bytes(Address address) throws IOException {
-    ByteArrayDataOutputStream outputStream = ADDRESS_BUFFER.get();
-    address.writeTo(outputStream);
-    return outputStream.buffer();
-  }
-
-
-
-
-  private List<Tuple<Integer, Boolean>> getLocalPartitions(
-      Address local, Map<Integer, List<DefaultClusterNode>> p2n) {
-    if (p2n == null) {
-      return List.of();
-    }
-    List<Tuple<Integer, Boolean>> list = new ArrayList<>(p2n.size());
-    partition2Nodes.forEach(
-        (k, v) -> {
-          int index = indexOf(v, local);
-          if (index > 0) {
-            list.add(new Tuple<>(k, false));
-          } else if (index == 0) {
-            list.add(new Tuple<>(k, true));
-          }
-        });
-    list.sort(Comparator.comparingInt(Tuple::t1));
-    return list;
-  }
-
-  private int indexOf(Collection<DefaultClusterNode> nodes, Address address) {
-    int i = 0;
-    for (DefaultClusterNode node : nodes) {
-      if (node.uuid().equals(address)) {
-        return i;
-      }
-    }
-    return -1;
   }
 
   /**
@@ -619,10 +528,6 @@ class DefaultDistributedEngine
 
     if (this.persistStorage != null) {
       this.persistStorage.close();
-    }
-
-    if (this.jobId2Partitions != null) {
-      this.jobId2Partitions.clear();
     }
 
     if (this.defaultViewChangedHandler != null) {
