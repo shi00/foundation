@@ -186,7 +186,7 @@ class RendezvousPartitionMapping
         }
       }
       log.warn(
-          "ClusterDataAllocator excludeNeighbors is ignored because topology has no enough nodes to assign backups.");
+          "RendezvousPartitionMapping excludeNeighbors is ignored because topology has no enough nodes to assign backups.");
     }
 
     assert res.size() <= primaryAndBackups;
