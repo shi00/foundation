@@ -195,6 +195,27 @@ public final class DevastatorProperties implements Serializable {
       return new short[] {major, minor, micro};
     }
 
+    /**
+     * 版本是否兼容，version1是否兼容version2
+     *
+     * @param version1 版本1
+     * @param version2 版本2
+     * @return true or false
+     */
+    public static boolean isCompatible(Version version1, Version version2) {
+      if (version1 == null || version2 == null) {
+        throw new IllegalArgumentException("version1 or version2 must not be null.");
+      }
+      if (version1.equals(version2)) {
+        return true;
+      }
+
+      short[] v1 = decode(version1.version);
+      short[] v2 = decode(version2.version);
+
+      return v1[0] == v2[0] && v1[1] == v2[1];
+    }
+
     @Override
     public String toString() {
       return String.valueOf(version);

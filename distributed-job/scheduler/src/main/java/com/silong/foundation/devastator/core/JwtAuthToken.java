@@ -24,7 +24,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.config.DevastatorProperties.Version;
-import com.silong.foundation.devastator.utils.VersionUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -37,6 +36,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Map;
 
+import static com.silong.foundation.devastator.config.DevastatorProperties.Version.isCompatible;
 import static com.silong.foundation.devastator.config.DevastatorProperties.version;
 
 /**
@@ -111,7 +111,7 @@ public class JwtAuthToken extends AuthToken {
       try {
         DecodedJWT jwt = verifier.verify(jwtAuthToken.jwtToken);
         return config.clusterName().equals(jwt.getIssuer())
-            && VersionUtils.isCompatible(version(), Version.parse(jwt.getClaim(VERSION).as(Integer.class).shortValue()))
+            && isCompatible(version(), Version.parse(jwt.getClaim(VERSION).as(Integer.class).shortValue()))
             && config.backupNums() == jwt.getClaim(BACKUP_NUM).as(Integer.class)
             && config.partitionCount() == jwt.getClaim(PARTITIONS).as(Integer.class);
       } catch (Exception e) {
