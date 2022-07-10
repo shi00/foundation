@@ -96,7 +96,7 @@ class DefaultDistributedEngine
   private final Map<String, DistributedJobScheduler> distributedJobSchedulerMap;
 
   /** 集群通信信道 */
-  final JChannel jChannel;
+  private final JChannel jChannel;
 
   /** 配置 */
   final DevastatorConfig config;
@@ -107,11 +107,8 @@ class DefaultDistributedEngine
   /** 持久化存储 */
   final RocksDbPersistStorage persistStorage;
 
-  /** 分区到节点映射关系，Collection中的第一个节点为primary，后续为backup */
-  final Map<Integer, List<DefaultClusterNode>> partition2Nodes;
-
-  /** 节点到分区列表的映射表 */
-  final Map<DefaultClusterNode, List<Integer>> node2Partitions;
+  /** 分布式元数据 */
+  final DistributedDataMetadata metadata;
 
   /** 对象分区映射器 */
   final DefaultObjectPartitionMapping objectPartitionMapping;
@@ -138,8 +135,7 @@ class DefaultDistributedEngine
       this.config = config;
       this.objectPartitionMapping = new DefaultObjectPartitionMapping(config.partitionCount());
       // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
-      this.partition2Nodes = new ConcurrentHashMap<>(config.partitionCount() + 1, 1.0f);
-      this.node2Partitions = new ConcurrentHashMap<>();
+      this.metadata = new DistributedDataMetadata(this);
       this.distributedJobSchedulerMap =
           new ConcurrentHashMap<>(config.scheduledExecutorConfigs().size());
       this.partitionMapping = RendezvousPartitionMapping.INSTANCE;
@@ -358,9 +354,9 @@ class DefaultDistributedEngine
       }
 
       // 处理任务消息
-      if (message instanceof PooledBytesMessage msg) {
+      if (message instanceof PooledBytesMessage) {
         try {
-          byte[] bytes = msg.getArray();
+          byte[] bytes = message.getArray();
           JobMsgPayload jobMsgPayload = JobMsgPayload.parseFrom(bytes);
 
           // 根据任务计算其归属的任务消息处理队列
@@ -397,11 +393,20 @@ class DefaultDistributedEngine
    * @param view 集群视图
    * @return 集群节点列表
    */
-  public List<ClusterNode<Address>> getClusterNodes(View view) {
+  public List<DefaultClusterNode> getClusterNodes(View view) {
     if (view == null) {
       throw new IllegalArgumentException("view must not be null.");
     }
     return view.getMembers().stream().map(this::buildClusterNode).toList();
+  }
+
+  /**
+   * 获取本地节点地址
+   *
+   * @return 节点地址
+   */
+  public Address getLocalAddress() {
+    return jChannel.address();
   }
 
   /**
@@ -413,7 +418,7 @@ class DefaultDistributedEngine
     return buildClusterNode(jChannel.address());
   }
 
-  private ClusterNode<Address> buildClusterNode(Address address) {
+  private DefaultClusterNode buildClusterNode(Address address) {
     return new DefaultClusterNode((ClusterNodeUUID) address, jChannel.address());
   }
 
@@ -542,8 +547,8 @@ class DefaultDistributedEngine
       }
     }
 
-    if (this.partition2Nodes != null) {
-      this.partition2Nodes.clear();
+    if (this.metadata != null) {
+      this.metadata.close();
     }
 
     if (this.distributedJobSchedulerMap != null) {

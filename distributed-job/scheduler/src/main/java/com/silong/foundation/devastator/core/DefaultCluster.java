@@ -67,7 +67,7 @@ class DefaultCluster implements Cluster, Serializable {
 
   @Override
   @NonNull
-  public Collection<ClusterNode<Address>> clusterNodes() {
+  public Collection<DefaultClusterNode> clusterNodes() {
     return engine.getClusterNodes(engine.currentView());
   }
 

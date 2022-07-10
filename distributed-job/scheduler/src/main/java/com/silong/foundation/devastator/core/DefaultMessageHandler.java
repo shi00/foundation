@@ -95,7 +95,8 @@ class DefaultMessageHandler
   }
 
   private boolean isPrimaryPartition2LocalNode(int partition) {
-    return engine.partition2Nodes.get(partition).get(0).uuid().equals(engine.jChannel.address());
+    List<DefaultClusterNode> clusterNodes = engine.metadata.getClusterNodes(partition);
+    return !clusterNodes.isEmpty() && clusterNodes.get(0).uuid().equals(engine.getLocalAddress());
   }
 
   @Override
@@ -122,7 +123,7 @@ class DefaultMessageHandler
       engine.persistStorage.put(partCf, jobKey, event.rawData());
 
       // 根据分区号获取其映射的节点列表
-      List<DefaultClusterNode> nodes = engine.partition2Nodes.get(partition);
+      List<DefaultClusterNode> nodes = engine.metadata.getClusterNodes(partition);
 
       // 如果本地节点是主分区，则触发任务执行
       if (isPrimaryPartition2LocalNode(partition)) {

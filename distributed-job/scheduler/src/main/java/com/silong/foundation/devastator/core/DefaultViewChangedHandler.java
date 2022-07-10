@@ -34,7 +34,6 @@ import org.jgroups.View;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
-import java.util.stream.IntStream;
 
 import static com.lmax.disruptor.dsl.ProducerType.MULTI;
 import static com.silong.foundation.devastator.utils.Utilities.powerOf2;
@@ -174,10 +173,13 @@ class DefaultViewChangedHandler
   private void repartition(View oldView, View newView) {
 
     // 获取集群节点列表
-    List<DefaultClusterNode> newClusterNodes = getClusterNodesFromView(newView);
+    List<DefaultClusterNode> newClusterNodes = engine.getClusterNodes(newView);
+
+    // 如果是首次加入集群则只需从新计算数据分布映射表，等待数据同步
+    if (oldView == null) {}
 
     // 根据集群节点调整分区分布
-    rebalancePartitionTable(newClusterNodes);
+    //    rebalancePartitionTable(newClusterNodes);
 
     //    List<Tuple<Integer, Boolean>> oldLocalPartitions = null;
     //    if (oldPartition2ClusterNodes != null) {
@@ -186,33 +188,6 @@ class DefaultViewChangedHandler
     //
     //    List<Tuple<Integer, Boolean>> newLocalPartitions =
     //        getLocalPartitions(localAddress, partition2ClusterNodes);
-  }
-
-  /**
-   * 从视图获取集群节点
-   *
-   * @param view 视图
-   * @return 集群节点列表
-   */
-  private List<DefaultClusterNode> getClusterNodesFromView(View view) {
-    Address localAddress = engine.jChannel.getAddress();
-    return view.getMembers().stream()
-        .map(address -> new DefaultClusterNode((ClusterNodeUUID) address, localAddress))
-        .toList();
-  }
-
-  private void rebalancePartitionTable(List<DefaultClusterNode> clusterNodes) {
-    IntStream.range(0, engine.config.partitionCount())
-        .parallel()
-        .forEach(
-            partitionNo -> {
-              List<DefaultClusterNode> newMapping =
-                  engine.partitionMapping.allocatePartition(
-                      partitionNo, engine.config.backupNums(), clusterNodes, null);
-              List<DefaultClusterNode> oldMapping = engine.partition2Nodes.get(partitionNo);
-
-              engine.partition2Nodes.put(partitionNo, newMapping);
-            });
   }
 
   /**

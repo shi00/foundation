@@ -62,10 +62,13 @@ class WrapRunnable implements Runnable {
   private final String partCf;
 
   WrapRunnable(
-          DefaultDistributedEngine engine,
-          String partCf, byte[] jobKey, Runnable command, List<DefaultClusterNode> nodes,
-          JobMsgPayload.Builder jobMsgPayloadBuilder,
-          Job.Builder jobBuilder) {
+      DefaultDistributedEngine engine,
+      String partCf,
+      byte[] jobKey,
+      Runnable command,
+      List<DefaultClusterNode> nodes,
+      JobMsgPayload.Builder jobMsgPayloadBuilder,
+      Job.Builder jobBuilder) {
     this.engine = engine;
     this.nodes = nodes;
     this.jobMsgPayloadBuilder = jobMsgPayloadBuilder;
@@ -84,7 +87,7 @@ class WrapRunnable implements Runnable {
   }
 
   void syncJob(byte[] jobPayload) throws Exception {
-    Address localAddress = engine.jChannel.getAddress();
+    Address localAddress = engine.getLocalAddress();
     for (DefaultClusterNode node : nodes) {
       Address dest = node.uuid();
       // 本地节点持久化
