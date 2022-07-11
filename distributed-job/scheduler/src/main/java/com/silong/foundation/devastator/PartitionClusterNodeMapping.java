@@ -19,7 +19,6 @@
 package com.silong.foundation.devastator;
 
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.jgroups.Address;
 
 import java.util.Collection;
 import java.util.List;
@@ -40,8 +39,9 @@ import java.util.Map;
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-09 19:01
+ * @param <T> 节点类型
  */
-public interface PartitionClusterNodeMapping<T extends Identity<Address>> {
+public interface PartitionClusterNodeMapping<T> {
 
   /**
    * 分区到集群节点映射
