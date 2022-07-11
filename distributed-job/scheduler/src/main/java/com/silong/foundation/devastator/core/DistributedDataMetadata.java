@@ -42,7 +42,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
   @Serial private static final long serialVersionUID = 4228081108547447817L;
 
   /** 分区到节点映射表 */
-  private final Map<Integer, List<ClusterNodeUUID>> partition2Nodes;
+  private final RecycleConcurrentMap<Integer, List<ClusterNodeUUID>> partition2Nodes;
 
   /** 节点到分区映射表，value为true标识primary否则为backup节点 */
   private final RecycleConcurrentMap<Integer, Boolean> node2Partitions;
@@ -60,7 +60,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
 
     // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
     int initialCapacity = engine.config.partitionCount() + 1;
-    this.partition2Nodes = new ConcurrentHashMap<>(initialCapacity, 1.0f);
+    this.partition2Nodes = new RecycleConcurrentMap<>(initialCapacity, 1.0f);
     this.node2Partitions = new RecycleConcurrentMap<>(initialCapacity, 1.0f);
   }
 
@@ -78,6 +78,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     RendezvousPartitionMapping partitionMapping = engine.partitionMapping;
     ClusterNodeUUID localAddress = engine.getLocalAddress();
     // 滚动map
+    partition2Nodes.scroll();
     node2Partitions.scroll();
     IntStream.range(0, partitionCount)
         .parallel()
@@ -111,7 +112,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @return true or false
    */
   public synchronized boolean isLocalContains(int partition) {
-    return node2Partitions.get(partition) != null;
+    return node2Partitions.containsKey(partition);
   }
 
   /**
@@ -132,14 +133,11 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
 
   private static class RecycleConcurrentMap<K, V> implements Map<K, V> {
 
-    /** map队列，循环利用 */
-    private final ConcurrentHashMap<K, V>[] maps;
+    /** 当前正则使用的map */
+    private volatile ConcurrentHashMap<K, V> current;
 
-    /** 求余索引 */
-    private final int mark;
-
-    /** 索引 */
-    private int index;
+    /** 上一次使用的map */
+    private volatile ConcurrentHashMap<K, V> history;
 
     /**
      * 构造方法
@@ -147,95 +145,102 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
      * @param initialCapacity 初始容量
      * @param loadFactor 负载因子
      */
-    @SuppressWarnings("unchecked")
     public RecycleConcurrentMap(int initialCapacity, float loadFactor) {
-      this.maps =
-          new ConcurrentHashMap[] {
-            new ConcurrentHashMap<>(initialCapacity, loadFactor),
-            new ConcurrentHashMap<>(initialCapacity, loadFactor)
-          };
-      this.index = 0;
-      this.mark = maps.length - 1;
+      this.current = new ConcurrentHashMap<>(initialCapacity, loadFactor);
+      this.history = new ConcurrentHashMap<>(initialCapacity, loadFactor);
     }
 
-    /** 释放当前map，换备用map */
+    /**
+     * 返回历史map数据
+     *
+     * @return map
+     */
+    @NonNull
+    public Map<K, V> history() {
+      return history;
+    }
+
+    /** 循环使用map */
     public void scroll() {
-      clear();
-      index++;
+      ConcurrentHashMap<K, V> swap = current;
+      history.clear();
+      current = history;
+      history = swap;
     }
 
     /** 释放资源 */
     public void release() {
-      for (ConcurrentHashMap<K, V> map : maps) {
-        map.clear();
+      if (current != null) {
+        current.clear();
+        current = null;
+      }
+      if (history != null) {
+        history.clear();
+        history = null;
       }
     }
 
     @Override
     public int size() {
-      return indexMap().size();
-    }
-
-    private ConcurrentHashMap<K, V> indexMap() {
-      return maps[index & mark];
+      return current.size();
     }
 
     @Override
     public boolean isEmpty() {
-      return indexMap().isEmpty();
+      return current.isEmpty();
     }
 
     @Override
     public boolean containsKey(Object key) {
-      return indexMap().containsKey(key);
+      return current.containsKey(key);
     }
 
     @Override
     public boolean containsValue(Object value) {
-      return indexMap().containsValue(value);
+      return current.containsValue(value);
     }
 
     @Override
     public V get(Object key) {
-      return indexMap().get(key);
+      return current.get(key);
     }
 
     @Override
     public V put(K key, V value) {
-      return indexMap().put(key, value);
+      return current.put(key, value);
     }
 
     @Override
     public V remove(Object key) {
-      return indexMap().remove(key);
+      return current.remove(key);
     }
 
     @Override
     public void putAll(@NonNull Map<? extends K, ? extends V> m) {
-      indexMap().putAll(m);
+      current.putAll(m);
     }
 
     @Override
     public void clear() {
-      indexMap().clear();
+      current.clear();
     }
 
     @Override
     @NonNull
     public Set<K> keySet() {
-      return indexMap().keySet();
+      return current.keySet();
     }
 
     @Override
     @NonNull
     public Collection<V> values() {
-      return indexMap().values();
+      return current.values();
     }
 
     @Override
     @NonNull
     public Set<Entry<K, V>> entrySet() {
-      return indexMap().entrySet();
+      return current.entrySet();
     }
   }
 }
