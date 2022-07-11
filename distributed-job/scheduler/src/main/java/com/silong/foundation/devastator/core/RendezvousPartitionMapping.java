@@ -19,7 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.Identity;
-import com.silong.foundation.devastator.PartitionClusterNodeMapping;
+import com.silong.foundation.devastator.Partition2NodesMapping;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableBiPredicate;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -55,8 +55,7 @@ import static com.silong.foundation.devastator.utils.Utilities.mixHash;
  * @since 2022-04-06 22:29
  */
 @Slf4j
-class RendezvousPartitionMapping
-    implements PartitionClusterNodeMapping<ClusterNodeUUID>, Serializable {
+class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUUID>, Serializable {
 
   @Serial private static final long serialVersionUID = -5940041940626753044L;
 
@@ -189,7 +188,10 @@ class RendezvousPartitionMapping
           "RendezvousPartitionMapping excludeNeighbors is ignored because topology has no enough nodes to assign backups.");
     }
 
-    assert res.size() <= primaryAndBackups;
+    if (res.size() > primaryAndBackups) {
+      throw new IllegalStateException(
+          "The number of primary and backup nodes must be greater than or equal to the number of mapping nodes.");
+    }
     return res;
   }
 

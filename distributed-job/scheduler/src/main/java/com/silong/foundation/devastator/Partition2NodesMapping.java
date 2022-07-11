@@ -41,7 +41,7 @@ import java.util.Map;
  * @since 2022-04-09 19:01
  * @param <T> 节点类型
  */
-public interface PartitionClusterNodeMapping<T> {
+public interface Partition2NodesMapping<T> {
 
   /**
    * 分区到集群节点映射

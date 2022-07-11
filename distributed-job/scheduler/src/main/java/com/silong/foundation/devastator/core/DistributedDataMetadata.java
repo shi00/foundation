@@ -25,7 +25,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
@@ -44,7 +43,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
   private final Map<Integer, List<ClusterNodeUUID>> partition2Nodes;
 
   /** 节点到分区映射表 */
-  private final Set<Integer> node2Partitions;
+  private final Map<Integer, Boolean> node2Partitions;
 
   /** 节点本地地址 */
   private final DefaultDistributedEngine engine;
@@ -55,10 +54,12 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @param engine 分布式引擎
    */
   public DistributedDataMetadata(DefaultDistributedEngine engine) {
-    // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
     this.engine = engine;
-    this.partition2Nodes = new ConcurrentHashMap<>(engine.config.partitionCount() + 1, 1.0f);
-    this.node2Partitions = ConcurrentHashMap.newKeySet();
+
+    // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
+    int initialCapacity = engine.config.partitionCount() + 1;
+    this.partition2Nodes = new ConcurrentHashMap<>(initialCapacity, 1.0f);
+    this.node2Partitions = new ConcurrentHashMap<>(initialCapacity, 1.0f);
   }
 
   /**
@@ -66,38 +67,20 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    *
    * @param nodes 集群节点列表
    */
-  public synchronized void initialize(List<ClusterNodeUUID> nodes) {
-    // 并行计算分区节点映射关系
-    computePartition2Nodes(nodes);
-
-    // 提取本地节点包含的分区列表
-    computeNodePartitions();
-  }
-
-  private void computeNodePartitions() {
-    Address local = engine.getLocalAddress();
-    partition2Nodes.entrySet().parallelStream()
-        .forEach(
-            entry -> {
-              Integer partition = entry.getKey();
-              List<ClusterNodeUUID> nodeList = entry.getValue();
-              if (nodeList.stream().anyMatch(node -> node.uuid().equals(local))) {
-                node2Partitions.add(partition);
-              }
-            });
-  }
-
-  private void computePartition2Nodes(List<ClusterNodeUUID> nodes) {
+  public void computePartition2Nodes(List<ClusterNodeUUID> nodes) {
     int partitionCount = engine.config.partitionCount();
     int backupNum = engine.config.backupNums();
     RendezvousPartitionMapping partitionMapping = engine.partitionMapping;
+    Address localAddress = engine.getLocalAddress();
     IntStream.range(0, partitionCount)
         .parallel()
         .forEach(
-            partition ->
-                partition2Nodes.put(
-                    partition,
-                    partitionMapping.allocatePartition(partition, backupNum, nodes, null)));
+            partition -> {
+              List<ClusterNodeUUID> mappingNodes =
+                  partitionMapping.allocatePartition(partition, backupNum, nodes, null);
+
+              partition2Nodes.put(partition, mappingNodes);
+            });
   }
 
   /**
