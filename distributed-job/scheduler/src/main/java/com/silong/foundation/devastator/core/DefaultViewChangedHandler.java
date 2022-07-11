@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 import org.jgroups.MergeView;
 import org.jgroups.View;
+import org.jgroups.util.Util;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -170,10 +171,12 @@ class DefaultViewChangedHandler
    * @param oldView 旧集群视图
    * @param newView 新集群视图
    */
+  @SuppressWarnings("unchecked")
   private void repartition(View oldView, View newView) {
 
     // 获取新集群节点列表
-    List<ClusterNodeUUID> newClusterNodes = getClusterNodes(newView);
+    List<Address> newViewMembers = newView.getMembers();
+    List<ClusterNodeUUID> newClusterNodes = (List<ClusterNodeUUID>) (List<?>) newViewMembers;
 
     // 如果是首次加入集群则只需从新计算数据分布映射表，等待数据同步
     if (oldView == null) {
@@ -182,9 +185,10 @@ class DefaultViewChangedHandler
     }
 
     // 获取新集群节点列表
-    List<DefaultClusterNode> oldClusterNodes = engine.getClusterNodes(oldView);
+    List<Address> oldViewMembers = oldView.getMembers();
+    List<ClusterNodeUUID> oldClusterNodes = (List<ClusterNodeUUID>) (List<?>) oldViewMembers;
 
-    boolean join = oldView.getMembers().retainAll(newView.getMembers());
+    List<Address> leftMembers = Util.leftMembers(oldViewMembers, newViewMembers);
 
     // 根据集群节点调整分区分布
     //    rebalancePartitionTable(newClusterNodes);
@@ -196,11 +200,6 @@ class DefaultViewChangedHandler
     //
     //    List<Tuple<Integer, Boolean>> newLocalPartitions =
     //        getLocalPartitions(localAddress, partition2ClusterNodes);
-  }
-
-  @SuppressWarnings("unchecked")
-  private List<ClusterNodeUUID> getClusterNodes(View view) {
-    return (List<ClusterNodeUUID>) (List<?>) view.getMembers();
   }
 
   /**

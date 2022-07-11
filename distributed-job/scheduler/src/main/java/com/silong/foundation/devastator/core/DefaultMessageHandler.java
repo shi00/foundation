@@ -95,11 +95,6 @@ class DefaultMessageHandler
     return disruptor;
   }
 
-  private boolean isPrimaryPartition2LocalNode(int partition) {
-    List<ClusterNodeUUID> clusterNodes = engine.metadata.getClusterNodes(partition);
-    return !clusterNodes.isEmpty() && clusterNodes.get(0).uuid().equals(engine.getLocalAddress());
-  }
-
   @Override
   public void onEvent(JobMsgPayloadEvent event, long sequence, boolean endOfBatch) {
     if (log.isDebugEnabled()) {
@@ -123,11 +118,10 @@ class DefaultMessageHandler
       byte[] jobKey = INSTANCE.to(jobId);
       engine.persistStorage.put(partCf, jobKey, event.rawData());
 
-      // 根据分区号获取其映射的节点列表
-      List<ClusterNodeUUID> nodes = engine.metadata.getClusterNodes(partition);
-
       // 如果本地节点是主分区，则触发任务执行
-      if (isPrimaryPartition2LocalNode(partition)) {
+      if (engine.metadata.isLocalPrimary(partition)) {
+        // 根据分区号获取其映射的节点列表
+        List<ClusterNodeUUID> nodes = engine.metadata.getClusterNodes(partition);
         DefaultDistributedJobScheduler scheduler =
             (DefaultDistributedJobScheduler) engine.scheduler(job.getSchedulerName());
         JobClass jobClass = job.getJobClass();
