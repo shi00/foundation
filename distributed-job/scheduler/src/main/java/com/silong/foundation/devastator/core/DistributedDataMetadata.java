@@ -19,12 +19,14 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
-import org.jgroups.Address;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
@@ -37,13 +39,13 @@ import java.util.stream.IntStream;
  */
 class DistributedDataMetadata implements AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = 8690858620029609276L;
+  @Serial private static final long serialVersionUID = 4228081108547447817L;
 
   /** 分区到节点映射表 */
   private final Map<Integer, List<ClusterNodeUUID>> partition2Nodes;
 
-  /** 节点到分区映射表 */
-  private final Map<Integer, Boolean> node2Partitions;
+  /** 节点到分区映射表，value为true标识primary否则为backup节点 */
+  private final RecycleConcurrentMap<Integer, Boolean> node2Partitions;
 
   /** 节点本地地址 */
   private final DefaultDistributedEngine engine;
@@ -59,7 +61,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
     int initialCapacity = engine.config.partitionCount() + 1;
     this.partition2Nodes = new ConcurrentHashMap<>(initialCapacity, 1.0f);
-    this.node2Partitions = new ConcurrentHashMap<>(initialCapacity, 1.0f);
+    this.node2Partitions = new RecycleConcurrentMap<>(initialCapacity, 1.0f);
   }
 
   /**
@@ -68,17 +70,25 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @param nodes 集群节点列表
    */
   public void computePartition2Nodes(List<ClusterNodeUUID> nodes) {
+    if (nodes == null || nodes.isEmpty()) {
+      throw new IllegalArgumentException("nodes must not be null or empty.");
+    }
     int partitionCount = engine.config.partitionCount();
     int backupNum = engine.config.backupNums();
     RendezvousPartitionMapping partitionMapping = engine.partitionMapping;
-    Address localAddress = engine.getLocalAddress();
+    ClusterNodeUUID localAddress = engine.getLocalAddress();
+    // 滚动map
+    node2Partitions.scroll();
     IntStream.range(0, partitionCount)
         .parallel()
         .forEach(
             partition -> {
               List<ClusterNodeUUID> mappingNodes =
                   partitionMapping.allocatePartition(partition, backupNum, nodes, null);
-
+              int index = mappingNodes.indexOf(localAddress);
+              if (index >= 0) {
+                node2Partitions.put(partition, index == 0 ? Boolean.TRUE : Boolean.FALSE);
+              }
               partition2Nodes.put(partition, mappingNodes);
             });
   }
@@ -94,9 +104,137 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     return nodes == null ? List.of() : nodes;
   }
 
+  /**
+   * 分区是否存储在本地节点
+   *
+   * @param partition 分区
+   * @return true or false
+   */
+  public synchronized boolean isLocalContains(int partition) {
+    return node2Partitions.get(partition) != null;
+  }
+
+  /**
+   * 本地节点是否为primary分区
+   *
+   * @param partition 分区
+   * @return true or false
+   */
+  public synchronized boolean isLocalPrimary(int partition) {
+    return node2Partitions.get(partition) == Boolean.TRUE;
+  }
+
   @Override
-  public void close() {
+  public synchronized void close() {
     partition2Nodes.clear();
-    node2Partitions.clear();
+    node2Partitions.release();
+  }
+
+  private static class RecycleConcurrentMap<K, V> implements Map<K, V> {
+
+    /** map队列，循环利用 */
+    private final ConcurrentHashMap<K, V>[] maps;
+
+    /** 求余索引 */
+    private final int mark;
+
+    /** 索引 */
+    private long index;
+
+    /**
+     * 构造方法
+     *
+     * @param initialCapacity 初始容量
+     * @param loadFactor 负载因子
+     */
+    public RecycleConcurrentMap(int initialCapacity, float loadFactor) {
+      this.maps =
+          new ConcurrentHashMap[] {
+            new ConcurrentHashMap<>(initialCapacity, loadFactor),
+            new ConcurrentHashMap<>(initialCapacity, loadFactor)
+          };
+      this.index = 0;
+      this.mark = maps.length - 1;
+    }
+
+    /** 释放当前map，换备用map */
+    public void scroll() {
+      clear();
+      index++;
+    }
+
+    /** 释放资源 */
+    public void release() {
+      for (ConcurrentHashMap<K, V> map : maps) {
+        map.clear();
+      }
+    }
+
+    @Override
+    public int size() {
+      return indexMap().size();
+    }
+
+    private ConcurrentHashMap<K, V> indexMap() {
+      return maps[((int) (index & mark))];
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return indexMap().isEmpty();
+    }
+
+    @Override
+    public boolean containsKey(Object key) {
+      return indexMap().containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+      return indexMap().containsValue(value);
+    }
+
+    @Override
+    public V get(Object key) {
+      return indexMap().get(key);
+    }
+
+    @Override
+    public V put(K key, V value) {
+      return indexMap().put(key, value);
+    }
+
+    @Override
+    public V remove(Object key) {
+      return indexMap().remove(key);
+    }
+
+    @Override
+    public void putAll(@NonNull Map<? extends K, ? extends V> m) {
+      indexMap().putAll(m);
+    }
+
+    @Override
+    public void clear() {
+      indexMap().clear();
+    }
+
+    @Override
+    @NonNull
+    public Set<K> keySet() {
+      return indexMap().keySet();
+    }
+
+    @Override
+    @NonNull
+    public Collection<V> values() {
+      return indexMap().values();
+    }
+
+    @Override
+    @NonNull
+    public Set<Entry<K, V>> entrySet() {
+      return indexMap().entrySet();
+    }
   }
 }

@@ -177,7 +177,7 @@ class DefaultViewChangedHandler
 
     // 如果是首次加入集群则只需从新计算数据分布映射表，等待数据同步
     if (oldView == null) {
-      engine.metadata.initialize(newClusterNodes);
+      engine.metadata.computePartition2Nodes(newClusterNodes);
       return;
     }
 
