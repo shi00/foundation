@@ -67,12 +67,14 @@ class DefaultCluster implements Cluster, Serializable {
 
   @Override
   @NonNull
+  @SuppressWarnings("unchecked")
   public Collection<DefaultClusterNode> clusterNodes() {
     return engine.getClusterNodes(engine.currentView());
   }
 
   @Override
   @NonNull
+  @SuppressWarnings("unchecked")
   public ClusterNode<Address> localNode() {
     return engine.getLocalNode();
   }

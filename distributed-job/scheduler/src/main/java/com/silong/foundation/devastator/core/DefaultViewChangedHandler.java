@@ -173,7 +173,7 @@ class DefaultViewChangedHandler
   private void repartition(View oldView, View newView) {
 
     // 获取新集群节点列表
-    List<ClusterNodeUUID> newClusterNodes = (List<ClusterNodeUUID>) (List<?>) newView.getMembers();
+    List<ClusterNodeUUID> newClusterNodes = getClusterNodes(newView);
 
     // 如果是首次加入集群则只需从新计算数据分布映射表，等待数据同步
     if (oldView == null) {
@@ -196,6 +196,11 @@ class DefaultViewChangedHandler
     //
     //    List<Tuple<Integer, Boolean>> newLocalPartitions =
     //        getLocalPartitions(localAddress, partition2ClusterNodes);
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<ClusterNodeUUID> getClusterNodes(View view) {
+    return (List<ClusterNodeUUID>) (List<?>) view.getMembers();
   }
 
   /**

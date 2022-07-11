@@ -147,6 +147,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
      * @param initialCapacity 初始容量
      * @param loadFactor 负载因子
      */
+    @SuppressWarnings("unchecked")
     public RecycleConcurrentMap(int initialCapacity, float loadFactor) {
       this.maps =
           new ConcurrentHashMap[] {
