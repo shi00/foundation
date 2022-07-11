@@ -405,8 +405,8 @@ class DefaultDistributedEngine
    *
    * @return 节点地址
    */
-  public Address getLocalAddress() {
-    return jChannel.address();
+  public ClusterNodeUUID getLocalAddress() {
+    return (ClusterNodeUUID) jChannel.address();
   }
 
   /**
