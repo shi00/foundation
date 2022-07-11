@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.message.PooledBytesMessage;
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.Job;
 import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
 import com.silong.foundation.devastator.model.Devastator.JobMsgType;
@@ -44,7 +45,7 @@ class WrapRunnable implements Runnable {
   private final DefaultDistributedEngine engine;
 
   /** 任务映射的节点列表 */
-  private final List<DefaultClusterNode> nodes;
+  private final List<ClusterNodeUUID> nodes;
 
   /** 任务消息构建器 */
   private final JobMsgPayload.Builder jobMsgPayloadBuilder;
@@ -66,7 +67,7 @@ class WrapRunnable implements Runnable {
       String partCf,
       byte[] jobKey,
       Runnable command,
-      List<DefaultClusterNode> nodes,
+      List<ClusterNodeUUID> nodes,
       JobMsgPayload.Builder jobMsgPayloadBuilder,
       Job.Builder jobBuilder) {
     this.engine = engine;
@@ -88,7 +89,7 @@ class WrapRunnable implements Runnable {
 
   void syncJob(byte[] jobPayload) throws Exception {
     Address localAddress = engine.getLocalAddress();
-    for (DefaultClusterNode node : nodes) {
+    for (ClusterNodeUUID node : nodes) {
       Address dest = node.uuid();
       // 本地节点持久化
       if (dest.equals(localAddress)) {

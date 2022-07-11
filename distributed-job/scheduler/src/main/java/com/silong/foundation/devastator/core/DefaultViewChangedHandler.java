@@ -173,7 +173,7 @@ class DefaultViewChangedHandler
   private void repartition(View oldView, View newView) {
 
     // 获取新集群节点列表
-    List<DefaultClusterNode> newClusterNodes = engine.getClusterNodes(newView);
+    List<ClusterNodeUUID> newClusterNodes = (List<ClusterNodeUUID>) (List<?>) newView.getMembers();
 
     // 如果是首次加入集群则只需从新计算数据分布映射表，等待数据同步
     if (oldView == null) {

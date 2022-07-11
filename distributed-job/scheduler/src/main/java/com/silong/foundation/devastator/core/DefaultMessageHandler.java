@@ -23,6 +23,7 @@ import com.lmax.disruptor.LiteBlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.silong.foundation.devastator.event.JobMsgPayloadEvent;
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.Job;
 import com.silong.foundation.devastator.model.Devastator.JobClass;
 import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
@@ -95,7 +96,7 @@ class DefaultMessageHandler
   }
 
   private boolean isPrimaryPartition2LocalNode(int partition) {
-    List<DefaultClusterNode> clusterNodes = engine.metadata.getClusterNodes(partition);
+    List<ClusterNodeUUID> clusterNodes = engine.metadata.getClusterNodes(partition);
     return !clusterNodes.isEmpty() && clusterNodes.get(0).uuid().equals(engine.getLocalAddress());
   }
 
@@ -123,7 +124,7 @@ class DefaultMessageHandler
       engine.persistStorage.put(partCf, jobKey, event.rawData());
 
       // 根据分区号获取其映射的节点列表
-      List<DefaultClusterNode> nodes = engine.metadata.getClusterNodes(partition);
+      List<ClusterNodeUUID> nodes = engine.metadata.getClusterNodes(partition);
 
       // 如果本地节点是主分区，则触发任务执行
       if (isPrimaryPartition2LocalNode(partition)) {

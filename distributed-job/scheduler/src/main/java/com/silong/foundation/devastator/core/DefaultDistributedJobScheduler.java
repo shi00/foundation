@@ -21,6 +21,7 @@ package com.silong.foundation.devastator.core;
 import com.google.protobuf.ByteString;
 import com.silong.foundation.devastator.DistributedJobScheduler;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.Job;
 import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
 import com.silong.foundation.devastator.utils.KryoUtils;
@@ -128,7 +129,7 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     int partition = engine.objectPartitionMapping.partition(jobId);
 
     // 根据分区号获取其映射的节点列表
-    List<DefaultClusterNode> nodes = engine.metadata.getClusterNodes(partition);
+    List<ClusterNodeUUID> nodes = engine.metadata.getClusterNodes(partition);
     Address localAddress = engine.getLocalAddress();
 
     // 任务分发至分区对应的各节点

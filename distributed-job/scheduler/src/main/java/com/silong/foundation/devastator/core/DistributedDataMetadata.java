@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import org.jgroups.Address;
 
 import java.io.Serial;
@@ -40,7 +41,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
   @Serial private static final long serialVersionUID = 8690858620029609276L;
 
   /** 分区到节点映射表 */
-  private final Map<Integer, List<DefaultClusterNode>> partition2Nodes;
+  private final Map<Integer, List<ClusterNodeUUID>> partition2Nodes;
 
   /** 节点到分区映射表 */
   private final Set<Integer> node2Partitions;
@@ -65,7 +66,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    *
    * @param nodes 集群节点列表
    */
-  public synchronized void initialize(List<DefaultClusterNode> nodes) {
+  public synchronized void initialize(List<ClusterNodeUUID> nodes) {
     // 并行计算分区节点映射关系
     computePartition2Nodes(nodes);
 
@@ -79,14 +80,14 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
         .forEach(
             entry -> {
               Integer partition = entry.getKey();
-              List<DefaultClusterNode> nodeList = entry.getValue();
+              List<ClusterNodeUUID> nodeList = entry.getValue();
               if (nodeList.stream().anyMatch(node -> node.uuid().equals(local))) {
                 node2Partitions.add(partition);
               }
             });
   }
 
-  private void computePartition2Nodes(List<DefaultClusterNode> nodes) {
+  private void computePartition2Nodes(List<ClusterNodeUUID> nodes) {
     int partitionCount = engine.config.partitionCount();
     int backupNum = engine.config.backupNums();
     RendezvousPartitionMapping partitionMapping = engine.partitionMapping;
@@ -105,8 +106,8 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @param partition 分区号
    * @return 节点列表
    */
-  public synchronized List<DefaultClusterNode> getClusterNodes(int partition) {
-    List<DefaultClusterNode> nodes = partition2Nodes.get(partition);
+  public synchronized List<ClusterNodeUUID> getClusterNodes(int partition) {
+    List<ClusterNodeUUID> nodes = partition2Nodes.get(partition);
     return nodes == null ? List.of() : nodes;
   }
 

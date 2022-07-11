@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.devastator.core;
 
+import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.Serial;
@@ -33,7 +34,7 @@ import static com.silong.foundation.devastator.core.WeightNodeTuple.WeightNodeTu
  * @version 1.0.0
  * @since 2022-04-30 09:35
  */
-record WeightNodeTuple(long weight, DefaultClusterNode node) implements Comparable<WeightNodeTuple>, Serializable {
+record WeightNodeTuple(long weight, ClusterNodeUUID node) implements Comparable<WeightNodeTuple>, Serializable {
     @Serial
     private static final long serialVersionUID = -5468679374325846351L;
 
