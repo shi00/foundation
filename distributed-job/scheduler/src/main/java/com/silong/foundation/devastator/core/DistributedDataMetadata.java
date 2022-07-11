@@ -139,7 +139,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     private final int mark;
 
     /** 索引 */
-    private long index;
+    private int index;
 
     /**
      * 构造方法
@@ -176,7 +176,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     }
 
     private ConcurrentHashMap<K, V> indexMap() {
-      return maps[((int) (index & mark))];
+      return maps[index & mark];
     }
 
     @Override
