@@ -19,7 +19,6 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
-import com.silong.foundation.utilities.concurrent.McsSpinLock;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.Serial;
@@ -30,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
 
 /**
@@ -46,14 +46,14 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
   /** 分区到节点映射表 */
   private final RecycleConcurrentMap<Integer, List<ClusterNodeUUID>> partition2Nodes;
 
-  /** 节点到分区映射表，value为true标识primary否则为backup节点 */
-  private final RecycleConcurrentMap<Integer, Boolean> node2Partitions;
+  /** 节点到分区映射表，value为0标识primary，其他值为队列中的位置 */
+  private final RecycleConcurrentMap<Integer, Integer> node2Partitions;
 
   /** 节点本地地址 */
   private final DefaultDistributedEngine engine;
 
-  /** MCS自旋锁 */
-  private final Lock spinLock = new McsSpinLock();
+  /** 同步锁 */
+  private final Lock lock = new ReentrantLock();
 
   /**
    * 构造方法
@@ -83,7 +83,7 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     RendezvousPartitionMapping partitionMapping = engine.partitionMapping;
     ClusterNodeUUID localAddress = engine.getLocalAddress();
 
-    spinLock.lock();
+    lock.lock();
     try {
       // 滚动map
       partition2Nodes.scroll();
@@ -94,15 +94,46 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
               partition -> {
                 List<ClusterNodeUUID> mappingNodes =
                     partitionMapping.allocatePartition(partition, backupNum, nodes, null);
-                int index = mappingNodes.indexOf(localAddress);
+                int index = binarySearch(mappingNodes, localAddress);
                 if (index >= 0) {
-                  node2Partitions.put(partition, index == 0 ? Boolean.TRUE : Boolean.FALSE);
+                  node2Partitions.put(partition, index);
                 }
                 partition2Nodes.put(partition, mappingNodes);
               });
     } finally {
-      spinLock.unlock();
+      lock.unlock();
     }
+  }
+
+  /**
+   * 降序二分查找
+   *
+   * @param nodes 降序节点列表
+   * @param targetNode 目标节点
+   * @return 节点在列表中的位置，否则返回值<0
+   */
+  private static int binarySearch(List<ClusterNodeUUID> nodes, ClusterNodeUUID targetNode) {
+    int low = 0;
+    int high = nodes.size() - 1;
+    while (low <= high) {
+      // 取中值
+      int mid = (low + high) >>> 1;
+      ClusterNodeUUID midVal = nodes.get(mid);
+
+      // 目标与中值比较大小
+      int cmp = midVal.compareTo(targetNode);
+
+      if (cmp > 0) {
+        low = mid + 1;
+      } else if (cmp < 0) {
+        high = mid - 1;
+      } else {
+        // key found
+        return mid;
+      }
+    }
+    // key not found
+    return -(low + 1);
   }
 
   /**
@@ -112,12 +143,12 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @return 节点列表
    */
   public List<ClusterNodeUUID> getClusterNodes(int partition) {
-    spinLock.lock();
+    lock.lock();
     try {
       List<ClusterNodeUUID> nodes = partition2Nodes.get(partition);
       return nodes == null ? List.of() : nodes;
     } finally {
-      spinLock.unlock();
+      lock.unlock();
     }
   }
 
@@ -128,11 +159,11 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @return true or false
    */
   public boolean isLocalContains(int partition) {
-    spinLock.lock();
+    lock.lock();
     try {
       return node2Partitions.containsKey(partition);
     } finally {
-      spinLock.unlock();
+      lock.unlock();
     }
   }
 
@@ -143,11 +174,26 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @return true or false
    */
   public boolean isLocalPrimary(int partition) {
-    spinLock.lock();
+    lock.lock();
     try {
-      return node2Partitions.get(partition) == Boolean.TRUE;
+      return node2Partitions.containsKey(partition) && node2Partitions.get(partition) == 0;
     } finally {
-      spinLock.unlock();
+      lock.unlock();
+    }
+  }
+
+  /**
+   * 本地节点是否为Secondary分区
+   *
+   * @param partition 分区
+   * @return true or false
+   */
+  public boolean isLocalSecondary(int partition) {
+    lock.lock();
+    try {
+      return node2Partitions.containsKey(partition) && node2Partitions.get(partition) == 1;
+    } finally {
+      lock.unlock();
     }
   }
 
