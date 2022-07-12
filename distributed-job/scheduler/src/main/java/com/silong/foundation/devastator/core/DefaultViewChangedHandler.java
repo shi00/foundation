@@ -173,14 +173,13 @@ class DefaultViewChangedHandler
    */
   @SuppressWarnings("unchecked")
   private void repartition(View oldView, View newView) {
-
     // 获取新集群节点列表
     List<Address> newViewMembers = newView.getMembers();
     List<ClusterNodeUUID> newClusterNodes = (List<ClusterNodeUUID>) (List<?>) newViewMembers;
+    engine.metadata.computePartition2Nodes(newClusterNodes);
 
-    // 如果是首次加入集群则只需从新计算数据分布映射表，等待数据同步
+    // 如果是首次加入集群则只需从新计算数据分布映射表，等待其他节点同步数据
     if (oldView == null) {
-      engine.metadata.computePartition2Nodes(newClusterNodes);
       return;
     }
 
@@ -190,16 +189,7 @@ class DefaultViewChangedHandler
 
     List<Address> leftMembers = Util.leftMembers(oldViewMembers, newViewMembers);
 
-    // 根据集群节点调整分区分布
-    //    rebalancePartitionTable(newClusterNodes);
 
-    //    List<Tuple<Integer, Boolean>> oldLocalPartitions = null;
-    //    if (oldPartition2ClusterNodes != null) {
-    //      oldLocalPartitions = getLocalPartitions(localAddress, oldPartition2ClusterNodes);
-    //    }
-    //
-    //    List<Tuple<Integer, Boolean>> newLocalPartitions =
-    //        getLocalPartitions(localAddress, partition2ClusterNodes);
   }
 
   /**
