@@ -163,7 +163,9 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     /** 循环使用map */
     public void scroll() {
       ConcurrentHashMap<K, V> swap = current;
-      history.clear();
+      if (!history.isEmpty()) {
+        history.clear();
+      }
       current = history;
       history = swap;
     }
