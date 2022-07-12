@@ -33,41 +33,42 @@ import java.util.concurrent.locks.Lock;
  * @since 2022-07-12 20:12
  */
 public class ClhSpinLock implements Lock {
-  /** The end of the lock wait queue */
-  private final AtomicReference<QNode> tail = new AtomicReference<>(null);
 
-  private final ThreadLocal<QNode> preNode = ThreadLocal.withInitial(() -> null);
+  /** Ensure atomic operation */
+  private final AtomicReference<QNode> tail = new AtomicReference<>(new QNode());
 
-  private final ThreadLocal<QNode> myNode = ThreadLocal.withInitial(QNode::new);
+  /** Node variables of each thread are different */
+  private final ThreadLocal<QNode> current = ThreadLocal.withInitial(QNode::new);
 
-  @Override
+  /**
+   * Record the front drive node and reuse this node to prevent deadlocks: Assume that there is no
+   * use of the node, there are T1, T2 thread, T1 first Lock success, then T2 calls lock () Spin on
+   * the Locked field of the T1 node, if the T1 thread unlock () is followed, (T2 has not yet
+   * obtained the CPU time film), T1 calls Lock () again, because the value of tail is the node of
+   * the T2 thread, which is TRUE, so T1 spin is waiting T2 release the lock, while T2 at this time
+   * is still waiting to release the lock, which causes a deadlock.
+   */
+  private final ThreadLocal<QNode> pred = new ThreadLocal<>();
+
   public void lock() {
-    QNode qnode = myNode.get();
-    // Setting your own state to locked=true indicates that you need to obtain a lock
-    qnode.locked = true;
-    // The tail of the linked list is set to the qNode of the thread, and the previous tail is set
-    // to the preNode of the current thread
-    QNode pre = tail.getAndSet(qnode);
-    preNode.set(pre);
-    if (pre != null) {
-      // The current thread rotates on the locked field of the precursor node until the precursor
-      // node releases the lock resource
-      while (pre.locked) {
-        Thread.onSpinWait();
-      }
+    QNode node = current.get();
+    node.locked = true;
+    //  Set TAIL to the node of the current thread and get the previous node, this operation is
+    // atomic operation
+    QNode preNode = tail.getAndSet(node);
+    pred.set(preNode);
+    //  Busy waiting for the Locked field of the front drive node
+    while (preNode.locked) {
+      Thread.onSpinWait();
     }
   }
 
-  @Override
   public void unlock() {
-    QNode qnode = myNode.get();
-    // When the lock is released, its own locked is set to false, so that its successor node can end
-    // the spin
-    qnode.locked = false;
-    // Recycle the node and delete it from the virtual queue
-    // If the current node reference is set as its own preNode, the next node's preNode will become
-    // the current node's preNode, thus removing the current node from the queue
-    myNode.set(preNode.get());
+    QNode node = current.get();
+    //  Set the Locked property of the current thread node to false so that the next node
+    // successfully acquires the lock.
+    node.locked = false;
+    current.set(pred.get());
   }
 
   @Override

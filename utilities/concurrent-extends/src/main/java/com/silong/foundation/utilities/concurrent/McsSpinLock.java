@@ -52,21 +52,6 @@ public class McsSpinLock implements Lock {
   }
 
   @Override
-  public void lockInterruptibly() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean tryLock() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean tryLock(long time, TimeUnit unit) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public void unlock() {
     QNode qnode = myNode.get();
     if (qnode.next == null) {
@@ -93,11 +78,27 @@ public class McsSpinLock implements Lock {
     throw new UnsupportedOperationException();
   }
 
+  @Override
+  public void lockInterruptibly() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean tryLock() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public boolean tryLock(long time, TimeUnit unit) {
+    throw new UnsupportedOperationException();
+  }
+
   /** 锁节点 */
   static class QNode {
     /** Is it locked by the thread of qNode */
-    volatile boolean locked = false;
+    volatile boolean locked;
+
     /** Compared with CLHLock, there is a real next */
-    volatile QNode next = null;
+    volatile QNode next;
   }
 }
