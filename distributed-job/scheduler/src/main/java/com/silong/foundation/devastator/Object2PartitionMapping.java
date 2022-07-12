@@ -25,7 +25,7 @@ package com.silong.foundation.devastator;
  * @version 1.0.0
  * @since 2022-05-01 10:39
  */
-public interface ObjectPartitionMapping {
+public interface Object2PartitionMapping {
 
   /**
    * 集群内的分区总数量

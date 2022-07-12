@@ -111,7 +111,7 @@ class DefaultDistributedEngine
   final DistributedDataMetadata metadata;
 
   /** 对象分区映射器 */
-  final DefaultObjectPartitionMapping objectPartitionMapping;
+  final DefaultObject2PartitionMapping objectPartitionMapping;
 
   /** 集群状态 */
   private volatile ClusterState clusterState;
@@ -133,7 +133,7 @@ class DefaultDistributedEngine
 
     try {
       this.config = config;
-      this.objectPartitionMapping = new DefaultObjectPartitionMapping(config.partitionCount());
+      this.objectPartitionMapping = new DefaultObject2PartitionMapping(config.partitionCount());
       // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
       this.metadata = new DistributedDataMetadata(this);
       this.distributedJobSchedulerMap =

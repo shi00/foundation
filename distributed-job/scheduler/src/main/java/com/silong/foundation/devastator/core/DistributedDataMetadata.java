@@ -19,6 +19,7 @@
 package com.silong.foundation.devastator.core;
 
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
+import com.silong.foundation.utilities.concurrent.McsSpinLock;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.Serial;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.IntStream;
 
 /**
@@ -49,6 +51,9 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
 
   /** 节点本地地址 */
   private final DefaultDistributedEngine engine;
+
+  /** MCS自旋锁 */
+  private final Lock spinLock = new McsSpinLock();
 
   /**
    * 构造方法
@@ -77,21 +82,27 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     int backupNum = engine.config.backupNums();
     RendezvousPartitionMapping partitionMapping = engine.partitionMapping;
     ClusterNodeUUID localAddress = engine.getLocalAddress();
-    // 滚动map
-    partition2Nodes.scroll();
-    node2Partitions.scroll();
-    IntStream.range(0, partitionCount)
-        .parallel()
-        .forEach(
-            partition -> {
-              List<ClusterNodeUUID> mappingNodes =
-                  partitionMapping.allocatePartition(partition, backupNum, nodes, null);
-              int index = mappingNodes.indexOf(localAddress);
-              if (index >= 0) {
-                node2Partitions.put(partition, index == 0 ? Boolean.TRUE : Boolean.FALSE);
-              }
-              partition2Nodes.put(partition, mappingNodes);
-            });
+
+    spinLock.lock();
+    try {
+      // 滚动map
+      partition2Nodes.scroll();
+      node2Partitions.scroll();
+      IntStream.range(0, partitionCount)
+          .parallel()
+          .forEach(
+              partition -> {
+                List<ClusterNodeUUID> mappingNodes =
+                    partitionMapping.allocatePartition(partition, backupNum, nodes, null);
+                int index = mappingNodes.indexOf(localAddress);
+                if (index >= 0) {
+                  node2Partitions.put(partition, index == 0 ? Boolean.TRUE : Boolean.FALSE);
+                }
+                partition2Nodes.put(partition, mappingNodes);
+              });
+    } finally {
+      spinLock.unlock();
+    }
   }
 
   /**
@@ -100,9 +111,14 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @param partition 分区号
    * @return 节点列表
    */
-  public synchronized List<ClusterNodeUUID> getClusterNodes(int partition) {
-    List<ClusterNodeUUID> nodes = partition2Nodes.get(partition);
-    return nodes == null ? List.of() : nodes;
+  public List<ClusterNodeUUID> getClusterNodes(int partition) {
+    spinLock.lock();
+    try {
+      List<ClusterNodeUUID> nodes = partition2Nodes.get(partition);
+      return nodes == null ? List.of() : nodes;
+    } finally {
+      spinLock.unlock();
+    }
   }
 
   /**
@@ -111,8 +127,13 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @param partition 分区
    * @return true or false
    */
-  public synchronized boolean isLocalContains(int partition) {
-    return node2Partitions.containsKey(partition);
+  public boolean isLocalContains(int partition) {
+    spinLock.lock();
+    try {
+      return node2Partitions.containsKey(partition);
+    } finally {
+      spinLock.unlock();
+    }
   }
 
   /**
@@ -121,12 +142,17 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @param partition 分区
    * @return true or false
    */
-  public synchronized boolean isLocalPrimary(int partition) {
-    return node2Partitions.get(partition) == Boolean.TRUE;
+  public boolean isLocalPrimary(int partition) {
+    spinLock.lock();
+    try {
+      return node2Partitions.get(partition) == Boolean.TRUE;
+    } finally {
+      spinLock.unlock();
+    }
   }
 
   @Override
-  public synchronized void close() {
+  public void close() {
     partition2Nodes.clear();
     node2Partitions.release();
   }

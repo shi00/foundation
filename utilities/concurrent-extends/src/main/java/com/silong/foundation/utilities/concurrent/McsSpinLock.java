@@ -32,14 +32,14 @@ import java.util.concurrent.locks.Lock;
  */
 public class McsSpinLock implements Lock {
 
-  private final AtomicReference<QNode> tail = new AtomicReference<>(null);
+  private final AtomicReference<LockNode> tail = new AtomicReference<>(null);
 
-  private final ThreadLocal<QNode> myNode = ThreadLocal.withInitial(QNode::new);
+  private final ThreadLocal<LockNode> myNode = ThreadLocal.withInitial(LockNode::new);
 
   @Override
   public void lock() {
-    QNode qnode = myNode.get();
-    QNode preNode = tail.getAndSet(qnode);
+    LockNode qnode = myNode.get();
+    LockNode preNode = tail.getAndSet(qnode);
     if (preNode != null) {
       qnode.locked = false;
       preNode.next = qnode;
@@ -53,7 +53,7 @@ public class McsSpinLock implements Lock {
 
   @Override
   public void unlock() {
-    QNode qnode = myNode.get();
+    LockNode qnode = myNode.get();
     if (qnode.next == null) {
       // There is no waiting thread
       if (tail.compareAndSet(qnode, null)) {
@@ -93,12 +93,16 @@ public class McsSpinLock implements Lock {
     throw new UnsupportedOperationException();
   }
 
+  void close() {
+    myNode.remove();
+  }
+
   /** 锁节点 */
-  static class QNode {
+  static class LockNode {
     /** Is it locked by the thread of qNode */
     volatile boolean locked;
 
     /** Compared with CLHLock, there is a real next */
-    volatile QNode next;
+    volatile LockNode next;
   }
 }

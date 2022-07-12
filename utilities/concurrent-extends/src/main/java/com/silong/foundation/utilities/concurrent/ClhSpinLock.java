@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.utilities.concurrent;
 
-import com.silong.foundation.utilities.concurrent.McsSpinLock.QNode;
+import com.silong.foundation.utilities.concurrent.McsSpinLock.LockNode;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,10 +35,10 @@ import java.util.concurrent.locks.Lock;
 public class ClhSpinLock implements Lock {
 
   /** Ensure atomic operation */
-  private final AtomicReference<QNode> tail = new AtomicReference<>(new QNode());
+  private final AtomicReference<LockNode> tail = new AtomicReference<>(new LockNode());
 
   /** Node variables of each thread are different */
-  private final ThreadLocal<QNode> current = ThreadLocal.withInitial(QNode::new);
+  private final ThreadLocal<LockNode> current = ThreadLocal.withInitial(LockNode::new);
 
   /**
    * Record the front drive node and reuse this node to prevent deadlocks: Assume that there is no
@@ -48,14 +48,14 @@ public class ClhSpinLock implements Lock {
    * the T2 thread, which is TRUE, so T1 spin is waiting T2 release the lock, while T2 at this time
    * is still waiting to release the lock, which causes a deadlock.
    */
-  private final ThreadLocal<QNode> pred = new ThreadLocal<>();
+  private final ThreadLocal<LockNode> pred = new ThreadLocal<>();
 
   public void lock() {
-    QNode node = current.get();
+    LockNode node = current.get();
     node.locked = true;
     //  Set TAIL to the node of the current thread and get the previous node, this operation is
     // atomic operation
-    QNode preNode = tail.getAndSet(node);
+    LockNode preNode = tail.getAndSet(node);
     pred.set(preNode);
     //  Busy waiting for the Locked field of the front drive node
     while (preNode.locked) {
@@ -64,7 +64,7 @@ public class ClhSpinLock implements Lock {
   }
 
   public void unlock() {
-    QNode node = current.get();
+    LockNode node = current.get();
     //  Set the Locked property of the current thread node to false so that the next node
     // successfully acquires the lock.
     node.locked = false;
@@ -89,5 +89,10 @@ public class ClhSpinLock implements Lock {
   @Override
   public boolean tryLock(long time, TimeUnit unit) {
     throw new UnsupportedOperationException();
+  }
+
+  void close() {
+    current.remove();
+    pred.remove();
   }
 }

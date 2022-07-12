@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.silong.foundation.devastator.ObjectPartitionMapping;
+import com.silong.foundation.devastator.Object2PartitionMapping;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
@@ -36,7 +36,7 @@ import static com.silong.foundation.devastator.config.DevastatorConfig.*;
  */
 @ToString
 @EqualsAndHashCode
-class DefaultObjectPartitionMapping implements ObjectPartitionMapping, Serializable {
+class DefaultObject2PartitionMapping implements Object2PartitionMapping, Serializable {
 
   @Serial private static final long serialVersionUID = -5332104253133327573L;
 
@@ -47,7 +47,7 @@ class DefaultObjectPartitionMapping implements ObjectPartitionMapping, Serializa
   private int mask;
 
   /** 默认构造方法 */
-  public DefaultObjectPartitionMapping() {
+  public DefaultObject2PartitionMapping() {
     this(DEFAULT_PARTITION_SIZE);
   }
 
@@ -58,7 +58,7 @@ class DefaultObjectPartitionMapping implements ObjectPartitionMapping, Serializa
    *     ClusterDataAllocator.MAX_PARTITIONS_COUNT}，大于等于{@code
    *     ClusterDataAllocator.MIN_PARTITIONS_COUNT}
    */
-  public DefaultObjectPartitionMapping(int partitions) {
+  public DefaultObject2PartitionMapping(int partitions) {
     partitions(partitions);
   }
 
