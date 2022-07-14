@@ -28,8 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.IntStream;
 
 /**
@@ -52,8 +51,11 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
   /** 节点本地地址 */
   private final DefaultDistributedEngine engine;
 
-  /** 同步锁 */
-  private final Lock lock = new ReentrantLock();
+  /** 同步锁，读锁 */
+  private final ReentrantReadWriteLock.ReadLock readLock;
+
+  /** 同步锁，读锁 */
+  private final ReentrantReadWriteLock.WriteLock writeLock;
 
   /**
    * 构造方法
@@ -67,6 +69,9 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     int initialCapacity = engine.config.partitionCount() + 1;
     this.partition2Nodes = new RecycleConcurrentMap<>(initialCapacity, 1.0f);
     this.node2Partitions = new RecycleConcurrentMap<>(initialCapacity, 1.0f);
+    ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    this.readLock = readWriteLock.readLock();
+    this.writeLock = readWriteLock.writeLock();
   }
 
   /**
@@ -83,25 +88,55 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
     RendezvousPartitionMapping partitionMapping = engine.partitionMapping;
     ClusterNodeUUID localAddress = engine.getLocalAddress();
 
-    lock.lock();
+    writeLock.lock();
     try {
       // 滚动map
       partition2Nodes.scroll();
       node2Partitions.scroll();
+
+      // 获取上一次视图对应的分区表
+      Map<Integer, List<ClusterNodeUUID>> history = partition2Nodes.history();
       IntStream.range(0, partitionCount)
           .parallel()
           .forEach(
               partition -> {
-                List<ClusterNodeUUID> mappingNodes =
+                List<ClusterNodeUUID> newNodes =
                     partitionMapping.allocatePartition(partition, backupNum, nodes, null);
-                int index = binarySearch(mappingNodes, localAddress);
-                if (index >= 0) {
-                  node2Partitions.put(partition, index);
+                List<ClusterNodeUUID> historyNodes = history.get(partition);
+                int oldIndex = binarySearch(historyNodes, localAddress);
+                int newIndex = binarySearch(newNodes, localAddress);
+
+                boolean oldContains = oldIndex >= 0;
+                boolean newContains = newIndex >= 0;
+                if (oldContains && newContains) {
+
+                } else if (oldContains) {
+                  // 如果本地节点原来是主分区，而新的视图中不在本地节点保存，则同步分区数据至新节点
+                  if (oldIndex == 0) {
+                    engine.partitionSyncExecutor.execute(
+                        () -> {
+                          String partitionCf = engine.getPartitionCf(partition);
+                          //                      engine.persistStorage.
+
+                        });
+                  }
+
+                } else if (newContains) {
+
+                } else {
+
                 }
-                partition2Nodes.put(partition, mappingNodes);
+
+                // 保存本地节点对应的副本节点列表中的索引
+                if (newContains) {
+                  node2Partitions.put(partition, newIndex);
+                }
+
+                // 保存新的分区表
+                partition2Nodes.put(partition, newNodes);
               });
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -142,13 +177,13 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @param partition 分区号
    * @return 节点列表
    */
+  @NonNull
   public List<ClusterNodeUUID> getClusterNodes(int partition) {
-    lock.lock();
+    readLock.lock();
     try {
-      List<ClusterNodeUUID> nodes = partition2Nodes.get(partition);
-      return nodes == null ? List.of() : nodes;
+      return partition2Nodes.getOrDefault(partition, List.of());
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -159,11 +194,11 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @return true or false
    */
   public boolean isLocalContains(int partition) {
-    lock.lock();
+    readLock.lock();
     try {
       return node2Partitions.containsKey(partition);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -174,33 +209,34 @@ class DistributedDataMetadata implements AutoCloseable, Serializable {
    * @return true or false
    */
   public boolean isLocalPrimary(int partition) {
-    lock.lock();
-    try {
-      return node2Partitions.containsKey(partition) && node2Partitions.get(partition) == 0;
-    } finally {
-      lock.unlock();
-    }
+    return isLocalIndexFor(partition, 0);
   }
 
   /**
-   * 本地节点是否为Secondary分区
+   * 本地节点是否包含指定分区且本地节点在副本节点列表中的位置是否为给定值
    *
-   * @param partition 分区
+   * @param partition 分区号
+   * @param x 本地节点在副本队列中的位置
    * @return true or false
    */
-  public boolean isLocalSecondary(int partition) {
-    lock.lock();
+  public boolean isLocalIndexFor(int partition, int x) {
+    readLock.lock();
     try {
-      return node2Partitions.containsKey(partition) && node2Partitions.get(partition) == 1;
+      return node2Partitions.containsKey(partition) && node2Partitions.get(partition) == x;
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
   @Override
   public void close() {
-    partition2Nodes.clear();
-    node2Partitions.release();
+    writeLock.lock();
+    try {
+      partition2Nodes.clear();
+      node2Partitions.release();
+    } finally {
+      writeLock.unlock();
+    }
   }
 
   private static class RecycleConcurrentMap<K, V> implements Map<K, V> {

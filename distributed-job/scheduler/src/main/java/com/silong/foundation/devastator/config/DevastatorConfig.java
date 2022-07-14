@@ -74,6 +74,9 @@ public class DevastatorConfig implements Serializable {
   /** 消息事件队列数量 */
   public static final int DEFAULT_MESSAGE_EVENT_QUEUE_COUNT = 16;
 
+  /** 默认分区同步线程数量 */
+  public static final int DEFAULT_PARTITION_SYNC_THREAD_COUNT = 4;
+
   /** 实例名，不指定则随机生成一个uuid */
   @NotEmpty private String instanceName = UUID.randomUUID().toString();
 
@@ -105,6 +108,9 @@ public class DevastatorConfig implements Serializable {
 
   /** 消息处理队列数量，默认：16 */
   @Positive private int messageEventQueueCount = DEFAULT_MESSAGE_EVENT_QUEUE_COUNT;
+
+  /** 分区同步线程数量：默认：4 */
+  @Positive private int partitionSyncThreadCount = DEFAULT_PARTITION_SYNC_THREAD_COUNT;
 
   /** 节点属性 */
   @Valid @NotNull

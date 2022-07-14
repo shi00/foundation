@@ -187,9 +187,8 @@ class DefaultViewChangedHandler
     List<Address> oldViewMembers = oldView.getMembers();
     List<ClusterNodeUUID> oldClusterNodes = (List<ClusterNodeUUID>) (List<?>) oldViewMembers;
 
+    // 获取离开集群的节点列表
     List<Address> leftMembers = Util.leftMembers(oldViewMembers, newViewMembers);
-
-
   }
 
   /**

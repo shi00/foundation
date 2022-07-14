@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static com.silong.foundation.devastator.utils.Utilities.powerOf2;
@@ -82,6 +83,9 @@ class DefaultDistributedEngine
 
   @Serial private static final long serialVersionUID = 1258279194145465487L;
 
+  /** 分区数据同步线程名前缀 */
+  private static final String PARTITION_SYNC_THREAD_NAME_PREFIX = "partition-sync-processor";
+
   /** address缓存 */
   private static final ThreadLocal<ByteArrayDataOutputStream> ADDRESS_BUFFER =
       withInitial(() -> new ByteArrayDataOutputStream(LONG_SIZE * 2));
@@ -97,6 +101,9 @@ class DefaultDistributedEngine
 
   /** 集群通信信道 */
   private final JChannel jChannel;
+
+  /** 分区同步任务执行器 */
+  final Executor partitionSyncExecutor;
 
   /** 配置 */
   final DevastatorConfig config;
@@ -133,6 +140,10 @@ class DefaultDistributedEngine
 
     try {
       this.config = config;
+      this.partitionSyncExecutor =
+          Executors.newFixedThreadPool(
+              config.partitionSyncThreadCount(),
+              new SimpleThreadFactory(PARTITION_SYNC_THREAD_NAME_PREFIX));
       this.objectPartitionMapping = new DefaultObject2PartitionMapping(config.partitionCount());
       // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
       this.metadata = new DistributedDataMetadata(this);
