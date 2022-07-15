@@ -86,7 +86,7 @@ class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializa
     }
 
     // 如果当前coordinator仍然存在则保证当前coordinator不变，但是后续节点按权重，角色排序
-    if (members.indexOf(oldCoordinator) == 0) {
+    if (members.getFirst().equals(oldCoordinator)) {
       members.remove(oldCoordinator);
       members.sort(this::compare);
       members.addFirst(oldCoordinator);
