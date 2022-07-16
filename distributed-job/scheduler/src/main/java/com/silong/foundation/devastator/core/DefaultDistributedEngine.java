@@ -31,7 +31,7 @@ import com.silong.foundation.devastator.message.PooledNioMessage;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.ClusterNodeInfo;
 import com.silong.foundation.devastator.model.Devastator.ClusterState;
-import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
+import com.silong.foundation.devastator.model.Devastator.MsgPayload;
 import com.silong.foundation.utilities.concurrent.SimpleThreadFactory;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -272,9 +272,7 @@ class DefaultDistributedEngine
     if (partitionNo > 0) {
       throw new IllegalArgumentException("partitionNo must be greater than or equals 0.");
     }
-    String cf = clusterName() + partitionNo;
-    persistStorage.createColumnFamily(cf);
-    return cf;
+    return String.format("%s-partition%d", clusterName(), partitionNo);
   }
 
   /**
@@ -364,13 +362,14 @@ class DefaultDistributedEngine
       if (message instanceof PooledBytesMessage) {
         try {
           byte[] bytes = message.getArray();
-          JobMsgPayload jobMsgPayload = JobMsgPayload.parseFrom(bytes);
-
-          // 根据任务计算其归属的任务消息处理队列
-          int index = (int) (jobMsgPayload.getJob().getJobId() & messageEventQueueMark);
-          defaultMessageHandlers[index].handle(jobMsgPayload, bytes);
+          MsgPayload msgPayload = MsgPayload.parseFrom(bytes);
+          switch (msgPayload.getMsgType())
+          {
+            case JOB -> handleJobMessage(bytes, msgPayload);
+            case UNRECOGNIZED -> throw new IllegalStateException("Unknown msgType: " + msgPayload.getMsgType());
+          }
         } catch (InvalidProtocolBufferException e) {
-          log.error("Unknown job.", e);
+          log.error("Invalid message.", e);
         }
       } else {
         if (log.isDebugEnabled()) {
@@ -378,6 +377,12 @@ class DefaultDistributedEngine
         }
       }
     }
+  }
+
+  private void handleJobMessage(byte[] rawMsgBytes, MsgPayload msgPayload) {
+    // 根据任务计算其归属的任务消息处理队列
+    int index = (int) (msgPayload.getJob().getJobId() & messageEventQueueMark);
+    defaultMessageHandlers[index].handle(msgPayload, rawMsgBytes);
   }
 
   @Override
