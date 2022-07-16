@@ -49,7 +49,7 @@ enum JobClass{
 //任务类型
 enum JobType{
   ONE_SHOT = 0; //立即执行的一次性任务
-  DELAY = 1; //延时执行一次的任务
+  DELAY_ONE_SHOT = 1; //延时执行一次的任务
   PERIODIC_FIXED_DELAY = 2; //周期性固定延时任务
   PERIODIC_FIXED_PERIOD = 3; //周期性固定延时任务
 }
@@ -75,16 +75,22 @@ message Job{
   optional string job_class_fqdn = 8; //如果消息类型为JOB，此字段为job类型FQDN
 }
 
+//操作类型
+enum OperationType {
+  CREATE = 0; // 新增
+  DELETE = 1; // 删除
+  UPDATE = 2; // 更新
+  QUERY = 3; // 查询
+}
+
 //消息类型
-enum JobMsgType {
-  CREATE_JOB = 0; // 新增任务
-  DELETE_JOB = 1; // 删除任务
-  UPDATE_JOB = 2; // 更新任务
-  QUERY_JOB = 3; // 查询任务
+enum MsgType{
+  JOB = 0; //任务
 }
 
 //消息载荷
-message JobMsgPayload {
-  JobMsgType type = 1; //消息类型
-  Job job = 2; //任务
+message MsgPayload {
+  OperationType opType = 1; //操作类型
+  MsgType msgType = 2; //消息类型
+  optional Job job = 3; //任务载荷
 }
