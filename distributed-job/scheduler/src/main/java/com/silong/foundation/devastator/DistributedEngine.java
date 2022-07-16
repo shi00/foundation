@@ -31,7 +31,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 public interface DistributedEngine {
 
   /**
-   * 发送集群消息
+   * 异步发送集群消息
    *
    * @param msg 消息字节数组
    * @param dest 目标地址
@@ -39,11 +39,11 @@ public interface DistributedEngine {
    * @return this
    * @throws Exception 当前节点为连接集群或已关闭时抛出，参数异常时抛出
    */
-  <T extends Comparable<T>> DistributedEngine send(
+  <T extends Comparable<T>> DistributedEngine asyncSend(
       @NonNull byte[] msg, @Nullable ClusterNode<T> dest) throws Exception;
 
   /**
-   * 发送集群消息
+   * 异步发送集群消息
    *
    * @param msg 消息字节数组
    * @param offset 消息偏移位置
@@ -53,7 +53,7 @@ public interface DistributedEngine {
    * @param <T> 地址类型
    * @throws Exception 当前节点为连接集群或已关闭时抛出，参数异常时抛出
    */
-  <T extends Comparable<T>> DistributedEngine send(
+  <T extends Comparable<T>> DistributedEngine asyncSend(
       @NonNull byte[] msg, int offset, int length, @Nullable ClusterNode<T> dest) throws Exception;
 
   /**

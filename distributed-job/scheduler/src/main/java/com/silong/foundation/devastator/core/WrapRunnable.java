@@ -96,7 +96,7 @@ class WrapRunnable implements Runnable {
         engine.persistStorage.put(partCf, jobKey, jobPayload);
       } else {
         // 远程节点消息同步
-        engine.send(PooledBytesMessage.obtain().dest(dest).setArray(jobPayload));
+        engine.asyncSend(PooledBytesMessage.obtain().dest(dest).setArray(jobPayload));
       }
     }
   }

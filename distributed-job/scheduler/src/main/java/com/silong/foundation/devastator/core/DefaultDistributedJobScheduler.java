@@ -147,7 +147,7 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
                   engine, partCf, jobKey, command, nodes, jobMsgPayloadBuilder, jobBuilder));
         }
       } else {
-        engine.send(PooledBytesMessage.obtain().dest(dest).setArray(jobPayload));
+        engine.asyncSend(PooledBytesMessage.obtain().dest(dest).setArray(jobPayload));
       }
     }
   }

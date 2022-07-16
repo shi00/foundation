@@ -72,7 +72,7 @@ public class DevastatorConfig implements Serializable {
   public static final int DEFAULT_MESSAGE_EVENT_QUEUE_SIZE = 256;
 
   /** 消息事件队列数量 */
-  public static final int DEFAULT_MESSAGE_EVENT_QUEUE_COUNT = 16;
+  public static final int DEFAULT_MESSAGE_EVENT_QUEUE_COUNT = 4;
 
   /** 默认分区同步线程数量 */
   public static final int DEFAULT_PARTITION_SYNC_THREAD_COUNT = 4;
@@ -106,7 +106,7 @@ public class DevastatorConfig implements Serializable {
   /** 集群消息处理队列长度，必须是2的指数。默认：256。 */
   @Positive private int messageEventQueueSize = DEFAULT_MESSAGE_EVENT_QUEUE_SIZE;
 
-  /** 消息处理队列数量，默认：16 */
+  /** 消息处理队列数量，默认：4 */
   @Positive private int messageEventQueueCount = DEFAULT_MESSAGE_EVENT_QUEUE_COUNT;
 
   /** 分区同步线程数量：默认：4 */

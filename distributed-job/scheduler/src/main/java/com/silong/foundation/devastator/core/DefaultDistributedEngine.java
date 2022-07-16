@@ -142,7 +142,7 @@ class DefaultDistributedEngine
       this.config = config;
       this.partitionSyncExecutor =
           Executors.newFixedThreadPool(
-              config.partitionSyncThreadCount(),
+              powerOf2(config.partitionSyncThreadCount()),
               new SimpleThreadFactory(PARTITION_SYNC_THREAD_NAME_PREFIX));
       this.objectPartitionMapping = new DefaultObject2PartitionMapping(config.partitionCount());
       // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
@@ -319,35 +319,25 @@ class DefaultDistributedEngine
   }
 
   /**
-   * Sends a message. The message contains
+   * 异步消息发送
    *
-   * <ol>
-   *   <li>a destination address (Address). A {@code null} address sends the message to all cluster
-   *       members.
-   *   <li>a source address. Can be left empty as it will be assigned automatically
-   *   <li>a byte buffer. The message contents.
-   *   <li>several additional fields. They can be used by application programs (or patterns). E.g. a
-   *       message ID, flags etc
-   * </ol>
-   *
-   * @param message the message to be sent. Destination and buffer should be set. A null destination
-   *     means to send to all group members.
-   * @return {@code this}
-   * @exception Exception thrown if the channel is disconnected or closed
+   * @param message 消息
+   * @return this
+   * @throws Exception 异常
    */
-  DistributedEngine send(@NonNull Message message) throws Exception {
+  DistributedEngine asyncSend(@NonNull Message message) throws Exception {
     jChannel.send(message);
     return this;
   }
 
   @Override
-  public <T extends Comparable<T>> DistributedEngine send(
+  public <T extends Comparable<T>> DistributedEngine asyncSend(
       @NonNull byte[] msg, @Nullable ClusterNode<T> dest) throws Exception {
-    return send(msg, 0, msg.length, dest);
+    return asyncSend(msg, 0, msg.length, dest);
   }
 
   @Override
-  public <T extends Comparable<T>> DistributedEngine send(
+  public <T extends Comparable<T>> DistributedEngine asyncSend(
       @NonNull byte[] msg, int offset, int length, @Nullable ClusterNode<T> dest) throws Exception {
     if (dest == null) {
       jChannel.send(null, msg, offset, length);
