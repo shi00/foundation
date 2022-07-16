@@ -55,7 +55,7 @@ import static com.silong.foundation.devastator.utils.Utilities.xxhash64;
 class DefaultMessageHandler
     implements EventHandler<JobMsgPayloadEvent>, AutoCloseable, Serializable {
 
-  @Serial private static final long serialVersionUID = -1336687878210405788L;
+  @Serial private static final long serialVersionUID = 1219279850878495414L;
 
   /** 消息事件处理器线程名 */
   private static final String MESSAGE_EVENT_PROCESSOR = "cluster-message-processor";
