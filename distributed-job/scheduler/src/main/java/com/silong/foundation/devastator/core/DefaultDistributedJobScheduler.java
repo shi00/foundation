@@ -23,7 +23,7 @@ import com.silong.foundation.devastator.DistributedJobScheduler;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.Job;
-import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
+import com.silong.foundation.devastator.model.Devastator.MsgPayload;
 import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
 import lombok.extern.slf4j.Slf4j;
@@ -33,9 +33,10 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static com.silong.foundation.devastator.model.Devastator.JobClass.RUNNABLE;
-import static com.silong.foundation.devastator.model.Devastator.JobMsgType.CREATE_JOB;
 import static com.silong.foundation.devastator.model.Devastator.JobState.INIT;
 import static com.silong.foundation.devastator.model.Devastator.JobType.ONE_SHOT;
+import static com.silong.foundation.devastator.model.Devastator.MsgType.JOB;
+import static com.silong.foundation.devastator.model.Devastator.OperationType.CREATE;
 import static com.silong.foundation.devastator.utils.TypeConverter.Long2Bytes.INSTANCE;
 import static com.silong.foundation.devastator.utils.Utilities.xxhash64;
 
@@ -113,6 +114,7 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
     byte[] bytes = KryoUtils.serialize(runnable);
     long jobId = xxhash64(bytes);
 
+    // 构造任务消息
     Job.Builder jobBuilder =
         Job.newBuilder()
             .setJobId(jobId)
@@ -121,8 +123,8 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
             .setJobClass(RUNNABLE)
             .setJobState(INIT)
             .setJobBytes(ByteString.copyFrom(bytes));
-    JobMsgPayload.Builder jobMsgPayloadBuilder =
-        JobMsgPayload.newBuilder().setJob(jobBuilder).setType(CREATE_JOB);
+    MsgPayload.Builder jobMsgPayloadBuilder =
+        MsgPayload.newBuilder().setJob(jobBuilder).setMsgType(JOB).setOpType(CREATE);
     byte[] jobPayload = jobMsgPayloadBuilder.build().toByteArray();
 
     // 任务映射的分区编号
@@ -144,7 +146,7 @@ class DefaultDistributedJobScheduler implements DistributedJobScheduler, AutoClo
         if (i == 0) {
           executorService.execute(
               new WrapRunnable(
-                  engine, partCf, jobKey, command, nodes, jobMsgPayloadBuilder, jobBuilder));
+                  engine, partCf, jobKey, runnable, nodes, jobMsgPayloadBuilder, jobBuilder));
         }
       } else {
         engine.asyncSend(PooledBytesMessage.obtain().dest(dest).setArray(jobPayload));
