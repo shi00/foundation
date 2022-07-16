@@ -363,10 +363,12 @@ class DefaultDistributedEngine
         try {
           byte[] bytes = message.getArray();
           MsgPayload msgPayload = MsgPayload.parseFrom(bytes);
-          switch (msgPayload.getMsgType())
-          {
-            case JOB -> handleJobMessage(bytes, msgPayload);
-            case UNRECOGNIZED -> throw new IllegalStateException("Unknown msgType: " + msgPayload.getMsgType());
+          switch (msgPayload.getMsgType()) {
+            case JOB:
+              handleJobMessage(bytes, msgPayload);
+              break;
+            default:
+              throw new IllegalStateException("Unknown msgType: " + msgPayload.getMsgType());
           }
         } catch (InvalidProtocolBufferException e) {
           log.error("Invalid message.", e);

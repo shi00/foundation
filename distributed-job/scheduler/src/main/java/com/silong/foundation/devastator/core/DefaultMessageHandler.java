@@ -26,7 +26,7 @@ import com.silong.foundation.devastator.event.JobMsgPayloadEvent;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.Job;
 import com.silong.foundation.devastator.model.Devastator.JobClass;
-import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
+import com.silong.foundation.devastator.model.Devastator.MsgPayload;
 import com.silong.foundation.devastator.utils.KryoUtils;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableCallable;
 import com.silong.foundation.devastator.utils.LambdaSerializable.SerializableRunnable;
@@ -103,10 +103,11 @@ class DefaultMessageHandler
     }
 
     try {
-      JobMsgPayload jobMsgPayload = event.jobMsgPayload();
+      MsgPayload jobMsgPayload = event.jobMsgPayload();
       Job job = jobMsgPayload.getJob();
       byte[] jobBytes = job.getJobBytes().toByteArray();
 
+      // 校验任务id
       long jobId = job.getJobId();
       if (jobId != xxhash64(jobBytes)) {
         throw new IllegalStateException("Inconsistent jobId:" + jobId);
@@ -116,7 +117,7 @@ class DefaultMessageHandler
       int partition = engine.objectPartitionMapping.partition(jobId);
       String partCf = engine.getPartitionCf(partition);
       byte[] jobKey = INSTANCE.to(jobId);
-      engine.persistStorage.put(partCf, jobKey, event.rawData());
+      engine.persistStorage.put(partCf, jobKey, event.rawMsgBytes());
 
       // 如果本地节点是主分区，则触发任务执行
       if (engine.metadata.isLocalPrimary(partition)) {
@@ -125,7 +126,7 @@ class DefaultMessageHandler
         DefaultDistributedJobScheduler scheduler =
             (DefaultDistributedJobScheduler) engine.scheduler(job.getSchedulerName());
         JobClass jobClass = job.getJobClass();
-        JobMsgPayload.Builder jobMsgPayloadBuilder = JobMsgPayload.newBuilder(jobMsgPayload);
+        MsgPayload.Builder jobMsgPayloadBuilder = MsgPayload.newBuilder(jobMsgPayload);
         Job.Builder jobBuilder = Job.newBuilder(job);
         if (jobClass == RUNNABLE) {
           SerializableRunnable command = KryoUtils.deserialize(jobBytes);
@@ -151,16 +152,21 @@ class DefaultMessageHandler
    * 处理收到的任务消息
    *
    * @param payload 任务消息
-   * @param rawData 原始数据
+   * @param rawMsgBytes 原始消息数据
    */
-  public void handle(JobMsgPayload payload, byte[] rawData) {
+  public void handle(MsgPayload payload, byte[] rawMsgBytes) {
     if (payload == null) {
       log.error("payload must not be null.");
       return;
     }
+    if (rawMsgBytes == null) {
+      log.error("rawMsgBytes must not be null.");
+      return;
+    }
     long sequence = ringBuffer.next();
     try {
-      JobMsgPayloadEvent event = ringBuffer.get(sequence).jobMsgPayload(payload).rawData(rawData);
+      JobMsgPayloadEvent event =
+          ringBuffer.get(sequence).jobMsgPayload(payload).rawMsgBytes(rawMsgBytes);
       if (log.isDebugEnabled()) {
         log.debug("Enqueue {} with sequence:{}.", event, sequence);
       }
