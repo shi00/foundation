@@ -36,6 +36,8 @@ import org.jgroups.util.Util;
 import java.io.*;
 import java.util.function.Supplier;
 
+import static org.apache.commons.lang3.ArrayUtils.isEmpty;
+
 /**
  * 扩展UUID，作为节点信息
  *
@@ -66,7 +68,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
 
         @Override
         public ClusterNodeUUID from(byte[] bytes) throws IOException {
-          if (bytes == null || bytes.length == 0) {
+          if (isEmpty(bytes)) {
             return null;
           }
           ClusterNodeUUID clusterNodeUUID = new ClusterNodeUUID();
