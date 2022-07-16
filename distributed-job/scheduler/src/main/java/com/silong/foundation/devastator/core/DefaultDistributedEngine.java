@@ -56,9 +56,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static com.silong.foundation.devastator.utils.Utilities.powerOf2;
 import static java.lang.System.lineSeparator;
@@ -140,10 +138,16 @@ class DefaultDistributedEngine
 
     try {
       this.config = config;
+      int corePoolSize = powerOf2(config.partitionSyncThreadCount());
       this.partitionSyncExecutor =
-          Executors.newFixedThreadPool(
-              powerOf2(config.partitionSyncThreadCount()),
+          new ThreadPoolExecutor(
+              corePoolSize,
+              corePoolSize,
+              0L,
+              TimeUnit.MILLISECONDS,
+              new LinkedBlockingQueue<>(),
               new SimpleThreadFactory(PARTITION_SYNC_THREAD_NAME_PREFIX));
+
       this.objectPartitionMapping = new DefaultObject2PartitionMapping(config.partitionCount());
       // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
       this.metadata = new DistributedDataMetadata(this);
@@ -420,7 +424,17 @@ class DefaultDistributedEngine
   }
 
   private DefaultClusterNode buildClusterNode(Address address) {
-    return new DefaultClusterNode((ClusterNodeUUID) address, jChannel.address());
+    return new DefaultClusterNode((ClusterNodeUUID) address, this);
+  }
+
+  /**
+   * 给定节点是否为coordinator节点
+   *
+   * @param address 节点地址
+   * @return true or false
+   */
+  public boolean isCoordinator(@NonNull Address address) {
+    return jChannel.view().getCoord().equals(address);
   }
 
   @Override

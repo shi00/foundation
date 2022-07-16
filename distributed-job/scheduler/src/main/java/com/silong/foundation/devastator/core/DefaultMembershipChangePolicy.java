@@ -56,10 +56,6 @@ class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializa
     return weight != null ? Double.parseDouble(weight) : 0;
   }
 
-  private int getRole(ClusterNodeUUID uuid) {
-    return uuid.clusterNodeInfo().getRole();
-  }
-
   @Override
   public List<Address> getNewMembership(
       Collection<Address> currentMembers,
@@ -103,14 +99,6 @@ class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializa
         Double.compare(
             getNodePowerWeight(m2, CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY),
             getNodePowerWeight(m1, CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY));
-    if (compare != 0) {
-      return compare;
-    }
-
-    // 客户端节点不承担工作负载，优先作为coordinator
-    int role1 = getRole((ClusterNodeUUID) m1);
-    int role2 = getRole((ClusterNodeUUID) m2);
-    compare = Integer.compare(role2, role1);
     if (compare != 0) {
       return compare;
     }

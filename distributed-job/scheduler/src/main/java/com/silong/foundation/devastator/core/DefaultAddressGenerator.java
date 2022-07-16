@@ -99,7 +99,6 @@ class DefaultAddressGenerator implements AddressGenerator {
         .putAllAttributes(config.clusterNodeAttributes())
         .setInstanceName(config.instanceName())
         .setHostName(getHostName())
-        .setRole(config.clusterNodeRole().getValue())
         .addAllIpAddresses(getLocalAllAddresses())
         .build();
   }

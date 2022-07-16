@@ -47,23 +47,23 @@ class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   private final ClusterNodeUUID clusterNode;
 
   /** 本地地址 */
-  private final Address localAddress;
+  private final DefaultDistributedEngine engine;
 
   /**
    * 构造方法
    *
    * @param clusterNode 节点信息
-   * @param localAddress 节点地址
+   * @param engine 分布式引擎
    */
-  public DefaultClusterNode(ClusterNodeUUID clusterNode, Address localAddress) {
+  public DefaultClusterNode(ClusterNodeUUID clusterNode, DefaultDistributedEngine engine) {
     if (clusterNode == null) {
       throw new IllegalArgumentException("clusterNode must not be null.");
     }
-    if (localAddress == null) {
-      throw new IllegalArgumentException("localAddress must not be null.");
+    if (engine == null) {
+      throw new IllegalArgumentException("engine must not be null.");
     }
     this.clusterNode = clusterNode;
-    this.localAddress = localAddress;
+    this.engine = engine;
   }
 
   private ClusterNodeInfo getClusterNodeInfo() {
@@ -73,7 +73,7 @@ class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   @Override
   @NonNull
   public ClusterNodeRole role() {
-    return ClusterNodeRole.find(getClusterNodeInfo().getRole());
+    return engine.isCoordinator(clusterNode) ? ClusterNodeRole.LEADER : ClusterNodeRole.WORKER;
   }
 
   @Override
@@ -96,7 +96,7 @@ class DefaultClusterNode implements ClusterNode<Address>, Serializable {
 
   @Override
   public boolean isLocal() {
-    return localAddress.equals(clusterNode);
+    return engine.getLocalAddress().equals(clusterNode);
   }
 
   @Override

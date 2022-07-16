@@ -48,8 +48,8 @@ public interface ClusterNode<T extends Comparable<T>> extends Identity<T> {
     /** 工作节点 */
     WORKER(1),
 
-    /** 客户端节点 */
-    CLIENT(2);
+    /** 领导节点 */
+    LEADER(2);
 
     /** 角色值 */
     @Getter final int value;

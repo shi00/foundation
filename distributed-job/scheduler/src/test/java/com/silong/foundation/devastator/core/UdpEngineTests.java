@@ -21,7 +21,6 @@ package com.silong.foundation.devastator.core;
 import com.github.javafaker.Animal;
 import com.github.javafaker.Faker;
 import com.silong.foundation.devastator.ClusterNode;
-import com.silong.foundation.devastator.ClusterNode.ClusterNodeRole;
 import com.silong.foundation.devastator.config.DevastatorConfig;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import org.apache.commons.lang3.RandomUtils;
@@ -34,8 +33,6 @@ import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Map;
 
-import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.CLIENT;
-import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.WORKER;
 import static com.silong.foundation.devastator.core.DefaultMembershipChangePolicy.CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY;
 
 /**
@@ -70,7 +67,6 @@ public class UdpEngineTests {
         buildEngine(
             "test-cluster",
             name1,
-            CLIENT,
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
@@ -79,7 +75,6 @@ public class UdpEngineTests {
         buildEngine(
             "test-cluster",
             name2,
-            WORKER,
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.1"));
 
@@ -98,7 +93,6 @@ public class UdpEngineTests {
         buildEngine(
             "test-cluster1",
             name1,
-            CLIENT,
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
@@ -107,7 +101,6 @@ public class UdpEngineTests {
         buildEngine(
             "test-cluster1",
             name2,
-            WORKER,
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
@@ -126,7 +119,6 @@ public class UdpEngineTests {
         buildEngine(
             "test-cluster2",
             name1,
-            WORKER,
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
@@ -135,7 +127,6 @@ public class UdpEngineTests {
         buildEngine(
             "test-cluster2",
             name2,
-            WORKER,
             udpConfigFile,
             Map.of(CLUSTER_NODE_PERFORMANCE_RANK_ATTRIBUTE_KEY, "1.0"));
 
@@ -148,11 +139,7 @@ public class UdpEngineTests {
   }
 
   private DefaultDistributedEngine buildEngine(
-      String clusterName,
-      String instanceName,
-      ClusterNodeRole role,
-      String configFile,
-      Map<String, String> attributes)
+      String clusterName, String instanceName, String configFile, Map<String, String> attributes)
       throws IOException {
     String absolutePath =
         new File(".")
@@ -165,7 +152,6 @@ public class UdpEngineTests {
     DevastatorConfig config =
         new DevastatorConfig()
             .configFile(configFile)
-            .clusterNodeRole(role)
             .clusterName(clusterName)
             .instanceName(instanceName);
     config.persistStorageConfig().persistDataPath(absolutePath);
