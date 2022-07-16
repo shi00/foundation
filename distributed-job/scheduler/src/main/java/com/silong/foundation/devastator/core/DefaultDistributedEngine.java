@@ -138,16 +138,8 @@ class DefaultDistributedEngine
 
     try {
       this.config = config;
-      int corePoolSize = powerOf2(config.partitionSyncThreadCount());
       this.partitionSyncExecutor =
-          new ThreadPoolExecutor(
-              corePoolSize,
-              corePoolSize,
-              0L,
-              TimeUnit.MILLISECONDS,
-              new LinkedBlockingQueue<>(),
-              new SimpleThreadFactory(PARTITION_SYNC_THREAD_NAME_PREFIX));
-
+          buildPartitionSyncExecutor(powerOf2(config.partitionSyncThreadCount()));
       this.objectPartitionMapping = new DefaultObject2PartitionMapping(config.partitionCount());
       // 此处设置初始容量大于最大容量，配合负载因子为1，避免rehash
       this.metadata = new DistributedDataMetadata(this);
@@ -169,6 +161,16 @@ class DefaultDistributedEngine
     } catch (Exception e) {
       throw new DistributedEngineException("Failed to start distributed engine.", e);
     }
+  }
+
+  private ThreadPoolExecutor buildPartitionSyncExecutor(int corePoolSize) {
+    return new ThreadPoolExecutor(
+        corePoolSize,
+        corePoolSize,
+        0L,
+        TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<>(),
+        new SimpleThreadFactory(PARTITION_SYNC_THREAD_NAME_PREFIX));
   }
 
   private void configureDistributedEngine(JChannel jChannel) {

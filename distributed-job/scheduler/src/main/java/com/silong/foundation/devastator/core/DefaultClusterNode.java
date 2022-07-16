@@ -32,6 +32,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.LEADER;
+import static com.silong.foundation.devastator.ClusterNode.ClusterNodeRole.WORKER;
+
 /**
  * 默认集群节点实现
  *
@@ -73,7 +76,7 @@ class DefaultClusterNode implements ClusterNode<Address>, Serializable {
   @Override
   @NonNull
   public ClusterNodeRole role() {
-    return engine.isCoordinator(clusterNode) ? ClusterNodeRole.LEADER : ClusterNodeRole.WORKER;
+    return engine.isCoordinator(clusterNode) ? LEADER : WORKER;
   }
 
   @Override
