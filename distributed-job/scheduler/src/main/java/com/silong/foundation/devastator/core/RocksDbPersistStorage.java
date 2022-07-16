@@ -370,6 +370,15 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
     }
   }
 
+  private ColumnFamilyHandle createColumnFamilyIfAbsent(String columnFamilyName) {
+    ColumnFamilyHandle columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
+    if (columnFamilyHandle == null) {
+      createColumnFamily(columnFamilyName);
+      columnFamilyHandle = findColumnFamilyHandle(columnFamilyName);
+    }
+    return columnFamilyHandle;
+  }
+
   @Override
   public void put(byte[] key, byte[] value) {
     put(DEFAULT_COLUMN_FAMILY_NAME, key, value);
@@ -377,11 +386,11 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
 
   @Override
   public void put(String columnFamilyName, byte[] key, byte[] value) {
-    validateColumnFamily(columnFamilyName);
+    validate(isEmpty(columnFamilyName), "columnFamilyName must not be null or empty.");
     validate(key == null, "key must not be null.");
     validate(value == null, "value must not be null.");
     try {
-      rocksDB.put(findColumnFamilyHandle(columnFamilyName), key, value);
+      rocksDB.put(createColumnFamilyIfAbsent(columnFamilyName), key, value);
     } catch (RocksDBException e) {
       throw new DataAccessException(e);
     }
@@ -402,7 +411,7 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
   public void putAllWith(List<Tuple<String, KvPair<byte[], byte[]>>> columnFamilyNameWithKvPairs) {
     validate(
         columnFamilyNameWithKvPairs == null || columnFamilyNameWithKvPairs.isEmpty(),
-        "kvPairs must not be null or empty.");
+        "columnFamilyNameWithKvPairs must not be null or empty.");
     try (WriteOptions writeOptions = new WriteOptions()) {
       try (WriteBatch batch = new WriteBatch()) {
         for (Tuple<String, KvPair<byte[], byte[]>> tuple : columnFamilyNameWithKvPairs) {
@@ -416,7 +425,7 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
               || (value = kvPair.value()) == null) {
             continue;
           }
-          batch.put(findColumnFamilyHandle(columnFamilyName), key, value);
+          batch.put(createColumnFamilyIfAbsent(columnFamilyName), key, value);
         }
         rocksDB.write(writeOptions, batch);
       }
