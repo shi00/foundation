@@ -21,16 +21,16 @@ package com.silong.foundation.devastator.core;
 import com.silong.foundation.devastator.message.PooledBytesMessage;
 import com.silong.foundation.devastator.model.ClusterNodeUUID;
 import com.silong.foundation.devastator.model.Devastator.Job;
-import com.silong.foundation.devastator.model.Devastator.JobMsgPayload;
-import com.silong.foundation.devastator.model.Devastator.JobMsgType;
 import com.silong.foundation.devastator.model.Devastator.JobState;
+import com.silong.foundation.devastator.model.Devastator.MsgPayload;
+import com.silong.foundation.devastator.model.Devastator.OperationType;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 
 import java.util.List;
 
-import static com.silong.foundation.devastator.model.Devastator.JobMsgType.UPDATE_JOB;
 import static com.silong.foundation.devastator.model.Devastator.JobState.*;
+import static com.silong.foundation.devastator.model.Devastator.OperationType.UPDATE;
 
 /**
  * 支持集群节点同步和持久化能力的Runnable
@@ -48,7 +48,7 @@ class WrapRunnable implements Runnable {
   private final List<ClusterNodeUUID> nodes;
 
   /** 任务消息构建器 */
-  private final JobMsgPayload.Builder jobMsgPayloadBuilder;
+  private final MsgPayload.Builder jobMsgPayloadBuilder;
 
   /** 任务构建器 */
   private final Job.Builder jobBuilder;
@@ -68,7 +68,7 @@ class WrapRunnable implements Runnable {
       byte[] jobKey,
       Runnable command,
       List<ClusterNodeUUID> nodes,
-      JobMsgPayload.Builder jobMsgPayloadBuilder,
+      MsgPayload.Builder jobMsgPayloadBuilder,
       Job.Builder jobBuilder) {
     this.engine = engine;
     this.nodes = nodes;
@@ -79,10 +79,10 @@ class WrapRunnable implements Runnable {
     this.partCf = partCf;
   }
 
-  byte[] buildJobMsgPayload(JobState state, JobMsgType jobMsgType) {
+  byte[] buildJobMsgPayload(JobState state, OperationType opType) {
     return jobMsgPayloadBuilder
         .setJob(jobBuilder.setJobState(state))
-        .setType(jobMsgType)
+        .setOpType(opType)
         .build()
         .toByteArray();
   }
@@ -105,18 +105,18 @@ class WrapRunnable implements Runnable {
   public void run() {
     try {
       // 更新任务状态为运行中
-      syncJob(buildJobMsgPayload(RUNNING, UPDATE_JOB));
+      syncJob(buildJobMsgPayload(RUNNING, UPDATE));
 
       try {
         command.run();
       } catch (Throwable t) {
         log.error("Failed to execute {}.", command, t);
-        syncJob(buildJobMsgPayload(EXCEPTION, UPDATE_JOB));
+        syncJob(buildJobMsgPayload(EXCEPTION, UPDATE));
         return;
       }
 
       // 更新任务状态为正常完成
-      syncJob(buildJobMsgPayload(FINISH, UPDATE_JOB));
+      syncJob(buildJobMsgPayload(FINISH, UPDATE));
     } catch (Exception e) {
       log.error("Failed to update state of {}.", command, e);
     }
