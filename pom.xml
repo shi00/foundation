@@ -124,7 +124,7 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>2.7.1</spring-boot.version>
+        <spring-boot.version>2.7.2</spring-boot.version>
         <spring-cloud.version>2021.0.3</spring-cloud.version>
         <spring-native.version>0.12.1</spring-native.version>
         <guava.version>31.1-jre</guava.version>
@@ -146,8 +146,8 @@
         <plexus-archiver.version>4.4.0</plexus-archiver.version>
         <cron-utils.version>9.1.6</cron-utils.version>
         <jooq.version>3.14.16</jooq.version>
-        <jgroups.version>5.2.2.Final</jgroups.version>
-        <jgroups-raft.version>1.0.8.Final</jgroups-raft.version>
+        <jgroups.version>5.2.4.Final</jgroups.version>
+        <jgroups-raft.version>1.0.10.Final</jgroups-raft.version>
         <protobuf-java.version>3.21.2</protobuf-java.version>
         <jgroups-kubernetes.version>2.0.1.Final</jgroups-kubernetes.version>
         <rocksdbjni.version>7.3.1</rocksdbjni.version>
