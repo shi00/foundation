@@ -104,7 +104,7 @@
         <jaxb2-maven-plugin.version>2.5.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.2.0</maven-jxr-plugin.version>
-        <spotbugs-maven-plugin.version>4.7.0.0</spotbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.7.1.1</spotbugs-maven-plugin.version>
         <findsecbugs-plugin.version>1.12.0</findsecbugs-plugin.version>
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <versions-maven-plugin.version>2.11.0</versions-maven-plugin.version>
@@ -124,33 +124,33 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>2.7.2</spring-boot.version>
+        <spring-boot.version>2.7.3</spring-boot.version>
         <spring-cloud.version>2021.0.3</spring-cloud.version>
         <spring-native.version>0.12.1</spring-native.version>
         <guava.version>31.1-jre</guava.version>
         <passay.version>1.6.1</passay.version>
         <zxcvbn.version>1.7.0</zxcvbn.version>
-        <spotbugs.version>4.7.0</spotbugs.version>
+        <spotbugs.version>4.7.1</spotbugs.version>
         <disruptor.version>3.4.4</disruptor.version>
         <jctools.version>3.3.1-ea</jctools.version>
-        <jetcd.version>0.7.1</jetcd.version>
+        <jetcd.version>0.7.3</jetcd.version>
         <jmh.version>1.35</jmh.version>
         <jaxb-impl.version>3.0.2</jaxb-impl.version>
-        <testcontainers.version>1.17.2</testcontainers.version>
-        <springdoc.version>1.6.9</springdoc.version>
-        <libphonenumber.version>8.12.51</libphonenumber.version>
+        <testcontainers.version>1.17.3</testcontainers.version>
+        <springdoc.version>1.6.11</springdoc.version>
+        <libphonenumber.version>8.12.54</libphonenumber.version>
         <javafaker.version>1.0.2</javafaker.version>
         <commons-io.version>2.11.0</commons-io.version>
         <maven.version>3.8.6</maven.version>
         <plexus-utils.version>3.4.2</plexus-utils.version>
         <plexus-archiver.version>4.4.0</plexus-archiver.version>
-        <cron-utils.version>9.1.6</cron-utils.version>
+        <cron-utils.version>9.1.8</cron-utils.version>
         <jooq.version>3.14.16</jooq.version>
-        <jgroups.version>5.2.4.Final</jgroups.version>
+        <jgroups.version>5.2.6.Final</jgroups.version>
         <jgroups-raft.version>1.0.10.Final</jgroups-raft.version>
-        <protobuf-java.version>3.21.2</protobuf-java.version>
+        <protobuf-java.version>3.21.5</protobuf-java.version>
         <jgroups-kubernetes.version>2.0.1.Final</jgroups-kubernetes.version>
-        <rocksdbjni.version>7.3.1</rocksdbjni.version>
+        <rocksdbjni.version>7.4.5</rocksdbjni.version>
         <snappy-java.version>1.1.8.4</snappy-java.version>
         <zstd-jni.version>1.5.2-3</zstd-jni.version>
         <kryo.version>5.3.0</kryo.version>
