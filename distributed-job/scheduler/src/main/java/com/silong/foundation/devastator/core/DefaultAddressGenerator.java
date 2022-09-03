@@ -94,7 +94,7 @@ class DefaultAddressGenerator implements AddressGenerator {
         .setClusterName(config.clusterName())
         .setStartTime(mxbean.getStartTime())
         .setJvmInfo(buildJvmInfo(mxbean))
-        .setHardwareInfo(buildHardwareInfo())
+        .setHostInfo(buildHardwareInfo())
         .setDevastatorVersion(DevastatorProperties.version().getVersion())
         .putAllAttributes(config.clusterNodeAttributes())
         .setInstanceName(config.instanceName())
@@ -103,9 +103,9 @@ class DefaultAddressGenerator implements AddressGenerator {
         .build();
   }
 
-  private Devastator.HardwareInfo.Builder buildHardwareInfo() {
+  private Devastator.HostInfo.Builder buildHardwareInfo() {
     Runtime runtime = Runtime.getRuntime();
-    return Devastator.HardwareInfo.newBuilder()
+    return Devastator.HostInfo.newBuilder()
         .setAvailableProcessors(runtime.availableProcessors())
         .setTotalMemory(runtime.totalMemory());
   }

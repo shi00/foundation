@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.devastator.core;
 
-import com.silong.foundation.devastator.model.Devastator.HardwareInfo;
+import com.silong.foundation.devastator.model.Devastator.HostInfo;
 import com.silong.foundation.devastator.utils.TypeConverter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -36,12 +36,12 @@ import java.io.IOException;
 public class ProtobufTests {
 
   @Test
-  @DisplayName("protobuf-HardwareInfo")
+  @DisplayName("protobuf-HostInfo")
   void test1() throws IOException {
-    TypeConverter<HardwareInfo, byte[]> converter =
-        TypeConverter.getProtobufTypeConverter(HardwareInfo.class);
-    HardwareInfo hardwareInfo =
-        HardwareInfo.newBuilder().setTotalMemory(1).setAvailableProcessors(1).build();
+    TypeConverter<HostInfo, byte[]> converter =
+        TypeConverter.getProtobufTypeConverter(HostInfo.class);
+    HostInfo hardwareInfo =
+            HostInfo.newBuilder().setTotalMemory(1).setAvailableProcessors(1).build();
     byte[] to = converter.to(hardwareInfo);
     Assertions.assertEquals(hardwareInfo, converter.from(to));
   }

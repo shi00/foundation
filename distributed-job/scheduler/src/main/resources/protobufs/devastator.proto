@@ -16,11 +16,11 @@ message ClusterNodeInfo {
   repeated string ip_addresses = 7; //节点所有IP地址列表
   map<string, string> attributes = 8; //节点属性
   JvmInfo jvm_info = 9; //jvm信息
-  HardwareInfo hardware_info = 10; //硬件信息
+  HostInfo host_info = 10; //硬件信息
 }
 
-//host性能规格信息
-message HardwareInfo{
+//host信息
+message HostInfo{
   uint64 total_memory = 1; //内存总量，单位：字节
   uint32 available_processors = 2; //可用cpu数量
 }
