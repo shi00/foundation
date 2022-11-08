@@ -28,8 +28,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.List;
 
-import static org.springframework.util.SocketUtils.*;
-
 /**
  * 测试
  *
@@ -44,7 +42,7 @@ public class WebClientHttpTests extends BaseTests {
     mockWebServer = new MockWebServer();
     mockWebServer.setProtocolNegotiationEnabled(true);
     mockWebServer.setProtocols(List.of(Protocol.HTTP_1_1, Protocol.HTTP_2));
-    mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
+    mockWebServer.start(0);
     baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
     webClient = WebClients.create(new WebClientConfig(), MAPPER);
   }

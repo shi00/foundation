@@ -36,8 +36,6 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.List;
 
-import static org.springframework.util.SocketUtils.*;
-
 /**
  * 测试
  *
@@ -65,7 +63,7 @@ public class WebClientHttpsTwoWayTlsv12Tests extends WebClientHttpsTwoWayTlsv13T
     mockWebServer.setProtocolNegotiationEnabled(true);
     mockWebServer.setProtocols(List.of(Protocol.HTTP_2, Protocol.HTTP_1_1));
     mockWebServer.useHttps(buildTestSslContext().getSocketFactory(), false);
-    mockWebServer.start(findAvailableTcpPort(PORT_RANGE_MIN, PORT_RANGE_MAX));
+    mockWebServer.start(0);
     baseUrl = String.format("https://localhost:%s", mockWebServer.getPort());
     webClient =
         WebClients.create(

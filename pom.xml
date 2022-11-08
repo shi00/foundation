@@ -124,20 +124,20 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>2.7.3</spring-boot.version>
-        <spring-cloud.version>2021.0.3</spring-cloud.version>
+        <spring-boot.version>2.7.5</spring-boot.version>
+        <spring-cloud.version>2021.0.4</spring-cloud.version>
         <spring-native.version>0.12.1</spring-native.version>
         <guava.version>31.1-jre</guava.version>
         <passay.version>1.6.1</passay.version>
         <zxcvbn.version>1.7.0</zxcvbn.version>
         <spotbugs.version>4.7.1</spotbugs.version>
         <disruptor.version>3.4.4</disruptor.version>
-        <jctools.version>3.3.1-ea</jctools.version>
+        <jctools.version>4.0.1</jctools.version>
         <jetcd.version>0.7.3</jetcd.version>
         <jmh.version>1.35</jmh.version>
         <jaxb-impl.version>3.0.2</jaxb-impl.version>
         <testcontainers.version>1.17.3</testcontainers.version>
-        <springdoc.version>1.6.11</springdoc.version>
+        <springdoc.version>1.6.12</springdoc.version>
         <libphonenumber.version>8.12.54</libphonenumber.version>
         <javafaker.version>1.0.2</javafaker.version>
         <commons-io.version>2.11.0</commons-io.version>
