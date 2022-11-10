@@ -18,11 +18,10 @@
  */
 package com.silong.foundation.duuid.server.configure.properties;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
-
-import javax.validation.constraints.NotEmpty;
 
 import static org.apache.commons.lang3.SystemUtils.getHostName;
 

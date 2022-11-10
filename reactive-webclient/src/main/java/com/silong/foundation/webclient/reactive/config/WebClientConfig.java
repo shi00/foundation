@@ -18,6 +18,8 @@
  */
 package com.silong.foundation.webclient.reactive.config;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -26,8 +28,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;

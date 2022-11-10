@@ -18,11 +18,11 @@
  */
 package com.silong.foundation.devastator.config;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
 

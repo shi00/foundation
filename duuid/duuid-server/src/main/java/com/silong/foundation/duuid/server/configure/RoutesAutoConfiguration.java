@@ -32,6 +32,7 @@ import com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerInfo;
 import com.silong.foundation.model.ErrorDetail;
+import com.silong.foundation.springboot.starter.simpleauth.configure.SecurityAutoConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,6 +52,7 @@ import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfigurat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
@@ -88,6 +90,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
   MysqlProperties.class,
   DuuidServerProperties.class
 })
+@Import({SecurityAutoConfiguration.class})
 @SuppressFBWarnings(
     value = {"EI_EXPOSE_REP2"},
     justification = "只读初始配置")

@@ -18,12 +18,12 @@
  */
 package com.silong.foundation.webclient.reactive.config;
 
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
 
-import javax.validation.constraints.Positive;
 import java.time.Duration;
 
 /**

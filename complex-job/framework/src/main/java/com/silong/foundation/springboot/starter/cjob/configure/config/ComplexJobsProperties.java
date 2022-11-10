@@ -19,15 +19,14 @@
 package com.silong.foundation.springboot.starter.cjob.configure.config;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
-
-import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Positive;
 
 /**
  * 任务框架配置

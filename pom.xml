@@ -46,6 +46,27 @@
         <url>https://github.com/shi00/foundation</url>
     </scm>
 
+    <repositories>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
+
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -101,7 +122,7 @@
         <maven-failsafe-plugin.version>3.0.0-M7</maven-failsafe-plugin.version>
         <checkstyle.version>10.4</checkstyle.version>
         <p3c-pmd.version>2.1.1</p3c-pmd.version>
-        <jaxb2-maven-plugin.version>2.5.0</jaxb2-maven-plugin.version>
+        <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.2.0</maven-jxr-plugin.version>
         <spotbugs-maven-plugin.version>4.7.2.2</spotbugs-maven-plugin.version>
@@ -124,8 +145,8 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>2.7.5</spring-boot.version>
-        <spring-cloud.version>2021.0.5</spring-cloud.version>
+        <spring-boot.version>3.0.0-RC1</spring-boot.version>
+        <spring-cloud.version>2022.0.0-RC1</spring-cloud.version>
         <spring-native.version>0.12.0</spring-native.version>
         <guava.version>31.1-jre</guava.version>
         <passay.version>1.6.2</passay.version>
@@ -135,9 +156,9 @@
         <jctools.version>4.0.1</jctools.version>
         <jetcd.version>0.7.3</jetcd.version>
         <jmh.version>1.35</jmh.version>
-        <jaxb-impl.version>3.0.2</jaxb-impl.version>
+        <jaxb-impl.version>4.0.1</jaxb-impl.version>
         <testcontainers.version>1.17.5</testcontainers.version>
-        <springdoc.version>1.6.12</springdoc.version>
+        <springdoc.version>2.0.0-RC1</springdoc.version>
         <libphonenumber.version>8.13.0</libphonenumber.version>
         <javafaker.version>1.0.2</javafaker.version>
         <commons-io.version>2.11.0</commons-io.version>
@@ -360,37 +381,17 @@
             <!-- OpenAPI -->
             <dependency>
                 <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-ui</artifactId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
                 <version>${springdoc.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-webmvc-core</artifactId>
+                <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
                 <version>${springdoc.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-webflux-ui</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-hateoas</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-data-rest</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-security</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-native</artifactId>
+                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
                 <version>${springdoc.version}</version>
             </dependency>
             <!-- openAPI -->
@@ -710,7 +711,6 @@
                 <configuration>
                     <includeTestSourceDirectory>false</includeTestSourceDirectory>
                     <configLocation>google_checks.xml</configLocation>
-                    <encoding>UTF-8</encoding>
                 </configuration>
                 <executions>
                     <execution>

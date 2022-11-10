@@ -19,13 +19,13 @@
 package com.silong.foundation.springboot.starter.simpleauth.configure.config;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Positive;
 import java.util.Map;
 import java.util.Set;
 

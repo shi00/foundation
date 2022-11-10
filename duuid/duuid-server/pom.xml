@@ -87,7 +87,6 @@
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <configuration>
-                            <fork>true</fork>
                             <jmxPort>${jmx.port}</jmxPort>
                             <jvmArguments>-Dspring.application.admin.enabled=true</jvmArguments>
                             <layers>
@@ -180,58 +179,14 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
-            <repositories>
-                <repository>
-                    <id>spring-release</id>
-                    <name>Spring release</name>
-                    <url>https://repo.spring.io/release</url>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>spring-release</id>
-                    <name>Spring release</name>
-                    <url>https://repo.spring.io/release</url>
-                </pluginRepository>
-            </pluginRepositories>
             <dependencies>
-                <dependency>
-                    <groupId>org.springframework.experimental</groupId>
-                    <artifactId>spring-native</artifactId>
-                </dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
                 </dependency>
-                <dependency>
-                    <groupId>org.springdoc</groupId>
-                    <artifactId>springdoc-openapi-native</artifactId>
-                </dependency>
             </dependencies>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.springframework.experimental</groupId>
-                        <artifactId>spring-aot-maven-plugin</artifactId>
-                        <configuration>
-                            <removeYamlSupport>true</removeYamlSupport>
-                            <removeSpelSupport>true</removeSpelSupport>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>test-generate</id>
-                                <goals>
-                                    <goal>test-generate</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>generate</id>
-                                <goals>
-                                    <goal>generate</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -310,7 +265,6 @@
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
                         <configuration>
-                            <fork>true</fork>
                             <jmxPort>${jmx.port}</jmxPort>
                             <jvmArguments>-Dspring.application.admin.enabled=true</jvmArguments>
                             <layers>
@@ -449,7 +403,7 @@
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-webflux-ui</artifactId>
+            <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

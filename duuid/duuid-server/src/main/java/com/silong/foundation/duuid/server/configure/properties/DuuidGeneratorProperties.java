@@ -18,12 +18,11 @@
  */
 package com.silong.foundation.duuid.server.configure.properties;
 
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
-
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
 
 import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.*;
 

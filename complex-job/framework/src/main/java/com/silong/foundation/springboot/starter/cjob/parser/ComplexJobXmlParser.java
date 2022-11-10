@@ -21,9 +21,9 @@ package com.silong.foundation.springboot.starter.cjob.parser;
 import com.silong.foundation.springboot.starter.cjob.xsd2java.ComplexJobConfigList;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.InputStream;
 import java.net.MalformedURLException;
