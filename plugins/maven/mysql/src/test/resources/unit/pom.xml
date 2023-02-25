@@ -31,7 +31,7 @@
                 <groupId>com.silong</groupId>
                 <artifactId>mysql-maven-plugin</artifactId>
                 <configuration>
-                    <image>mysql:8.0.28</image>
+                    <image>mysql:8.0.31</image>
                     <database>test-db</database>
                     <jdbcUrl>jdbc-url</jdbcUrl>
                     <userName>root</userName>

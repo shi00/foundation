@@ -57,7 +57,7 @@ import static java.util.Objects.requireNonNull;
 class DuuidServerApplicationMysqlTests extends AbstractIT {
 
   /** 测试用镜像 */
-  public static final String MYSQL_8_0_28 = "mysql:8.0.28";
+  public static final String MYSQL_8_0_28 = "mysql:8.0.31";
 
   public static final String APPLICATION_PROPERTIES = "application-mysql.properties";
 

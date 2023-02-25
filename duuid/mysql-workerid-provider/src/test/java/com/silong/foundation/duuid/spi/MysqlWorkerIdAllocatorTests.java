@@ -52,7 +52,7 @@ public class MysqlWorkerIdAllocatorTests {
 
   @Container
   private static final MySQLContainer MYSQL_CONTAINER =
-      new MySQLContainer("mysql:8.0.28")
+      new MySQLContainer("mysql:8.0.31")
           .withDatabaseName("test")
           .withUsername(USER_TEST)
           .withPassword(PASSWORD_TEST);

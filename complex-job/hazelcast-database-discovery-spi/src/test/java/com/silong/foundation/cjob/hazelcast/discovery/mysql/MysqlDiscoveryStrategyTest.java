@@ -57,7 +57,7 @@ public class MysqlDiscoveryStrategyTest {
 
   @ClassRule
   public static final MySQLContainer<?> MYSQL =
-      new MySQLContainer<>(DockerImageName.parse("mysql:8.0.28"))
+      new MySQLContainer<>(DockerImageName.parse("mysql:8.0.31"))
           .withReuse(true)
           .withInitScript("hazelcast-cluster-nodes.sql");
 

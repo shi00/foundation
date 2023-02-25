@@ -23,8 +23,7 @@ import com.silong.foundation.duuid.generator.DuuidGenerator;
 import com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator;
 import com.silong.foundation.duuid.server.configure.properties.DuuidGeneratorProperties;
 import com.silong.foundation.duuid.server.configure.properties.DuuidServerProperties;
-import com.silong.foundation.duuid.server.configure.properties.EtcdProperties;
-import com.silong.foundation.duuid.server.configure.properties.MysqlProperties;
+import com.silong.foundation.duuid.server.configure.properties.WorkerIdProviderProperties;
 import com.silong.foundation.duuid.server.handlers.IdGeneratorHandler;
 import com.silong.foundation.duuid.server.model.Duuid;
 import com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator;
@@ -86,8 +85,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 @AutoConfigureBefore(WebFluxAutoConfiguration.class)
 @EnableConfigurationProperties({
   DuuidGeneratorProperties.class,
-  EtcdProperties.class,
-  MysqlProperties.class,
+  WorkerIdProviderProperties.class,
   DuuidServerProperties.class
 })
 @Import({SecurityAutoConfiguration.class})
@@ -99,35 +97,35 @@ public class RoutesAutoConfiguration {
   /** 配置注入 */
   private DuuidGeneratorProperties generatorProperties;
 
-  private EtcdProperties etcdProperties;
+  private WorkerIdProviderProperties.EtcdProperties etcdProperties;
 
-  private MysqlProperties mysqlProperties;
+  private WorkerIdProviderProperties.MysqlProperties mysqlProperties;
 
   private DuuidServerProperties serverProperties;
 
   @Bean
   @ConditionalOnProperty(
-      prefix = "duuid.worker-id-provider.etcdv3",
-      value = "enabled",
-      havingValue = "true")
+      prefix = "duuid.worker-id-provider",
+      value = "type",
+      havingValue = "etcdv3")
   WorkerIdAllocator registerEtcdV3WorkerIdAllocator() {
     return load(Etcdv3WorkerIdAllocator.class.getName());
   }
 
   @Bean
   @ConditionalOnProperty(
-      prefix = "duuid.worker-id-provider.mysql",
-      value = "enabled",
-      havingValue = "true")
+      prefix = "duuid.worker-id-provider",
+      value = "type",
+      havingValue = "mysql")
   WorkerIdAllocator registerMysqlWorkerIdAllocator() {
     return load(MysqlWorkerIdAllocator.class.getName());
   }
 
   @Bean
   @ConditionalOnProperty(
-      prefix = "duuid.worker-id-provider.etcdv3",
-      value = "enabled",
-      havingValue = "true")
+      prefix = "duuid.worker-id-provider",
+      value = "type",
+      havingValue = "etcdv3")
   WorkerInfo registerEtcdV3WorkerInfo() {
     return WorkerInfo.builder()
         .name(SystemUtils.getHostName())
@@ -153,9 +151,9 @@ public class RoutesAutoConfiguration {
 
   @Bean
   @ConditionalOnProperty(
-      prefix = "duuid.worker-id-provider.mysql",
-      value = "enabled",
-      havingValue = "true")
+      prefix = "duuid.worker-id-provider",
+      value = "type",
+      havingValue = "mysql")
   WorkerInfo registerMysqlWorkerInfo() {
     return WorkerInfo.builder()
         .name(SystemUtils.getHostName())
@@ -252,13 +250,9 @@ public class RoutesAutoConfiguration {
   }
 
   @Autowired
-  public void setMysqlProperties(MysqlProperties mysqlProperties) {
-    this.mysqlProperties = mysqlProperties;
-  }
-
-  @Autowired
-  public void setEtcdProperties(EtcdProperties etcdProperties) {
-    this.etcdProperties = etcdProperties;
+  public void setWorkerIdProviderProperties(WorkerIdProviderProperties workerIdProviderProperties) {
+    this.etcdProperties = workerIdProviderProperties.getEtcdv3();
+    this.mysqlProperties = workerIdProviderProperties.getMysql();
   }
 
   @Autowired
