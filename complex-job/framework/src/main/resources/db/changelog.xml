@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xmlns:pro="http://www.liquibase.org/xml/ns/pro"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.5.0.xsd
+		http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd
+		http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-4.5.0.xsd">
+    <changeSet id="2022-03-18:16:59" author="louis2sin">
+        <createTable tableName="complex_job">
+            <column name="id" autoIncrement="true" type="int">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_complex_job"/>
+            </column>
+            <column name="name" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="progress" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="createdBy" type="varchar(50)"/>
+            <column name="updatedBy" type="varchar(50)"/>
+            <column name="createdOn" type="" />
+            <column name="updatedOn" type="" />
+            <column name="desc" type="varchar(255)"/>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
