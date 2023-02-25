@@ -1,9 +1,0 @@
-#不必要的文件
-openapi
-src
-target
-.dockerignore
-pom.xml
-!target/*.jar
-
-
