@@ -71,5 +71,6 @@ public class TestMysqlMojoTest extends AbstractMojoTestCase {
     stopMysqlMojo.setPluginContext(PLUGIN_CONTEXT);
     stopMysqlMojo.execute();
     assertTrue(startMysqlMojo.getImage().contains(version));
+    mySqlContainer.stop();
   }
 }
