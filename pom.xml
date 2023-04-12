@@ -93,6 +93,7 @@
         <module>plugins/maven/etcdv3</module>
         <module>plugins/maven/mysql</module>
         <module>plugins/maven/props-writer</module>
+        <module>plugins/maven/video-frame-capture</module>
         <module>utilities/random-password</module>
         <module>utilities/simple-object-pool</module>
         <module>utilities/hashed-wheel-timer</module>
