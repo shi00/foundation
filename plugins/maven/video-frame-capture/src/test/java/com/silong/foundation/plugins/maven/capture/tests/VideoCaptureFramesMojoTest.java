@@ -19,7 +19,6 @@
 package com.silong.foundation.plugins.maven.capture.tests;
 
 import com.silong.foundation.plugins.maven.capture.VideoCaptureFramesMojo;
-import java.io.File;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 
 /**
@@ -39,8 +38,7 @@ public class VideoCaptureFramesMojoTest extends AbstractMojoTestCase {
         (VideoCaptureFramesMojo) lookupMojo("capture-frames", FORKED_POM_FILE);
     assertNotNull(mojo);
     mojo.execute();
-    File outputDirectory = mojo.getOutputDirectory();
 
-    assertTrue(outputDirectory.toPath().resolve("trailer.png").toFile().exists());
+    assertTrue(mojo.getOutputDirectory().toPath().resolve("trailer.png").toFile().exists());
   }
 }
