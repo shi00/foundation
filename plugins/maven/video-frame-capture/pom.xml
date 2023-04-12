@@ -18,9 +18,18 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
         <javacv-platform.version>1.5.8</javacv-platform.version>
         <javafx.version>20</javafx.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
         <!-- 视频处理 -->
         <dependency>
             <groupId>org.bytedeco</groupId>
