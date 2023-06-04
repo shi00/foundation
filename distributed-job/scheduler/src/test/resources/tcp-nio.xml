@@ -8,23 +8,23 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="urn:org:jgroups"
         xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd"
-        >
+>
     <TCP_NIO2 bind_port="7800"
-         thread_pool.min_threads="0"
-         thread_pool.max_threads="200"
-         thread_pool.keep_alive_time="30000"/>
+              thread_pool.min_threads="0"
+              thread_pool.max_threads="200"
+              thread_pool.keep_alive_time="30000"/>
     <RED/>
     <TCPPING async_discovery="true"
              initial_hosts="${jgroups.tcpping.initial_hosts:localhost[7800],localhost[7801]}"
              port_range="2"/>
-    <MERGE3  min_interval="10000"
-             max_interval="30000"/>
-    <FD_SOCK2/>
-    <FD_ALL3 timeout="30000" />
-    <VERIFY_SUSPECT2 timeout="1500"  />
-    <BARRIER />
+    <MERGE3 min_interval="10000"
+            max_interval="30000"/>
+    <FD_SOCK/>
+    <FD_ALL3 timeout="30000"/>
+    <VERIFY_SUSPECT timeout="1500"/>
+    <BARRIER/>
     <pbcast.NAKACK2 use_mcast_xmit="false"/>
-    <UNICAST3 />
+    <UNICAST3/>
     <pbcast.STABLE desired_avg_gossip="50000"
                    max_bytes="4M"/>
     <AUTH auth_class="com.silong.foundation.devastator.core.JwtAuthToken"/>
@@ -33,7 +33,7 @@
          min_threshold="0.4"/>
     <MFC max_credits="2M"
          min_threshold="0.4"/>
-    <FRAG2 frag_size="60K"  />
+    <FRAG2 frag_size="60K"/>
     <!--RSVP resend_interval="2000" timeout="10000"/-->
     <pbcast.STATE_TRANSFER/>
 </config>
