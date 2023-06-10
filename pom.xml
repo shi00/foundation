@@ -155,7 +155,7 @@
         <jctools.version>4.0.1</jctools.version>
         <jetcd.version>0.7.5</jetcd.version>
         <jmh.version>1.36</jmh.version>
-        <jooq.version>3.17.8</jooq.version>
+        <jooq.version>3.18.4</jooq.version>
         <jaxb-impl.version>4.0.2</jaxb-impl.version>
         <testcontainers.version>1.18.3</testcontainers.version>
         <springdoc.version>2.1.0</springdoc.version>

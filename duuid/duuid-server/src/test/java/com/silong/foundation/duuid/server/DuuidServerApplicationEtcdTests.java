@@ -18,7 +18,13 @@
  */
 package com.silong.foundation.duuid.server;
 
+import static java.util.Objects.requireNonNull;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+
 import io.etcd.jetcd.launcher.EtcdContainer;
+import java.io.*;
+import java.util.List;
+import java.util.Properties;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,13 +32,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import java.io.*;
-import java.util.List;
-import java.util.Properties;
-
-import static java.util.Objects.requireNonNull;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 /**
  * 服务集成测试
@@ -55,7 +54,7 @@ import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUti
 class DuuidServerApplicationEtcdTests extends AbstractIT {
 
   /** 测试用镜像 */
-  public static final String QUAY_IO_COREOS_ETCD_V_3_5_0 = "quay.io/coreos/etcd:v3.5.0";
+  public static final String QUAY_IO_COREOS_ETCD_V_3_5_9 = "quay.io/coreos/etcd:v3.5.9";
 
   public static final String APPLICATION_PROPERTIES = "application-etcd.properties";
 
@@ -88,7 +87,7 @@ class DuuidServerApplicationEtcdTests extends AbstractIT {
    */
   @BeforeAll
   static void etcdInit() throws IOException {
-    container = new EtcdContainer(QUAY_IO_COREOS_ETCD_V_3_5_0, randomAlphabetic(10), List.of());
+    container = new EtcdContainer(QUAY_IO_COREOS_ETCD_V_3_5_9, randomAlphabetic(10), List.of());
     container.start();
     Properties applicationProperties = new Properties();
     try (Reader in = new FileReader(TEMPLATE_FILE)) {

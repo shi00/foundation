@@ -18,19 +18,18 @@
  */
 package com.silong.foundation.duuid.spi;
 
+import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.common.collect.ImmutableList;
 import io.etcd.jetcd.launcher.EtcdContainer;
+import java.io.File;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
-
-import java.io.File;
-
-import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 单元测试
@@ -42,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class Etcdv3WorkerIdAllocatorTests {
 
   /** 测试用镜像 */
-  public static final String QUAY_IO_COREOS_ETCD_V_3_5_0 = "quay.io/coreos/etcd:v3.5.0";
+  public static final String QUAY_IO_COREOS_ETCD_V_3_5_9 = "quay.io/coreos/etcd:v3.5.9";
 
   static Etcdv3WorkerIdAllocator allocator = new Etcdv3WorkerIdAllocator();
 
@@ -50,7 +49,7 @@ public class Etcdv3WorkerIdAllocatorTests {
 
   @BeforeEach
   void init() {
-    container = new EtcdContainer(QUAY_IO_COREOS_ETCD_V_3_5_0, "server", ImmutableList.of());
+    container = new EtcdContainer(QUAY_IO_COREOS_ETCD_V_3_5_9, "server", ImmutableList.of());
   }
 
   @AfterEach

@@ -195,7 +195,6 @@
                             <metadataRepository>
                                 <enabled>true</enabled>
                             </metadataRepository>
-                            <requiredVersion>22.3</requiredVersion>
                         </configuration>
                         <executions>
                             <execution>
@@ -427,7 +426,7 @@
                 <artifactId>etcdv3-maven-plugin</artifactId>
                 <version>1.0.0</version>
                 <configuration>
-                    <image>quay.io/coreos/etcd:v3.5.0</image>
+                    <image>quay.io/coreos/etcd:v3.5.9</image>
                     <endpoint>etcdv3.endpoint</endpoint>
                 </configuration>
                 <executions>
