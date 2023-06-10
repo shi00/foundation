@@ -16,7 +16,7 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <javacv-platform.version>1.5.8</javacv-platform.version>
+        <javacv-platform.version>1.5.9</javacv-platform.version>
         <javafx.version>20</javafx.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
     </properties>
