@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import jdk.internal.vm.annotation.Contended;
 
 /**
  * MCS自旋锁实现
@@ -38,39 +39,39 @@ public class McsSpinLock implements Lock {
 
   @Override
   public void lock() {
-    LockNode qnode = myNode.get();
-    LockNode preNode = tail.getAndSet(qnode);
+    LockNode qNode = myNode.get();
+    LockNode preNode = tail.getAndSet(qNode);
     if (preNode != null) {
-      qnode.locked = false;
-      preNode.next = qnode;
+      qNode.locked = false;
+      preNode.next = qNode;
       // wait until predecessor gives up the lock
-      while (!qnode.locked) {
+      while (!qNode.locked) {
         Thread.onSpinWait();
       }
     }
-    qnode.locked = true;
+    qNode.locked = true;
   }
 
   @Override
   public void unlock() {
-    LockNode qnode = myNode.get();
-    if (qnode.next == null) {
+    LockNode qNode = myNode.get();
+    if (qNode.next == null) {
       // There is no waiting thread
-      if (tail.compareAndSet(qnode, null)) {
+      if (tail.compareAndSet(qNode, null)) {
         // If there is no waiting thread, it will return directly without notification
         return;
       }
       // wait until predecessor fills in its next field
       // Suddenly someone is behind him. Maybe he doesn't know who he is. Here are the people
       // waiting for the follow-up
-      while (qnode.next == null) {
+      while (qNode.next == null) {
         Thread.onSpinWait();
       }
     }
 
     // If there is a waiting thread behind, the following thread will be notified
-    qnode.next.locked = true;
-    qnode.next = null;
+    qNode.next.locked = true;
+    qNode.next = null;
   }
 
   @Override
@@ -100,9 +101,9 @@ public class McsSpinLock implements Lock {
   /** 锁节点 */
   static class LockNode {
     /** Is it locked by the thread of qNode */
-    volatile boolean locked;
+    @Contended volatile boolean locked;
 
     /** Compared with CLHLock, there is a real next */
-    volatile LockNode next;
+    @Contended volatile LockNode next;
   }
 }
