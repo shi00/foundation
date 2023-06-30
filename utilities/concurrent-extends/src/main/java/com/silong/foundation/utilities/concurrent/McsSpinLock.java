@@ -99,11 +99,12 @@ public class McsSpinLock implements Lock {
   }
 
   /** 锁节点 */
+  @Contended
   static class LockNode {
     /** Is it locked by the thread of qNode */
-    @Contended volatile boolean locked;
+    volatile boolean locked;
 
     /** Compared with CLHLock, there is a real next */
-    @Contended volatile LockNode next;
+    volatile LockNode next;
   }
 }
