@@ -234,7 +234,7 @@
                                         --report-unsupported-elements-at-runtime
                                         -H:+ReportExceptionStackTraces
                                         -H:IncludeResources="zoo/.*"
-                                        -H:IncludeResources="application-etcd.properties"
+                                        -H:IncludeResources="application.properties"
                                         -H:IncludeResources="logback-spring.xml"
                                     </BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                 </env>
