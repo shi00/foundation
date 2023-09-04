@@ -1,0 +1,10 @@
+[
+  {
+    "name": "io.netty.channel.epoll.EpollChannelOption",
+    "fields": [
+      {
+        "name": "TCP_USER_TIMEOUT"
+      }
+    ]
+  }
+]
