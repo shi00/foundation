@@ -82,9 +82,11 @@ public class PropertiesWriterMojo extends AbstractMojo {
   public void execute() {
     Log log = getLog();
 
+    File canonicalFile = outputDirectory.getCanonicalFile();
+
     // 文件输出目录不存在，则创建
-    if (!outputDirectory.exists()) {
-      if (outputDirectory.mkdirs()) {
+    if (!canonicalFile.exists()) {
+      if (canonicalFile.mkdirs()) {
         log.info(
             String.format(
                 "Directory %s was successfully created.", outputDirectory.getCanonicalPath()));
@@ -94,7 +96,7 @@ public class PropertiesWriterMojo extends AbstractMojo {
       }
     }
 
-    File outputFile = outputDirectory.toPath().resolve(fileName).toFile();
+    File outputFile = canonicalFile.toPath().resolve(fileName).toFile();
     log.info("Saving properties to file " + outputFile.getCanonicalPath());
     try (FileOutputStream out = new FileOutputStream(outputFile)) {
       properties.store(out, comment);
