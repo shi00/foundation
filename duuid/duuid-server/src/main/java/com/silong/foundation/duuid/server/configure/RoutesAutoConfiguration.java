@@ -18,6 +18,18 @@
  */
 package com.silong.foundation.duuid.server.configure;
 
+import static com.silong.foundation.constants.HttpStatusCode.*;
+import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.SYSTEM_CLOCK_PROVIDER;
+import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
+import static com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator.*;
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
+import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterators.spliteratorUnknownSize;
+import static org.springframework.http.MediaType.*;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
+import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
+
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.duuid.generator.DuuidGenerator;
 import com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator;
@@ -39,10 +51,14 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.springdoc.core.annotations.RouterOperation;
 import org.springdoc.core.annotations.RouterOperations;
+import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -52,26 +68,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
-
-import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.stream.StreamSupport;
-
-import static com.silong.foundation.constants.HttpStatusCode.*;
-import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.SYSTEM_CLOCK_PROVIDER;
-import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
-import static com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator.*;
-import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
-import static java.util.Spliterator.ORDERED;
-import static java.util.Spliterators.spliteratorUnknownSize;
-import static org.springframework.http.MediaType.*;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
-import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
-import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 
 /**
  * 服务端点路由配置
@@ -89,6 +90,8 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
   DuuidServerProperties.class
 })
 @Import({SecurityAutoConfiguration.class})
+@ImportRuntimeHints(ServiceRuntimeHintsRegistrar.class)
+@RegisterReflectionForBinding({ErrorDetail.class, Duuid.class})
 @SuppressFBWarnings(
     value = {"EI_EXPOSE_REP2"},
     justification = "只读初始配置")
@@ -113,10 +116,7 @@ public class RoutesAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnProperty(
-      prefix = "duuid.worker-id-provider",
-      value = "type",
-      havingValue = "mysql")
+  @ConditionalOnProperty(prefix = "duuid.worker-id-provider", value = "type", havingValue = "mysql")
   WorkerIdAllocator registerMysqlWorkerIdAllocator() {
     return load(MysqlWorkerIdAllocator.class.getName());
   }
@@ -150,10 +150,7 @@ public class RoutesAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnProperty(
-      prefix = "duuid.worker-id-provider",
-      value = "type",
-      havingValue = "mysql")
+  @ConditionalOnProperty(prefix = "duuid.worker-id-provider", value = "type", havingValue = "mysql")
   WorkerInfo registerMysqlWorkerInfo() {
     return WorkerInfo.builder()
         .name(SystemUtils.getHostName())
