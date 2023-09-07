@@ -18,6 +18,10 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
+import static com.silong.foundation.crypto.digest.HmacToolkit.hmacSha256;
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
+import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
+
 import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +30,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
 import reactor.core.publisher.Mono;
-
-import static com.silong.foundation.crypto.digest.HmacToolkit.hmacSha256;
-import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
-import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
 
 /**
  * 鉴权管理器，对请求头签名进行鉴权
@@ -67,6 +67,16 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     String signature = token.signature();
     String random = token.random();
     String timestamp = token.timestamp();
+
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "identifier:{}, random:{}, signature:{}, timestamp:{}",
+          identifier,
+          random,
+          "******",
+          timestamp);
+    }
+
     if (isAnyEmpty(identifier, signature, random, timestamp)) {
       throw new BadCredentialsException(
           String.format(

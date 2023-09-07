@@ -18,9 +18,12 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.configure;
 
+import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.AUTHENTICATION;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
 import com.silong.foundation.springboot.starter.simpleauth.security.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,8 +39,6 @@ import org.springframework.security.web.server.savedrequest.NoOpServerRequestCac
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.reactive.config.EnableWebFlux;
 
-import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.AUTHENTICATION;
-
 /**
  * 安全配置
  *
@@ -45,6 +46,7 @@ import static org.springframework.security.config.web.server.SecurityWebFiltersO
  * @version 1.0.0
  * @since 2022-01-17 13:50
  */
+@Slf4j
 @EnableWebFlux
 @EnableConfigurationProperties(SimpleAuthProperties.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
@@ -105,6 +107,14 @@ public class SecurityAutoConfiguration {
     // 无安全上下文缓存
     http = http.securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
 
+    String[] whiteList = simpleAuthProperties.getWhiteList().toArray(new String[0]);
+
+    log.info("whiteList: {}", String.join(", ", whiteList));
+
+    String[] authList = simpleAuthProperties.getAuthList().toArray(new String[0]);
+
+    log.info("authList: {}", String.join(", ", authList));
+
     return http
         // 定制权限不足异常处理
         .exceptionHandling()
@@ -113,9 +123,9 @@ public class SecurityAutoConfiguration {
         .authenticationEntryPoint(authenticationEntryPoint)
         .and()
         .authorizeExchange()
-        .pathMatchers(simpleAuthProperties.getWhiteList().toArray(new String[0]))
+        .pathMatchers(whiteList)
         .permitAll()
-        .pathMatchers(simpleAuthProperties.getAuthList().toArray(new String[0]))
+        .pathMatchers(authList)
         .authenticated()
         .anyExchange()
         .denyAll()
