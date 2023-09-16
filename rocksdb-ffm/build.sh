@@ -3,6 +3,7 @@ ROCKSDB_VER=$1
 ROCKSDB_DIR=rocksdb-"$ROCKSDB_VER"
 OUTPUT_DIR=$2
 ROCKSDB_PKG=v"$ROCKSDB_VER".tar.gz
+PORT=$3
 
 echo "Start downloading $ROCKSDB_PKG ......"
 
@@ -12,4 +13,4 @@ source /etc/profile
 make clean && make shared_lib
 ldd librocksdb.so
 jextract --source --header-class-name RocksDB --output /opt/"$OUTPUT_DIR" -t com.silong.foundation.rocksdbffm -I /opt/"$ROCKSDB_DIR"/include/rocksdb -I /opt/"$ROCKSDB_DIR"/include/rocksdb/utilities /opt/"$ROCKSDB_DIR"/include/rocksdb/c.h
-
+jwebserver -p "$PORT" -b 127.0.0.1
