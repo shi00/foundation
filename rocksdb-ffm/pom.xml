@@ -32,6 +32,7 @@
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <rocksdb.version>8.5.3</rocksdb.version>
+        <output.dir>rocksdb-java-src</output.dir>
     </properties>
 
     <profiles>
@@ -126,7 +127,7 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>build-rocksdb-builder</id>
+                        <id>rocksdb-builder</id>
                         <phase>initialize</phase>
                         <goals>
                             <goal>build</goal>
@@ -148,6 +149,8 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <verbose>true</verbose>
+                    <imagePullPolicy>IfNotPresent</imagePullPolicy>
                     <images>
                         <image>
                             <name>rocksdb-builder:${project.version}</name>
@@ -162,23 +165,27 @@
                                     <mode>host</mode>
                                 </network>
                                 <log>
-                                    <prefix>%C</prefix>
+                                    <prefix>RD</prefix>
                                     <date>ISO8601</date>
                                     <color>BLUE</color>
                                 </log>
                                 <autoRemove>true</autoRemove>
                                 <stopMode>graceful</stopMode>
                                 <containerNamePattern>${project.artifactId}</containerNamePattern>
-                                <entrypoint>./opt/build.sh ${rocksdb.version}</entrypoint>
+                                <entrypoint>./opt/build.sh ${rocksdb.version} ${output.dir}</entrypoint>
                                 <wait>
-                                    <time>999999999</time>
+                                    <time>9999999</time>
                                 </wait>
                             </run>
                             <copy>
                                 <entries>
                                     <entry>
-                                        <containerPath>/opt/rocksdb-${rocksdb.version}</containerPath>
-                                        <hostDirectory>${project.build.directory}</hostDirectory>
+                                        <containerPath>/opt/${output.dir}</containerPath>
+                                        <hostDirectory>${project.build.directory}/classes</hostDirectory>
+                                    </entry>
+                                    <entry>
+                                        <containerPath>/opt/rocksdb-${rocksdb.version}/librocksdb.so</containerPath>
+                                        <hostDirectory>${project.build.directory}/classes</hostDirectory>
                                     </entry>
                                 </entries>
                             </copy>
