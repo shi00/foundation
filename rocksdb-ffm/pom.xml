@@ -156,6 +156,7 @@
                             <name>rocksdb-builder:${project.version}</name>
                             <build>
                                 <dockerFileDir>${project.basedir}</dockerFileDir>
+                                <optimise>true</optimise>
                             </build>
                         </image>
                         <image>
@@ -165,14 +166,18 @@
                                     <mode>host</mode>
                                 </network>
                                 <log>
-                                    <prefix>RD</prefix>
+                                    <prefix>%C</prefix>
                                     <date>ISO8601</date>
                                     <color>BLUE</color>
                                 </log>
                                 <autoRemove>true</autoRemove>
                                 <stopMode>graceful</stopMode>
-                                <containerNamePattern>${project.artifactId}</containerNamePattern>
-                                <entrypoint>./opt/build.sh ${rocksdb.version} ${output.dir}</entrypoint>
+                                <containerNamePattern>${project.artifactId}-%t</containerNamePattern>
+                                <entrypoint>
+                                    <shell>
+                                        ./build.sh ${rocksdb.version} ${output.dir}
+                                    </shell>
+                                </entrypoint>
                                 <wait>
                                     <time>9999999</time>
                                 </wait>

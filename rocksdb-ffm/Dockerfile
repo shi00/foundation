@@ -3,7 +3,7 @@ FROM centos:7
 #安装常用软件包
 RUN yum -y update \
 && yum -y groupinstall 'Development Tools' \
-&& yum -y install wget snappy snappy-devel zlib zlib-devel bzip2 bzip2-devel lz4-devel libasan which \
+&& yum -y install wget snappy snappy-devel zlib zlib-devel bzip2 bzip2-devel lz4-devel libasan which python3 java \
 && yum clean all \
 && rm -rf /var/cache/yum
 #安装常用软件包
@@ -27,10 +27,10 @@ RUN yum -y install epel-release \
 
 #安装 jextract
 WORKDIR /opt
-RUN wget --no-check-certificate https://download.java.net/java/early_access/jextract/1/openjdk-20-jextract+1-2_linux-x64_bin.tar.gz \
+RUN wget -t 3 --no-check-certificate https://download.java.net/java/early_access/jextract/1/openjdk-20-jextract+1-2_linux-x64_bin.tar.gz \
 && tar zxvf openjdk-20-jextract+1-2_linux-x64_bin.tar.gz \
 && echo "export PATH=$PATH:/opt/jextract-20/bin" >> /etc/profile \
-&& source /etc/profile
+&& rm -rf openjdk-20-jextract+1-2_linux-x64_bin.tar.gz
 #安装 jextract
 
 # 预制构建脚本
