@@ -82,6 +82,7 @@
         <module>distributed-job/computron</module>
         <module>distributed-job/discovery</module>
         <module>crypto</module>
+        <module>rocksdb-ffm</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>
         <module>duuid/idgen</module>
@@ -103,7 +104,7 @@
     </modules>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>20</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -142,6 +143,7 @@
         <springdoc-openapi-maven-plugin.version>1.4</springdoc-openapi-maven-plugin.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
         <maven-site-plugin.version>4.0.0-M5</maven-site-plugin.version>
+        <docker-maven-plugin.version>0.43.4</docker-maven-plugin.version>
         <maven-project-info-reports-plugin.version>3.4.2</maven-project-info-reports-plugin.version>
         <!-- 插件 -->
 
@@ -171,7 +173,7 @@
         <jgroups-raft.version>1.0.11.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.1.Final</jgroups-kubernetes.version>
         <protobuf-java.version>3.24.2</protobuf-java.version>
-        <rocksdbjni.version>8.3.2</rocksdbjni.version>
+        <rocksdbjni.version>8.3.3</rocksdbjni.version>
         <snappy-java.version>1.1.10.3</snappy-java.version>
         <zstd-jni.version>1.5.5-5</zstd-jni.version>
         <kryo.version>5.5.0</kryo.version>
@@ -526,9 +528,9 @@
                     <version>${protoc-jar-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>com.spotify</groupId>
-                    <artifactId>dockerfile-maven-plugin</artifactId>
-                    <version>${dockerfile-maven-plugin.version}</version>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>${docker-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.springdoc</groupId>
