@@ -6,7 +6,7 @@ ROCKSDB_PKG=v"$ROCKSDB_VER".tar.gz
 
 echo "Start downloading $ROCKSDB_PKG ......"
 
-wget -t 3 --no-check-certificate https://github.com/facebook/rocksdb/archive/refs/tags/"$ROCKSDB_PKG"
+wget -c -t 3 --no-check-certificate https://github.com/facebook/rocksdb/archive/refs/tags/"$ROCKSDB_PKG"
 tar zxvf "$ROCKSDB_PKG" && cd "$ROCKSDB_DIR"
 source /etc/profile
 make clean && make shared_lib
