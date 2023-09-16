@@ -153,14 +153,14 @@
                     <imagePullPolicy>IfNotPresent</imagePullPolicy>
                     <images>
                         <image>
-                            <name>rocksdb-builder:${project.version}</name>
+                            <name>builder-base</name>
                             <build>
                                 <dockerFileDir>${project.basedir}</dockerFileDir>
                                 <optimise>true</optimise>
                             </build>
                         </image>
                         <image>
-                            <name>rocksdb-builder:${project.version}</name>
+                            <name>builder-base</name>
                             <run>
                                 <network>
                                     <mode>host</mode>

@@ -11,5 +11,5 @@ tar zxvf "$ROCKSDB_PKG" && cd "$ROCKSDB_DIR"
 source /etc/profile
 make clean && make shared_lib
 ldd librocksdb.so
-jextract --source --header-class-name RocksDB --output /opt/"$OUTPUT_DIR" -t com.silong.foundation.rocksdbffm -I /opt/"$ROCKSDB_DIR"/include/rocksdb -I /opt/"$ROCKSDB_DIR"/include/rocksdb/utilities c.h
+jextract --source --header-class-name RocksDB --output /opt/"$OUTPUT_DIR" -t com.silong.foundation.rocksdbffm -I /opt/"$ROCKSDB_DIR"/include/rocksdb -I /opt/"$ROCKSDB_DIR"/include/rocksdb/utilities /opt/"$ROCKSDB_DIR"/include/rocksdb/c.h
 
