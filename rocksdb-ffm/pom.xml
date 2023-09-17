@@ -32,8 +32,8 @@
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <rocksdb.version>8.5.3</rocksdb.version>
-        <output.dir>classes</output.dir>
-        <web.port>9889</web.port>
+        <output.src.dir>rocksdb-java-src</output.src.dir>
+        <output.shared-lib.dir>classes</output.shared-lib.dir>
     </properties>
 
     <profiles>
@@ -114,6 +114,24 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
@@ -134,8 +152,6 @@
                             <goal>build</goal>
                         </goals>
                         <configuration>
-                            <verbose>true</verbose>
-                            <imagePullPolicy>IfNotPresent</imagePullPolicy>
                             <images>
                                 <image>
                                     <name>builder-base:${project.version}</name>
@@ -148,20 +164,15 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>build-rocksdb</id>
+                        <id>start-build</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>start</goal>
-                            <goal>copy</goal>
-                            <goal>stop</goal>
                         </goals>
                         <configuration>
-                            <verbose>true</verbose>
-                            <imagePullPolicy>IfNotPresent</imagePullPolicy>
                             <images>
                                 <image>
                                     <name>builder-base:${project.version}</name>
-                                    <alias>${project.artifactId}-${project.version}</alias>
                                     <run>
                                         <network>
                                             <mode>host</mode>
@@ -172,42 +183,39 @@
                                             <date>ISO8601</date>
                                             <color>BLUE</color>
                                         </log>
+                                        <volumes>
+                                            <bind>
+                                                <volume>
+                                                    ${project.basedir}/target/generated-sources:/opt/${output.src.dir}
+                                                </volume>
+                                                <volume>
+                                                    ${project.build.outputDirectory}:/opt/${output.shared-lib.dir}
+                                                </volume>
+                                            </bind>
+                                        </volumes>
                                         <autoRemove>true</autoRemove>
                                         <stopMode>graceful</stopMode>
                                         <containerNamePattern>%e</containerNamePattern>
                                         <entrypoint>
                                             <shell>
-                                                ./build.sh ${rocksdb.version} ${output.dir} ${web.port}
+                                                ./build.sh ${rocksdb.version} ${output.src.dir} ${output.shared-lib.dir}
                                             </shell>
                                         </entrypoint>
                                         <wait>
-                                            <!--                                    <http>-->
-                                            <!--                                        <url>http://127.0.0.1:${web.port}</url>-->
-                                            <!--                                        <method>GET</method>-->
-                                            <!--                                        <status>404</status>-->
-                                            <!--                                    </http>-->
                                             <time>9999999</time>
+                                            <exit>0</exit>
                                         </wait>
                                     </run>
-                                    <copy>
-                                        <entries>
-                                            <entry>
-                                                <containerPath>/opt/${output.dir}</containerPath>
-                                                <hostDirectory>${project.build.directory}/generated-sources
-                                                </hostDirectory>
-                                            </entry>
-                                            <entry>
-                                                <containerPath>/opt/rocksdb-${rocksdb.version}/librocksdb.so
-                                                </containerPath>
-                                                <hostDirectory>${project.build.directory}/classes</hostDirectory>
-                                            </entry>
-                                        </entries>
-                                    </copy>
                                 </image>
                             </images>
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <verbose>true</verbose>
+                    <useColor>true</useColor>
+                    <imagePullPolicy>IfNotPresent</imagePullPolicy>
+                </configuration>
             </plugin>
         </plugins>
     </build>
