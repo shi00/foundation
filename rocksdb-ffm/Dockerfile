@@ -2,6 +2,8 @@ FROM centos:7
 
 LABEL maintainer="louis sin"
 
+USER root
+
 WORKDIR /opt
 
 ENV TZ=Asia/Shanghai
@@ -18,7 +20,8 @@ RUN yum -y update \
 && yum clean all \
 && rm -rf /var/cache/yum \
 && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
-&& echo "source /opt/rh/devtoolset-11/enable" >> /etc/bashrc
+&& echo "source /opt/rh/devtoolset-11/enable" >> ~/.bashrc \
+&& echo "source /etc/profile" >> ~/.bashrc
 SHELL ["/bin/bash", "--login", "-c"]
 ENTRYPOINT ["/usr/bin/bash", "--login", "-c"]
 #安装常用软件包
@@ -33,8 +36,7 @@ RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_acc
 && echo "export M2_HOME=/opt/apache-maven-3.9.4" >> /etc/profile \
 && echo "export JAVA_HOME=/opt/jdk-21" >> /etc/profile \
 && echo "export PATH=$PATH:/opt/jdk-21/bin:/opt/apache-maven-3.9.4/bin:/opt/jextract-20/bin" >> /etc/profile \
-&& rm -rf *.tar.gz \
-&& source /etc/profile
+&& rm -rf *.tar.gz
 #安装 jextract
 
 # 预制构建脚本

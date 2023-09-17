@@ -32,8 +32,8 @@
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <rocksdb.version>8.5.3</rocksdb.version>
-        <output.dir>rocksdb-java-src</output.dir>
-        <web.port>8998</web.port>
+        <output.dir>classes</output.dir>
+        <web.port>9889</web.port>
     </properties>
 
     <profiles>
@@ -128,80 +128,86 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>rocksdb-builder</id>
+                        <id>build-image</id>
                         <phase>initialize</phase>
                         <goals>
                             <goal>build</goal>
                         </goals>
+                        <configuration>
+                            <verbose>true</verbose>
+                            <imagePullPolicy>IfNotPresent</imagePullPolicy>
+                            <images>
+                                <image>
+                                    <name>builder-base:${project.version}</name>
+                                    <build>
+                                        <dockerFileDir>${project.basedir}</dockerFileDir>
+                                        <optimise>true</optimise>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
                     </execution>
                     <execution>
-                        <id>start-build-rocksdb</id>
+                        <id>build-rocksdb</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>start</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>stop-build-rocksdb</id>
-                        <phase>process-resources</phase>
-                        <goals>
+                            <goal>copy</goal>
                             <goal>stop</goal>
                         </goals>
+                        <configuration>
+                            <verbose>true</verbose>
+                            <imagePullPolicy>IfNotPresent</imagePullPolicy>
+                            <images>
+                                <image>
+                                    <name>builder-base:${project.version}</name>
+                                    <alias>${project.artifactId}-${project.version}</alias>
+                                    <run>
+                                        <network>
+                                            <mode>host</mode>
+                                        </network>
+                                        <user>root</user>
+                                        <log>
+                                            <prefix>%C</prefix>
+                                            <date>ISO8601</date>
+                                            <color>BLUE</color>
+                                        </log>
+                                        <autoRemove>true</autoRemove>
+                                        <stopMode>graceful</stopMode>
+                                        <containerNamePattern>%e</containerNamePattern>
+                                        <entrypoint>
+                                            <shell>
+                                                ./build.sh ${rocksdb.version} ${output.dir} ${web.port}
+                                            </shell>
+                                        </entrypoint>
+                                        <wait>
+                                            <!--                                    <http>-->
+                                            <!--                                        <url>http://127.0.0.1:${web.port}</url>-->
+                                            <!--                                        <method>GET</method>-->
+                                            <!--                                        <status>404</status>-->
+                                            <!--                                    </http>-->
+                                            <time>9999999</time>
+                                        </wait>
+                                    </run>
+                                    <copy>
+                                        <entries>
+                                            <entry>
+                                                <containerPath>/opt/${output.dir}</containerPath>
+                                                <hostDirectory>${project.build.directory}/generated-sources
+                                                </hostDirectory>
+                                            </entry>
+                                            <entry>
+                                                <containerPath>/opt/rocksdb-${rocksdb.version}/librocksdb.so
+                                                </containerPath>
+                                                <hostDirectory>${project.build.directory}/classes</hostDirectory>
+                                            </entry>
+                                        </entries>
+                                    </copy>
+                                </image>
+                            </images>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <verbose>true</verbose>
-                    <imagePullPolicy>IfNotPresent</imagePullPolicy>
-                    <images>
-                        <image>
-                            <name>builder-base</name>
-                            <build>
-                                <dockerFileDir>${project.basedir}</dockerFileDir>
-                                <optimise>true</optimise>
-                            </build>
-                        </image>
-                        <image>
-                            <name>builder-base</name>
-                            <run>
-                                <network>
-                                    <mode>host</mode>
-                                </network>
-                                <log>
-                                    <prefix>%C</prefix>
-                                    <date>ISO8601</date>
-                                    <color>BLUE</color>
-                                </log>
-                                <autoRemove>true</autoRemove>
-                                <stopMode>graceful</stopMode>
-                                <containerNamePattern>${project.artifactId}-%t</containerNamePattern>
-                                <entrypoint>
-                                    <shell>
-                                        ./build.sh ${rocksdb.version} ${output.dir} ${web.port}
-                                    </shell>
-                                </entrypoint>
-                                <wait>
-                                    <http>
-                                        <url>http://127.0.0.1:${web.port}</url>
-                                        <method>GET</method>
-                                        <status>200..504</status>
-                                    </http>
-                                </wait>
-                            </run>
-                            <copy>
-                                <entries>
-                                    <entry>
-                                        <containerPath>/opt/${output.dir}</containerPath>
-                                        <hostDirectory>${project.build.directory}/classes</hostDirectory>
-                                    </entry>
-                                    <entry>
-                                        <containerPath>/opt/rocksdb-${rocksdb.version}/librocksdb.so</containerPath>
-                                        <hostDirectory>${project.build.directory}/classes</hostDirectory>
-                                    </entry>
-                                </entries>
-                            </copy>
-                        </image>
-                    </images>
-                </configuration>
             </plugin>
         </plugins>
     </build>
