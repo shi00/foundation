@@ -17,4 +17,3 @@ mkdir -p "$SHARDED_LIB_DIR" \
 && jextract --source --header-class-name RocksDB --output /opt/"$OUTPUT_SRC_DIR" -t com.silong.foundation.rocksdbffm -I /opt/"$ROCKSDB_DIR"/include/rocksdb -I /opt/"$ROCKSDB_DIR"/include/rocksdb/utilities /opt/"$ROCKSDB_DIR"/include/rocksdb/c.h
 #cd .. && mkdir -p output && mv "$OUTPUT_SRC_DIR" output && mv "$ROCKSDB_DIR"/librocksdb.so."$ROCKSDB_VER" output/librocksdb.so
 echo "==================Build completed=================="
-exit

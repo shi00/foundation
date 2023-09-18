@@ -202,8 +202,9 @@
                                             </shell>
                                         </entrypoint>
                                         <wait>
-                                            <time>9999999</time>
-                                            <exit>0</exit>
+                                            <time>3600000</time>
+                                            <!--                                            <exit>0</exit>-->
+                                            <log>==================Build completed==================</log>
                                         </wait>
                                     </run>
                                 </image>
