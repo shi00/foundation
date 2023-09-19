@@ -29,8 +29,8 @@ ENTRYPOINT ["/usr/bin/bash", "--login", "-c"]
 #安装java相关软件包
 RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_access/jextract/1/openjdk-20-jextract+1-2_linux-x64_bin.tar.gz \
 && tar zxvf openjdk-20-jextract+1-2_linux-x64_bin.tar.gz \
-&& wget -t 3 -c --no-check-certificate https://download.java.net/java/GA/jdk21/fd2272bbf8e04c3dbaee13770090416c/35/GPL/openjdk-21_linux-x64_bin.tar.gz \
-&& tar zxvf openjdk-21_linux-x64_bin.tar.gz \
+&& wget -t 3 -c --no-check-certificate https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz \
+&& tar zxvf jdk-21_linux-x64_bin.tar.gz \
 && wget -t 3 -c --no-check-certificate https://dlcdn.apache.org/maven/maven-3/3.9.4/binaries/apache-maven-3.9.4-bin.tar.gz \
 && tar zxvf apache-maven-3.9.4-bin.tar.gz \
 && echo "export M2_HOME=/opt/apache-maven-3.9.4" >> /etc/profile \

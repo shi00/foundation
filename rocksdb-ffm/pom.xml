@@ -203,8 +203,7 @@
                                         </entrypoint>
                                         <wait>
                                             <time>3600000</time>
-                                            <!--                                            <exit>0</exit>-->
-                                            <log>==================Build completed==================</log>
+                                            <log>================== Build completed ==================</log>
                                         </wait>
                                     </run>
                                 </image>
