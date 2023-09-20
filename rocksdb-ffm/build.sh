@@ -20,6 +20,11 @@ echo "Successfully downloaded $ROCKSDB_PKG"
 tar zxvf "$ROCKSDB_PKG"
 cd "$ROCKSDB_DIR"
 make clean && make shared_lib
+if [ ! -f "$SHARDED_LIB_NAME"."$ROCKSDB_VER" ];then
+  echo "Failed to build $SHARDED_LIB_NAME.$ROCKSDB_VER"
+  exit 1
+fi
+
 ldd "$SHARDED_LIB_NAME" | grep "not found"
 if [ $? -ne 0 ]; then
   echo "Successfully built $SHARDED_LIB_NAME"
