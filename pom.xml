@@ -146,6 +146,7 @@
         <maven-site-plugin.version>4.0.0-M5</maven-site-plugin.version>
         <docker-maven-plugin.version>0.43.4</docker-maven-plugin.version>
         <maven-project-info-reports-plugin.version>3.4.2</maven-project-info-reports-plugin.version>
+        <download-maven-plugin.version>1.7.1</download-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
@@ -456,6 +457,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <artifactId>download-maven-plugin</artifactId>
+                    <version>${download-maven-plugin.version}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>

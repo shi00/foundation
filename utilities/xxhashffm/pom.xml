@@ -34,7 +34,45 @@
         <xxhash.version>0.8.2</xxhash.version>
         <output.src.dir>xxhash-java-src</output.src.dir>
         <output.shared-lib.dir>classes</output.shared-lib.dir>
+        <lib.name>libxxhash</lib.name>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <os>
+                    <family>windows</family>
+                    <arch>x86_64</arch>
+                    <name>windows</name>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>download-vcpkg</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <url>http://downloads.sourceforge.net/project/jbpm/jBPM%203/jbpm-3.1.4/jbpm-3.1.4.zip</url>
+                            <unpack>true</unpack>
+                            <outputDirectory>${project.build.directory}/jbpm-3.1.4</outputDirectory>
+                            <md5>df65b5642f33676313ebe4d5b69a3fff</md5>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>

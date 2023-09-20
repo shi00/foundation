@@ -22,10 +22,10 @@
 package com.silong.foundation.utilities.xxhash;
 
 /**
- * 提供xxhash
+ * xxhash单元测试
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-09-16 14:52
+ * @since 2023-09-20 22:13
  */
-public interface XxHash {}
+public class XxhashTest {}
