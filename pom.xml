@@ -100,7 +100,7 @@
         <module>utilities/simple-object-pool</module>
         <module>utilities/hashed-wheel-timer</module>
         <module>utilities/concurrent-extends</module>
-        <module>utilities/xxhash</module>
+        <module>utilities/xxhashffm</module>
         <module>common-objects</module>
     </modules>
 
