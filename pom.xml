@@ -630,6 +630,7 @@
                         <exclude>**/*.sql</exclude>
                         <exclude>**/*.proto</exclude>
                         <exclude>**/*.bat</exclude>
+                        <exclude>**/*.sh</exclude>
                         <exclude>**/*.cer</exclude>
                         <exclude>**/*.xsd</exclude>
                         <!-- Git related files -->
