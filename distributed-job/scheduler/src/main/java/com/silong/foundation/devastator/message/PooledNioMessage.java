@@ -22,7 +22,7 @@ import com.esotericsoftware.kryo.util.Pool;
 import com.esotericsoftware.kryo.util.Pool.Poolable;
 import org.jgroups.Address;
 import org.jgroups.MessageFactory;
-import org.jgroups.RefcountedNioMessage;
+import org.jgroups.NioMessage;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -34,7 +34,7 @@ import java.util.Arrays;
  * @version 1.0.0
  * @since 2022-05-01 21:30
  */
-public class PooledNioMessage extends RefcountedNioMessage implements Poolable {
+public class PooledNioMessage extends NioMessage implements Poolable {
 
   /** 消息类型 */
   public static final short MSG_TYPE = 679;
@@ -79,7 +79,7 @@ public class PooledNioMessage extends RefcountedNioMessage implements Poolable {
   }
 
   private void release() {
-    onRelease(message -> NIO_MESSAGE_POOL.free((PooledNioMessage) message));
+    //    onRelease(message -> NIO_MESSAGE_POOL.free((PooledNioMessage) message));
   }
 
   /**
