@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.utilities.concurrent;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
  * @since 2022-07-03 17:17
  */
 public class SimpleThreadFactoryTests {
+  AtomicInteger count = new AtomicInteger();
 
   @BeforeEach
   void init() {
@@ -41,7 +43,7 @@ public class SimpleThreadFactoryTests {
     String prefix = "A-";
     SimpleThreadFactory factory = new SimpleThreadFactory(prefix);
     for (int i = 0; i < 100; i++) {
-      Thread t = factory.newThread(System.out::println);
+      Thread t = factory.newThread(() -> System.out.println(count.incrementAndGet()));
       t.start();
       Assertions.assertEquals(prefix + i, t.getName());
     }
@@ -52,7 +54,7 @@ public class SimpleThreadFactoryTests {
     String prefix = "A";
     SimpleThreadFactory factory = new SimpleThreadFactory(prefix);
     for (int i = 0; i < 100; i++) {
-      Thread t = factory.newThread(System.out::println);
+      Thread t = factory.newThread(() -> System.out.println(count.incrementAndGet()));
       t.start();
       Assertions.assertEquals(prefix + "-" + i, t.getName());
     }
