@@ -19,7 +19,6 @@
 package com.silong.foundation.utilities.concurrent;
 
 import com.silong.foundation.utilities.concurrent.McsSpinLock.LockNode;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
@@ -89,10 +88,5 @@ public class ClhSpinLock implements Lock {
   @Override
   public boolean tryLock(long time, TimeUnit unit) {
     throw new UnsupportedOperationException();
-  }
-
-  void close() {
-    current.remove();
-    pred.remove();
   }
 }

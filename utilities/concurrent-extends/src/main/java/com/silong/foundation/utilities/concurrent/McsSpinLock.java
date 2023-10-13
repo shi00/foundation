@@ -94,10 +94,6 @@ public class McsSpinLock implements Lock {
     throw new UnsupportedOperationException();
   }
 
-  void close() {
-    myNode.remove();
-  }
-
   /** 锁节点 */
   @Contended
   static class LockNode {
