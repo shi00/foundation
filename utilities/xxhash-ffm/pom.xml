@@ -32,7 +32,6 @@
     <properties>
         <java.version>21</java.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <xxhash.version>0.8.2</xxhash.version>
         <output.src.dir>xxhash-java-src</output.src.dir>
         <output.shared-lib.dir>classes</output.shared-lib.dir>
         <lib.name>libxxhash</lib.name>
@@ -215,7 +214,7 @@
                                         <containerNamePattern>%e</containerNamePattern>
                                         <entrypoint>
                                             <shell>
-                                                ./build.sh ${xxhash.version} ${output.src.dir} ${output.shared-lib.dir}
+                                                ./build.sh ${output.src.dir} ${output.shared-lib.dir}
                                             </shell>
                                         </entrypoint>
                                         <wait>

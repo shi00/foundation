@@ -21,7 +21,7 @@
 
 package com.silong.foundation.utilities.xxhash;
 
-import static com.silong.foundation.utilities.xxhash.generated.Xxhash.*;
+import static com.silong.foundation.utilities.xxhash.generated.xxHash.*;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import com.silong.foundation.utilities.nlloader.NativeLibLoader;
