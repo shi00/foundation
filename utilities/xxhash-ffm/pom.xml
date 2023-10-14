@@ -208,6 +208,7 @@
                                         <entrypoint>
                                             <shell>
                                                 ./build.sh ${xxhash.version} ${output.src.dir} ${output.shared-lib.dir}
+                                                ${os.detected.name} ${os.detected.arch}
                                             </shell>
                                         </entrypoint>
                                         <wait>

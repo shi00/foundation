@@ -4,9 +4,13 @@ XXHASH_DIR=xxHash-"$XXHASH_VER"
 OUTPUT_SRC_DIR=$2
 XXHASH_PKG=v"$XXHASH_VER".tar.gz
 SHARDED_LIB_DIR=$3
+OS_NAME=$4
+OS_ARCH=$5
 SHARDED_LIB_NAME="libxxhash.so"
 
 source /etc/profile
+
+echo "$OS_NAME" "$OS_ARCH" "$XXHASH_VER" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR"
 
 echo "================== Start downloading $XXHASH_PKG =================="
 mkdir -p "$SHARDED_LIB_DIR"
@@ -34,7 +38,8 @@ else
   exit 1
 fi
 
-mv "$SHARDED_LIB_NAME"."$XXHASH_VER" /opt/"$SHARDED_LIB_DIR"/"$SHARDED_LIB_NAME"
+mkdir -p /opt/"$SHARDED_LIB_DIR"/"$OS_NAME"/"$OS_ARCH"
+mv "$SHARDED_LIB_NAME"."$XXHASH_VER" /opt/"$SHARDED_LIB_DIR"/"$OS_NAME"/"$OS_ARCH"/"$SHARDED_LIB_NAME"
 jextract --source --header-class-name Xxhash --output /opt/"$OUTPUT_SRC_DIR" -t com.silong.foundation.utilities.xxhash.generated -I /opt/"$XXHASH_DIR" /opt/"$XXHASH_DIR"/xxhash.h
 if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
   echo "Failed to generate code by jextract"
