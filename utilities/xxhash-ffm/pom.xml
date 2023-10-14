@@ -91,6 +91,11 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.silong</groupId>
+            <artifactId>nativelib-loader</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>

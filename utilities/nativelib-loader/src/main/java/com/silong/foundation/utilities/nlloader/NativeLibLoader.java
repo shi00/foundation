@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 从classpath包含的jar包中加载指定的共享库，配合本地方法使用
@@ -42,6 +43,7 @@ import lombok.SneakyThrows;
  * @version 1.0.0
  * @since 2023-10-13 22:55
  */
+@Slf4j
 public final class NativeLibLoader {
 
   /** 临时目录 */
@@ -58,6 +60,8 @@ public final class NativeLibLoader {
     PLATFORM_DETECTOR.detect(properties, List.of());
     OS_NAME = properties.getProperty(DETECTED_NAME);
     OS_ARCH = properties.getProperty(DETECTED_ARCH);
+    log.info("OS_NAME: " + OS_NAME);
+    log.info("OS_ARCH: " + OS_ARCH);
   }
 
   /** 工具类，禁止实例化 */
@@ -75,13 +79,20 @@ public final class NativeLibLoader {
     String prefix = originLib.substring(0, index - 1);
     String suffix = originLib.substring(index);
     Path tmpLib = TEMP_DIR.resolve(String.format("%s_%d%s", prefix, System.nanoTime(), suffix));
-    try (InputStream inputStream =
-        NativeLibLoader.class.getResourceAsStream(
-            String.format("/%s/%s/%s", OS_NAME, OS_ARCH, originLib))) {
-      Files.copy(requireNonNull(inputStream), tmpLib, REPLACE_EXISTING);
-      File file = tmpLib.toFile();
-      file.deleteOnExit();
-      return file.getCanonicalPath();
+    String libPath = String.format("/%s/%s/%s", OS_NAME, OS_ARCH, originLib);
+    try (InputStream inputStream = NativeLibLoader.class.getResourceAsStream(libPath)) {
+      Files.copy(
+          requireNonNull(
+              inputStream,
+              String.format("Failed to load %s from %s in classpath.", originLib, libPath)),
+          tmpLib,
+          REPLACE_EXISTING);
+      File tmpFile = tmpLib.toFile();
+      tmpFile.deleteOnExit();
+      log.info(String.format("Prepare to load %s from %s in classpath.", originLib, libPath));
+      String canonicalPath = tmpFile.getCanonicalPath();
+      log.info(String.format("Generate %s for loading.", canonicalPath));
+      return canonicalPath;
     }
   }
 
@@ -106,8 +117,8 @@ public final class NativeLibLoader {
     }
 
     // 加载临时生成的库文件
-    System.load(
-        generateTempLib(
-            String.format("%s.%s", libName, PlatformLibFormat.match(OS_NAME).libFormat)));
+    String originLib = String.format("%s.%s", libName, PlatformLibFormat.match(OS_NAME).libFormat);
+    System.load(generateTempLib(originLib));
+    log.info("Successfully loaded " + originLib);
   }
 }

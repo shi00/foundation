@@ -23,16 +23,9 @@ package com.silong.foundation.utilities.xxhash;
 
 import static com.silong.foundation.utilities.xxhash.generated.Xxhash.*;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.util.Objects.requireNonNull;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import com.silong.foundation.utilities.nlloader.NativeLibLoader;
 import java.lang.foreign.Arena;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import lombok.SneakyThrows;
 
 /**
  * 提供xxhash生成工具
@@ -47,47 +40,7 @@ public final class XxHashUtils {
   private static final String LIB_XXHASH = "libxxhash";
 
   static {
-    loadNativeLib();
-  }
-
-  @SneakyThrows
-  private static void loadNativeLib() {
-    // 仅支持64bit操作系统
-    int osArch = Integer.parseInt(System.getProperty("sun.arch.data.model"));
-    if (osArch != 64) {
-      throw new UnsupportedOperationException("Only supported on 64bit operating systems.");
-    }
-
-    String osName = System.getProperty("os.name");
-    if (osName.startsWith("Windows")) {
-      System.load(generateTempLib(LIB_XXHASH + ".dll"));
-    } else if (osName.startsWith("Linux")) {
-      System.load(generateTempLib(LIB_XXHASH + ".so"));
-    } else {
-      throw new UnsupportedOperationException("Only supports Windows or Linux operating systems.");
-    }
-  }
-
-  private static String generateTempLib(String originLib) throws IOException {
-    long time = System.nanoTime();
-    Path path = new File(System.getProperty("java.io.tmpdir")).toPath();
-    int index = originLib.lastIndexOf('.');
-    String prefix = originLib.substring(0, index - 1);
-    String suffix = originLib.substring(index);
-    String name = String.format("%s_%d%s", prefix, time, suffix);
-    Path tmpLib = path.resolve(name);
-    try (InputStream inputStream =
-        XxHashUtils.class.getResourceAsStream(String.format("/%s", originLib))) {
-      Files.copy(requireNonNull(inputStream), tmpLib, REPLACE_EXISTING);
-      File file = tmpLib.toFile();
-      file.deleteOnExit();
-      return file.getCanonicalPath();
-    }
-  }
-
-  @SneakyThrows
-  private static void getDelete(Path path) {
-    Files.delete(path);
+    NativeLibLoader.loadLibrary(LIB_XXHASH);
   }
 
   /** 工具类禁止实例化 */
