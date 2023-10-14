@@ -79,7 +79,7 @@ public final class NativeLibLoader {
     String prefix = originLib.substring(0, index - 1);
     String suffix = originLib.substring(index);
     Path tmpLib = TEMP_DIR.resolve(String.format("%s_%d%s", prefix, System.nanoTime(), suffix));
-    String libPath = String.format("/%s/%s/%s", OS_NAME, OS_ARCH, originLib);
+    String libPath = String.format("/native/%s/%s/%s", OS_NAME, OS_ARCH, originLib);
     try (InputStream inputStream = NativeLibLoader.class.getResourceAsStream(libPath)) {
       Files.copy(
           requireNonNull(

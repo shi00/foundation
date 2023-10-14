@@ -38,8 +38,8 @@ else
   exit 1
 fi
 
-mkdir -p /opt/"$SHARDED_LIB_DIR"/"$OS_NAME"/"$OS_ARCH"
-mv "$SHARDED_LIB_NAME"."$XXHASH_VER" /opt/"$SHARDED_LIB_DIR"/"$OS_NAME"/"$OS_ARCH"/"$SHARDED_LIB_NAME"
+mkdir -p /opt/"$SHARDED_LIB_DIR"/native/"$OS_NAME"/"$OS_ARCH"
+mv "$SHARDED_LIB_NAME"."$XXHASH_VER" /opt/"$SHARDED_LIB_DIR"/native/"$OS_NAME"/"$OS_ARCH"/"$SHARDED_LIB_NAME"
 jextract --source --header-class-name Xxhash --output /opt/"$OUTPUT_SRC_DIR" -t com.silong.foundation.utilities.xxhash.generated -I /opt/"$XXHASH_DIR" /opt/"$XXHASH_DIR"/xxhash.h
 if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
   echo "Failed to generate code by jextract"
