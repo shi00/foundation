@@ -4,8 +4,8 @@ XXHASH_DIR=xxHash-"$XXHASH_VER"
 OUTPUT_SRC_DIR=$2
 XXHASH_PKG=v"$XXHASH_VER".tar.gz
 SHARDED_LIB_DIR=$3
-OS_NAME=$4
-OS_ARCH=$5
+OS_NAME=$(echo $(uname -s) | tr '[A-Z]' '[a-z]')   # 获取操作系统名
+OS_ARCH=$(uname -p)                  # 获取操作系统架构
 SHARDED_LIB_NAME="libxxhash.so"
 
 source /etc/profile
