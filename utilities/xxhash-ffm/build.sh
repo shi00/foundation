@@ -7,10 +7,14 @@ SHARDED_LIB_NAME="libxxhash.so"
 
 source /etc/profile
 
-echo "$OS_NAME" "$OS_ARCH" "$XXHASH_VER" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR"
+echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR"
 
 echo "================== Start downloading xxHash =================="
 git clone https://github.com/Cyan4973/xxHash.git
+if [ ! -d ./xxHash ];then
+  echo "Failed to clone xxHash."
+  exit 1
+fi
 
 echo "================== Start building xxHash =================="
 cd vcpkg
@@ -18,6 +22,15 @@ mkdir custom-triplets
 cp triplets/x64-linux.cmake custom-triplets/x64-linux-dynamic.cmake
 sed -i 's/set(VCPKG_LIBRARY_LINKAGE static)/set(VCPKG_LIBRARY_LINKAGE dynamic)/g' custom-triplets/x64-linux-dynamic.cmake
 ./vcpkg install xxhash:x64-linux-dynamic --overlay-triplets=custom-triplets
+ldd installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" | grep "not found"
+if [ $? -ne 0 ]; then
+  echo "Successfully built $SHARDED_LIB_NAME"
+else
+  ldd "$SHARDED_LIB_NAME"
+  echo "Failed to built $SHARDED_LIB_NAME, some libraries $SHARDED_LIB_NAME depends on do not exist."
+  exit 1
+fi
+
 mkdir -p /opt/"$SHARDED_LIB_DIR"/native/"$OS_NAME"/"$OS_ARCH"
 cp installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"/native/"$OS_NAME"/"$OS_ARCH"/"$SHARDED_LIB_NAME"
 
