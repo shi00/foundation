@@ -42,7 +42,7 @@ public class XxHashTest {
     do {
       String str = RandomStringUtils.random(1024);
       byte[] bytes = str.getBytes(UTF_8);
-      assertEquals(XxHashUtils.hash32(bytes), XxHashUtils.hash32(bytes));
+      assertEquals(XxHashGenerator.hash32(bytes), XxHashGenerator.hash32(bytes));
     } while (--count > 0);
   }
 
@@ -52,7 +52,7 @@ public class XxHashTest {
     do {
       String str = RandomStringUtils.random(1024);
       byte[] bytes = str.getBytes(UTF_8);
-      assertEquals(XxHashUtils.hash64(bytes), XxHashUtils.hash64(bytes));
+      assertEquals(XxHashGenerator.hash64(bytes), XxHashGenerator.hash64(bytes));
     } while (--count > 0);
   }
 }

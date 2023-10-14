@@ -34,7 +34,7 @@ import java.lang.foreign.Arena;
  * @version 1.0.0
  * @since 2023-09-16 14:52
  */
-public final class XxHashUtils {
+public final class XxHashGenerator {
 
   /** 共享库名称 */
   private static final String LIB_XXHASH = "libxxhash";
@@ -44,7 +44,7 @@ public final class XxHashUtils {
   }
 
   /** 工具类禁止实例化 */
-  private XxHashUtils() {}
+  private XxHashGenerator() {}
 
   /**
    * 生成xxhash
@@ -67,7 +67,7 @@ public final class XxHashUtils {
    * @param data 数据
    * @return hash码
    */
-  public static long hash32(byte[] data) {
+  public static int hash32(byte[] data) {
     if (data == null || data.length == 0) {
       return 0;
     }
