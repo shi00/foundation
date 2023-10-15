@@ -39,34 +39,180 @@
 
     <profiles>
         <profile>
-            <id>windows</id>
+            <id>linux</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <os>
-                    <family>windows</family>
-                    <arch>x86_64</arch>
+                    <name>linux</name>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>build-image</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>builder-base:${project.version}</name>
+                                            <build>
+                                                <contextDir>${project.basedir}/builder/linux</contextDir>
+                                                <dockerFile>Dockerfile</dockerFile>
+                                                <optimise>true</optimise>
+                                            </build>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>start-build</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>builder-base:${project.version}</name>
+                                            <run>
+                                                <network>
+                                                    <mode>host</mode>
+                                                </network>
+                                                <user>root</user>
+                                                <log>
+                                                    <prefix>%C</prefix>
+                                                    <date>ISO8601</date>
+                                                    <color>BLUE</color>
+                                                </log>
+                                                <volumes>
+                                                    <bind>
+                                                        <volume>
+                                                            ${project.basedir}/target/generated-sources:/opt/${output.src.dir}
+                                                        </volume>
+                                                        <volume>
+                                                            ${project.build.outputDirectory}:/opt/${output.shared-lib.dir}
+                                                        </volume>
+                                                    </bind>
+                                                </volumes>
+                                                <autoRemove>true</autoRemove>
+                                                <stopMode>graceful</stopMode>
+                                                <containerNamePattern>%e</containerNamePattern>
+                                                <entrypoint>
+                                                    <shell>
+                                                        ./build.sh ${output.src.dir} ${output.shared-lib.dir}
+                                                    </shell>
+                                                </entrypoint>
+                                                <wait>
+                                                    <time>3600000</time>
+                                                    <log>================== Build completed ==================</log>
+                                                </wait>
+                                            </run>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <verbose>true</verbose>
+                            <useColor>true</useColor>
+                            <imagePullPolicy>IfNotPresent</imagePullPolicy>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <os>
                     <name>windows</name>
                 </os>
             </activation>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.googlecode.maven-download-plugin</groupId>
-                        <artifactId>download-maven-plugin</artifactId>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>download-vcpkg</id>
+                                <id>build-image</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>builder-base:${project.version}</name>
+                                            <build>
+                                                <dockerFile>Dockerfile</dockerFile>
+                                                <contextDir>${project.basedir}/builder/windows</contextDir>
+                                                <optimise>true</optimise>
+                                            </build>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>start-build</id>
                                 <phase>generate-resources</phase>
                                 <goals>
-                                    <goal>wget</goal>
+                                    <goal>start</goal>
                                 </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>builder-base:${project.version}</name>
+                                            <run>
+                                                <network>
+                                                    <mode>host</mode>
+                                                </network>
+                                                <user>root</user>
+                                                <log>
+                                                    <prefix>%C</prefix>
+                                                    <date>ISO8601</date>
+                                                    <color>BLUE</color>
+                                                </log>
+                                                <volumes>
+                                                    <bind>
+                                                        <volume>
+                                                            ${project.basedir}/target/generated-sources:/opt/${output.src.dir}
+                                                        </volume>
+                                                        <volume>
+                                                            ${project.build.outputDirectory}:/opt/${output.shared-lib.dir}
+                                                        </volume>
+                                                    </bind>
+                                                </volumes>
+                                                <autoRemove>true</autoRemove>
+                                                <stopMode>graceful</stopMode>
+                                                <containerNamePattern>%e</containerNamePattern>
+                                                <entrypoint>
+                                                    <shell>
+                                                        ./build.sh ${output.src.dir} ${output.shared-lib.dir}
+                                                    </shell>
+                                                </entrypoint>
+                                                <wait>
+                                                    <time>3600000</time>
+                                                    <log>================== Build completed ==================</log>
+                                                </wait>
+                                            </run>
+                                        </image>
+                                    </images>
+                                </configuration>
                             </execution>
                         </executions>
                         <configuration>
-                            <url>http://downloads.sourceforge.net/project/jbpm/jBPM%203/jbpm-3.1.4/jbpm-3.1.4.zip</url>
-                            <unpack>true</unpack>
-                            <outputDirectory>${project.build.directory}/jbpm-3.1.4</outputDirectory>
-                            <md5>df65b5642f33676313ebe4d5b69a3fff</md5>
+                            <verbose>true</verbose>
+                            <useColor>true</useColor>
+                            <imagePullPolicy>IfNotPresent</imagePullPolicy>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -155,82 +301,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>--enable-preview</compilerArgs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>build-image</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
-                        <configuration>
-                            <images>
-                                <image>
-                                    <name>builder-base:${project.version}</name>
-                                    <build>
-                                        <dockerFileDir>${project.basedir}</dockerFileDir>
-                                        <optimise>true</optimise>
-                                    </build>
-                                </image>
-                            </images>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>start-build</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>start</goal>
-                        </goals>
-                        <configuration>
-                            <images>
-                                <image>
-                                    <name>builder-base:${project.version}</name>
-                                    <run>
-                                        <network>
-                                            <mode>host</mode>
-                                        </network>
-                                        <user>root</user>
-                                        <log>
-                                            <prefix>%C</prefix>
-                                            <date>ISO8601</date>
-                                            <color>BLUE</color>
-                                        </log>
-                                        <volumes>
-                                            <bind>
-                                                <volume>
-                                                    ${project.basedir}/target/generated-sources:/opt/${output.src.dir}
-                                                </volume>
-                                                <volume>
-                                                    ${project.build.outputDirectory}:/opt/${output.shared-lib.dir}
-                                                </volume>
-                                            </bind>
-                                        </volumes>
-                                        <autoRemove>true</autoRemove>
-                                        <stopMode>graceful</stopMode>
-                                        <containerNamePattern>%e</containerNamePattern>
-                                        <entrypoint>
-                                            <shell>
-                                                ./build.sh ${output.src.dir} ${output.shared-lib.dir}
-                                            </shell>
-                                        </entrypoint>
-                                        <wait>
-                                            <time>3600000</time>
-                                            <log>================== Build completed ==================</log>
-                                        </wait>
-                                    </run>
-                                </image>
-                            </images>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <verbose>true</verbose>
-                    <useColor>true</useColor>
-                    <imagePullPolicy>IfNotPresent</imagePullPolicy>
                 </configuration>
             </plugin>
         </plugins>
