@@ -1,4 +1,4 @@
-FROM centos:7 AS base
+FROM mcr.microsoft.com/windows/servercore:ltsc2019 AS base
 
 LABEL maintainer="louis sin"
 

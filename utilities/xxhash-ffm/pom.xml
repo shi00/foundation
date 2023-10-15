@@ -61,7 +61,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-base:${project.version}</name>
+                                            <name>builder-base-linux:${project.version}</name>
                                             <build>
                                                 <contextDir>${project.basedir}/builder/linux</contextDir>
                                                 <dockerFile>Dockerfile</dockerFile>
@@ -151,7 +151,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-base:${project.version}</name>
+                                            <name>builder-base-windows:${project.version}</name>
                                             <build>
                                                 <dockerFile>Dockerfile</dockerFile>
                                                 <contextDir>${project.basedir}/builder/windows</contextDir>
