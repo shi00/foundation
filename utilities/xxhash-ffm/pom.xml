@@ -155,7 +155,7 @@
                                             <name>builder-base-windows:${project.version}</name>
                                             <build>
                                                 <dockerFile>Dockerfile</dockerFile>
-                                                <contextDir>${project.basedir}/builder/windows</contextDir>
+                                                <contextDir>${project.basedir}\builder\windows</contextDir>
                                                 <optimise>true</optimise>
                                             </build>
                                         </image>
@@ -185,10 +185,10 @@
                                                 <volumes>
                                                     <bind>
                                                         <volume>
-                                                            D:\workspace\foundation\utilities\xxhash-ffm\target\generated-sources:c:\${output.src.dir}
+                                                            ${project.build.directory}\generated-sources:c:\${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            D:\workspace\foundation\utilities\xxhash-ffm\target\classes:c:\${output.shared-lib.dir}
+                                                            ${project.build.outputDirectory}:c:\${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
