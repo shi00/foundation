@@ -35,9 +35,7 @@ RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_acc
 && wget -t 3 -c --no-check-certificate https://dlcdn.apache.org/maven/maven-3/3.9.4/binaries/apache-maven-3.9.4-bin.tar.gz \
 && tar zxvf apache-maven-3.9.4-bin.tar.gz \
 && mv apache-maven-3.9.4 apache-maven \
-&& wget -t 3 -c --no-check-certificate https://github.com/microsoft/vcpkg/archive/refs/tags/2023.08.09.tar.gz \
-&& tar zxvf 2023.08.09.tar.gz \
-&& mv vcpkg-2023.08.09 vcpkg \
+&& git clone https://github.com/microsoft/vcpkg.git \
 && ./vcpkg/bootstrap-vcpkg.sh \
 && ./vcpkg/vcpkg integrate install \
 && echo "export M2_HOME=/opt/apache-maven" >> /etc/profile \
