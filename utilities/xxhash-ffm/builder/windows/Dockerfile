@@ -5,8 +5,7 @@ LABEL maintainer="louis sin"
 WORKDIR "c:\vcpkg"
 
 # update chocolately package manager
-RUN @powershell ./vcpkg update \
-&& @powershell ./vcpkg upgrade
+RUN @powershell ./vcpkg upgrade  --no-dry-run
 
 RUN choco install openjdk -Y \
 && refreshenv
