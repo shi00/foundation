@@ -15,6 +15,12 @@ cp triplets/x64-linux.cmake custom-triplets/x64-linux-dynamic.cmake
 sed -i 's/set(VCPKG_LIBRARY_LINKAGE static)/set(VCPKG_LIBRARY_LINKAGE dynamic)/g' custom-triplets/x64-linux-dynamic.cmake
 ./vcpkg install xxhash:x64-linux-dynamic --overlay-triplets=custom-triplets
 
+#判断文件是否存在
+if [ ! -f installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" ]; then
+    echo "Failed to build xxhash."
+    exit 1
+fi
+
 mkdir -p /opt/"$SHARDED_LIB_DIR"/native/"$OS_NAME"/"$OS_ARCH"
 cp installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"/native/"$OS_NAME"/"$OS_ARCH"/"$SHARDED_LIB_NAME"
 
