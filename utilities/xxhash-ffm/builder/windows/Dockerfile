@@ -7,8 +7,8 @@ WORKDIR "c:\vcpkg"
 # update vcpkg
 RUN git config --global --add safe.directory C:/vcpkg \
 && git pull
-RUN for /f %i in ('git tag') do (git checkout %i)
-RUN bootstrap-vcpkg.bat
+RUN for /f "tokens=1 delims=-" %i in ('git describe --tags') do git checkout %i
+RUN @powershell ./bootstrap-vcpkg.bat
 
 # install jdk21
 RUN choco install openjdk -Y \
