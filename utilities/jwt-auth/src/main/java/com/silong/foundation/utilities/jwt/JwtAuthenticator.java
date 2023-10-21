@@ -52,6 +52,19 @@ import lombok.extern.slf4j.Slf4j;
 @Accessors(fluent = true)
 public class JwtAuthenticator {
 
+  /** token校验结果 */
+  @Getter
+  @Setter
+  @AllArgsConstructor
+  @NoArgsConstructor
+  @EqualsAndHashCode
+  @ToString
+  public static class Result {
+    public static final Result VALID = new Result(true, null);
+    private boolean isValid;
+    private String cause;
+  }
+
   /**
    * 签名算法
    *
@@ -165,50 +178,82 @@ public class JwtAuthenticator {
    * @param jwtToken token
    * @return true or false
    */
-  public boolean verifyJwtToken(
-      @NonNull String jwtToken, @NonNull Function<Map<String, Claim>, Boolean> payloadsVerifier) {
+  public Result verifyJwtToken(
+      @NonNull String jwtToken, @NonNull Function<Map<String, Claim>, Result> payloadsVerifier) {
     try {
       DecodedJWT jwt = verifier.verify(jwtToken);
-      return checkSubject(jwt.getSubject())
-          && checkIssuer(jwt.getIssuer())
-          && checkJwtId(jwt.getId())
-          && checkAudiences(jwt.getAudience())
-          && payloadsVerifier.apply(jwt.getClaims());
+      Result result = checkSubject(jwt.getSubject());
+      if (!result.isValid) {
+        return result;
+      }
+      result = checkIssuer(jwt.getIssuer());
+      if (!result.isValid) {
+        return result;
+      }
+
+      result = checkJwtId(jwt.getId());
+      if (!result.isValid) {
+        return result;
+      }
+
+      result = checkAudiences(jwt.getAudience());
+      if (!result.isValid) {
+        return result;
+      }
+
+      result = payloadsVerifier.apply(jwt.getClaims());
+      if (!result.isValid) {
+        return result;
+      }
+      return Result.VALID;
     } catch (JWTVerificationException e) {
       log.error("Failed to verify the token.", e);
-      return false;
+      return new Result(false, e.getMessage());
     }
   }
 
-  private boolean checkSubject(String jwtSubject) {
+  private Result checkSubject(String jwtSubject) {
     if (subject == null) {
-      return true;
+      return Result.VALID;
+    } else if (subject.equals(jwtSubject)) {
+      return Result.VALID;
     } else {
-      return subject.equals(jwtSubject);
+      log.error("subject:{} != jwtSubject:{}", subject, jwtSubject);
+      return new Result(false, "Invalid Subject.");
     }
   }
 
-  private boolean checkIssuer(String jwtIssuer) {
+  private Result checkIssuer(String jwtIssuer) {
     if (issuer == null) {
-      return true;
+      return Result.VALID;
+    } else if (issuer.equals(jwtIssuer)) {
+      return Result.VALID;
     } else {
-      return issuer.equals(jwtIssuer);
+      log.error("issuer:{} != jwtIssuer:{}", issuer, jwtIssuer);
+      return new Result(false, "Invalid Issuer.");
     }
   }
 
-  private boolean checkJwtId(String jwtId) {
+  private Result checkJwtId(String jwtId) {
     if (this.jwtId == null) {
-      return true;
+      return Result.VALID;
+    } else if (this.jwtId.equals(jwtId)) {
+      return Result.VALID;
     } else {
-      return this.jwtId.equals(jwtId);
+      log.error("jwtId:{} != Id:{}", this.jwtId, jwtId);
+      return new Result(false, "Invalid JwtId.");
     }
   }
 
-  private boolean checkAudiences(List<String> jwtAudiences) {
+  private Result checkAudiences(List<String> jwtAudiences) {
     if (this.audience == null) {
-      return true;
+      return Result.VALID;
+    } else if (jwtAudiences != null
+        && jwtAudiences.size() == 1
+        && jwtAudiences.contains(audience)) {
+      return Result.VALID;
     } else {
-      return jwtAudiences != null && jwtAudiences.contains(audience) && jwtAudiences.size() == 1;
+      return new Result(false, "Invalid Audience.");
     }
   }
 }

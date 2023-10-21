@@ -25,6 +25,7 @@ import static com.silong.foundation.utilities.jwt.JwtAuthenticator.SignatureAlgo
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.auth0.jwt.interfaces.Claim;
+import com.silong.foundation.utilities.jwt.JwtAuthenticator.Result;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -100,17 +101,19 @@ public class JwtAuthenticatorTests {
               Map.entry("9", DOUBLE_VALUE),
               Map.entry("10", LONG_VALUE)));
 
-  private static boolean check(Map<String, Claim> m) {
-    return m.get("1").asString().equals(STR_VALUE)
-        && m.get("4").as(List.class).equals(LIST_VALUE)
-        && m.get("5").as(Map.class).equals(MAP_VALUE)
-        && m.get("6").asInt().equals(INTEGER_VALUE)
-        && m.get("7").asBoolean().equals(BOOLEAN_VALUE)
-        && m.get("9").as(Double.class).equals(DOUBLE_VALUE)
-        && m.get("10").as(Long.class).equals(LONG_VALUE)
-        && m.get("11").isNull()
-        && m.get("3").asInstant().equals(NOW_INSTANT)
-        && m.get("2").asDate().equals(NOW_DATE);
+  private static Result check(Map<String, Claim> m) {
+    boolean result =
+        m.get("1").asString().equals(STR_VALUE)
+            && m.get("4").as(List.class).equals(LIST_VALUE)
+            && m.get("5").as(Map.class).equals(MAP_VALUE)
+            && m.get("6").asInt().equals(INTEGER_VALUE)
+            && m.get("7").asBoolean().equals(BOOLEAN_VALUE)
+            && m.get("9").as(Double.class).equals(DOUBLE_VALUE)
+            && m.get("10").as(Long.class).equals(LONG_VALUE)
+            && m.get("11").isNull()
+            && m.get("3").asInstant().equals(NOW_INSTANT)
+            && m.get("2").asDate().equals(NOW_DATE);
+    return result ? Result.VALID : new Result(false, "Invalid Payloads.");
   }
 
   private static byte[] randomKey(int bits) {
@@ -134,8 +137,9 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)),
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     Assertions.assertTrue(
-        authenticator.verifyJwtToken(
-            authenticator.generateJwtToken(PAYLOAD), JwtAuthenticatorTests::check));
+        authenticator
+            .verifyJwtToken(authenticator.generateJwtToken(PAYLOAD), JwtAuthenticatorTests::check)
+            .isValid());
   }
 
   @Test
@@ -150,8 +154,9 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)),
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     Assertions.assertTrue(
-        authenticator.verifyJwtToken(
-            authenticator.generateJwtToken(PAYLOAD), JwtAuthenticatorTests::check));
+        authenticator
+            .verifyJwtToken(authenticator.generateJwtToken(PAYLOAD), JwtAuthenticatorTests::check)
+            .isValid());
   }
 
   @Test
@@ -166,8 +171,9 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)),
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     Assertions.assertTrue(
-        authenticator.verifyJwtToken(
-            authenticator.generateJwtToken(PAYLOAD), JwtAuthenticatorTests::check));
+        authenticator
+            .verifyJwtToken(authenticator.generateJwtToken(PAYLOAD), JwtAuthenticatorTests::check)
+            .isValid());
   }
 
   @Test
@@ -183,7 +189,8 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
     Thread.sleep(5000);
-    Assertions.assertFalse(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertFalse(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -199,7 +206,8 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
     Thread.sleep(5000);
-    Assertions.assertFalse(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertFalse(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -215,7 +223,8 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
     Thread.sleep(5000);
-    Assertions.assertFalse(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertFalse(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -231,7 +240,8 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
     Thread.sleep(5000);
-    Assertions.assertFalse(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertFalse(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -246,7 +256,8 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)),
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -261,7 +272,8 @@ public class JwtAuthenticatorTests {
             null,
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -276,7 +288,8 @@ public class JwtAuthenticatorTests {
             null,
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -284,7 +297,8 @@ public class JwtAuthenticatorTests {
     JwtAuthenticator authenticator =
         new JwtAuthenticator(HMAC_SHA384, randomKey(384), 1, null, null, null, null);
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -299,7 +313,8 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)),
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -314,7 +329,8 @@ public class JwtAuthenticatorTests {
             null,
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -329,7 +345,8 @@ public class JwtAuthenticatorTests {
             null,
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -337,7 +354,8 @@ public class JwtAuthenticatorTests {
     JwtAuthenticator authenticator =
         new JwtAuthenticator(HMAC_SHA256, randomKey(256), 1, null, null, null, null);
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -352,7 +370,8 @@ public class JwtAuthenticatorTests {
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)),
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -367,7 +386,8 @@ public class JwtAuthenticatorTests {
             null,
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -382,7 +402,8 @@ public class JwtAuthenticatorTests {
             null,
             RandomStringUtils.random(RandomUtils.nextInt(1, 128)));
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 
   @Test
@@ -390,6 +411,7 @@ public class JwtAuthenticatorTests {
     JwtAuthenticator authenticator =
         new JwtAuthenticator(HMAC_SHA512, randomKey(512), 1, null, null, null, null);
     String jwtToken = authenticator.generateJwtToken(PAYLOAD);
-    Assertions.assertTrue(authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check));
+    Assertions.assertTrue(
+        authenticator.verifyJwtToken(jwtToken, JwtAuthenticatorTests::check).isValid());
   }
 }
