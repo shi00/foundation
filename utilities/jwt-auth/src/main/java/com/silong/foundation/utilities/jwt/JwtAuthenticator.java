@@ -33,7 +33,6 @@ import java.util.function.Function;
  * @since 2023-10-22 9:32
  */
 public interface JwtAuthenticator {
-
   /**
    * 对指定载荷进行签名，产生签名Token
    *
