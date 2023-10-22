@@ -56,12 +56,16 @@ public class JwtAuthenticator {
   @Getter
   @Setter
   @AllArgsConstructor
-  @NoArgsConstructor
+  @Builder
   @EqualsAndHashCode
   @ToString
   public static class Result {
     public static final Result VALID = new Result(true, null);
-    private boolean isValid;
+
+    /** 是否有效 */
+    private boolean valid;
+
+    /** 错误原因 */
     private String cause;
   }
 
@@ -183,26 +187,26 @@ public class JwtAuthenticator {
     try {
       DecodedJWT jwt = verifier.verify(jwtToken);
       Result result = checkSubject(jwt.getSubject());
-      if (!result.isValid) {
+      if (!result.valid) {
         return result;
       }
       result = checkIssuer(jwt.getIssuer());
-      if (!result.isValid) {
+      if (!result.valid) {
         return result;
       }
 
       result = checkJwtId(jwt.getId());
-      if (!result.isValid) {
+      if (!result.valid) {
         return result;
       }
 
       result = checkAudiences(jwt.getAudience());
-      if (!result.isValid) {
+      if (!result.valid) {
         return result;
       }
 
       result = payloadsVerifier.apply(jwt.getClaims());
-      if (!result.isValid) {
+      if (!result.valid) {
         return result;
       }
       return Result.VALID;
