@@ -47,7 +47,7 @@ import org.junit.jupiter.api.Test;
  * @version 1.0.0
  * @since 2023-10-21 19:02
  */
-public class HmacJwtAuthenticatorTests {
+public class SimpleJwtAuthenticatorTests {
 
   private static final Instant NOW_INSTANT = Instant.now().truncatedTo(SECONDS);
 
@@ -152,30 +152,30 @@ public class HmacJwtAuthenticatorTests {
   @Test
   public void test1() {
     Algorithm algorithm = Algorithm.HMAC256(randomKey(256));
-    HmacJwtAuthenticator authenticator =
-        HmacJwtAuthenticator.builder().signatureAlgorithm(algorithm).build();
+    SimpleJwtAuthenticator authenticator =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).build();
     String token = authenticator.generate(PAYLOAD);
-    Result result = authenticator.verify(token, HmacJwtAuthenticatorTests::check);
+    Result result = authenticator.verify(token, SimpleJwtAuthenticatorTests::check);
     Assertions.assertTrue(result.isValid(), result::cause);
   }
 
   @Test
   public void test2() {
     Algorithm algorithm = Algorithm.HMAC384(randomKey(384));
-    HmacJwtAuthenticator authenticator =
-        HmacJwtAuthenticator.builder().signatureAlgorithm(algorithm).build();
+    SimpleJwtAuthenticator authenticator =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).build();
     String token = authenticator.generate(PAYLOAD);
-    Result result = authenticator.verify(token, HmacJwtAuthenticatorTests::check);
+    Result result = authenticator.verify(token, SimpleJwtAuthenticatorTests::check);
     Assertions.assertTrue(result.isValid(), result::cause);
   }
 
   @Test
   public void test3() {
     Algorithm algorithm = Algorithm.HMAC512(randomKey(512));
-    HmacJwtAuthenticator authenticator =
-        HmacJwtAuthenticator.builder().signatureAlgorithm(algorithm).build();
+    SimpleJwtAuthenticator authenticator =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).build();
     String token = authenticator.generate(PAYLOAD);
-    Result result = authenticator.verify(token, HmacJwtAuthenticatorTests::check);
+    Result result = authenticator.verify(token, SimpleJwtAuthenticatorTests::check);
     Assertions.assertTrue(result.isValid(), result::cause);
   }
 
@@ -189,21 +189,24 @@ public class HmacJwtAuthenticatorTests {
   @Test
   public void testHMC256Exp() {
     Algorithm algorithm = Algorithm.HMAC256(randomKey(256));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 0, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 0, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertFalse(result.isValid(), result::cause);
   }
 
   @Test
   public void testHMC256Exp1() {
     Algorithm algorithm = Algorithm.HMAC256(randomKey(256));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 1, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 1, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertFalse(result.isValid(), result::cause);
   }
 
   @Test
   public void testHMC256Exp2() {
     Algorithm algorithm = Algorithm.HMAC256(randomKey(256));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 3, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 3, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertTrue(result.isValid(), result::cause);
   }
 
@@ -217,21 +220,24 @@ public class HmacJwtAuthenticatorTests {
   @Test
   public void testHMC384Exp() {
     Algorithm algorithm = Algorithm.HMAC384(randomKey(384));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 0, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 0, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertFalse(result.isValid(), result::cause);
   }
 
   @Test
   public void testHMC384Exp1() {
     Algorithm algorithm = Algorithm.HMAC384(randomKey(384));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 1, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 1, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertFalse(result.isValid(), result::cause);
   }
 
   @Test
   public void testHMC384Exp2() {
     Algorithm algorithm = Algorithm.HMAC384(randomKey(384));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 3, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 3, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertTrue(result.isValid(), result::cause);
   }
 
@@ -245,28 +251,31 @@ public class HmacJwtAuthenticatorTests {
   @Test
   public void testHMC512Exp() {
     Algorithm algorithm = Algorithm.HMAC512(randomKey(512));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 0, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 0, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertFalse(result.isValid(), result::cause);
   }
 
   @Test
   public void testHMC512Exp1() {
     Algorithm algorithm = Algorithm.HMAC512(randomKey(512));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 1, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 1, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertFalse(result.isValid(), result::cause);
   }
 
   @Test
   public void testHMC512Exp2() {
     Algorithm algorithm = Algorithm.HMAC512(randomKey(512));
-    Result result = doTest(algorithm, Duration.of(3, SECONDS), 3, HmacJwtAuthenticatorTests::sleep);
+    Result result =
+        doTest(algorithm, Duration.of(3, SECONDS), 3, SimpleJwtAuthenticatorTests::sleep);
     Assertions.assertTrue(result.isValid(), result::cause);
   }
 
   private Result doTest(
       Algorithm algorithm, Duration period, Integer leeway, Consumer<Duration> timeConsumer) {
-    HmacJwtAuthenticator authenticator =
-        HmacJwtAuthenticator.builder()
+    SimpleJwtAuthenticator authenticator =
+        SimpleJwtAuthenticator.builder()
             .signatureAlgorithm(algorithm)
             .headers(HEADERS)
             .leeway(leeway)
@@ -286,7 +295,7 @@ public class HmacJwtAuthenticatorTests {
     if (timeConsumer != null) {
       timeConsumer.accept(period);
     }
-    return authenticator.verify(token, HmacJwtAuthenticatorTests::check);
+    return authenticator.verify(token, SimpleJwtAuthenticatorTests::check);
   }
 
   @SneakyThrows

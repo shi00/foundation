@@ -51,53 +51,53 @@ import lombok.extern.slf4j.Slf4j;
 @ToString
 @EqualsAndHashCode
 @Accessors(fluent = true)
-public class HmacJwtAuthenticator implements JwtAuthenticator {
+public class SimpleJwtAuthenticator implements JwtAuthenticator {
 
   /** 构造器 */
   public class Builder {
     public Builder signatureAlgorithm(Algorithm signatureAlgorithm) {
-      HmacJwtAuthenticator.this.signatureAlgorithm = signatureAlgorithm;
+      SimpleJwtAuthenticator.this.signatureAlgorithm = signatureAlgorithm;
       return this;
     }
 
     public Builder leeway(int leeway) {
-      HmacJwtAuthenticator.this.leeway = leeway;
+      SimpleJwtAuthenticator.this.leeway = leeway;
       return this;
     }
 
     public Builder headers(Map<String, Object> headers) {
-      HmacJwtAuthenticator.this.headers = headers;
+      SimpleJwtAuthenticator.this.headers = headers;
       return this;
     }
 
     public Builder issuer(String issuer) {
-      HmacJwtAuthenticator.this.issuer = issuer;
+      SimpleJwtAuthenticator.this.issuer = issuer;
       return this;
     }
 
     public Builder subject(String subject) {
-      HmacJwtAuthenticator.this.subject = subject;
+      SimpleJwtAuthenticator.this.subject = subject;
       return this;
     }
 
     public Builder jwtId(String jwtId) {
-      HmacJwtAuthenticator.this.jwtId = jwtId;
+      SimpleJwtAuthenticator.this.jwtId = jwtId;
       return this;
     }
 
     public Builder audiences(String[] audiences) {
-      HmacJwtAuthenticator.this.audiences = audiences;
+      SimpleJwtAuthenticator.this.audiences = audiences;
       return this;
     }
 
     public Builder period(Duration period) {
-      HmacJwtAuthenticator.this.period = period;
+      SimpleJwtAuthenticator.this.period = period;
       return this;
     }
 
-    public HmacJwtAuthenticator build() {
-      HmacJwtAuthenticator.this.verifier = HmacJwtAuthenticator.this.buildVerifier();
-      return HmacJwtAuthenticator.this;
+    public SimpleJwtAuthenticator build() {
+      SimpleJwtAuthenticator.this.verifier = SimpleJwtAuthenticator.this.buildVerifier();
+      return SimpleJwtAuthenticator.this;
     }
   }
 
@@ -129,7 +129,7 @@ public class HmacJwtAuthenticator implements JwtAuthenticator {
   @Getter private int leeway;
 
   /** 构造方法 */
-  private HmacJwtAuthenticator() {}
+  private SimpleJwtAuthenticator() {}
 
   @Override
   public String generate(@NonNull Map<String, ?> payloads) {
@@ -198,6 +198,6 @@ public class HmacJwtAuthenticator implements JwtAuthenticator {
    * @return 构造器
    */
   public static Builder builder() {
-    return new HmacJwtAuthenticator().new Builder();
+    return new SimpleJwtAuthenticator().new Builder();
   }
 }
