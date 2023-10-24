@@ -42,13 +42,6 @@ public interface JwtAuthenticator {
   String generate(Map<String, ?> payloads);
 
   /**
-   * 对预置载荷进行签名，产生签名Token
-   *
-   * @return 签名token
-   */
-  String generateByDefaultPayloads();
-
-  /**
    * 校验token
    *
    * @param jwtToken token
@@ -56,12 +49,4 @@ public interface JwtAuthenticator {
    * @return 校验结果
    */
   Result verify(String jwtToken, Function<Map<String, Claim>, Result> payloadsVerifier);
-
-  /**
-   * 校验token
-   *
-   * @param jwtToken token
-   * @return 校验结果
-   */
-  Result verifyByDefaultPayloadsVerifier(String jwtToken);
 }
