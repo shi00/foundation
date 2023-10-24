@@ -180,6 +180,78 @@ public class SimpleJwtAuthenticatorTests {
   }
 
   @Test
+  public void test4() {
+    Algorithm algorithm = Algorithm.HMAC512(randomKey(512));
+    SimpleJwtAuthenticator authenticatorA =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).issuer("A").build();
+    SimpleJwtAuthenticator authenticatorB =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).issuer("B").build();
+    String token = authenticatorA.generate(PAYLOAD);
+    Result result = authenticatorB.verify(token, m -> Result.VALID);
+    Assertions.assertFalse(result.isValid(), result::cause);
+  }
+
+  @Test
+  public void test5() {
+    Algorithm algorithm = Algorithm.HMAC256(randomKey(256));
+    SimpleJwtAuthenticator authenticatorA =
+        SimpleJwtAuthenticator.builder()
+            .signatureAlgorithm(algorithm)
+            .audiences(new String[] {"A"})
+            .build();
+    SimpleJwtAuthenticator authenticatorB =
+        SimpleJwtAuthenticator.builder()
+            .signatureAlgorithm(algorithm)
+            .audiences(new String[] {"A", "B"})
+            .build();
+    String token = authenticatorA.generate(PAYLOAD);
+    Result result = authenticatorB.verify(token, m -> Result.VALID);
+    Assertions.assertFalse(result.isValid(), result::cause);
+  }
+
+  @Test
+  public void test6() {
+    Algorithm algorithm = Algorithm.HMAC384(randomKey(384));
+    SimpleJwtAuthenticator authenticatorA =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).subject("A").build();
+    SimpleJwtAuthenticator authenticatorB =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).subject("B").build();
+    String token = authenticatorA.generate(PAYLOAD);
+    Result result = authenticatorB.verify(token, m -> Result.VALID);
+    Assertions.assertFalse(result.isValid(), result::cause);
+  }
+
+  @Test
+  public void test7() {
+    Algorithm algorithm = Algorithm.HMAC384(randomKey(384));
+    SimpleJwtAuthenticator authenticatorA =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).jwtId("A").build();
+    SimpleJwtAuthenticator authenticatorB =
+        SimpleJwtAuthenticator.builder().signatureAlgorithm(algorithm).jwtId("B").build();
+    String token = authenticatorA.generate(PAYLOAD);
+    Result result = authenticatorB.verify(token, m -> Result.VALID);
+    Assertions.assertFalse(result.isValid(), result::cause);
+  }
+
+  @Test
+  public void test8() {
+    Algorithm algorithm = Algorithm.HMAC384(randomKey(384));
+    SimpleJwtAuthenticator authenticatorA =
+        SimpleJwtAuthenticator.builder()
+            .signatureAlgorithm(algorithm)
+            .headers(Map.of("A", new TestObj(1, "s")))
+            .build();
+    SimpleJwtAuthenticator authenticatorB =
+        SimpleJwtAuthenticator.builder()
+            .signatureAlgorithm(algorithm)
+            .headers(Map.of("B", new TestObj(1, "s")))
+            .build();
+    String token = authenticatorA.generate(PAYLOAD);
+    Result result = authenticatorB.verify(token, m -> Result.VALID);
+    Assertions.assertTrue(result.isValid(), result::cause);
+  }
+
+  @Test
   public void testHMC256WithoutExp() {
     Algorithm algorithm = Algorithm.HMAC256(randomKey(256));
     Result result = doTest(algorithm, null, 0, null);

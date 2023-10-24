@@ -95,6 +95,17 @@ public class SimpleJwtAuthenticator implements JwtAuthenticator {
       return this;
     }
 
+    public Builder defaultPayloads(Map<String, ?> defaultPayloads) {
+      SimpleJwtAuthenticator.this.defaultPayloads = defaultPayloads;
+      return this;
+    }
+
+    public Builder defaultPayloadsVerifier(
+        Function<Map<String, Claim>, Result> defaultPayloadsVerifier) {
+      SimpleJwtAuthenticator.this.defaultPayloadsVerifier = defaultPayloadsVerifier;
+      return this;
+    }
+
     public SimpleJwtAuthenticator build() {
       SimpleJwtAuthenticator.this.verifier = SimpleJwtAuthenticator.this.buildVerifier();
       return SimpleJwtAuthenticator.this;
@@ -128,6 +139,12 @@ public class SimpleJwtAuthenticator implements JwtAuthenticator {
   /** 超期时间余地，单位：秒 */
   @Getter private int leeway;
 
+  /** 默认token负载 */
+  @Getter private Map<String, ?> defaultPayloads;
+
+  /** 默认token负载校验器 */
+  @Getter private Function<Map<String, Claim>, Result> defaultPayloadsVerifier;
+
   /** 构造方法 */
   private SimpleJwtAuthenticator() {}
 
@@ -156,6 +173,11 @@ public class SimpleJwtAuthenticator implements JwtAuthenticator {
     }
     return builder.sign(
         Objects.requireNonNull(signatureAlgorithm, "Signature algorithm must be specified."));
+  }
+
+  @Override
+  public String generateByDefaultPayloads() {
+    return generate(Objects.requireNonNull(defaultPayloads, "defaultPayloads must not be null."));
   }
 
   private JWTVerifier buildVerifier() {
@@ -190,6 +212,14 @@ public class SimpleJwtAuthenticator implements JwtAuthenticator {
       log.error("Failed to verify the jwtToken: {}.", jwtToken, e);
       return new Result(false, e.getMessage());
     }
+  }
+
+  @Override
+  public Result verifyByDefaultPayloadsVerifier(String jwtToken) {
+    return verify(
+        jwtToken,
+        Objects.requireNonNull(
+            defaultPayloadsVerifier, "defaultPayloadsVerifier must not be null."));
   }
 
   /**
