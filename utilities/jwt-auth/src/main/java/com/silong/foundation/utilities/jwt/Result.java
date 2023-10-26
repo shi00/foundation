@@ -40,8 +40,8 @@ public class Result {
   public static final Result VALID = new Result(true, null);
 
   /** 是否有效 */
-  @Setter private boolean isValid;
+  private boolean isValid;
 
   /** 错误原因 */
-  @Setter private String cause;
+  private String cause;
 }

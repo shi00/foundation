@@ -183,12 +183,21 @@ public class SimpleJwtAuthenticator implements JwtAuthenticator {
   @Override
   public Result verify(
       @NonNull String jwtToken, @NonNull Function<Map<String, Claim>, Result> payloadsVerifier) {
+    Result result = null;
     try {
       DecodedJWT jwt = verifier.verify(jwtToken);
-      return payloadsVerifier.apply(jwt.getClaims());
+      return result = payloadsVerifier.apply(jwt.getClaims());
     } catch (JWTVerificationException e) {
-      log.error("Failed to verify the jwtToken: {}.", jwtToken, e);
+      log.warn("Failed to verify the jwtToken: {}.", jwtToken, e);
       return new Result(false, e.getMessage());
+    } finally {
+      if (result != null) {
+        if (!result.isValid()) {
+          log.warn("Failed to verify the jwtToken: {}, cause: {}", jwtToken, result.cause());
+        } else if (log.isDebugEnabled()) {
+          log.debug("Successfully authenticated the jwtToken: {}", jwtToken);
+        }
+      }
     }
   }
 
