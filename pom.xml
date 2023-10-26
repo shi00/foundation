@@ -80,6 +80,7 @@
         <!--        <module>okhttp3-webclient</module>-->
         <module>distributed-job/devastator</module>
         <module>distributed-job/bonecrusher</module>
+        <module>distributed-job/mixmaster</module>
         <module>distributed-job/discovery</module>
         <module>crypto</module>
         <module>complex-job/framework</module>
