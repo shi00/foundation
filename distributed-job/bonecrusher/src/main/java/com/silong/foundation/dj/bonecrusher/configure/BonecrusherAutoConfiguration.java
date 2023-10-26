@@ -31,7 +31,6 @@ import com.silong.foundation.dj.bonecrusher.handler.FileServerHandler;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import com.silong.foundation.utilities.jwt.SimpleJwtAuthenticator;
 import io.netty.handler.logging.LoggingHandler;
-import java.util.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -66,18 +65,16 @@ public class BonecrusherAutoConfiguration {
         // 设置签名密钥
         .signatureAlgorithm(
             Algorithm.HMAC256(
-                Base64.getDecoder()
-                    .decode(
-                        AesGcmToolkit.encrypt(
-                            properties.getAuth().getSignKey(), properties.getAuth().getWorkKey()))))
+                AesGcmToolkit.decrypt(
+                    properties.getAuth().getSignKey(), properties.getAuth().getWorkKey())))
         // 设置超期时间
         .period(properties.getAuth().getExpires())
         .build();
   }
 
   @Bean
-  public AuthChannelHandler authChannelHandler(Bonecrusher bonecrusher) {
-    return new AuthChannelHandler(bonecrusher().simpleClusterViewSupplier());
+  public AuthChannelHandler authChannelHandler(JwtAuthenticator jwtAuthenticator) {
+    return new AuthChannelHandler(jwtAuthenticator);
   }
 
   @Bean
@@ -91,8 +88,11 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Bean
-  public Bonecrusher bonecrusher() {
-    return new Bonecrusher(properties);
+  public Bonecrusher bonecrusher(
+      LoggingHandler loggingHandler,
+      AuthChannelHandler authChannelHandler,
+      FileServerHandler fileServerHandler) {
+    return new Bonecrusher(properties, loggingHandler, authChannelHandler, fileServerHandler);
   }
 
   @Autowired

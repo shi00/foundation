@@ -39,11 +39,9 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.scheduling.annotation.Async;
@@ -66,12 +64,6 @@ public class Bonecrusher implements ApplicationListener<PayloadApplicationEvent<
 
   private final ServerBootstrap serverBootstrap;
 
-  private LoggingHandler loggingHandler;
-
-  private FileServerHandler fileServerHandler;
-
-  private AuthChannelHandler authChannelHandler;
-
   /** 保存当前集群视图 */
   private final AtomicReference<SimpleClusterView> simpleClusterViewRef = new AtomicReference<>();
 
@@ -82,8 +74,15 @@ public class Bonecrusher implements ApplicationListener<PayloadApplicationEvent<
    * 构造方法
    *
    * @param properties 配置
+   * @param loggingHandler 日志打印处理器
+   * @param authChannelHandler 鉴权处理器
+   * @param fileServerHandler 文件下载处理器
    */
-  public Bonecrusher(@NonNull BonecrusherProperties properties) {
+  public Bonecrusher(
+      @NonNull BonecrusherProperties properties,
+      @NonNull LoggingHandler loggingHandler,
+      @NonNull AuthChannelHandler authChannelHandler,
+      @NonNull FileServerHandler fileServerHandler) {
     this.properties = properties;
     this.serverBootstrap =
         new ServerBootstrap()
@@ -114,7 +113,7 @@ public class Bonecrusher implements ApplicationListener<PayloadApplicationEvent<
                   protected void initChannel(UdtChannel ch) {
                     ch.pipeline()
                         .addLast(loggingHandler)
-                        .addLast(authChannelHandler)
+                        .addLast(authChannelHandler.clusterViewSupplier(simpleClusterViewRef::get))
                         .addLast(new ChunkedWriteHandler())
                         .addLast(fileServerHandler);
                   }
@@ -145,30 +144,6 @@ public class Bonecrusher implements ApplicationListener<PayloadApplicationEvent<
     bossGroup.shutdownGracefully();
     workersGroup.shutdownGracefully();
     log.info("The bonecrusher has been shutdown gracefully.");
-  }
-
-  /**
-   * 获取当前集群视图
-   *
-   * @return 集群视图
-   */
-  public Supplier<SimpleClusterView> simpleClusterViewSupplier() {
-    return simpleClusterViewRef::get;
-  }
-
-  @Autowired
-  public void setLoggingHandler(LoggingHandler loggingHandler) {
-    this.loggingHandler = loggingHandler;
-  }
-
-  @Autowired
-  public void setAuthChannelHandler(AuthChannelHandler authChannelHandler) {
-    this.authChannelHandler = authChannelHandler;
-  }
-
-  @Autowired
-  public void setFileServerHandler(FileServerHandler fileServerHandler) {
-    this.fileServerHandler = fileServerHandler;
   }
 
   /**

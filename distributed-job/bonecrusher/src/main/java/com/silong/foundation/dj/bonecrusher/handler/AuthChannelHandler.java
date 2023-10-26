@@ -46,8 +46,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import lombok.NonNull;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Channel鉴权处理器，接收集群
@@ -68,19 +69,21 @@ public class AuthChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   private static final String GENERATOR_NAME_KEY = "generator";
 
-  private final Supplier<SimpleClusterView> clusterViewSupplier;
+  @Setter
+  @Accessors(fluent = true)
+  private Supplier<SimpleClusterView> clusterViewSupplier;
 
   /** 鉴权工具 */
-  private JwtAuthenticator jwtAuthenticator;
+  private final JwtAuthenticator jwtAuthenticator;
 
   /**
    * 构造方法
    *
-   * @param clusterViewSupplier 集群视图提供者
+   * @param jwtAuthenticator 认证处理器
    */
-  public AuthChannelHandler(@NonNull Supplier<SimpleClusterView> clusterViewSupplier) {
+  public AuthChannelHandler(@NonNull JwtAuthenticator jwtAuthenticator) {
     super(true);
-    this.clusterViewSupplier = clusterViewSupplier;
+    this.jwtAuthenticator = jwtAuthenticator;
   }
 
   /**
@@ -177,10 +180,5 @@ public class AuthChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
         "An exception occurs that causes the channel to be closed. {}",
         NioUdtProvider.socketUDT(ctx.channel()).toStringOptions());
     ctx.close();
-  }
-
-  @Autowired
-  public void setJwtAuthenticator(JwtAuthenticator jwtAuthenticator) {
-    this.jwtAuthenticator = jwtAuthenticator;
   }
 }
