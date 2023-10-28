@@ -24,12 +24,14 @@ package com.silong.foundation.dj.bonecrusher.configure;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
-import com.silong.foundation.dj.bonecrusher.Bonecrusher;
+import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
-import com.silong.foundation.dj.bonecrusher.handler.AuthChannelHandler;
-import com.silong.foundation.dj.bonecrusher.handler.FileServerHandler;
+import com.silong.foundation.dj.bonecrusher.handler.*;
+import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import com.silong.foundation.utilities.jwt.SimpleJwtAuthenticator;
+import io.netty.handler.codec.protobuf.ProtobufDecoder;
+import io.netty.handler.codec.protobuf.ProtobufEncoder;
 import io.netty.handler.logging.LoggingHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -44,15 +46,28 @@ import org.springframework.context.annotation.Configuration;
  * @since 2023-10-24 14:41
  */
 @Configuration
-@EnableConfigurationProperties(BonecrusherProperties.class)
+@EnableConfigurationProperties({BonecrusherProperties.class, BonecrusherClientProperties.class})
 public class BonecrusherAutoConfiguration {
 
   static {
     RootKey.initialize();
   }
 
-  /** 配置 */
-  private BonecrusherProperties properties;
+  /** 服务器配置 */
+  private BonecrusherProperties serverProperties;
+
+  /** 客户端配置 */
+  private BonecrusherClientProperties clientProperties;
+
+  @Bean
+  public ProtobufDecoder protobufDecoder() {
+    return new ProtobufDecoder(Messages.Request.getDefaultInstance());
+  }
+
+  @Bean
+  public RespChannelHandler respChannelHandler() {
+    return new RespChannelHandler();
+  }
 
   /**
    * jwt 鉴权处理器
@@ -66,37 +81,40 @@ public class BonecrusherAutoConfiguration {
         .signatureAlgorithm(
             Algorithm.HMAC256(
                 AesGcmToolkit.decrypt(
-                    properties.getAuth().getSignKey(), properties.getAuth().getWorkKey())))
+                    serverProperties.getAuth().getSignKey(),
+                    serverProperties.getAuth().getWorkKey())))
         // 设置超期时间
-        .period(properties.getAuth().getExpires())
+        .period(serverProperties.getAuth().getExpires())
         .build();
   }
 
   @Bean
-  public AuthChannelHandler authChannelHandler(JwtAuthenticator jwtAuthenticator) {
-    return new AuthChannelHandler(jwtAuthenticator);
+  public ServerAuthChannelHandler serverAuthChannelHandler(JwtAuthenticator jwtAuthenticator) {
+    return new ServerAuthChannelHandler(serverProperties, jwtAuthenticator);
+  }
+
+  @Bean
+  public ProtobufEncoder protobufEncoder() {
+    return new ProtobufEncoder();
   }
 
   @Bean
   public FileServerHandler fileServerHandler() {
-    return new FileServerHandler(properties.getDataStorePath());
+    return new FileServerHandler(serverProperties.getDataStorePath());
   }
 
   @Bean
   public LoggingHandler loggingHandler() {
-    return new LoggingHandler(properties.getLogLevel());
-  }
-
-  @Bean
-  public Bonecrusher bonecrusher(
-      LoggingHandler loggingHandler,
-      AuthChannelHandler authChannelHandler,
-      FileServerHandler fileServerHandler) {
-    return new Bonecrusher(properties, loggingHandler, authChannelHandler, fileServerHandler);
+    return new LoggingHandler(serverProperties.getLogLevel());
   }
 
   @Autowired
-  public void setProperties(BonecrusherProperties properties) {
-    this.properties = properties;
+  public void setServerProperties(BonecrusherProperties serverProperties) {
+    this.serverProperties = serverProperties;
+  }
+
+  @Autowired
+  public void setClientProperties(BonecrusherClientProperties clientProperties) {
+    this.clientProperties = clientProperties;
   }
 }

@@ -9,9 +9,9 @@ option java_outer_classname = "Messages";
 //请求
 message Request {
   Type type = 1; //请求类型
+  string token = 2; //鉴权令牌
   oneof body{
-    LoadingClassReq loading_class = 2; // 类加载请求
-    LoginReq  login = 3; //登录请求
+    LoadingClassReq loading_class = 3; // 类加载请求
     SyncDataReq sync_data = 4; // 数据同步请求
   }
 }
@@ -19,23 +19,8 @@ message Request {
 //响应
 message Response {
   Type type = 1; //响应类型
-  oneof body{
-    LoadingClassResp loading_class = 2; // 类加载响应
-    LoginResp login = 3; //响应结果
-    SyncDataResp sync_data = 4 ; //数据同步
-  }
-}
-
-
-//登录请求
-message LoginReq{
-  string token = 1; //访问令牌
-  string generator = 2;//token生成者
-}
-
-//登录响应
-message LoginResp{
-  Result result = 1; //响应结果
+  Result result = 2;
+  optional DataBlockArray data_block_array = 3 ; //数据块
 }
 
 //加载类请求
@@ -43,21 +28,14 @@ message LoadingClassReq{
   string class_fqdn = 1; //类加载器加载的全限定名
 }
 
-//加载类响应
-message LoadingClassResp{
-  Result result = 1; //结果
-  optional DataBlock data_block = 2 ; //数据块
-}
-
 //数据同步请求
 message SyncDataReq {
-  string partitionNo = 1; // 需要同步的分区编号
+  string partition_no = 1; // 需要同步的分区编号
 }
 
-//数据响应
-message SyncDataResp {
-  Result result = 1; //响应结果
-  DataBlock data_block = 2 ; //数据块
+//数据块数组
+message DataBlockArray{
+  repeated DataBlock data_block = 1; //数据块数组
 }
 
 //数据块
@@ -81,8 +59,7 @@ message Result
 enum Type{
   LOADING_CLASS_REQ = 0; //类加载请求
   LOADING_CLASS_RESP = 1; //类加载响应
-  LOGIN_REQ = 2; //登录请求
-  LOGIN_RESP = 3; //登录响应
-  DATA_SYNC_REQ = 4; //数据同步请求
-  DATA_SYNC_RESP = 5; //数据同步响应
+  DATA_SYNC_REQ = 3; //数据同步请求
+  DATA_SYNC_RESP = 4; //数据同步响应
+  AUTHENTICATION_FAILED_RESP = 5; //鉴权失败
 }

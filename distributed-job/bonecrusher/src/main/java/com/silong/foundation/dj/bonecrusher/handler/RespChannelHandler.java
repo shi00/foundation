@@ -19,44 +19,28 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.message;
+package com.silong.foundation.dj.bonecrusher.handler;
 
-import lombok.Getter;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
- * 错误码
+ * 客户端响应处理器
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-10-26 0:03
+ * @since 2023-10-26 23:25
  */
-@Getter
-public enum ErrorCode {
+@Sharable
+public class RespChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
-  /** 找不到对应的class */
-  CLASS_NOT_FOUND(102, "The specified class[%s] cannot be found."),
-
-  /** 登录失败 */
-  PERFORM_OPERATIONS_WITHOUT_LOGGING_IN(
-      101, "Other operations can only be performed after successful login."),
-
-  /** 加载类成功 */
-  LOADING_CLASS_SUCCESSFUL(0, "Loading class[%s] successfully."),
-
-  /** 鉴权失败 */
-  AUTHENTICATION_FAILED(100, "Authentication failed."),
-
-  /** 成功 */
-  SUCCESS(0, null);
-
-  /** 错误码 */
-  final int code;
-
-  /** 错误描述 */
-  final String desc;
-
-  ErrorCode(int code, String desc) {
-    this.code = code;
-    this.desc = desc;
+  @Override
+  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    ctx.fireChannelActive();
   }
+
+  @Override
+  protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {}
 }

@@ -24,7 +24,6 @@ package com.silong.foundation.dj.bonecrusher.configure.config;
 import static io.netty.handler.logging.LogLevel.INFO;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.apache.commons.lang3.SystemUtils.getHostName;
 
 import io.netty.handler.logging.LogLevel;
 import jakarta.validation.Valid;
@@ -50,13 +49,31 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "bonecrusher")
 public class BonecrusherProperties {
 
+  /** 读写空闲事件触发配置 */
+  @Data
+  public static class IdleStateProperties {
+    /** 当指定时间内没有执行任何读取操作时，将触发状态为 IdleState.READER_IDLE 的 IdleStateEvent。指定 0 禁用。 */
+    @NotNull
+    @DurationUnit(SECONDS)
+    private Duration readerIdleTime = Duration.ZERO;
+
+    /** 当指定时间内没有执行任何写入操作时，将触发状态为 IdleState.WRITER_IDLE 的 IdleStateEvent。指定 0 禁用。 */
+    @NotNull
+    @DurationUnit(SECONDS)
+    private Duration writerIdleTime = Duration.ZERO;
+
+    /** 当指定时间段内没有进行读写操作时，会触发状态为 IdleState.ALL_IDLE 的 IdleStateEvent。指定 0 禁用。 */
+    @NotNull
+    @DurationUnit(SECONDS)
+    private Duration allIdleTime = Duration.ZERO;
+
+    /** 在评估写空闲时是否应考虑字节消耗。默认为 false。 */
+    private boolean observeOutput;
+  }
+
   /** netty相关调优配置 */
   @Data
   public static class NettyTuningProperties {
-
-    // SO_BACKLOG，默认：128
-    @Positive private int SO_BACKLOG = 128;
-
     /** SO_REUSEADDR，默认：true */
     private boolean SO_REUSEADDR = true;
 
@@ -89,28 +106,28 @@ public class BonecrusherProperties {
 
   /**
    * UDT Server监听地址，目前支持ipv4<br>
-   * 默认：0.0.0.0
+   * 默认：127.0.0.1
    */
-  @NotEmpty private String address = "0.0.0.0";
+  @NotEmpty private String address = "127.0.0.1";
 
   // 服务监听端口，默认：6118
   @Max(65535)
   @Min(1025)
   private int port = 6118;
 
-  /** 数据存储目录，默认：user.dir */
-  @NotNull private Path dataStorePath = SystemUtils.getUserDir().toPath();
+  /** 数据存储目录，默认：java.io.tmpdir */
+  @NotNull private Path dataStorePath = SystemUtils.getJavaIoTmpDir().toPath();
 
-  /** 节点名，默认：主机名 */
-  @NotEmpty private String nodeName = getHostName();
-
-  /** Netty bossGroup，默认：1 */
+  /** Netty server bossGroup，默认：1 */
   @Positive private int bossGroupThreads = 1;
 
-  // Netty workerGroup，默认：可用cpu核数
+  /** Netty client connector，默认：可用cpu核数 */
+  @Positive private int connectorGroupThreads = Runtime.getRuntime().availableProcessors();
+
+  /** Netty server workerGroup，默认：可用cpu核数 */
   @Positive private int workerGroupThreads = Runtime.getRuntime().availableProcessors();
 
-  // 日志级别，默认：INFO
+  /** 日志级别，默认：INFO */
   @NotNull private LogLevel LogLevel = INFO;
 
   /** 鉴权配置 */
@@ -119,4 +136,8 @@ public class BonecrusherProperties {
   /** netty调优配置 */
   @Valid @NestedConfigurationProperty
   private NettyTuningProperties netty = new NettyTuningProperties();
+
+  /** 服务器空闲事件触发配置 */
+  @Valid @NestedConfigurationProperty
+  private BonecrusherProperties.IdleStateProperties idleState = new IdleStateProperties();
 }

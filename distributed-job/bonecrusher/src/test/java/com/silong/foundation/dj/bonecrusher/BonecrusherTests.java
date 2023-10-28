@@ -21,9 +21,18 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
+import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
+import java.util.List;
+import org.jgroups.Address;
+import org.jgroups.View;
+import org.jgroups.ViewId;
+import org.jgroups.stack.IpAddress;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -38,6 +47,29 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @TestPropertySource(locations = "classpath:application.properties")
 @ExtendWith(SpringExtension.class)
 public class BonecrusherTests {
+
+  @Autowired private ApplicationEventPublisher publisher;
+
+  @Autowired private DataSyncServer bonecrusher;
+
+  @Autowired private BonecrusherProperties properties;
+
   @Test
-  public void startServer() throws Exception {}
+  public void startServer() throws Exception {
+
+    Address creator = new IpAddress("127.0.0.1:43434");
+    ViewId oldViewId = new ViewId(creator, 1);
+    ViewId newViewId = new ViewId(creator, 2);
+
+    View oldView = new View(oldViewId, List.of(creator));
+
+    View newView = new View(newViewId, List.of(new IpAddress("127.0.0.1:43436"), creator));
+
+    publisher.publishEvent(new ClusterViewChangedEvent("cluster-test", oldView, newView));
+    bonecrusher.start();
+
+    bonecrusher.client().connect(properties.getAddress(), properties.getPort());
+
+    Thread.sleep(5000);
+  }
 }

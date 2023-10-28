@@ -21,16 +21,16 @@
 
 package com.silong.foundation.dj.bonecrusher.handler;
 
-import static com.silong.foundation.dj.bonecrusher.message.ErrorCode.CLASS_NOT_FOUND;
-import static com.silong.foundation.dj.bonecrusher.message.ErrorCode.LOADING_CLASS_SUCCESSFUL;
+import static com.silong.foundation.dj.bonecrusher.message.ErrorCode.*;
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING_CLASS_RESP;
 
 import com.google.protobuf.ByteString;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
+import com.silong.foundation.dj.bonecrusher.message.Messages.*;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.udt.nio.NioUdtProvider;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +49,7 @@ import org.apache.commons.lang3.SystemUtils;
  */
 @Slf4j
 @Sharable
-public class FileServerHandler extends SimpleChannelInboundHandler<Messages.Request> {
+public class FileServerHandler extends ChannelInboundHandlerAdapter {
 
   /** 文件保存目录 */
   private final Path dataStorePath;
@@ -60,7 +60,6 @@ public class FileServerHandler extends SimpleChannelInboundHandler<Messages.Requ
    * @param dataStorePath 数据存储目录
    */
   public FileServerHandler(@NonNull Path dataStorePath) {
-    super(false);
     this.dataStorePath = dataStorePath;
   }
 
@@ -70,7 +69,7 @@ public class FileServerHandler extends SimpleChannelInboundHandler<Messages.Requ
     return SystemUtils.getJavaIoTmpDir().toPath();
   }
 
-  private void handleSyncDataReq(ChannelHandlerContext ctx, Messages.SyncDataReq request) {
+  private void handleSyncDataReq(ChannelHandlerContext ctx, SyncDataReq request) {
 
     //    RandomAccessFile raf = null;
     //    long length = -1;
@@ -99,28 +98,27 @@ public class FileServerHandler extends SimpleChannelInboundHandler<Messages.Requ
   }
 
   @Override
-  public void channelRead0(ChannelHandlerContext ctx, Messages.Request request) throws Exception {
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    Request request = (Request) msg;
     switch (request.getType()) {
       case DATA_SYNC_REQ -> handleSyncDataReq(ctx, request.getSyncData());
       case LOADING_CLASS_REQ -> handleLoadingClassReq(ctx, request.getLoadingClass());
     }
   }
 
-  private void handleLoadingClassReq(ChannelHandlerContext ctx, Messages.LoadingClassReq request)
+  private void handleLoadingClassReq(ChannelHandlerContext ctx, LoadingClassReq request)
       throws IOException {
     String classFqdn = request.getClassFqdn();
     try (InputStream inputStream = getClass().getResourceAsStream(fqdn2Path(classFqdn))) {
       if (inputStream == null) {
         ctx.writeAndFlush(
             Unpooled.wrappedBuffer(
-                Messages.Response.newBuilder()
-                    .setLoadingClass(
-                        Messages.LoadingClassResp.newBuilder()
-                            .setResult(
-                                Messages.Result.newBuilder()
-                                    .setCode(CLASS_NOT_FOUND.getCode())
-                                    .setDesc(String.format(CLASS_NOT_FOUND.getDesc(), classFqdn))))
+                Response.newBuilder()
                     .setType(LOADING_CLASS_RESP)
+                    .setResult(
+                        Result.newBuilder()
+                            .setCode(CLASS_NOT_FOUND.getCode())
+                            .setDesc(CLASS_NOT_FOUND.getDesc()))
                     .build()
                     .toByteArray()));
         return;
@@ -128,21 +126,17 @@ public class FileServerHandler extends SimpleChannelInboundHandler<Messages.Requ
 
       ctx.writeAndFlush(
           Unpooled.wrappedBuffer(
-              Messages.Response.newBuilder()
-                  .setLoadingClass(
-                      Messages.LoadingClassResp.newBuilder()
-                          .setDataBlock(
-                              Messages.DataBlock.newBuilder()
-                                  .setData(ByteString.readFrom(inputStream)))
-                          .setResult(
-                              Messages.Result.newBuilder()
-                                  .setCode(LOADING_CLASS_SUCCESSFUL.getCode())
-                                  .setDesc(
-                                      String.format(
-                                          LOADING_CLASS_SUCCESSFUL.getDesc(), classFqdn))))
+              Response.newBuilder()
                   .setType(LOADING_CLASS_RESP)
+                  .setResult(Result.newBuilder().setCode(SUCCESS.getCode()))
+                  .setDataBlockArray(
+                      DataBlockArray.newBuilder()
+                          .addDataBlock(
+                              Messages.DataBlock.newBuilder()
+                                  .setData(ByteString.readFrom(inputStream))))
                   .build()
                   .toByteArray()));
+
       log.info("transfer class: {}", classFqdn);
     }
   }

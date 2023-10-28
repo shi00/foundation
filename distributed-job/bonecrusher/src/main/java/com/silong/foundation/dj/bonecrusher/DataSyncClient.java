@@ -19,44 +19,34 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.message;
-
-import lombok.Getter;
+package com.silong.foundation.dj.bonecrusher;
 
 /**
- * 错误码
+ * 数据同步客户端接口
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-10-26 0:03
+ * @since 2023-10-28 17:54
  */
-@Getter
-public enum ErrorCode {
+public interface DataSyncClient extends AutoCloseable {
 
-  /** 找不到对应的class */
-  CLASS_NOT_FOUND(102, "The specified class[%s] cannot be found."),
+  /**
+   * 连接服务端
+   *
+   * @param remoteAddress 服务器地址
+   * @param remotePort 服务器端口
+   * @throws Exception 异常
+   */
+  DataSyncClient connect(String remoteAddress, int remotePort) throws Exception;
 
-  /** 登录失败 */
-  PERFORM_OPERATIONS_WITHOUT_LOGGING_IN(
-      101, "Other operations can only be performed after successful login."),
-
-  /** 加载类成功 */
-  LOADING_CLASS_SUCCESSFUL(0, "Loading class[%s] successfully."),
-
-  /** 鉴权失败 */
-  AUTHENTICATION_FAILED(100, "Authentication failed."),
-
-  /** 成功 */
-  SUCCESS(0, null);
-
-  /** 错误码 */
-  final int code;
-
-  /** 错误描述 */
-  final String desc;
-
-  ErrorCode(int code, String desc) {
-    this.code = code;
-    this.desc = desc;
-  }
+  /**
+   * 发送同步消息
+   *
+   * @param req 请求
+   * @return 响应
+   * @param <T> 请求类型
+   * @param <R> 响应结果
+   * @throws Exception 异常
+   */
+  <T, R> R sendSync(T req) throws Exception;
 }
