@@ -28,7 +28,7 @@ import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientPr
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.ClientAuthChannelHandler;
-import com.silong.foundation.dj.bonecrusher.handler.FileServerHandler;
+import com.silong.foundation.dj.bonecrusher.handler.FileLoaderHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ServerAuthChannelHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -37,8 +37,12 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.udt.UdtChannel;
 import io.netty.channel.udt.nio.NioUdtProvider;
+import io.netty.handler.codec.compression.SnappyFrameDecoder;
+import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
+import io.netty.handler.codec.protobuf.ProtobufVarint32FrameDecoder;
+import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -51,6 +55,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -76,13 +81,17 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
   private ServerBootstrap serverBootstrap;
 
-  private LoggingHandler loggingHandler;
+  private LoggingHandler serverLoggingHandler;
+
+  private LoggingHandler clientLoggingHandler;
 
   private ProtobufDecoder protobufDecoder;
 
   private ProtobufEncoder protobufEncoder;
 
-  private FileServerHandler fileServerHandler;
+  private FileLoaderHandler fileLoaderHandler;
+
+  private ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender;
 
   private ServerAuthChannelHandler serverAuthChannelHandler;
 
@@ -113,7 +122,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                         NioUdtProvider.BYTE_PROVIDER))
             // 设置服务端通道实现类型
             .channelFactory(NioUdtProvider.BYTE_ACCEPTOR)
-            .handler(loggingHandler)
+            .handler(serverLoggingHandler)
             // 设置子channel的缓冲区分配器
             .option(SO_REUSEADDR, serverProperties.getNetty().isSO_REUSEADDR())
             .option(
@@ -126,15 +135,23 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                   protected void initChannel(UdtChannel ch) {
                     ch.pipeline()
                         .addLast("idleStateMonitor", idleStateHandler()) // channel空闲监控
+                        .addLast("snappyFrameEncoder", new SnappyFrameEncoder())
+                        .addLast("snappyFrameDecoder", new SnappyFrameDecoder())
+                        .addLast(
+                            "protobufVarint32FrameDecoder",
+                            new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
+                        .addLast(
+                            "protobufVarint32LengthFieldPrepender",
+                            protobufVarint32LengthFieldPrepender) // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
                         .addLast("protobufEncoder", protobufEncoder)
                         .addLast("protobufDecoder", protobufDecoder)
-                        .addLast("logging", loggingHandler)
+                        .addLast("serverLogging", serverLoggingHandler)
                         .addLast(
                             "authenticator",
                             serverAuthChannelHandler.clusterViewChangedEventSupplier(
                                 clusterViewChangedEventRef::get))
                         .addLast("chunkedWriter", new ChunkedWriteHandler())
-                        .addLast("fileServer", fileServerHandler);
+                        .addLast("fileLoader", fileLoaderHandler);
                   }
                 })
             .validate(); // 配置校验
@@ -264,7 +281,9 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                     @Override
                     public void initChannel(UdtChannel ch) {
                       ch.pipeline()
-                          .addLast(loggingHandler)
+                          .addLast(new SnappyFrameEncoder())
+                          .addLast(clientLoggingHandler)
+                          .addLast(protobufVarint32LengthFieldPrepender)
                           .addLast(
                               new ClientAuthChannelHandler(
                                       clientProperties,
@@ -296,17 +315,24 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   }
 
   @Autowired
-  public void setLoggingHandler(LoggingHandler loggingHandler) {
-    this.loggingHandler = loggingHandler;
+  public void setServerLoggingHandler(
+      @Qualifier("serverLoggingHandler") LoggingHandler serverLoggingHandler) {
+    this.serverLoggingHandler = serverLoggingHandler;
   }
 
   @Autowired
-  public void setFileServerHandler(FileServerHandler fileServerHandler) {
-    this.fileServerHandler = fileServerHandler;
+  public void setClientLoggingHandler(
+      @Qualifier("clientLoggingHandler") LoggingHandler clientLoggingHandler) {
+    this.clientLoggingHandler = clientLoggingHandler;
   }
 
   @Autowired
-  public void setAuthChannelHandler(ServerAuthChannelHandler serverAuthChannelHandler) {
+  public void setFileLoaderHandler(FileLoaderHandler fileLoaderHandler) {
+    this.fileLoaderHandler = fileLoaderHandler;
+  }
+
+  @Autowired
+  public void setServerAuthChannelHandler(ServerAuthChannelHandler serverAuthChannelHandler) {
     this.serverAuthChannelHandler = serverAuthChannelHandler;
   }
 
@@ -328,5 +354,11 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   @Autowired
   public void setClientProperties(BonecrusherClientProperties clientProperties) {
     this.clientProperties = clientProperties;
+  }
+
+  @Autowired
+  public void setProtobufVarint32LengthFieldPrepender(
+      ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender) {
+    this.protobufVarint32LengthFieldPrepender = protobufVarint32LengthFieldPrepender;
   }
 }

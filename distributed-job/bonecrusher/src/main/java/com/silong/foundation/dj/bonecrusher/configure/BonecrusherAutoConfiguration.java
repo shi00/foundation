@@ -32,6 +32,7 @@ import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import com.silong.foundation.utilities.jwt.SimpleJwtAuthenticator;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
+import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 import io.netty.handler.logging.LoggingHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -65,8 +66,8 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Bean
-  public RespChannelHandler respChannelHandler() {
-    return new RespChannelHandler();
+  public ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender() {
+    return new ProtobufVarint32LengthFieldPrepender();
   }
 
   /**
@@ -99,13 +100,18 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Bean
-  public FileServerHandler fileServerHandler() {
-    return new FileServerHandler(serverProperties.getDataStorePath());
+  public FileLoaderHandler fileServerHandler() {
+    return new FileLoaderHandler(serverProperties.getDataStorePath());
   }
 
   @Bean
-  public LoggingHandler loggingHandler() {
+  public LoggingHandler serverLoggingHandler() {
     return new LoggingHandler(serverProperties.getLogLevel());
+  }
+
+  @Bean
+  public LoggingHandler clientLoggingHandler() {
+    return new LoggingHandler(clientProperties.getLogLevel());
   }
 
   @Autowired

@@ -56,7 +56,6 @@ public class BonecrusherTests {
 
   @Test
   public void startServer() throws Exception {
-
     Address creator = new IpAddress("127.0.0.1:43434");
     ViewId oldViewId = new ViewId(creator, 1);
     ViewId newViewId = new ViewId(creator, 2);

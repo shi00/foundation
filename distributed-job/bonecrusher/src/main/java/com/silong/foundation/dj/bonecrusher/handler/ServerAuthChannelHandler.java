@@ -130,23 +130,27 @@ public class ServerAuthChannelHandler extends ChannelDuplexHandler {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
-    Request request = (Request) msg;
+    // 处理请求，否则传递给pipeline中后续handler
+    if (msg instanceof Request request) {
 
-    // 执行签名认证
-    Result result = jwtAuthenticator.verify(request.getToken(), this::checkTokenPayload);
+      // 执行签名认证
+      Result result = jwtAuthenticator.verify(request.getToken(), this::checkTokenPayload);
 
-    // 鉴权成功后消息往后续pipeline中的handler传递，处理
-    if (result.isValid()) {
-      ctx.fireChannelRead(request);
+      // 鉴权成功后消息往后续pipeline中的handler传递，处理
+      if (result.isValid()) {
+        ctx.fireChannelRead(request);
+      } else {
+        ctx.writeAndFlush(
+            Messages.Response.newBuilder()
+                .setType(AUTHENTICATION_FAILED_RESP)
+                .setResult(
+                    Messages.Result.newBuilder()
+                        .setCode(AUTHENTICATION_FAILED.getCode())
+                        .setDesc(AUTHENTICATION_FAILED.getDesc()))
+                .build());
+      }
     } else {
-      ctx.writeAndFlush(
-          Messages.Response.newBuilder()
-              .setType(AUTHENTICATION_FAILED_RESP)
-              .setResult(
-                  Messages.Result.newBuilder()
-                      .setCode(AUTHENTICATION_FAILED.getCode())
-                      .setDesc(AUTHENTICATION_FAILED.getDesc()))
-              .build());
+      ctx.fireChannelRead(msg);
     }
   }
 

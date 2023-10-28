@@ -24,7 +24,6 @@ package com.silong.foundation.dj.bonecrusher.configure.config;
 import static io.netty.handler.logging.LogLevel.INFO;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-import io.netty.handler.logging.LogLevel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Duration;
@@ -58,11 +57,11 @@ public class BonecrusherClientProperties {
     private Duration CONNECT_TIMEOUT_MILLIS = Duration.of(5, SECONDS);
   }
 
-  /** Netty client connector，默认：可用cpu核数 */
-  @Positive private int connectorGroupThreads = Runtime.getRuntime().availableProcessors();
-
   /** 日志级别，默认：INFO */
-  @NotNull private LogLevel LogLevel = INFO;
+  @NotNull private io.netty.handler.logging.LogLevel LogLevel = INFO;
+
+  /** Netty client connector，默认：1 */
+  @Positive private int connectorGroupThreads = 1;
 
   /** netty调优配置 */
   @Valid @NestedConfigurationProperty

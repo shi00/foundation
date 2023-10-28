@@ -21,17 +21,17 @@
 
 package com.silong.foundation.dj.bonecrusher.handler;
 
-import static com.silong.foundation.dj.bonecrusher.message.ErrorCode.*;
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING_CLASS_RESP;
 
-import com.google.protobuf.ByteString;
-import com.silong.foundation.dj.bonecrusher.message.Messages;
+import com.silong.foundation.dj.bonecrusher.message.ErrorCode;
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.udt.nio.NioUdtProvider;
+import io.netty.handler.stream.ChunkedStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -41,7 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 /**
- * 文件数据保存处理器
+ * 文件加载处理器
  *
  * @author louis sin
  * @version 1.0.0
@@ -49,7 +49,19 @@ import org.apache.commons.lang3.SystemUtils;
  */
 @Slf4j
 @Sharable
-public class FileServerHandler extends ChannelInboundHandlerAdapter {
+public class FileLoaderHandler extends ChannelInboundHandlerAdapter {
+
+  /** 找不到指定class */
+  private static final ByteBuf CLASS_NOT_FOUND =
+      Unpooled.wrappedBuffer(
+          Response.newBuilder()
+              .setType(LOADING_CLASS_RESP)
+              .setResult(
+                  Result.newBuilder()
+                      .setCode(ErrorCode.CLASS_NOT_FOUND.getCode())
+                      .setDesc(ErrorCode.CLASS_NOT_FOUND.getDesc()))
+              .build()
+              .toByteArray());
 
   /** 文件保存目录 */
   private final Path dataStorePath;
@@ -59,7 +71,7 @@ public class FileServerHandler extends ChannelInboundHandlerAdapter {
    *
    * @param dataStorePath 数据存储目录
    */
-  public FileServerHandler(@NonNull Path dataStorePath) {
+  public FileLoaderHandler(@NonNull Path dataStorePath) {
     this.dataStorePath = dataStorePath;
   }
 
@@ -99,10 +111,13 @@ public class FileServerHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    Request request = (Request) msg;
-    switch (request.getType()) {
-      case DATA_SYNC_REQ -> handleSyncDataReq(ctx, request.getSyncData());
-      case LOADING_CLASS_REQ -> handleLoadingClassReq(ctx, request.getLoadingClass());
+    if (msg instanceof Request request) {
+      switch (request.getType()) {
+        case DATA_SYNC_REQ -> handleSyncDataReq(ctx, request.getSyncData());
+        case LOADING_CLASS_REQ -> handleLoadingClassReq(ctx, request.getLoadingClass());
+      }
+    } else {
+      ctx.fireChannelRead(msg);
     }
   }
 
@@ -111,45 +126,40 @@ public class FileServerHandler extends ChannelInboundHandlerAdapter {
     String classFqdn = request.getClassFqdn();
     try (InputStream inputStream = getClass().getResourceAsStream(fqdn2Path(classFqdn))) {
       if (inputStream == null) {
-        ctx.writeAndFlush(
-            Unpooled.wrappedBuffer(
-                Response.newBuilder()
-                    .setType(LOADING_CLASS_RESP)
-                    .setResult(
-                        Result.newBuilder()
-                            .setCode(CLASS_NOT_FOUND.getCode())
-                            .setDesc(CLASS_NOT_FOUND.getDesc()))
-                    .build()
-                    .toByteArray()));
+        ctx.writeAndFlush(CLASS_NOT_FOUND); // 找不到指定class，返回错误
         return;
       }
 
-      ctx.writeAndFlush(
-          Unpooled.wrappedBuffer(
-              Response.newBuilder()
-                  .setType(LOADING_CLASS_RESP)
-                  .setResult(Result.newBuilder().setCode(SUCCESS.getCode()))
-                  .setDataBlockArray(
-                      DataBlockArray.newBuilder()
-                          .addDataBlock(
-                              Messages.DataBlock.newBuilder()
-                                  .setData(ByteString.readFrom(inputStream))))
-                  .build()
-                  .toByteArray()));
-
-      log.info("transfer class: {}", classFqdn);
+      log.info(
+          "The transfer of class[{}] is about to begin from {} to {} by channel[id:{}].",
+          classFqdn,
+          ctx.channel().localAddress(),
+          ctx.channel().remoteAddress(),
+          ctx.channel().id());
+      ctx.writeAndFlush(new ChunkedStream(inputStream));
     }
   }
 
+  /**
+   * 拼装class文件路径
+   *
+   * @param classFqdn fqdn
+   * @return class文件加载路径
+   */
   private String fqdn2Path(String classFqdn) {
     return "/" + StringUtils.replaceChars(classFqdn, '.', '/') + ".class";
   }
 
   @Override
-  public void exceptionCaught(final ChannelHandlerContext ctx, Throwable cause) {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     log.error(
-        "An exception occurs that causes the channel to be closed. {}",
-        NioUdtProvider.socketUDT(ctx.channel()).toStringOptions());
+        "The channel[id:{}] is closed between client:{} and server:{}. {}details:{}",
+        ctx.channel().id(),
+        ctx.channel().remoteAddress(),
+        ctx.channel().localAddress(),
+        System.lineSeparator(),
+        NioUdtProvider.socketUDT(ctx.channel()).toStringOptions(),
+        cause);
     ctx.close();
   }
 }
