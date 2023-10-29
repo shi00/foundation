@@ -35,8 +35,8 @@ import org.springframework.context.ApplicationEvent;
  * @version 1.0.0
  * @since 2023-10-28 15:33
  */
-@EqualsAndHashCode(callSuper = true)
 @Getter
+@EqualsAndHashCode(callSuper = true)
 @Accessors(fluent = true)
 public class ClusterViewChangedEvent extends ApplicationEvent {
 
@@ -46,7 +46,7 @@ public class ClusterViewChangedEvent extends ApplicationEvent {
   private final View newView;
 
   /** 集群名 */
-  private String cluster;
+  private final String cluster;
 
   /**
    * 构造方法
