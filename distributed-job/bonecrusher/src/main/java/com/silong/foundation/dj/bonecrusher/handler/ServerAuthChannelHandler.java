@@ -170,7 +170,13 @@ public class ServerAuthChannelHandler extends ChannelDuplexHandler {
           && generator != null
           && Objects.equals(cluster.asString(), event.cluster())
           && Arrays.stream(event.newView().getMembersRaw())
-              .anyMatch(member -> member.toString().equals(generator.asString()))) {
+              .anyMatch(
+                  memberAddress -> memberAddress.equals(event.localAddress())) // 确保服务端归属节点在集群内
+          && Arrays.stream(event.newView().getMembersRaw())
+              .anyMatch(
+                  memberAddress ->
+                      memberAddress.toString().equals(generator.asString())) // 确保请求客户端节点在集群内
+      ) {
         return Result.VALID;
       }
     }
