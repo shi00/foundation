@@ -24,7 +24,9 @@ package com.silong.foundation.dj.bonecrusher.event;
 import java.io.Serial;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.experimental.Accessors;
+import org.jgroups.Address;
 import org.jgroups.View;
 import org.springframework.context.ApplicationEvent;
 
@@ -36,11 +38,11 @@ import org.springframework.context.ApplicationEvent;
  * @since 2023-10-28 15:33
  */
 @Getter
-@EqualsAndHashCode(callSuper = true)
 @Accessors(fluent = true)
+@EqualsAndHashCode(callSuper = true)
 public class ClusterViewChangedEvent extends ApplicationEvent {
 
-  @Serial private static final long serialVersionUID = -3187704248173392620L;
+  @Serial private static final long serialVersionUID = 314_447_926_653_736_236L;
 
   /** 新视图 */
   private final View newView;
@@ -48,15 +50,24 @@ public class ClusterViewChangedEvent extends ApplicationEvent {
   /** 集群名 */
   private final String cluster;
 
+  /** 本地节点地址 */
+  private final Address localAddress;
+
   /**
    * 构造方法
    *
    * @param cluster 集群
+   * @param localAddress 本地地址
    * @param oldView 旧视图
    * @param newView 当前新视图
    */
-  public ClusterViewChangedEvent(String cluster, View oldView, View newView) {
+  public ClusterViewChangedEvent(
+      @NonNull String cluster,
+      @NonNull Address localAddress,
+      @NonNull View oldView,
+      @NonNull View newView) {
     super(oldView);
+    this.localAddress = localAddress;
     this.cluster = cluster;
     this.newView = newView;
   }
@@ -73,7 +84,7 @@ public class ClusterViewChangedEvent extends ApplicationEvent {
   @Override
   public String toString() {
     return String.format(
-        "ClusterViewChangedEvent{cluster:%s, oldView:[%s], newView:[%s]}",
-        cluster, getSource(), newView);
+        "ClusterViewChangedEvent{cluster:%s, localAddress:%s, oldView:[%s], newView:[%s]}",
+        cluster, localAddress, getSource(), newView);
   }
 }
