@@ -121,9 +121,6 @@ public class BonecrusherProperties {
   /** Netty server bossGroup，默认：1 */
   @Positive private int bossGroupThreads = 1;
 
-  /** Netty client connector，默认：可用cpu核数 */
-  @Positive private int connectorGroupThreads = Runtime.getRuntime().availableProcessors();
-
   /** Netty server workerGroup，默认：可用cpu核数 */
   @Positive private int workerGroupThreads = Runtime.getRuntime().availableProcessors();
 
