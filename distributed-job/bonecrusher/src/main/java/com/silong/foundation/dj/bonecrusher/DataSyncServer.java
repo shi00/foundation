@@ -40,7 +40,7 @@ public interface DataSyncServer {
   /**
    * 关闭服务器
    *
-   * @throws Exception
+   * @throws Exception 异常
    */
   void shutdown() throws Exception;
 
