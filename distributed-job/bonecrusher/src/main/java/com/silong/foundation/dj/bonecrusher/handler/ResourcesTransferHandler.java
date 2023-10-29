@@ -41,7 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 /**
- * 文件加载处理器
+ * 资源传输处理器
  *
  * @author louis sin
  * @version 1.0.0
@@ -49,7 +49,7 @@ import org.apache.commons.lang3.SystemUtils;
  */
 @Slf4j
 @Sharable
-public class FileLoaderHandler extends ChannelInboundHandlerAdapter {
+public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
 
   /** 找不到指定class */
   private static final ByteBuf CLASS_NOT_FOUND =
@@ -71,7 +71,7 @@ public class FileLoaderHandler extends ChannelInboundHandlerAdapter {
    *
    * @param dataStorePath 数据存储目录
    */
-  public FileLoaderHandler(@NonNull Path dataStorePath) {
+  public ResourcesTransferHandler(@NonNull Path dataStorePath) {
     this.dataStorePath = dataStorePath;
   }
 
