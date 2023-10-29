@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.message;
+package com.silong.foundation.dj.bonecrusher.utils;
 
 import lombok.Getter;
 
@@ -34,14 +34,7 @@ import lombok.Getter;
 public enum ErrorCode {
 
   /** 找不到对应的class */
-  CLASS_NOT_FOUND(102, "The specified class[%s] cannot be found."),
-
-  /** 登录失败 */
-  PERFORM_OPERATIONS_WITHOUT_LOGGING_IN(
-      101, "Other operations can only be performed after successful login."),
-
-  /** 加载类成功 */
-  LOADING_CLASS_SUCCESSFUL(0, "Loading class[%s] successfully."),
+  CLASS_NOT_FOUND(101, "The specified class[%s] cannot be found."),
 
   /** 鉴权失败 */
   AUTHENTICATION_FAILED(100, "Authentication failed."),

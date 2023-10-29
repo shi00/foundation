@@ -23,8 +23,8 @@ package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING_CLASS_RESP;
 
-import com.silong.foundation.dj.bonecrusher.message.ErrorCode;
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
+import com.silong.foundation.dj.bonecrusher.utils.ErrorCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
