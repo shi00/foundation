@@ -100,8 +100,8 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Bean
-  public FileLoaderHandler fileServerHandler() {
-    return new FileLoaderHandler(serverProperties.getDataStorePath());
+  public ResourcesTransferHandler fileServerHandler() {
+    return new ResourcesTransferHandler(serverProperties.getDataStorePath());
   }
 
   @Bean
