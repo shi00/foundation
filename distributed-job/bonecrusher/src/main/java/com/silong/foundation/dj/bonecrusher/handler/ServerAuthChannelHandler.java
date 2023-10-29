@@ -36,6 +36,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.udt.nio.NioUdtProvider;
 import io.netty.handler.timeout.IdleStateEvent;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -155,20 +156,20 @@ public class ServerAuthChannelHandler extends ChannelDuplexHandler {
   }
 
   private Result checkTokenPayload(Map<String, Claim> claims) {
-    ClusterViewChangedEvent clusterViewChangedEvent = clusterViewChangedEventSupplier.get();
+    ClusterViewChangedEvent event = clusterViewChangedEventSupplier.get();
     if (log.isDebugEnabled()) {
-      log.debug("clusterViewChangedEvent: {}, claims: {}", clusterViewChangedEvent, claims);
+      log.debug("clusterViewChangedEvent: {}, claims: {}", event, claims);
     }
 
-    if (clusterViewChangedEvent == null) {
+    if (event == null) {
       log.error("The local node has not joined the cluster or has left the cluster.");
     } else {
       Claim cluster = claims.get(CLUSTER_KEY);
       Claim generator = claims.get(GENERATOR_KEY);
       if (cluster != null
           && generator != null
-          && Objects.equals(cluster.asString(), clusterViewChangedEvent.cluster())
-          && clusterViewChangedEvent.newView().getMembers().stream()
+          && Objects.equals(cluster.asString(), event.cluster())
+          && Arrays.stream(event.newView().getMembersRaw())
               .anyMatch(member -> member.toString().equals(generator.asString()))) {
         return Result.VALID;
       }
