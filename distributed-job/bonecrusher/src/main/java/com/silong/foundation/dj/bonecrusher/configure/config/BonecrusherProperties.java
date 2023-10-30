@@ -24,6 +24,7 @@ package com.silong.foundation.dj.bonecrusher.configure.config;
 import static io.netty.handler.logging.LogLevel.INFO;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.springframework.util.unit.DataUnit.KILOBYTES;
 
 import io.netty.handler.logging.LogLevel;
 import jakarta.validation.Valid;
@@ -34,7 +35,9 @@ import lombok.*;
 import org.apache.commons.lang3.SystemUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.boot.convert.DataSizeUnit;
 import org.springframework.boot.convert.DurationUnit;
+import org.springframework.util.unit.DataSize;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -114,6 +117,11 @@ public class BonecrusherProperties {
   @Max(65535)
   @Min(1025)
   private int port = 6118;
+
+  /** 文件传输时，数据分块大小，默认：8KB */
+  @NotNull
+  @DataSizeUnit(KILOBYTES)
+  private DataSize dataBlockSize = DataSize.ofKilobytes(8);
 
   /** 数据存储目录，默认：java.io.tmpdir */
   @NotNull private Path dataStorePath = SystemUtils.getJavaIoTmpDir().toPath();
