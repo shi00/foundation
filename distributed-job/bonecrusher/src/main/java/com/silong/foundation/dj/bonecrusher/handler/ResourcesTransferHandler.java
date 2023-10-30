@@ -22,7 +22,9 @@
 package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING_CLASS_RESP;
+import static org.apache.commons.lang3.StringUtils.replaceChars;
 
+import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
 import com.silong.foundation.dj.bonecrusher.utils.ErrorCode;
 import io.netty.buffer.ByteBuf;
@@ -37,8 +39,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.springframework.util.unit.DataSize;
 
 /**
  * 资源传输处理器
@@ -66,13 +68,16 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
   /** 文件保存目录 */
   private final Path dataStorePath;
 
+  private final DataSize dataBlockSize;
+
   /**
    * 构造方法
    *
-   * @param dataStorePath 数据存储目录
+   * @param properties 配置
    */
-  public ResourcesTransferHandler(@NonNull Path dataStorePath) {
-    this.dataStorePath = dataStorePath;
+  public ResourcesTransferHandler(@NonNull BonecrusherProperties properties) {
+    this.dataStorePath = properties.getDataStorePath();
+    this.dataBlockSize = properties.getDataBlockSize();
   }
 
   /** 导出分区数据 */
@@ -124,19 +129,32 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
   private void handleLoadingClassReq(ChannelHandlerContext ctx, LoadingClassReq request)
       throws IOException {
     String classFqdn = request.getClassFqdn();
-    try (InputStream inputStream = getClass().getResourceAsStream(fqdn2Path(classFqdn))) {
+    try (InputStream inputStream = getClass().getResourceAsStream(classFqdn2Path(classFqdn))) {
       if (inputStream == null) {
         ctx.writeAndFlush(CLASS_NOT_FOUND); // 找不到指定class，返回错误
         return;
       }
 
-      log.info(
-          "The transfer of class[{}] is about to begin from {} to {} by channel[id:{}].",
-          classFqdn,
-          ctx.channel().localAddress(),
-          ctx.channel().remoteAddress(),
-          ctx.channel().id());
-      ctx.writeAndFlush(new ChunkedStream(inputStream));
+      // 分块数据发送
+      ctx.writeAndFlush(new ChunkedStream(inputStream, (int) dataBlockSize.toKilobytes()))
+          .addListener(
+              future -> {
+                if (future.isSuccess()) {
+                  log.info(
+                      "The class[{}] transfer completed successfully from {} to {} by channel[id:{}].",
+                      classFqdn,
+                      ctx.channel().localAddress(),
+                      ctx.channel().remoteAddress(),
+                      ctx.channel().id());
+                } else {
+                  log.info(
+                      "Failed to transfer the class[{}] from {} to {} by channel[id:{}].",
+                      classFqdn,
+                      ctx.channel().localAddress(),
+                      ctx.channel().remoteAddress(),
+                      ctx.channel().id());
+                }
+              });
     }
   }
 
@@ -146,8 +164,8 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
    * @param classFqdn fqdn
    * @return class文件加载路径
    */
-  private String fqdn2Path(String classFqdn) {
-    return "/" + StringUtils.replaceChars(classFqdn, '.', '/') + ".class";
+  private String classFqdn2Path(String classFqdn) {
+    return "/" + replaceChars(classFqdn, '.', '/') + ".class";
   }
 
   @Override
