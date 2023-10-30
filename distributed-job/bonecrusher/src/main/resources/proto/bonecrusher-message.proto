@@ -19,8 +19,10 @@ message Request {
 //响应
 message Response {
   Type type = 1; //响应类型
-  Result result = 2;
-  optional DataBlockArray data_block_array = 3 ; //数据块
+  oneof body {
+    Result result = 2;
+    DataBlock data_block = 3 ; //数据块
+  }
 }
 
 //加载类请求
@@ -33,19 +35,12 @@ message SyncDataReq {
   string partition_no = 1; // 需要同步的分区编号
 }
 
-//数据块数组
-message DataBlockArray{
-  repeated DataBlock data_block = 1; //数据块数组
-}
-
 //数据块
 message DataBlock {
-  optional uint32 block_size = 2; //数据块大小，单位：KB
-  optional uint32 total_block = 3; //数据块总数
-  optional uint32 block_no = 4; //当前数据块编号，从0开始计数
-  optional bytes data = 5; //数据块
-  optional string block_signature = 6; //当前数据块签名
-  optional string integrated_signature = 7; //完整数据签名
+  optional string data_uuid = 1; //文件名或类fqdn
+  optional uint32 total_blocks = 2; //数据块总数
+  optional uint32 block_no = 3; //当前数据块编号，从0开始计数
+  optional bytes data = 4; //数据块
 }
 
 // 响应结果
