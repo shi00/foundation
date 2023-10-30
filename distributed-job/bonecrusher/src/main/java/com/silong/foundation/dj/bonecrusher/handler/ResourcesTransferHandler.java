@@ -28,6 +28,7 @@ import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperti
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
 import com.silong.foundation.dj.bonecrusher.utils.ErrorCode;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -37,6 +38,7 @@ import io.netty.handler.stream.ChunkedStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
@@ -136,7 +138,41 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
       }
 
       // 分块数据发送
-      ctx.writeAndFlush(new ChunkedStream(inputStream, (int) dataBlockSize.toKilobytes()))
+      int chunkSize = (int) dataBlockSize.toKilobytes();
+      ctx.writeAndFlush(
+              new ChunkedStream(inputStream, chunkSize) {
+
+                /** 数据块总量 */
+                private final int totalBlocks =
+                    inputStream.available() % chunkSize == 0
+                        ? inputStream.available() / chunkSize
+                        : inputStream.available() / chunkSize + 1;
+
+                /** 数据块计数 */
+                private final AtomicInteger dataBlockNoCount = new AtomicInteger(0);
+
+                private ByteBuf attachRespType(
+                    ByteBufAllocator allocator, ByteBuf fileDataBlock, Type respType) {
+                  if (fileDataBlock != null) {
+                    fileDataBlock =
+                        allocator
+                            .compositeBuffer(2)
+                            .addComponents(
+                                allocator
+                                    .buffer(4 * 3)
+                                    .writeInt(respType.ordinal()) // 响应类型
+                                    .writeInt(totalBlocks) // 数据块总量
+                                    .writeInt(dataBlockNoCount.getAndIncrement()), // 数据块编号
+                                fileDataBlock);
+                  }
+                  return fileDataBlock;
+                }
+
+                @Override
+                public ByteBuf readChunk(ByteBufAllocator allocator) throws Exception {
+                  return attachRespType(allocator, super.readChunk(allocator), LOADING_CLASS_RESP);
+                }
+              })
           .addListener(
               future -> {
                 if (future.isSuccess()) {
