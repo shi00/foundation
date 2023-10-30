@@ -61,8 +61,18 @@ public class BonecrusherAutoConfiguration {
   private BonecrusherClientProperties clientProperties;
 
   @Bean
-  public ProtobufDecoder protobufDecoder() {
+  public ProtobufEncoder protobufEncoder() {
+    return new ProtobufEncoder();
+  }
+
+  @Bean
+  public ProtobufDecoder requestProtobufDecoder() {
     return new ProtobufDecoder(Messages.Request.getDefaultInstance());
+  }
+
+  @Bean
+  public ProtobufDecoder responseProtobufDecoder() {
+    return new ProtobufDecoder(Messages.Response.getDefaultInstance());
   }
 
   @Bean
@@ -90,18 +100,18 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Bean
-  public ServerAuthChannelHandler serverAuthChannelHandler(JwtAuthenticator jwtAuthenticator) {
-    return new ServerAuthChannelHandler(serverProperties, jwtAuthenticator);
+  public ServerChannelHandler serverChannelHandler(JwtAuthenticator jwtAuthenticator) {
+    return new ServerChannelHandler(serverProperties, jwtAuthenticator);
   }
 
   @Bean
-  public ProtobufEncoder protobufEncoder() {
-    return new ProtobufEncoder();
+  ClientChannelHandler clientChannelHandler(JwtAuthenticator jwtAuthenticator) {
+    return new ClientChannelHandler(clientProperties, jwtAuthenticator);
   }
 
   @Bean
-  public ResourcesTransferHandler fileServerHandler() {
-    return new ResourcesTransferHandler(serverProperties.getDataStorePath());
+  public ResourcesTransferHandler resourcesTransferHandler() {
+    return new ResourcesTransferHandler(serverProperties);
   }
 
   @Bean
