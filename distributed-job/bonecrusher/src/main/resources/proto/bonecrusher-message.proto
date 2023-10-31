@@ -10,20 +10,13 @@ option java_outer_classname = "Messages";
 message Request {
   Type type = 1; //请求类型
   string token = 2; //鉴权令牌
+  string uuid = 5; //请求Uuid
   oneof body{
     LoadingClassReq loading_class = 3; // 类加载请求
     SyncDataReq sync_data = 4; // 数据同步请求
   }
 }
 
-//响应
-message Response {
-  Type type = 1; //响应类型
-  oneof body {
-    Result result = 2;
-    DataBlock data_block = 3 ; //数据块
-  }
-}
 
 //加载类请求
 message LoadingClassReq{
@@ -35,12 +28,23 @@ message SyncDataReq {
   string partition_no = 1; // 需要同步的分区编号
 }
 
-//数据块
-message DataBlock {
+
+//响应头
+message Response {
+  Type type = 1; //响应类型
+  string uuid = 4; //请求uuid，标识那个请求的响应
+  oneof body {
+    Result result = 2;
+    DataBlockMetadata data_block_metadata = 3 ; //数据块
+  }
+}
+
+//数据块元数据
+message DataBlockMetadata {
   optional string data_uuid = 1; //文件名或类fqdn
   optional uint32 total_blocks = 2; //数据块总数
   optional uint32 block_no = 3; //当前数据块编号，从0开始计数
-  optional bytes data = 4; //数据块
+  optional uint32 block_size = 4;//数据分块大小
 }
 
 // 响应结果
