@@ -55,17 +55,11 @@ import org.springframework.util.unit.DataSize;
 @Sharable
 public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
 
-  /** 找不到指定class */
-  private static final ByteBuf CLASS_NOT_FOUND =
-      Unpooled.wrappedBuffer(
-          Response.newBuilder()
-              .setType(LOADING_CLASS_RESP)
-              .setResult(
-                  Result.newBuilder()
-                      .setCode(ErrorCode.CLASS_NOT_FOUND.getCode())
-                      .setDesc(ErrorCode.CLASS_NOT_FOUND.getDesc()))
-              .build()
-              .toByteArray());
+  private static final Result CLASS_NOT_FOUND =
+      Result.newBuilder()
+          .setCode(ErrorCode.CLASS_NOT_FOUND.getCode()) // 找不到指定class，返回错误
+          .setDesc(ErrorCode.CLASS_NOT_FOUND.getDesc())
+          .build();
 
   /** 文件保存目录 */
   private final Path dataStorePath;
@@ -88,7 +82,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
     return SystemUtils.getJavaIoTmpDir().toPath();
   }
 
-  private void handleSyncDataReq(ChannelHandlerContext ctx, SyncDataReq request) {
+  private void handleSyncDataReq(ChannelHandlerContext ctx, SyncDataReq request, String requestId) {
 
     //    RandomAccessFile raf = null;
     //    long length = -1;
@@ -120,20 +114,34 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     if (msg instanceof Request request) {
       switch (request.getType()) {
-        case DATA_SYNC_REQ -> handleSyncDataReq(ctx, request.getSyncData());
-        case LOADING_CLASS_REQ -> handleLoadingClassReq(ctx, request.getLoadingClass());
+        case DATA_SYNC_REQ -> handleSyncDataReq(ctx, request.getSyncData(), request.getUuid());
+        case LOADING_CLASS_REQ -> handleLoadingClassReq(
+            ctx, request.getLoadingClass(), request.getUuid());
       }
     } else {
       ctx.fireChannelRead(msg);
     }
   }
 
-  private void handleLoadingClassReq(ChannelHandlerContext ctx, LoadingClassReq request)
-      throws IOException {
+  private int calculateTotalBlocks(int readableBytes, int chunkSize) {
+    return readableBytes % chunkSize == 0
+        ? readableBytes / chunkSize
+        : readableBytes / chunkSize + 1;
+  }
+
+  private void handleLoadingClassReq(
+      ChannelHandlerContext ctx, LoadingClassReq request, String requestId) throws IOException {
     String classFqdn = request.getClassFqdn();
     try (InputStream inputStream = getClass().getResourceAsStream(classFqdn2Path(classFqdn))) {
       if (inputStream == null) {
-        ctx.writeAndFlush(CLASS_NOT_FOUND); // 找不到指定class，返回错误
+        ctx.writeAndFlush(
+            Unpooled.wrappedBuffer(
+                Response.newBuilder()
+                    .setType(LOADING_CLASS_RESP)
+                    .setResult(CLASS_NOT_FOUND)
+                    .setUuid(requestId)
+                    .build()
+                    .toByteArray()));
         return;
       }
 
@@ -144,9 +152,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
 
                 /** 数据块总量 */
                 private final int totalBlocks =
-                    inputStream.available() % chunkSize == 0
-                        ? inputStream.available() / chunkSize
-                        : inputStream.available() / chunkSize + 1;
+                    calculateTotalBlocks(inputStream.available(), chunkSize);
 
                 /** 数据块计数 */
                 private final AtomicInteger dataBlockNoCount = new AtomicInteger(0);
@@ -154,15 +160,25 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                 private ByteBuf attachRespType(
                     ByteBufAllocator allocator, ByteBuf fileDataBlock, Type respType) {
                   if (fileDataBlock != null) {
+                    Response response =
+                        Response.newBuilder()
+                            .setType(respType)
+                            .setUuid(requestId)
+                            .setDataBlockMetadata(
+                                DataBlockMetadata.newBuilder()
+                                    .setDataUuid(classFqdn)
+                                    .setTotalBlocks(totalBlocks)
+                                    .setBlockSize(chunkSize)
+                                    .setBlockNo(dataBlockNoCount.getAndIncrement()))
+                            .build();
+
+                    // 拼装组合bytebuf，第一个组件为protobuf响应
                     fileDataBlock =
                         allocator
                             .compositeBuffer(2)
                             .addComponents(
-                                allocator
-                                    .buffer(4 * 3)
-                                    .writeInt(respType.ordinal()) // 响应类型
-                                    .writeInt(totalBlocks) // 数据块总量
-                                    .writeInt(dataBlockNoCount.getAndIncrement()), // 数据块编号
+                                true,
+                                Unpooled.wrappedBuffer(response.toByteArray()),
                                 fileDataBlock);
                   }
                   return fileDataBlock;
