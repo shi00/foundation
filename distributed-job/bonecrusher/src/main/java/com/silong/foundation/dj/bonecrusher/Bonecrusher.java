@@ -27,9 +27,9 @@ import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
-import com.silong.foundation.dj.bonecrusher.handler.ClientAuthChannelHandler;
+import com.silong.foundation.dj.bonecrusher.handler.ClientChannelHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ResourcesTransferHandler;
-import com.silong.foundation.dj.bonecrusher.handler.ServerAuthChannelHandler;
+import com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -85,15 +85,19 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
   private LoggingHandler clientLoggingHandler;
 
-  private ProtobufDecoder protobufDecoder;
+  private ProtobufDecoder responseProtobufDecoder;
+
+  private ProtobufDecoder requestProtobufDecoder;
 
   private ProtobufEncoder protobufEncoder;
+
+  private ClientChannelHandler clientChannelHandler;
 
   private ResourcesTransferHandler resourcesTransferHandler;
 
   private ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender;
 
-  private ServerAuthChannelHandler serverAuthChannelHandler;
+  private ServerChannelHandler serverChannelHandler;
 
   private Channel serverChannel;
 
@@ -147,20 +151,20 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                     protected void initChannel(UdtChannel ch) {
                       ch.pipeline()
                           .addLast("idleStateMonitor", idleStateHandler()) // channel空闲监控
-                          .addLast("snappyFrameEncoder", new SnappyFrameEncoder())
-                          .addLast("snappyFrameDecoder", new SnappyFrameDecoder())
-                          .addLast(
-                              "protobufVarint32FrameDecoder",
-                              new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
+                          .addLast("snappyFrameEncoder", new SnappyFrameEncoder()) // snappy 压缩编码器
+                          .addLast("snappyFrameDecoder", new SnappyFrameDecoder()) // snappy 解压缩解码器
                           .addLast(
                               "protobufVarint32LengthFieldPrepender",
                               protobufVarint32LengthFieldPrepender) // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
-                          .addLast("protobufEncoder", protobufEncoder)
-                          .addLast("protobufDecoder", protobufDecoder)
+                          .addLast(
+                              "protobufVarint32FrameDecoder",
+                              new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
+                          .addLast("protobufEncoder", protobufEncoder) // protobuf编码器
+                          .addLast("protobufDecoder", requestProtobufDecoder) // protobuf请求解码器
                           .addLast("serverLogging", serverLoggingHandler)
                           .addLast(
                               "authenticator",
-                              serverAuthChannelHandler.clusterViewChangedEventSupplier(
+                              serverChannelHandler.clusterViewChangedEventSupplier(
                                   clusterViewChangedEventRef::get))
                           .addLast("chunkedWriter", new ChunkedWriteHandler())
                           .addLast("resourcesTransfer", resourcesTransferHandler);
@@ -319,13 +323,12 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
         clientConnectorsGroup
             .shutdownGracefully()
             .addListener(
-                future -> {
-                  log.info(
-                      "The client[{}--->id:{}] of bonecrusher has been shutdown {}.",
-                      clientChannel.localAddress(),
-                      id,
-                      future.isSuccess() ? "successfully" : "unsuccessfully");
-                });
+                future ->
+                    log.info(
+                        "The client[{}--->id:{}] of bonecrusher has been shutdown {}.",
+                        clientChannel.localAddress(),
+                        id,
+                        future.isSuccess() ? "successfully" : "unsuccessfully"));
       }
     }
 
@@ -352,15 +355,21 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                       @Override
                       public void initChannel(UdtChannel ch) {
                         ch.pipeline()
-                            .addLast(new SnappyFrameEncoder())
-                            .addLast(clientLoggingHandler)
-                            .addLast(protobufVarint32LengthFieldPrepender)
+                            .addLast("snappyFrameEncoder", new SnappyFrameEncoder())
+                            .addLast("snappyFrameDecoder", new SnappyFrameDecoder())
                             .addLast(
-                                new ClientAuthChannelHandler(
-                                        clientProperties,
-                                        serverAuthChannelHandler.getJwtAuthenticator())
-                                    .clusterViewChangedEventSupplier(
-                                        clusterViewChangedEventRef::get));
+                                "protobufVarint32LengthFieldPrepender",
+                                protobufVarint32LengthFieldPrepender) // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
+                            .addLast(
+                                "protobufVarint32FrameDecoder",
+                                new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
+                            .addLast("protobufEncoder", protobufEncoder)
+                            .addLast("protobufDecoder", responseProtobufDecoder)
+                            .addLast("clientLogging", clientLoggingHandler)
+                            .addLast(
+                                "messagesHandler",
+                                clientChannelHandler.clusterViewChangedEventSupplier(
+                                    clusterViewChangedEventRef::get));
                       }
                     })
                 .validate();
@@ -406,18 +415,30 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   }
 
   @Autowired
-  public void setServerAuthChannelHandler(ServerAuthChannelHandler serverAuthChannelHandler) {
-    this.serverAuthChannelHandler = serverAuthChannelHandler;
+  public void setServerAuthChannelHandler(ServerChannelHandler serverChannelHandler) {
+    this.serverChannelHandler = serverChannelHandler;
   }
 
   @Autowired
-  public void setProtobufDecoder(ProtobufDecoder protobufDecoder) {
-    this.protobufDecoder = protobufDecoder;
+  public void setClientChannelHandler(ClientChannelHandler clientChannelHandler) {
+    this.clientChannelHandler = clientChannelHandler;
   }
 
   @Autowired
   public void setProtobufEncoder(ProtobufEncoder protobufEncoder) {
     this.protobufEncoder = protobufEncoder;
+  }
+
+  @Autowired
+  public void setRequestProtobufDecoder(
+      @Qualifier("requestProtobufDecoder") ProtobufDecoder requestProtobufDecoder) {
+    this.requestProtobufDecoder = requestProtobufDecoder;
+  }
+
+  @Autowired
+  public void setResponseProtobufDecoder(
+      @Qualifier("responseProtobufDecoder") ProtobufDecoder responseProtobufDecoder) {
+    this.responseProtobufDecoder = responseProtobufDecoder;
   }
 
   @Autowired
