@@ -47,7 +47,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Channel鉴权处理器，接收集群
+ * Server Channel Handler
  *
  * @author louis sin
  * @version 1.0.0
@@ -55,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Sharable
-public class ServerAuthChannelHandler extends ChannelDuplexHandler {
+public class ServerChannelHandler extends ChannelDuplexHandler {
   static final String CLUSTER_KEY = "cluster";
 
   static final String GENERATOR_KEY = "generator";
@@ -77,7 +77,7 @@ public class ServerAuthChannelHandler extends ChannelDuplexHandler {
    * @param properties 配置
    * @param jwtAuthenticator 认证处理器
    */
-  public ServerAuthChannelHandler(
+  public ServerChannelHandler(
       @NonNull BonecrusherProperties properties, @NonNull JwtAuthenticator jwtAuthenticator) {
     this.properties = properties;
     this.jwtAuthenticator = jwtAuthenticator;
