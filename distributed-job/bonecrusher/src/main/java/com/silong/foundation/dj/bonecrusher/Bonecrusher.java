@@ -25,11 +25,12 @@ import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
-import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
+import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.ClientChannelHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ResourcesTransferHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler;
+import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -47,12 +48,13 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.Promise;
 import jakarta.annotation.PostConstruct;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -71,7 +73,7 @@ import org.springframework.stereotype.Component;
 @Component
 class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataSyncServer {
 
-  private BonecrusherProperties serverProperties;
+  private BonecrusherServerProperties serverProperties;
 
   private BonecrusherClientProperties clientProperties;
 
@@ -98,6 +100,8 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   private ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender;
 
   private ServerChannelHandler serverChannelHandler;
+
+  private EventExecutor eventExecutor;
 
   private Channel serverChannel;
 
@@ -218,47 +222,17 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
       ChannelId id = serverChannel.id();
       String address = serverProperties.getAddress();
       int port = serverProperties.getPort();
-      CountDownLatch latch = new CountDownLatch(2);
-      serverBossGroup
-          .shutdownGracefully()
-          .addListener(
-              future -> {
-                log.info(
-                    "The bossGroup of bonecrusher[{}:{}--->id:{}] has been shutdown {}.",
-                    address,
-                    port,
-                    id,
-                    future.isSuccess() ? "successfully" : "unsuccessfully");
-                latch.countDown();
-              });
-      serverConnectorsGroup
-          .shutdownGracefully()
-          .addListener(
-              future -> {
-                log.info(
-                    "The workersGroup of bonecrusher[{}:{}--->id:{}] has been shutdown {}.",
-                    address,
-                    port,
-                    id,
-                    future.isSuccess() ? "successfully" : "unsuccessfully");
-                latch.countDown();
-              });
 
-      Thread.ofVirtual()
-          .start(
-              () -> {
-                try {
-                  latch.await();
-                } catch (InterruptedException e) {
-                  log.error("{} is interrupted.", Thread.currentThread().getName(), e);
-                }
-
-                log.info(
-                    "The server[{}:{}--->id:{}] of bonecrusher has been shutdown.",
-                    address,
-                    port,
-                    id);
-              });
+      FutureCombiner<?, io.netty.util.concurrent.Future<?>> futureCombiner =
+          new FutureCombiner(
+              serverBossGroup.shutdownGracefully(), serverConnectorsGroup.shutdownGracefully());
+      futureCombiner.whenAllComplete(
+          () ->
+              log.info(
+                  "The server[{}:{}--->id:{}] of bonecrusher has been shutdown.",
+                  address,
+                  port,
+                  id));
     }
   }
 
@@ -274,6 +248,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     private final AtomicReference<ClientState> state = new AtomicReference<>();
 
+    /** 客户端状态 */
     private enum ClientState {
       // 初始化
       INIT,
@@ -296,19 +271,16 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     @Override
     public <T, R> R sendSync(T req) throws Exception {
-      if (state.get() == ClientState.CONNECTED) {
-        clientChannel.writeAndFlush(req);
-
-        return null;
-      }
-      throw new IllegalStateException(
-          String.format("The current status of the client is not %s.", ClientState.CONNECTED));
+      return this.<T, R>sendAsync(req).get();
     }
 
     @Override
-    public <T, R> void sendAsync(T req, Consumer<R> resultConsumer) throws Exception {
+    public <T, R> io.netty.util.concurrent.Future<R> sendAsync(@NonNull T req) throws Exception {
       if (state.get() == ClientState.CONNECTED) {
+        Promise<R> promise = eventExecutor.newPromise();
+
         clientChannel.writeAndFlush(req);
+        return promise;
       }
       throw new IllegalStateException(
           String.format("The current status of the client is not %s.", ClientState.CONNECTED));
@@ -442,13 +414,18 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   }
 
   @Autowired
-  public void setServerProperties(BonecrusherProperties serverProperties) {
+  public void setServerProperties(BonecrusherServerProperties serverProperties) {
     this.serverProperties = serverProperties;
   }
 
   @Autowired
   public void setClientProperties(BonecrusherClientProperties clientProperties) {
     this.clientProperties = clientProperties;
+  }
+
+  @Autowired
+  public void setEventExecutor(EventExecutor eventExecutor) {
+    this.eventExecutor = eventExecutor;
   }
 
   @Autowired

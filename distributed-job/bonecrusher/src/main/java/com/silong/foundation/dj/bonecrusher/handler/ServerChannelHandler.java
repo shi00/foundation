@@ -25,7 +25,7 @@ import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.AUTHENT
 import static com.silong.foundation.dj.bonecrusher.utils.ErrorCode.AUTHENTICATION_FAILED;
 
 import com.auth0.jwt.interfaces.Claim;
-import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
+import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
@@ -64,7 +64,7 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
   @Getter private final JwtAuthenticator jwtAuthenticator;
 
   /** 配置 */
-  private final BonecrusherProperties properties;
+  private final BonecrusherServerProperties properties;
 
   /** 集群视图 */
   @Setter
@@ -78,7 +78,7 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
    * @param jwtAuthenticator 认证处理器
    */
   public ServerChannelHandler(
-      @NonNull BonecrusherProperties properties, @NonNull JwtAuthenticator jwtAuthenticator) {
+      @NonNull BonecrusherServerProperties properties, @NonNull JwtAuthenticator jwtAuthenticator) {
     this.properties = properties;
     this.jwtAuthenticator = jwtAuthenticator;
   }

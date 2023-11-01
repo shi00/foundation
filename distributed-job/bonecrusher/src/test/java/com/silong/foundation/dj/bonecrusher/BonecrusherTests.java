@@ -64,11 +64,11 @@ public class BonecrusherTests {
 
     View newView = new View(newViewId, List.of(new IpAddress("127.0.0.1:43436"), creator));
 
-    publisher.publishEvent(new ClusterViewChangedEvent("cluster-test", oldView, newView));
+    publisher.publishEvent(new ClusterViewChangedEvent("cluster-test", creator, oldView, newView));
     bonecrusher.start();
 
     bonecrusher.client().connect(properties.getAddress(), properties.getPort());
 
-    Thread.sleep(5000);
+    Thread.sleep(500000);
   }
 }

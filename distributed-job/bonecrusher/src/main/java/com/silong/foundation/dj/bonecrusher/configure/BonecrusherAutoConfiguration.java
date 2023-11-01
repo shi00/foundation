@@ -21,11 +21,14 @@
 
 package com.silong.foundation.dj.bonecrusher.configure;
 
+import static com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties.EventExecutorType.UNORDERED;
+
 import com.auth0.jwt.algorithms.Algorithm;
 import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
+import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.handler.*;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
@@ -34,6 +37,8 @@ import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
 import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.*;
+import java.util.concurrent.ThreadFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -47,7 +52,11 @@ import org.springframework.context.annotation.Configuration;
  * @since 2023-10-24 14:41
  */
 @Configuration
-@EnableConfigurationProperties({BonecrusherProperties.class, BonecrusherClientProperties.class})
+@EnableConfigurationProperties({
+  BonecrusherProperties.class,
+  BonecrusherServerProperties.class,
+  BonecrusherClientProperties.class
+})
 public class BonecrusherAutoConfiguration {
 
   static {
@@ -55,10 +64,13 @@ public class BonecrusherAutoConfiguration {
   }
 
   /** 服务器配置 */
-  private BonecrusherProperties serverProperties;
+  private BonecrusherProperties properties;
 
   /** 客户端配置 */
   private BonecrusherClientProperties clientProperties;
+
+  /** 服务端配置 */
+  private BonecrusherServerProperties serverProperties;
 
   @Bean
   public ProtobufEncoder protobufEncoder() {
@@ -92,11 +104,18 @@ public class BonecrusherAutoConfiguration {
         .signatureAlgorithm(
             Algorithm.HMAC256(
                 AesGcmToolkit.decrypt(
-                    serverProperties.getAuth().getSignKey(),
-                    serverProperties.getAuth().getWorkKey())))
+                    properties.getAuth().getSignKey(), properties.getAuth().getWorkKey())))
         // 设置超期时间
-        .period(serverProperties.getAuth().getExpires())
+        .period(properties.getAuth().getExpires())
         .build();
+  }
+
+  @Bean
+  EventExecutor eventExecutor() {
+    ThreadFactory factory = new DefaultThreadFactory("Bonecrusher", true);
+    return properties.getEventExecutorType() == UNORDERED
+        ? new UnorderedThreadPoolEventExecutor(properties.getEventExecutorThreads(), factory)
+        : new DefaultEventExecutor(factory);
   }
 
   @Bean
@@ -125,12 +144,17 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Autowired
-  public void setServerProperties(BonecrusherProperties serverProperties) {
-    this.serverProperties = serverProperties;
+  public void setProperties(BonecrusherProperties properties) {
+    this.properties = properties;
   }
 
   @Autowired
   public void setClientProperties(BonecrusherClientProperties clientProperties) {
     this.clientProperties = clientProperties;
+  }
+
+  @Autowired
+  public void setServerProperties(BonecrusherServerProperties serverProperties) {
+    this.serverProperties = serverProperties;
   }
 }
