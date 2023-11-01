@@ -24,7 +24,7 @@ package com.silong.foundation.dj.bonecrusher.handler;
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING_CLASS_RESP;
 import static org.apache.commons.lang3.StringUtils.replaceChars;
 
-import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
+import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
 import com.silong.foundation.dj.bonecrusher.utils.ErrorCode;
 import io.netty.buffer.ByteBuf;
@@ -71,7 +71,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
    *
    * @param properties 配置
    */
-  public ResourcesTransferHandler(@NonNull BonecrusherProperties properties) {
+  public ResourcesTransferHandler(@NonNull BonecrusherServerProperties properties) {
     this.dataStorePath = properties.getDataStorePath();
     this.dataBlockSize = properties.getDataBlockSize();
   }
