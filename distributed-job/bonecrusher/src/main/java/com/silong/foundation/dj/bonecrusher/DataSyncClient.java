@@ -21,7 +21,7 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
-import java.util.function.Consumer;
+import io.netty.util.concurrent.Future;
 
 /**
  * 数据同步客户端接口
@@ -56,10 +56,10 @@ public interface DataSyncClient extends AutoCloseable {
    * 异步发送消息
    *
    * @param req 请求
-   * @param resultConsumer 响应处理器
+   * @return 异步任务Future
    * @param <T> 请求类型
    * @param <R> 响应类型
    * @throws Exception 异常
    */
-  <T, R> void sendAsync(T req, Consumer<R> resultConsumer) throws Exception;
+  <T, R> Future<R> sendAsync(T req) throws Exception;
 }
