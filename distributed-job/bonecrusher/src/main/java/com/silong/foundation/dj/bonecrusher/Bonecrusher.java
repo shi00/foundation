@@ -31,6 +31,7 @@ import com.silong.foundation.dj.bonecrusher.handler.ClientChannelHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ResourcesTransferHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
+import com.silong.foundation.lambda.Tuple2;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -278,8 +279,8 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
     public <T, R> io.netty.util.concurrent.Future<R> sendAsync(@NonNull T req) throws Exception {
       if (state.get() == ClientState.CONNECTED) {
         Promise<R> promise = eventExecutor.newPromise();
-
-        clientChannel.writeAndFlush(req);
+        Tuple2<T, Promise<R>> tuple2 = Tuple2.<T, Promise<R>>builder().t1(req).t2(promise).build();
+        clientChannel.writeAndFlush(tuple2);
         return promise;
       }
       throw new IllegalStateException(
