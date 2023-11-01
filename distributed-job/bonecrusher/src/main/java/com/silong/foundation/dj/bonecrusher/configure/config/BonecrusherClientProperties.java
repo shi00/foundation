@@ -63,6 +63,12 @@ public class BonecrusherClientProperties {
   /** Netty client connector，默认：1 */
   @Positive private int connectorGroupThreads = 1;
 
+  /** 请求超时时间，默认：3秒 */
+  @NotNull private Duration requestTimeout = Duration.of(3, SECONDS);
+
+  /** 最大并发请求数，默认：500 */
+  @Positive private int maximumConcurrentRequests = 500;
+
   /** netty调优配置 */
   @Valid @NestedConfigurationProperty
   private NettyTuningProperties netty = new NettyTuningProperties();

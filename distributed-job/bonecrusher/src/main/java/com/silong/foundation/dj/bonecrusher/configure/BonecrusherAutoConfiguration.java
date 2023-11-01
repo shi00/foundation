@@ -124,8 +124,9 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Bean
-  ClientChannelHandler clientChannelHandler(JwtAuthenticator jwtAuthenticator) {
-    return new ClientChannelHandler(clientProperties, jwtAuthenticator);
+  ClientChannelHandler clientChannelHandler(
+      JwtAuthenticator jwtAuthenticator, EventExecutor executor) {
+    return new ClientChannelHandler(clientProperties, executor, jwtAuthenticator);
   }
 
   @Bean
