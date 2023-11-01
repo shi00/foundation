@@ -19,13 +19,45 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.handler;
+package com.silong.foundation.dj.bonecrusher.exception;
+
+import java.io.Serial;
 
 /**
- * 数据块包装处理器
+ * 部分执行失败异常
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-10-26 17:49
+ * @since 2023-11-01 14:26
  */
-public class DataBlockHandler {}
+public class PartialExecutionFailureException extends Exception {
+  @Serial private static final long serialVersionUID = -7446287127850697618L;
+
+  /**
+   * 构造方法
+   *
+   * @param message 异常消息
+   */
+  public PartialExecutionFailureException(String message) {
+    super(message);
+  }
+
+  /**
+   * 构造方法
+   *
+   * @param message 异常消息
+   * @param cause 异常
+   */
+  public PartialExecutionFailureException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  /**
+   * 构造方法
+   *
+   * @param cause 异常
+   */
+  public PartialExecutionFailureException(Throwable cause) {
+    super(cause);
+  }
+}
