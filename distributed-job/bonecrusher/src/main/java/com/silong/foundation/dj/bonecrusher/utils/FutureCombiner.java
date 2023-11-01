@@ -21,10 +21,12 @@
 
 package com.silong.foundation.dj.bonecrusher.utils;
 
+import static java.util.Collections.unmodifiableList;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 import com.silong.foundation.dj.bonecrusher.exception.PartialExecutionFailureException;
 import io.netty.util.concurrent.Future;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
@@ -66,6 +68,22 @@ public class FutureCombiner<R, T extends Future<R>> {
     }
     this.futures = List.of(futures);
     this.failedFutures = new AtomicReferenceArray<>(futures.length);
+  }
+
+  /**
+   * 获取执行失败的future
+   *
+   * @return 执行失败future列表
+   */
+  public List<T> getFailedFutures() {
+    if (index.get() <= 0) {
+      return List.of();
+    }
+    ArrayList<T> result = new ArrayList<>(index.get());
+    for (int i = index.get() - 1; i >= 0; i--) {
+      result.add(failedFutures.get(i));
+    }
+    return unmodifiableList(result);
   }
 
   /**
@@ -213,7 +231,7 @@ public class FutureCombiner<R, T extends Future<R>> {
                 if (index.get() != 0) {
                   throw new PartialExecutionFailureException(
                       String.format(
-                          "Total Tasks: %d, Failed Tasks: %d.", futures.size(), index.get()));
+                          "Total Tasks: %d, Failed Tasks: %d", futures.size(), index.get()));
                 }
 
                 return callback.call();
