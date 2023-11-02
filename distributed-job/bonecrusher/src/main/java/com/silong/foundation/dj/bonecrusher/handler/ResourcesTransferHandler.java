@@ -169,7 +169,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                                 DataBlockMetadata.newBuilder()
                                     .setDataUuid(classFqdn)
                                     .setTotalBlocks(totalBlocks)
-                                    .setBlockSize(chunkSize)
+                                    .setBlockSize(fileDataBlock.readableBytes())
                                     .setBlockNo(dataBlockNoCount++))
                             .build();
 
