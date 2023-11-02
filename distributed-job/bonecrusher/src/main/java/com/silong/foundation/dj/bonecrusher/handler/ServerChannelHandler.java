@@ -31,6 +31,7 @@ import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import com.silong.foundation.utilities.jwt.Result;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -133,7 +134,6 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
     // 处理请求，否则传递给pipeline中后续handler
     if (msg instanceof Request request) {
-
       // 执行签名认证
       Result result = jwtAuthenticator.verify(request.getToken(), this::checkTokenPayload);
 
@@ -141,14 +141,18 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
       if (result.isValid()) {
         ctx.fireChannelRead(request);
       } else {
-        ctx.writeAndFlush(
+        Messages.Response response =
             Messages.Response.newBuilder()
                 .setType(AUTHENTICATION_FAILED_RESP)
                 .setResult(
                     Messages.Result.newBuilder()
                         .setCode(AUTHENTICATION_FAILED.getCode())
                         .setDesc(AUTHENTICATION_FAILED.getDesc()))
-                .build());
+                .build();
+        ctx.writeAndFlush(
+            ctx.alloc()
+                .compositeBuffer(1)
+                .addComponent(true, Unpooled.wrappedBuffer(response.toByteArray())));
       }
     } else {
       ctx.fireChannelRead(msg);
