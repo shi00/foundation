@@ -21,8 +21,9 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
-import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
+import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
+import com.silong.foundation.dj.bonecrusher.message.Messages;
 import java.util.List;
 import org.jgroups.Address;
 import org.jgroups.View;
@@ -52,7 +53,7 @@ public class BonecrusherTests {
 
   @Autowired private DataSyncServer bonecrusher;
 
-  @Autowired private BonecrusherProperties properties;
+  @Autowired private BonecrusherServerProperties properties;
 
   @Test
   public void startServer() throws Exception {
@@ -65,9 +66,19 @@ public class BonecrusherTests {
     View newView = new View(newViewId, List.of(new IpAddress("127.0.0.1:43436"), creator));
 
     publisher.publishEvent(new ClusterViewChangedEvent("cluster-test", creator, oldView, newView));
-    bonecrusher.start();
+    bonecrusher.start(false);
 
-    bonecrusher.client().connect(properties.getAddress(), properties.getPort());
+    DataSyncClient client =
+        bonecrusher.client().connect(properties.getAddress(), properties.getPort());
+
+    Object o =
+        client.sendSync(
+            Messages.Request.newBuilder()
+                .setType(Messages.Type.LOADING_CLASS_REQ)
+                .setLoadingClass(
+                    Messages.LoadingClassReq.newBuilder()
+                        .setClassFqdn("com.silong.foundation.dj.bonecrusher.Bonecrusher")));
+    System.out.println(o.toString());
 
     Thread.sleep(500000);
   }
