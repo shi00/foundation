@@ -21,6 +21,8 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import static com.silong.foundation.dj.bonecrusher.enu.ClientState.CLOSED;
+import static com.silong.foundation.dj.bonecrusher.enu.ClientState.CONNECTED;
 import static com.silong.foundation.dj.bonecrusher.enu.ServerState.*;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static io.netty.channel.ChannelOption.SO_REUSEADDR;
@@ -34,7 +36,7 @@ import com.silong.foundation.dj.bonecrusher.handler.ClientChannelHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ResourcesTransferHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
-import com.silong.foundation.lambda.Tuple2;
+import com.silong.foundation.lambda.Tuple3;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -56,6 +58,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import jakarta.annotation.PostConstruct;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.Getter;
@@ -189,11 +192,8 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
     return serverState.get();
   }
 
-  /**
-   * 启动服务<br>
-   * 注意：阻塞调用start方法的当前线程
-   */
-  public void start() throws InterruptedException {
+  @Override
+  public void start(boolean block) throws InterruptedException {
     if (serverState.compareAndSet(INITIALIZED, RUNNING)) {
       // 只有节点加入集群后才能启动
       joinClusterLatch.await();
@@ -210,7 +210,12 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
           serverChannel.id());
 
       // 对关闭通道进行监听
-      //    channel.closeFuture().sync();
+      if (block) {
+        serverChannel.closeFuture().sync();
+      }
+    } else {
+      throw new IllegalStateException(
+          String.format("The current status of the server is not %s.", INITIALIZED));
     }
   }
 
@@ -254,13 +259,14 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     @Override
     public DataSyncClient connect(String remoteAddress, int remotePort) throws Exception {
-      if (clientState.compareAndSet(ClientState.INITIALIZED, ClientState.CONNECTED)) {
+      if (clientState.compareAndSet(ClientState.INITIALIZED, CONNECTED)) {
         joinClusterLatch.await(); // 加入集群后才能创建客户端
         this.clientChannel = bootstrap.connect(remoteAddress, remotePort).sync().channel();
         return this;
+      } else {
+        throw new IllegalStateException(
+            String.format("The current status of the client is not %s.", ClientState.INITIALIZED));
       }
-      throw new IllegalStateException(
-          String.format("The current status of the client is not %s.", ClientState.INITIALIZED));
     }
 
     @Override
@@ -269,21 +275,44 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
     }
 
     @Override
-    public <T, R> io.netty.util.concurrent.Future<R> sendAsync(@NonNull T req) {
-      if (clientState.get() == ClientState.CONNECTED) {
+    public <T, R> Future<R> sendAsync(@NonNull T req) {
+      if (clientState.get() == CONNECTED) {
         Promise<R> promise = eventExecutor.newPromise();
-        Tuple2<T, Promise<R>> tuple2 = Tuple2.<T, Promise<R>>builder().t1(req).t2(promise).build();
-        clientChannel.writeAndFlush(tuple2);
-        return promise;
+        Tuple3<T, Promise<R>, String> tuple3 =
+            Tuple3.<T, Promise<R>, String>builder()
+                .t1(req)
+                .t2(promise)
+                .t3(UUID.randomUUID().toString())
+                .build();
+
+        // 异步发送请求
+        ChannelFuture channelFuture =
+            clientChannel
+                .writeAndFlush(tuple3)
+                .addListener(
+                    future -> {
+                      // 取消或者失败时通知
+                      if (!future.isSuccess()) {
+                        clientChannelHandler.cancelRequest(tuple3.t3());
+                      }
+                    });
+        return promise.addListener(
+            future -> {
+              // 第三方通过promise执行取消时，执行取消
+              if (future.isCancelled()) {
+                channelFuture.cancel(true);
+              }
+            });
+      } else {
+        throw new IllegalStateException(
+            String.format("The current status of the client is not %s.", CONNECTED));
       }
-      throw new IllegalStateException(
-          String.format("The current status of the client is not %s.", ClientState.CONNECTED));
     }
 
     @Override
     public void close() {
-      if (clientState.compareAndSet(ClientState.CONNECTED, ClientState.CLOSED)
-          || clientState.compareAndSet(ClientState.INITIALIZED, ClientState.CLOSED)) {
+      if (clientState.compareAndSet(CONNECTED, CLOSED)
+          || clientState.compareAndSet(ClientState.INITIALIZED, CLOSED)) {
         ChannelId id = clientChannel.id();
         clientConnectorsGroup
             .shutdownGracefully()
