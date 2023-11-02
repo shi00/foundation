@@ -21,11 +21,14 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import static com.silong.foundation.dj.bonecrusher.enu.ServerState.*;
 import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
+import com.silong.foundation.dj.bonecrusher.enu.ClientState;
+import com.silong.foundation.dj.bonecrusher.enu.ServerState;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.ClientChannelHandler;
 import com.silong.foundation.dj.bonecrusher.handler.ResourcesTransferHandler;
@@ -50,6 +53,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import jakarta.annotation.PostConstruct;
 import java.util.concurrent.*;
@@ -113,21 +117,13 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   /** 加入集群latch，确保服务只能在节点加入集群后启动 */
   private final CountDownLatch joinClusterLatch = new CountDownLatch(1);
 
-  private final AtomicReference<ServerState> state = new AtomicReference<>();
-
-  private enum ServerState {
-    // 初始化状态
-    INIT,
-    // 运行中
-    RUNNING,
-    // 关闭
-    SHUTDOWN
-  }
+  /** 服务器状态 */
+  private final AtomicReference<ServerState> serverState = new AtomicReference<>(CREATED);
 
   /** 初始化服务 */
   @PostConstruct
   public void initialize() {
-    try {
+    if (serverState.compareAndSet(CREATED, INITIALIZED)) {
       this.serverBootstrap =
           new ServerBootstrap()
               .group(
@@ -176,8 +172,6 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                     }
                   })
               .validate(); // 配置校验
-    } finally {
-      state.set(ServerState.INIT);
     }
   }
 
@@ -190,12 +184,17 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
         TimeUnit.SECONDS);
   }
 
+  @Override
+  public ServerState state() {
+    return serverState.get();
+  }
+
   /**
    * 启动服务<br>
    * 注意：阻塞调用start方法的当前线程
    */
   public void start() throws InterruptedException {
-    if (state.compareAndSet(ServerState.INIT, ServerState.RUNNING)) {
+    if (serverState.compareAndSet(INITIALIZED, RUNNING)) {
       // 只有节点加入集群后才能启动
       joinClusterLatch.await();
 
@@ -217,22 +216,19 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
   /** 异步关闭服务 */
   public void shutdown() {
-    ServerState serverState = state.get();
-    if (serverState != null && serverState != ServerState.SHUTDOWN) {
-      state.set(ServerState.SHUTDOWN);
+    // 只有初始化状态或运行状态才能关闭
+    if (serverState.compareAndSet(INITIALIZED, SHUTDOWN)
+        || serverState.compareAndSet(RUNNING, SHUTDOWN)) {
       ChannelId id = serverChannel.id();
-      String address = serverProperties.getAddress();
-      int port = serverProperties.getPort();
-
-      FutureCombiner<?, io.netty.util.concurrent.Future<?>> futureCombiner =
+      FutureCombiner<?, Future<?>> futureCombiner =
           new FutureCombiner(
               serverBossGroup.shutdownGracefully(), serverConnectorsGroup.shutdownGracefully());
       futureCombiner.whenAllComplete(
           () ->
               log.info(
                   "The server[{}:{}--->id:{}] of bonecrusher has been shutdown.",
-                  address,
-                  port,
+                  serverProperties.getAddress(),
+                  serverProperties.getPort(),
                   id));
     }
   }
@@ -247,27 +243,24 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     private Channel clientChannel;
 
-    private final AtomicReference<ClientState> state = new AtomicReference<>();
-
     /** 客户端状态 */
-    private enum ClientState {
-      // 初始化
-      INIT,
-      // 已连接
-      CONNECTED,
-      // 已关闭
-      CLOSED
+    private final AtomicReference<ClientState> clientState =
+        new AtomicReference<>(ClientState.INITIALIZED);
+
+    @Override
+    public ClientState state() {
+      return clientState.get();
     }
 
     @Override
     public DataSyncClient connect(String remoteAddress, int remotePort) throws Exception {
-      if (state.compareAndSet(ClientState.INIT, ClientState.CONNECTED)) {
+      if (clientState.compareAndSet(ClientState.INITIALIZED, ClientState.CONNECTED)) {
         joinClusterLatch.await(); // 加入集群后才能创建客户端
         this.clientChannel = bootstrap.connect(remoteAddress, remotePort).sync().channel();
         return this;
       }
       throw new IllegalStateException(
-          String.format("The current status of the client is not %s.", ClientState.INIT));
+          String.format("The current status of the client is not %s.", ClientState.INITIALIZED));
     }
 
     @Override
@@ -276,8 +269,8 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
     }
 
     @Override
-    public <T, R> io.netty.util.concurrent.Future<R> sendAsync(@NonNull T req) throws Exception {
-      if (state.get() == ClientState.CONNECTED) {
+    public <T, R> io.netty.util.concurrent.Future<R> sendAsync(@NonNull T req) {
+      if (clientState.get() == ClientState.CONNECTED) {
         Promise<R> promise = eventExecutor.newPromise();
         Tuple2<T, Promise<R>> tuple2 = Tuple2.<T, Promise<R>>builder().t1(req).t2(promise).build();
         clientChannel.writeAndFlush(tuple2);
@@ -289,9 +282,8 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     @Override
     public void close() {
-      ClientState clientState = state.get();
-      if (clientState != null && clientState != ClientState.CLOSED) {
-        state.set(ClientState.CLOSED);
+      if (clientState.compareAndSet(ClientState.CONNECTED, ClientState.CLOSED)
+          || clientState.compareAndSet(ClientState.INITIALIZED, ClientState.CLOSED)) {
         ChannelId id = clientChannel.id();
         clientConnectorsGroup
             .shutdownGracefully()
@@ -307,48 +299,44 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     /** 构造方法 */
     public BonecrusherClient() {
-      try {
-        this.bootstrap =
-            new Bootstrap()
-                .group(
-                    this.clientConnectorsGroup =
-                        new NioEventLoopGroup(
-                            clientProperties.getConnectorGroupThreads(),
-                            new DefaultThreadFactory("BC-Connector"),
-                            NioUdtProvider.BYTE_PROVIDER))
-                // 设置服务端通道实现类型
-                .channelFactory(NioUdtProvider.BYTE_CONNECTOR)
-                // 设置子channel的缓冲区分配器
-                .option(SO_REUSEADDR, clientProperties.getNetty().isSO_REUSEADDR())
-                .option(
-                    CONNECT_TIMEOUT_MILLIS,
-                    (int) clientProperties.getNetty().getCONNECT_TIMEOUT_MILLIS().toMillis())
-                .handler(
-                    new ChannelInitializer<UdtChannel>() {
-                      @Override
-                      public void initChannel(UdtChannel ch) {
-                        ch.pipeline()
-                            .addLast("snappyFrameEncoder", new SnappyFrameEncoder())
-                            .addLast("snappyFrameDecoder", new SnappyFrameDecoder())
-                            .addLast(
-                                "protobufVarint32LengthFieldPrepender",
-                                protobufVarint32LengthFieldPrepender) // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
-                            .addLast(
-                                "protobufVarint32FrameDecoder",
-                                new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
-                            .addLast("protobufEncoder", protobufEncoder)
-                            .addLast("protobufDecoder", responseProtobufDecoder)
-                            .addLast("clientLogging", clientLoggingHandler)
-                            .addLast(
-                                "messagesHandler",
-                                clientChannelHandler.clusterViewChangedEventSupplier(
-                                    clusterViewChangedEventRef::get));
-                      }
-                    })
-                .validate();
-      } finally {
-        state.set(ClientState.INIT);
-      }
+      this.bootstrap =
+          new Bootstrap()
+              .group(
+                  this.clientConnectorsGroup =
+                      new NioEventLoopGroup(
+                          clientProperties.getConnectorGroupThreads(),
+                          new DefaultThreadFactory("BC-Connector"),
+                          NioUdtProvider.BYTE_PROVIDER))
+              // 设置服务端通道实现类型
+              .channelFactory(NioUdtProvider.BYTE_CONNECTOR)
+              // 设置子channel的缓冲区分配器
+              .option(SO_REUSEADDR, clientProperties.getNetty().isSO_REUSEADDR())
+              .option(
+                  CONNECT_TIMEOUT_MILLIS,
+                  (int) clientProperties.getNetty().getCONNECT_TIMEOUT_MILLIS().toMillis())
+              .handler(
+                  new ChannelInitializer<UdtChannel>() {
+                    @Override
+                    public void initChannel(UdtChannel ch) {
+                      ch.pipeline()
+                          .addLast("snappyFrameEncoder", new SnappyFrameEncoder())
+                          .addLast("snappyFrameDecoder", new SnappyFrameDecoder())
+                          .addLast(
+                              "protobufVarint32LengthFieldPrepender",
+                              protobufVarint32LengthFieldPrepender) // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
+                          .addLast(
+                              "protobufVarint32FrameDecoder",
+                              new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
+                          .addLast("protobufEncoder", protobufEncoder)
+                          .addLast("protobufDecoder", responseProtobufDecoder)
+                          .addLast("clientLogging", clientLoggingHandler)
+                          .addLast(
+                              "messagesHandler",
+                              clientChannelHandler.clusterViewChangedEventSupplier(
+                                  clusterViewChangedEventRef::get));
+                    }
+                  })
+              .validate();
     }
   }
 
