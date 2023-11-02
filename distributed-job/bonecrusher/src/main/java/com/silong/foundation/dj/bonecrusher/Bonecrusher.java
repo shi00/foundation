@@ -167,7 +167,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                           .addLast("protobufDecoder", requestProtobufDecoder) // protobuf请求解码器
                           .addLast("serverLogging", serverLoggingHandler)
                           .addLast(
-                              "authenticator",
+                              "serverHandler",
                               serverChannelHandler.clusterViewChangedEventSupplier(
                                   clusterViewChangedEventRef::get))
                           .addLast("chunkedWriter", new ChunkedWriteHandler())
@@ -353,14 +353,16 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                           .addLast(
                               "protobufVarint32LengthFieldPrepender",
                               protobufVarint32LengthFieldPrepender) // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
-                          .addLast(
-                              "protobufVarint32FrameDecoder",
-                              new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
+                          //                          .addLast(
+                          //                              "protobufVarint32FrameDecoder",
+                          //                              new ProtobufVarint32FrameDecoder()) //
+                          // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
                           .addLast("protobufEncoder", protobufEncoder)
-                          .addLast("protobufDecoder", responseProtobufDecoder)
+                          //                          .addLast("protobufDecoder",
+                          // responseProtobufDecoder)
                           .addLast("clientLogging", clientLoggingHandler)
                           .addLast(
-                              "messagesHandler",
+                              "clientHandler",
                               clientChannelHandler.clusterViewChangedEventSupplier(
                                   clusterViewChangedEventRef::get));
                     }
