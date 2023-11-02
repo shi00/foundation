@@ -21,8 +21,8 @@
 
 package com.silong.foundation.dj.bonecrusher.handler;
 
+import static com.silong.foundation.dj.bonecrusher.enu.ErrorCode.AUTHENTICATION_FAILED;
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.AUTHENTICATION_FAILED_RESP;
-import static com.silong.foundation.dj.bonecrusher.utils.ErrorCode.AUTHENTICATION_FAILED;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
