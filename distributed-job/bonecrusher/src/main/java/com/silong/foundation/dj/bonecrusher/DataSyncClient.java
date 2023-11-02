@@ -21,6 +21,7 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import com.silong.foundation.dj.bonecrusher.enu.ClientState;
 import io.netty.util.concurrent.Future;
 
 /**
@@ -31,6 +32,13 @@ import io.netty.util.concurrent.Future;
  * @since 2023-10-28 17:54
  */
 public interface DataSyncClient extends AutoCloseable {
+
+  /**
+   * 获取当前客户端状态
+   *
+   * @return 状态
+   */
+  ClientState state();
 
   /**
    * 连接服务端

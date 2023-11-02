@@ -21,6 +21,8 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import com.silong.foundation.dj.bonecrusher.enu.ServerState;
+
 /**
  * 数据同步服务器接口
  *
@@ -29,6 +31,13 @@ package com.silong.foundation.dj.bonecrusher;
  * @since 2023-10-28 17:54
  */
 public interface DataSyncServer {
+
+  /**
+   * 获取服务器状态
+   *
+   * @return 状态
+   */
+  ServerState state();
 
   /**
    * 启动服务
