@@ -137,7 +137,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    if (msg instanceof CompositeByteBuf compositeByteBuf && compositeByteBuf.numComponents() == 2) {
+    if (msg instanceof CompositeByteBuf compositeByteBuf) {
       try {
         ByteBuf respBuf = compositeByteBuf.component(0);
         byte[] array;
