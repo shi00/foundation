@@ -150,11 +150,12 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
           array = ByteBufUtil.getBytes(respBuf, respBuf.readerIndex(), length, false);
           offset = 0;
         }
-        Messages.Response response = Messages.Response.parser().parseFrom(array, offset, length);
-        Tuple2<Messages.Request, Promise> value = cache.asMap().remove(response.getUuid());
+        Messages.ResponseHeader responseHeader =
+            Messages.ResponseHeader.parser().parseFrom(array, offset, length);
+        Tuple2<Messages.Request, Promise> value = cache.asMap().remove(responseHeader.getUuid());
         if (value != null) {
-          log.info("Request: {}, Response: {}", value.t1(), response);
-          if (response.hasResult()) {
+          log.info("Request: {}, Response: {}", value.t1(), responseHeader);
+          if (responseHeader.hasResult()) {
             value.t2().setFailure(new RequestResponseException());
           } else {
             ByteBuf data = compositeByteBuf.component(1);

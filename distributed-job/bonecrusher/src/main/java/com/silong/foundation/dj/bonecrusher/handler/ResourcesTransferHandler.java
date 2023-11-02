@@ -133,8 +133,8 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
     String classFqdn = request.getClassFqdn();
     try (InputStream inputStream = getClass().getResourceAsStream(classFqdn2Path(classFqdn))) {
       if (inputStream == null) {
-        Response response =
-            Response.newBuilder()
+        ResponseHeader responseHeader =
+            ResponseHeader.newBuilder()
                 .setType(LOADING_CLASS_RESP)
                 .setResult(CLASS_NOT_FOUND)
                 .setUuid(requestId)
@@ -142,7 +142,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
         ctx.writeAndFlush(
             ctx.alloc()
                 .compositeBuffer(1)
-                .addComponent(true, Unpooled.wrappedBuffer(response.toByteArray())));
+                .addComponent(true, Unpooled.wrappedBuffer(responseHeader.toByteArray())));
         return;
       }
 
@@ -161,8 +161,8 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                 private ByteBuf attachRespType(
                     ByteBufAllocator allocator, ByteBuf fileDataBlock, Type respType) {
                   if (fileDataBlock != null) {
-                    Response response =
-                        Response.newBuilder()
+                    ResponseHeader responseHeader =
+                        ResponseHeader.newBuilder()
                             .setType(respType)
                             .setUuid(requestId)
                             .setDataBlockMetadata(
@@ -179,7 +179,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                             .compositeBuffer(2)
                             .addComponents(
                                 true,
-                                Unpooled.wrappedBuffer(response.toByteArray()),
+                                Unpooled.wrappedBuffer(responseHeader.toByteArray()),
                                 fileDataBlock);
                   }
                   return fileDataBlock;

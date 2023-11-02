@@ -141,8 +141,8 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
       if (result.isValid()) {
         ctx.fireChannelRead(request);
       } else {
-        Messages.Response response =
-            Messages.Response.newBuilder()
+        Messages.ResponseHeader responseHeader =
+            Messages.ResponseHeader.newBuilder()
                 .setType(AUTHENTICATION_FAILED_RESP)
                 .setResult(
                     Messages.Result.newBuilder()
@@ -152,7 +152,7 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
         ctx.writeAndFlush(
             ctx.alloc()
                 .compositeBuffer(1)
-                .addComponent(true, Unpooled.wrappedBuffer(response.toByteArray())));
+                .addComponent(true, Unpooled.wrappedBuffer(responseHeader.toByteArray())));
       }
     } else {
       ctx.fireChannelRead(msg);
