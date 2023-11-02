@@ -32,7 +32,7 @@ import java.util.concurrent.ExecutionException;
  * @since 2023-11-01 14:26
  */
 public class PartialExecutionSuccessException extends ExecutionException {
-  @Serial private static final long serialVersionUID = 7851210931496205225L;
+  @Serial private static final long serialVersionUID = 4365504477678417698L;
 
   /**
    * 构造方法

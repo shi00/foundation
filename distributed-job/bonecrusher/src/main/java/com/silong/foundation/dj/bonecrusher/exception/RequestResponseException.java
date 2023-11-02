@@ -19,28 +19,29 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.handler;
+package com.silong.foundation.dj.bonecrusher.exception;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler.Sharable;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import java.io.Serial;
 
 /**
- * 客户端响应处理器
+ * 请求响应异常
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-10-26 23:25
+ * @since 2023-11-01 14:26
  */
-@Sharable
-public class RespChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public class RequestResponseException extends Exception {
+  @Serial private static final long serialVersionUID = 8590740567171253942L;
 
-  @Override
-  public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    ctx.fireChannelActive();
+  /** 构造方法 */
+  public RequestResponseException() {}
+
+  /**
+   * 构造方法
+   *
+   * @param message 异常消息
+   */
+  public RequestResponseException(String message) {
+    super(message);
   }
-
-  @Override
-  protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {}
 }

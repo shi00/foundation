@@ -28,8 +28,10 @@ import com.github.benmanes.caffeine.cache.*;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.exception.ConcurrentRequestLimitExceededException;
+import com.silong.foundation.dj.bonecrusher.exception.RequestResponseException;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.lambda.Tuple2;
+import com.silong.foundation.lambda.Tuple3;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -39,10 +41,10 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.udt.nio.NioUdtProvider;
-import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Promise;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
@@ -62,9 +64,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ClientChannelHandler extends ChannelDuplexHandler {
 
-  private static final AttributeKey<Cache<String, Tuple2<Messages.Request, Promise>>>
-      REQUEST_CACHE_KEY = AttributeKey.valueOf("bonecrusher.request.promise");
-
   /** 集群视图 */
   @Setter
   @Accessors(fluent = true)
@@ -76,12 +75,9 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
   /** 配置 */
   private final BonecrusherClientProperties clientProperties;
 
-  /** 请求超时监听器 */
-  private final RemovalListener<String, Tuple2<Messages.Request, Promise>> requestTimeoutlListener;
-
   private final Executor executor;
 
-  private ChannelHandlerContext handlerContext;
+  private final Cache<String, Tuple2<Messages.Request, Promise>> cache;
 
   /**
    * 构造方法
@@ -97,90 +93,108 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
     this.clientProperties = clientProperties;
     this.executor = executor;
     this.jwtAuthenticator = jwtAuthenticator;
-    this.requestTimeoutlListener =
-        (uuid, tuple2, cause) -> {
-
-          // 只有垃圾收集导致的淘汰promise才会为null，因此过滤此种场景
-          if (tuple2 != null) {
-            switch (cause) {
-              case EXPIRED -> // 请求超时
-              tuple2
-                  .t2()
-                  .setFailure(
-                      new TimeoutException(
-                          String.format(
-                              "Timeout Threshold: %ss, Request: %s",
-                              clientProperties.getRequestTimeout().toSeconds(), tuple2.t1())));
-              case SIZE -> // 超出并发请求数上限淘汰
-              tuple2
-                  .t2()
-                  .setFailure(
-                      new ConcurrentRequestLimitExceededException(
-                          String.format(
-                              "The number of concurrent requests exceeded the limit of %d. Discard Request: %s",
-                              clientProperties.getMaximumConcurrentRequests(), tuple2.t1())));
-            }
-          }
-        };
+    this.cache =
+        Caffeine.newBuilder()
+            .initialCapacity(clientProperties.getExpectedConcurrentRequests())
+            .maximumSize(clientProperties.getMaximumConcurrentRequests())
+            .executor(executor)
+            .expireAfterWrite(clientProperties.getRequestTimeout())
+            .scheduler(Scheduler.systemScheduler())
+            .evictionListener(buildRemovalListener(clientProperties))
+            .build();
   }
 
-  @Override
-  public void channelActive(ChannelHandlerContext ctx) {
-    // 创建请求缓存，并缓存
-    ctx.channel()
-        .attr(REQUEST_CACHE_KEY)
-        .set(
-            Caffeine.newBuilder()
-                .initialCapacity(100)
-                .maximumSize(clientProperties.getMaximumConcurrentRequests())
-                .executor(executor)
-                .expireAfterWrite(clientProperties.getRequestTimeout())
-                .scheduler(Scheduler.systemScheduler())
-                .evictionListener(requestTimeoutlListener)
-                .build());
-    handlerContext = ctx;
-    ctx.fireChannelActive();
+  private RemovalListener<String, Tuple2<Messages.Request, Promise>> buildRemovalListener(
+      BonecrusherClientProperties clientProperties) {
+    return (uuid, tuple2, cause) -> {
+      // 只有垃圾收集导致的淘汰promise才会为null，因此过滤此种场景
+      if (tuple2 != null) {
+        switch (cause) {
+          case EXPLICIT -> {
+            log.info("Request canceled: {}", tuple2.t1());
+            tuple2.t2().setFailure(new CancellationException());
+          }
+          case EXPIRED -> // 请求超时
+          {
+            log.info(
+                "Timeout Threshold: {}s, Request: {}",
+                clientProperties.getRequestTimeout().toSeconds(),
+                tuple2.t1());
+            tuple2.t2().setFailure(new TimeoutException());
+          }
+          case SIZE -> // 超出并发请求数上限淘汰
+          {
+            log.info(
+                "The number of concurrent requests exceeded the limit of {}. Discard Request: {}",
+                clientProperties.getMaximumConcurrentRequests(),
+                tuple2.t1());
+            tuple2.t2().setFailure(new ConcurrentRequestLimitExceededException());
+          }
+        }
+      }
+    };
   }
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     if (msg instanceof CompositeByteBuf compositeByteBuf && compositeByteBuf.numComponents() == 2) {
-      ByteBuf respBuf = compositeByteBuf.component(0);
-      byte[] array;
-      int offset;
-      int length = respBuf.readableBytes();
-      if (respBuf.hasArray()) {
-        array = respBuf.array();
-        offset = respBuf.arrayOffset() + respBuf.readerIndex();
-      } else {
-        array = ByteBufUtil.getBytes(respBuf, respBuf.readerIndex(), length, false);
-        offset = 0;
+      try {
+        ByteBuf respBuf = compositeByteBuf.component(0);
+        byte[] array;
+        int offset;
+        int length = respBuf.readableBytes();
+        if (respBuf.hasArray()) {
+          array = respBuf.array();
+          offset = respBuf.arrayOffset() + respBuf.readerIndex();
+        } else {
+          array = ByteBufUtil.getBytes(respBuf, respBuf.readerIndex(), length, false);
+          offset = 0;
+        }
+        Messages.Response response = Messages.Response.parser().parseFrom(array, offset, length);
+        Tuple2<Messages.Request, Promise> value = cache.asMap().remove(response.getUuid());
+        if (value != null) {
+          log.info("Request: {}, Response: {}", value.t1(), response);
+          if (response.hasResult()) {
+            value.t2().setFailure(new RequestResponseException());
+          } else {
+            ByteBuf data = compositeByteBuf.component(1);
+            array = ByteBufUtil.getBytes(data, data.readerIndex(), data.readableBytes(), true);
+            value.t2().setSuccess(array);
+          }
+        }
+      } finally {
+        ReferenceCountUtil.release(compositeByteBuf);
       }
-      Messages.Response response = Messages.Response.parser().parseFrom(array, offset, length);
-      if (response.getResult() != null) {
-        Tuple2<Messages.Request, Promise> value =
-            ctx.channel().attr(REQUEST_CACHE_KEY).get().getIfPresent(response.getUuid());
-      }
+      return;
     }
     ctx.fireChannelRead(msg);
   }
 
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-    if (msg instanceof Tuple2 tuple2) {
-      Object req = tuple2.t1();
-      Promise cPromise = (Promise) tuple2.t2();
-      Messages.Request r = null;
+    if (msg instanceof Tuple3 tuple3) {
+      Object req = tuple3.t1();
+      Promise<?> cPromise = (Promise<?>) tuple3.t2();
+      String uuid = (String) tuple3.t3();
+      String token = getToken();
 
       // 为请求添加鉴权token和uuid
       if (req instanceof Messages.Request request) {
-        cache(r = buildRequest(request.toBuilder()), cPromise);
+        msg = cache(request.toBuilder().setToken(token).setUuid(uuid).build(), cPromise);
       } else if (req instanceof Messages.Request.Builder builder) {
-        cache(r = buildRequest(builder), cPromise);
+        msg = cache(builder.setToken(token).setUuid(uuid).build(), cPromise);
       }
-      msg = r == null ? msg : r;
     }
     ctx.write(msg, promise);
+  }
+
+  /**
+   * 取消请求
+   *
+   * @param reqUuid 请求uuid
+   */
+  public void cancelRequest(@NonNull String reqUuid) {
+    cache.invalidate(reqUuid);
   }
 
   @Override
@@ -196,18 +210,11 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
     ctx.close();
   }
 
-  private void cache(Messages.Request request, Promise promise) {
-    handlerContext
-        .channel()
-        .attr(REQUEST_CACHE_KEY)
-        .get()
-        .put(
-            request.getUuid(),
-            Tuple2.<Messages.Request, Promise>builder().t1(request).t2(promise).build());
-  }
-
-  private Messages.Request buildRequest(Messages.Request.Builder builder) {
-    return builder.setToken(getToken()).setUuid(UUID.randomUUID().toString()).build();
+  private Messages.Request cache(Messages.Request request, Promise<?> promise) {
+    cache.put(
+        request.getUuid(),
+        Tuple2.<Messages.Request, Promise>builder().t1(request).t2(promise).build());
+    return request;
   }
 
   private String getToken() {

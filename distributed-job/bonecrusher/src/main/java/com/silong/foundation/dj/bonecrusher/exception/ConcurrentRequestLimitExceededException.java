@@ -31,7 +31,10 @@ import java.io.Serial;
  * @since 2023-11-01 14:26
  */
 public class ConcurrentRequestLimitExceededException extends Exception {
-  @Serial private static final long serialVersionUID = -7069467979951568383L;
+  @Serial private static final long serialVersionUID = 7484126504532421056L;
+
+  /** 构造方法 */
+  public ConcurrentRequestLimitExceededException() {}
 
   /**
    * 构造方法
