@@ -146,7 +146,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
       }
 
       // 分块数据发送
-      int chunkSize = (int) dataBlockSize.toKilobytes();
+      int chunkSize = (int) dataBlockSize.toBytes();
       ctx.writeAndFlush(
               new ChunkedStream(inputStream, chunkSize) {
 
