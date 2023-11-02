@@ -42,9 +42,10 @@ public interface DataSyncServer {
   /**
    * 启动服务
    *
+   * @param block 是否阻塞当前线程，等待服务器关闭
    * @throws Exception 异常
    */
-  void start() throws Exception;
+  void start(boolean block) throws Exception;
 
   /**
    * 关闭服务器
