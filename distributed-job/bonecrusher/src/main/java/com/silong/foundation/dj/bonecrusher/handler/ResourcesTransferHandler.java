@@ -38,7 +38,6 @@ import io.netty.handler.stream.ChunkedStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
@@ -155,7 +154,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                     calculateTotalBlocks(inputStream.available(), chunkSize);
 
                 /** 数据块计数 */
-                private final AtomicInteger dataBlockNoCount = new AtomicInteger(0);
+                private int dataBlockNoCount = 0;
 
                 private ByteBuf attachRespType(
                     ByteBufAllocator allocator, ByteBuf fileDataBlock, Type respType) {
@@ -169,7 +168,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                                     .setDataUuid(classFqdn)
                                     .setTotalBlocks(totalBlocks)
                                     .setBlockSize(chunkSize)
-                                    .setBlockNo(dataBlockNoCount.getAndIncrement()))
+                                    .setBlockNo(dataBlockNoCount++))
                             .build();
 
                     // 拼装组合bytebuf，第一个组件为protobuf响应
