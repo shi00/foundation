@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.utils;
+package com.silong.foundation.dj.bonecrusher.enu;
 
 import lombok.Getter;
 
