@@ -61,8 +61,7 @@ public class FutureCombiner<R, T extends Future<R>> {
    *
    * @param futures futures
    */
-  @SafeVarargs
-  public FutureCombiner(T... futures) {
+  public FutureCombiner(T[] futures) {
     if (futures == null || futures.length == 0) {
       throw new IllegalArgumentException("futures must not be null or empty.");
     }
