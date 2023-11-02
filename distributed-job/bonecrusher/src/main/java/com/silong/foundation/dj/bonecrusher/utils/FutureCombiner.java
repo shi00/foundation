@@ -21,17 +21,13 @@
 
 package com.silong.foundation.dj.bonecrusher.utils;
 
-import static java.util.Collections.unmodifiableList;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
-import com.silong.foundation.dj.bonecrusher.exception.PartialExecutionFailureException;
+import com.silong.foundation.dj.bonecrusher.exception.PartialExecutionSuccessException;
 import io.netty.util.concurrent.Future;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Supplier;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -51,10 +47,13 @@ public class FutureCombiner<R, T extends Future<R>> {
   /** netty future list */
   private final List<T> futures;
 
-  /** 执行失败的future列表 */
-  private final AtomicReferenceArray<T> failedFutures;
+  /** 执行不成功的future列表 */
+  private final Object[] unsuccessfulFutures;
 
   private final AtomicInteger index = new AtomicInteger(0);
+
+  /** 是否已执行完毕 */
+  private volatile boolean isFinish;
 
   /**
    * 构造方法
@@ -66,23 +65,63 @@ public class FutureCombiner<R, T extends Future<R>> {
       throw new IllegalArgumentException("futures must not be null or empty.");
     }
     this.futures = List.of(futures);
-    this.failedFutures = new AtomicReferenceArray<>(futures.length);
+    this.unsuccessfulFutures = new Object[futures.length];
+  }
+
+  /**
+   * 是否执行完毕
+   *
+   * @return true or false
+   */
+  public boolean isDone() {
+    return isFinish;
+  }
+
+  /**
+   * 获取执行成功的future列表
+   *
+   * @return 执行成功的future列表
+   */
+  public List<T> getSuccessFutures() {
+    if (index.get() == 0) {
+      return futures;
+    }
+    return futures.stream()
+        .filter(
+            f -> Arrays.stream(unsuccessfulFutures).filter(Objects::nonNull).allMatch(o -> o != f))
+        .toList();
   }
 
   /**
    * 获取执行失败的future
    *
-   * @return 执行失败future列表
+   * @return 执行失败的future列表
    */
   public List<T> getFailedFutures() {
-    if (index.get() <= 0) {
+    if (index.get() == 0) {
       return List.of();
     }
-    ArrayList<T> result = new ArrayList<>(index.get());
-    for (int i = index.get() - 1; i >= 0; i--) {
-      result.add(failedFutures.get(i));
+    return Arrays.stream(unsuccessfulFutures)
+        .filter(Objects::nonNull)
+        .map(o -> (T) o)
+        .filter(f -> !f.isCancelled())
+        .toList();
+  }
+
+  /**
+   * 获取取消执行的future
+   *
+   * @return 取消执行的future列表
+   */
+  public List<T> getCancelledFutures() {
+    if (index.get() == 0) {
+      return List.of();
     }
-    return unmodifiableList(result);
+    return Arrays.stream(unsuccessfulFutures)
+        .filter(Objects::nonNull)
+        .map(o -> (T) o)
+        .filter(java.util.concurrent.Future::isCancelled)
+        .toList();
   }
 
   /**
@@ -198,11 +237,10 @@ public class FutureCombiner<R, T extends Future<R>> {
         f ->
             f.addListener(
                 future -> {
-                  // 记录失败future
+                  // 执行完毕可能3种原因：成功，取消，异常结束
                   if (!future.isSuccess()) {
-                    while (!failedFutures.compareAndSet(index.getAndIncrement(), null, f)) {
-                      Thread.onSpinWait();
-                    }
+                    // 保存不成功的future
+                    unsuccessfulFutures[index.getAndIncrement()] = f;
                   }
                   latch.countDown();
                 }));
@@ -228,9 +266,13 @@ public class FutureCombiner<R, T extends Future<R>> {
 
                 // 如果存在执行失败的future
                 if (index.get() != 0) {
-                  throw new PartialExecutionFailureException(
+                  throw new PartialExecutionSuccessException(
                       String.format(
-                          "Total Tasks: %d, Failed Tasks: %d", futures.size(), index.get()));
+                          "Total Tasks: %d, Failed Tasks: %d, Success Tasks: %d, Cancelled Tasks:%d.",
+                          futures.size(),
+                          getFailedFutures().size(),
+                          getSuccessFutures().size(),
+                          getCancelledFutures().size()));
                 }
 
                 return callback.call();
@@ -240,6 +282,8 @@ public class FutureCombiner<R, T extends Future<R>> {
             })
         .handleAsync(
             (q, t) -> {
+              isFinish = true;
+
               // 发生异常返回空结果
               if (t != null) {
                 log.error("Failed to execute callback: {}.", callback, t);
