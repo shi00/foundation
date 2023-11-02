@@ -66,7 +66,10 @@ public class BonecrusherClientProperties {
   /** 请求超时时间，默认：3秒 */
   @NotNull private Duration requestTimeout = Duration.of(3, SECONDS);
 
-  /** 最大并发请求数，默认：500 */
+  /** 预期通常情况下的并发请求数，默认：250/s */
+  @Positive private int expectedConcurrentRequests = 250;
+
+  /** 最大并发请求数，默认：500/s */
   @Positive private int maximumConcurrentRequests = 500;
 
   /** netty调优配置 */
