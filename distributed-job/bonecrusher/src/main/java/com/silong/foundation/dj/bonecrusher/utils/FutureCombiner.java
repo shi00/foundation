@@ -237,8 +237,7 @@ public class FutureCombiner<R, T extends Future<R>> {
               } catch (Exception e) {
                 throw new CompletionException(e);
               }
-            },
-            executor)
+            })
         .handleAsync(
             (q, t) -> {
               // 发生异常返回空结果
@@ -247,7 +246,6 @@ public class FutureCombiner<R, T extends Future<R>> {
                 return exceptionValueSupply.get();
               }
               return q;
-            },
-            executor);
+            });
   }
 }
