@@ -22,23 +22,24 @@
 package com.silong.foundation.dj.bonecrusher.exception;
 
 import java.io.Serial;
+import java.util.concurrent.ExecutionException;
 
 /**
- * 部分执行失败异常
+ * 部分执行成功异常
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2023-11-01 14:26
  */
-public class PartialExecutionFailureException extends Exception {
-  @Serial private static final long serialVersionUID = -7446287127850697618L;
+public class PartialExecutionSuccessException extends ExecutionException {
+  @Serial private static final long serialVersionUID = 7851210931496205225L;
 
   /**
    * 构造方法
    *
    * @param message 异常消息
    */
-  public PartialExecutionFailureException(String message) {
+  public PartialExecutionSuccessException(String message) {
     super(message);
   }
 
@@ -48,7 +49,7 @@ public class PartialExecutionFailureException extends Exception {
    * @param message 异常消息
    * @param cause 异常
    */
-  public PartialExecutionFailureException(String message, Throwable cause) {
+  public PartialExecutionSuccessException(String message, Throwable cause) {
     super(message, cause);
   }
 
@@ -57,7 +58,7 @@ public class PartialExecutionFailureException extends Exception {
    *
    * @param cause 异常
    */
-  public PartialExecutionFailureException(Throwable cause) {
+  public PartialExecutionSuccessException(Throwable cause) {
     super(cause);
   }
 }
