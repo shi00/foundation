@@ -133,14 +133,16 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
     String classFqdn = request.getClassFqdn();
     try (InputStream inputStream = getClass().getResourceAsStream(classFqdn2Path(classFqdn))) {
       if (inputStream == null) {
+        Response response =
+            Response.newBuilder()
+                .setType(LOADING_CLASS_RESP)
+                .setResult(CLASS_NOT_FOUND)
+                .setUuid(requestId)
+                .build();
         ctx.writeAndFlush(
-            Unpooled.wrappedBuffer(
-                Response.newBuilder()
-                    .setType(LOADING_CLASS_RESP)
-                    .setResult(CLASS_NOT_FOUND)
-                    .setUuid(requestId)
-                    .build()
-                    .toByteArray()));
+            ctx.alloc()
+                .compositeBuffer(1)
+                .addComponent(true, Unpooled.wrappedBuffer(response.toByteArray())));
         return;
       }
 
