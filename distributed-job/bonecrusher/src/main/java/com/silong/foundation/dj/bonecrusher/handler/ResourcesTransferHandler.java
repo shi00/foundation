@@ -203,7 +203,8 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                       classFqdn,
                       ctx.channel().localAddress(),
                       ctx.channel().remoteAddress(),
-                      ctx.channel().id());
+                      ctx.channel().id(),
+                      future.cause());
                 }
               });
     }
