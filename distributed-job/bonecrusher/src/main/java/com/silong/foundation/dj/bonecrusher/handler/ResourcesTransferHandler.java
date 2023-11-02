@@ -25,8 +25,8 @@ import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING
 import static org.apache.commons.lang3.StringUtils.replaceChars;
 
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
+import com.silong.foundation.dj.bonecrusher.enu.ErrorCode;
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
-import com.silong.foundation.dj.bonecrusher.utils.ErrorCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
