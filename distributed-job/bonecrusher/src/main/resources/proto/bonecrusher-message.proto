@@ -17,7 +17,6 @@ message Request {
   }
 }
 
-
 //加载类请求
 message LoadingClassReq{
   string class_fqdn = 1; //类加载器加载的全限定名
@@ -28,9 +27,8 @@ message SyncDataReq {
   string partition_no = 1; // 需要同步的分区编号
 }
 
-
 //响应头
-message Response {
+message ResponseHeader {
   Type type = 1; //响应类型
   string uuid = 4; //请求uuid，标识那个请求的响应
   oneof body {
