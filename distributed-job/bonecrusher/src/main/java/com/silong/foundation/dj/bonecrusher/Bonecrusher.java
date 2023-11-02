@@ -157,13 +157,15 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                           .addLast("idleStateMonitor", idleStateHandler()) // channel空闲监控
                           .addLast("snappyFrameEncoder", new SnappyFrameEncoder()) // snappy 压缩编码器
                           .addLast("snappyFrameDecoder", new SnappyFrameDecoder()) // snappy 解压缩解码器
-                          .addLast(
-                              "protobufVarint32LengthFieldPrepender",
-                              protobufVarint32LengthFieldPrepender) // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
+                          //                          .addLast(
+                          //                              "protobufVarint32LengthFieldPrepender",
+                          //                              protobufVarint32LengthFieldPrepender) //
+                          // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
                           .addLast(
                               "protobufVarint32FrameDecoder",
                               new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
-                          .addLast("protobufEncoder", protobufEncoder) // protobuf编码器
+                          //                          .addLast("protobufEncoder", protobufEncoder)
+                          // // protobuf编码器
                           .addLast("protobufDecoder", requestProtobufDecoder) // protobuf请求解码器
                           .addLast("serverLogging", serverLoggingHandler)
                           .addLast(
