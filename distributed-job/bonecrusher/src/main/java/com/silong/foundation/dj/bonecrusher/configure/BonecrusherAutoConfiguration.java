@@ -83,11 +83,6 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Bean
-  public ProtobufDecoder responseProtobufDecoder() {
-    return new ProtobufDecoder(Messages.ResponseHeader.getDefaultInstance());
-  }
-
-  @Bean
   public BonecrusherResponseDecoder bonecrusherResponseDecoder() {
     return new BonecrusherResponseDecoder();
   }
