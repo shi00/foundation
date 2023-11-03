@@ -22,6 +22,7 @@
 package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.enu.MessageMagic.RESPONSE;
+import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
 import com.silong.foundation.lambda.Tuple2;
@@ -49,16 +50,16 @@ public class BonecrusherResponseEncoder extends ChannelOutboundHandlerAdapter {
       Tuple2<ResponseHeader, ByteBuf> tuple2 = (Tuple2<ResponseHeader, ByteBuf>) msg;
       ResponseHeader responseHeader = tuple2.t1();
       ByteBuf data = tuple2.t2();
-      switch (tuple2.t1().getType()) {
+      switch (responseHeader.getType()) {
         case DATA_SYNC_RESP, LOADING_CLASS_RESP, AUTHENTICATION_FAILED_RESP -> msg =
-            data != null
+            (data != null && data != EMPTY_BUFFER)
                 ? ctx.alloc()
                     .compositeBuffer(3)
                     .addComponents(
                         true,
                         RESPONSE.getMagicBuf(), // 响应魔数
                         Unpooled.wrappedBuffer(responseHeader.toByteArray()), // 响应头
-                        tuple2.t2())
+                        data)
                 : ctx.alloc()
                     .compositeBuffer(2)
                     .addComponents(
@@ -66,7 +67,7 @@ public class BonecrusherResponseEncoder extends ChannelOutboundHandlerAdapter {
                         RESPONSE.getMagicBuf(), // 响应魔数
                         Unpooled.wrappedBuffer(responseHeader.toByteArray()));
         default -> throw new IllegalArgumentException(
-            "Unknown Message Type: " + tuple2.t1().getType());
+            "Unknown Message Type: " + responseHeader.getType());
       }
     }
     ctx.write(msg, promise);
