@@ -27,6 +27,7 @@ import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
 import com.silong.foundation.lambda.Tuple2;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -69,6 +70,9 @@ public class BonecrusherResponseEncoder extends ChannelOutboundHandlerAdapter {
         default -> throw new IllegalArgumentException(
             "Unknown Message Type: " + responseHeader.getType());
       }
+    } else if (msg instanceof CompositeByteBuf buf) {
+      // 在数据包中插入魔数
+      msg = buf.addComponent(true, 0, RESPONSE.getMagicBuf());
     }
     ctx.write(msg, promise);
   }

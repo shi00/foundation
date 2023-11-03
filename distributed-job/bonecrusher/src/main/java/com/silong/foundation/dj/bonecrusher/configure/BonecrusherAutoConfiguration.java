@@ -97,6 +97,11 @@ public class BonecrusherAutoConfiguration {
     return new ProtobufVarint32LengthFieldPrepender();
   }
 
+  @Bean
+  public BonecrusherResponseEncoder bonecrusherResponseEncoder() {
+    return new BonecrusherResponseEncoder();
+  }
+
   /**
    * jwt 鉴权处理器
    *
