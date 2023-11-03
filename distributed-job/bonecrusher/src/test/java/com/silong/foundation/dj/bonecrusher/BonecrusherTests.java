@@ -21,13 +21,15 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import static com.silong.foundation.dj.bonecrusher.handler.ResourcesTransferHandler.classFqdn2Path;
+
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
-import com.silong.foundation.dj.bonecrusher.message.Messages.Request.Builder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.util.concurrent.Future;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
@@ -35,7 +37,9 @@ import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.ViewId;
 import org.jgroups.stack.IpAddress;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,34 +66,28 @@ public class BonecrusherTests {
 
   @Autowired private BonecrusherServerProperties properties;
 
+  @AfterEach
+  public void shutdownServer() throws Exception {
+    bonecrusher.shutdown();
+  }
+
   @Test
-  public void startServer() throws Exception {
-    Address creator = new IpAddress("127.0.0.1:43434");
-    ViewId oldViewId = new ViewId(creator, 1);
-    ViewId newViewId = new ViewId(creator, 2);
-
-    View oldView = new View(oldViewId, List.of(creator));
-
-    View newView = new View(newViewId, List.of(new IpAddress("127.0.0.1:43436"), creator));
-
-    publisher.publishEvent(new ClusterViewChangedEvent("cluster-test", creator, oldView, newView));
+  @DisplayName("sendSyncMessage")
+  public void test1() throws Exception {
+    String fqdn = "com.silong.foundation.dj.bonecrusher.Bonecrusher";
+    fireViewChangedEvent();
     bonecrusher.start(false);
 
     try (DataSyncClient client =
         bonecrusher.client().connect(properties.getAddress(), properties.getPort())) {
       ByteBuf byteBuf =
-          client.<Builder, ByteBuf>sendSync(
+          client.sendSync(
               Messages.Request.newBuilder()
                   .setType(Messages.Type.LOADING_CLASS_REQ)
-                  .setLoadingClass(
-                      Messages.LoadingClassReq.newBuilder()
-                          .setClassFqdn("com.silong.foundation.dj.bonecrusher.Bonecrusher")));
+                  .setLoadingClass(Messages.LoadingClassReq.newBuilder().setClassFqdn(fqdn)));
 
       try (InputStream inputStream =
-          Objects.requireNonNull(
-              getClass()
-                  .getResourceAsStream(
-                      "/com/silong/foundation/dj/bonecrusher/Bonecrusher.class"))) {
+          Objects.requireNonNull(getClass().getResourceAsStream(classFqdn2Path(fqdn)))) {
         int available = inputStream.available();
         byte[] bytes = new byte[available];
         inputStream.read(bytes);
@@ -97,5 +95,41 @@ public class BonecrusherTests {
         Assertions.assertTrue(ByteBufUtil.equals(byteBuf, Unpooled.wrappedBuffer(bytes)));
       }
     }
+  }
+
+  @Test
+  @DisplayName("sendAsyncMessage")
+  public void test2() throws Exception {
+    String fqdn = "com.silong.foundation.dj.bonecrusher.Bonecrusher";
+    fireViewChangedEvent();
+    bonecrusher.start(false);
+
+    try (DataSyncClient client =
+        bonecrusher.client().connect(properties.getAddress(), properties.getPort())) {
+
+      Future<ByteBuf> bufFuture =
+          client.sendAsync(
+              Messages.Request.newBuilder()
+                  .setType(Messages.Type.LOADING_CLASS_REQ)
+                  .setLoadingClass(Messages.LoadingClassReq.newBuilder().setClassFqdn(fqdn)));
+
+      try (InputStream inputStream =
+          Objects.requireNonNull(getClass().getResourceAsStream(classFqdn2Path(fqdn)))) {
+        int available = inputStream.available();
+        byte[] bytes = new byte[available];
+        inputStream.read(bytes);
+
+        Assertions.assertTrue(ByteBufUtil.equals(bufFuture.get(), Unpooled.wrappedBuffer(bytes)));
+      }
+    }
+  }
+
+  private void fireViewChangedEvent() throws Exception {
+    Address creator = new IpAddress("127.0.0.1:43434");
+    ViewId oldViewId = new ViewId(creator, 1);
+    ViewId newViewId = new ViewId(creator, 2);
+    View oldView = new View(oldViewId, List.of(creator));
+    View newView = new View(newViewId, List.of(new IpAddress("127.0.0.1:43436"), creator));
+    publisher.publishEvent(new ClusterViewChangedEvent("cluster-test", creator, oldView, newView));
   }
 }

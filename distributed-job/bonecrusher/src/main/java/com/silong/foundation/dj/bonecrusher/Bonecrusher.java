@@ -56,6 +56,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import jakarta.annotation.PostConstruct;
+import java.net.SocketAddress;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -230,7 +231,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
       }
     } else {
       throw new IllegalStateException(
-          String.format("The current status of the server is not %s.", INITIALIZED));
+          String.format("The current status[%s] of the server is not %s.", state(), INITIALIZED));
     }
   }
 
@@ -329,13 +330,14 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
       if (clientState.compareAndSet(CONNECTED, CLOSED)
           || clientState.compareAndSet(ClientState.INITIALIZED, CLOSED)) {
         ChannelId id = clientChannel.id();
+        SocketAddress localAddress = clientChannel.localAddress();
         clientConnectorsGroup
             .shutdownGracefully()
             .addListener(
                 future ->
                     log.info(
                         "The client[{}--->id:{}] of bonecrusher has been shutdown {}.",
-                        clientChannel.localAddress(),
+                        localAddress,
                         id,
                         future.isSuccess() ? "successfully" : "unsuccessfully"));
       }
