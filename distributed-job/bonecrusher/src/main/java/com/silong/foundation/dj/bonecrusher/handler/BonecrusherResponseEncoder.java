@@ -22,20 +22,22 @@
 package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.enu.MessageMagic.RESPONSE;
-import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
-import com.silong.foundation.lambda.Tuple2;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.EncoderException;
+import java.io.IOException;
+import java.util.function.Supplier;
 
 /**
- * 响应消息编码器
+ * 响应消息编码器，magic->totalbytes->headerBytes->header->datablock
  *
  * @author louis sin
  * @version 1.0.0
@@ -44,35 +46,49 @@ import io.netty.channel.ChannelPromise;
 @Sharable
 public class BonecrusherResponseEncoder extends ChannelOutboundHandlerAdapter {
 
+  private static final Supplier<ByteBuf> PREFIX_BYTE_BUF_SUPPLIER =
+      () -> Unpooled.buffer(Integer.BYTES * 3);
+
+  private static final ThreadLocal<ByteBuf> PREFIX_BYTE_BUF_THREAD_LOCAL =
+      ThreadLocal.withInitial(PREFIX_BYTE_BUF_SUPPLIER);
+
+  private ByteBuf getPrefixByteBuf() {
+    // 虚拟线程不使用，直接新建
+    if (Thread.currentThread().isVirtual()) {
+      PREFIX_BYTE_BUF_THREAD_LOCAL.remove();
+      return PREFIX_BYTE_BUF_SUPPLIER.get();
+    } else {
+      return PREFIX_BYTE_BUF_THREAD_LOCAL.get().clear();
+    }
+  }
+
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-    if (msg instanceof Tuple2) {
-      @SuppressWarnings("unchecked")
-      Tuple2<ResponseHeader, ByteBuf> tuple2 = (Tuple2<ResponseHeader, ByteBuf>) msg;
-      ResponseHeader responseHeader = tuple2.t1();
-      ByteBuf data = tuple2.t2();
-      switch (responseHeader.getType()) {
-        case DATA_SYNC_RESP, LOADING_CLASS_RESP, AUTHENTICATION_FAILED_RESP -> msg =
-            (data != null && data != EMPTY_BUFFER)
-                ? ctx.alloc()
-                    .compositeBuffer(3)
-                    .addComponents(
-                        true,
-                        RESPONSE.getMagicBuf(), // 响应魔数
-                        Unpooled.wrappedBuffer(responseHeader.toByteArray()), // 响应头
-                        data)
-                : ctx.alloc()
-                    .compositeBuffer(2)
-                    .addComponents(
-                        true,
-                        RESPONSE.getMagicBuf(), // 响应魔数
-                        Unpooled.wrappedBuffer(responseHeader.toByteArray()));
-        default -> throw new IllegalArgumentException(
-            "Unknown Message Type: " + responseHeader.getType());
+    switch (msg) {
+      case ResponseHeader header -> {
+        ByteBuf headerBuf = ctx.alloc().buffer(header.getSerializedSize());
+        try (ByteBufOutputStream outputStream = new ByteBufOutputStream(headerBuf)) {
+          header.writeTo(outputStream);
+        } catch (IOException e) {
+          throw new EncoderException(e);
+        }
+
+        ByteBuf prefixBuf = getPrefixByteBuf();
+        prefixBuf
+            .writeInt(RESPONSE.getMagic()) // 魔数
+            .writeInt(prefixBuf.capacity() + headerBuf.readableBytes()) // 响应数据总长，单位：字节
+            .writeInt(headerBuf.readableBytes()); // 响应头长度
+        msg = ctx.alloc().compositeBuffer(2).addComponents(true, prefixBuf, headerBuf);
       }
-    } else if (msg instanceof CompositeByteBuf buf) {
-      // 在数据包中插入魔数
-      msg = buf.addComponent(true, 0, RESPONSE.getMagicBuf());
+      case CompositeByteBuf buf -> {
+        ByteBuf prefixBuf = getPrefixByteBuf();
+        prefixBuf
+            .writeInt(RESPONSE.getMagic()) // 魔数
+            .writeInt(prefixBuf.capacity() - Integer.BYTES + buf.readableBytes()); // 响应数据总长，单位：字节
+        msg = buf.addComponents(0, prefixBuf);
+      }
+      case null -> throw new IllegalArgumentException("msg must not be null or empty.");
+      default -> {}
     }
     ctx.write(msg, promise);
   }
