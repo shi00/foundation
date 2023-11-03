@@ -19,34 +19,18 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.utils;
-
-import static com.silong.foundation.dj.bonecrusher.enu.EventExecutorType.UNORDERED;
-import static java.util.Locale.ENGLISH;
-
-import com.silong.foundation.dj.bonecrusher.enu.EventExecutorType;
-import java.util.Arrays;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.stereotype.Component;
+package com.silong.foundation.dj.bonecrusher.enu;
 
 /**
- * 类型转换器
+ * 事件执行其类型
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-10-24 16:40
+ * @since 2023-11-04 0:16
  */
-@Slf4j
-@Component
-@ConfigurationPropertiesBinding
-public class TypeConvertor implements Converter<String, EventExecutorType> {
-  @Override
-  public EventExecutorType convert(String source) {
-    return Arrays.stream(EventExecutorType.values())
-        .filter(t -> t.name().equals(source.trim().toUpperCase(ENGLISH)))
-        .findAny()
-        .orElse(UNORDERED);
-  }
+public enum EventExecutorType {
+  // 有序
+  ORDER,
+  // 无序
+  UNORDERED
 }

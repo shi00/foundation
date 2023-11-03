@@ -24,8 +24,8 @@ package com.silong.foundation.dj.bonecrusher;
 import static com.silong.foundation.dj.bonecrusher.enu.ClientState.CLOSED;
 import static com.silong.foundation.dj.bonecrusher.enu.ClientState.CONNECTED;
 import static com.silong.foundation.dj.bonecrusher.enu.ServerState.*;
-import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
-import static io.netty.channel.ChannelOption.SO_REUSEADDR;
+import static io.netty.channel.ChannelOption.*;
+import static io.netty.channel.udt.UdtChannelOption.*;
 
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
@@ -145,9 +145,21 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
               .handler(serverLoggingHandler)
               // 设置子channel的缓冲区分配器
               .option(SO_REUSEADDR, serverProperties.getNetty().isSO_REUSEADDR())
+              .option(SO_LINGER, serverProperties.getNetty().getSO_LINGER())
+              .option(SO_RCVBUF, (int) serverProperties.getNetty().getSO_RCVBUF().toBytes())
+              .option(SO_SNDBUF, (int) serverProperties.getNetty().getSO_SNDBUF().toBytes())
               .option(
-                  CONNECT_TIMEOUT_MILLIS,
-                  (int) serverProperties.getNetty().getCONNECT_TIMEOUT_MILLIS().toMillis())
+                  PROTOCOL_RECEIVE_BUFFER_SIZE,
+                  (int) serverProperties.getNetty().getPROTOCOL_RECEIVE_BUFFER_SIZE().toBytes())
+              .option(
+                  PROTOCOL_SEND_BUFFER_SIZE,
+                  (int) serverProperties.getNetty().getPROTOCOL_SEND_BUFFER_SIZE().toBytes())
+              .option(
+                  SYSTEM_RECEIVE_BUFFER_SIZE,
+                  (int) serverProperties.getNetty().getSYSTEM_RECEIVE_BUFFER_SIZE().toBytes())
+              .option(
+                  SYSTEM_SEND_BUFFER_SIZE,
+                  (int) serverProperties.getNetty().getSYSTEM_SEND_BUFFER_SIZE().toBytes())
               .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
               .childHandler(
                   new ChannelInitializer<UdtChannel>() {
@@ -343,9 +355,21 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
               .channelFactory(NioUdtProvider.BYTE_CONNECTOR)
               // 设置子channel的缓冲区分配器
               .option(SO_REUSEADDR, clientProperties.getNetty().isSO_REUSEADDR())
+              .option(SO_LINGER, clientProperties.getNetty().getSO_LINGER())
+              .option(SO_RCVBUF, (int) clientProperties.getNetty().getSO_RCVBUF().toBytes())
+              .option(SO_SNDBUF, (int) clientProperties.getNetty().getSO_SNDBUF().toBytes())
               .option(
-                  CONNECT_TIMEOUT_MILLIS,
-                  (int) clientProperties.getNetty().getCONNECT_TIMEOUT_MILLIS().toMillis())
+                  PROTOCOL_RECEIVE_BUFFER_SIZE,
+                  (int) clientProperties.getNetty().getPROTOCOL_RECEIVE_BUFFER_SIZE().toBytes())
+              .option(
+                  PROTOCOL_SEND_BUFFER_SIZE,
+                  (int) clientProperties.getNetty().getPROTOCOL_SEND_BUFFER_SIZE().toBytes())
+              .option(
+                  SYSTEM_RECEIVE_BUFFER_SIZE,
+                  (int) clientProperties.getNetty().getSYSTEM_RECEIVE_BUFFER_SIZE().toBytes())
+              .option(
+                  SYSTEM_SEND_BUFFER_SIZE,
+                  (int) clientProperties.getNetty().getSYSTEM_SEND_BUFFER_SIZE().toBytes())
               .handler(
                   new ChannelInitializer<UdtChannel>() {
                     @Override

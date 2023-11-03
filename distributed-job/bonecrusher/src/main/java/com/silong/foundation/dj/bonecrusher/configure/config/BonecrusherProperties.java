@@ -21,9 +21,10 @@
 
 package com.silong.foundation.dj.bonecrusher.configure.config;
 
-import static com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties.EventExecutorType.UNORDERED;
+import static com.silong.foundation.dj.bonecrusher.enu.EventExecutorType.UNORDERED;
 import static java.time.temporal.ChronoUnit.DAYS;
 
+import com.silong.foundation.dj.bonecrusher.enu.EventExecutorType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Duration;
@@ -44,14 +45,6 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "bonecrusher")
 public class BonecrusherProperties {
-
-  /** 事件执行其类型 */
-  public enum EventExecutorType {
-    // 有序
-    ORDER,
-    // 无序
-    UNORDERED
-  }
 
   /**
    * 鉴权配置

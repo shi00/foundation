@@ -21,7 +21,7 @@
 
 package com.silong.foundation.dj.bonecrusher.configure;
 
-import static com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties.EventExecutorType.UNORDERED;
+import static com.silong.foundation.dj.bonecrusher.enu.EventExecutorType.UNORDERED;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.silong.foundation.crypto.RootKey;

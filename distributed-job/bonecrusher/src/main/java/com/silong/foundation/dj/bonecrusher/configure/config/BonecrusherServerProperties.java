@@ -72,18 +72,6 @@ public class BonecrusherServerProperties {
     private boolean observeOutput;
   }
 
-  /** netty相关调优配置 */
-  @Data
-  public static class NettyTuningProperties {
-    /** SO_REUSEADDR，默认：true */
-    private boolean SO_REUSEADDR = true;
-
-    /** CONNECT_TIMEOUT_MILLIS，默认：5秒 */
-    @NotNull
-    @DurationUnit(SECONDS)
-    private Duration CONNECT_TIMEOUT_MILLIS = Duration.of(5, SECONDS);
-  }
-
   /**
    * UDT Server监听地址，目前支持ipv4<br>
    * 默认：127.0.0.1

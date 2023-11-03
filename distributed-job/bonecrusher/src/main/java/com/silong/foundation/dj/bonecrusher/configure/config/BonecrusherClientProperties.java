@@ -30,7 +30,6 @@ import java.time.Duration;
 import lombok.*;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.boot.convert.DurationUnit;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -45,26 +44,14 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "bonecrusher.client")
 public class BonecrusherClientProperties {
 
-  /** netty相关调优配置 */
-  @Data
-  public static class NettyTuningProperties {
-    /** SO_REUSEADDR，默认：true */
-    private boolean SO_REUSEADDR = true;
-
-    /** CONNECT_TIMEOUT_MILLIS，默认：5秒 */
-    @NotNull
-    @DurationUnit(SECONDS)
-    private Duration CONNECT_TIMEOUT_MILLIS = Duration.of(5, SECONDS);
-  }
-
   /** 日志级别，默认：INFO */
   @NotNull private io.netty.handler.logging.LogLevel LogLevel = INFO;
 
   /** Connector Group线程池线程命名前缀，默认：BC-Connector */
   @NotEmpty private String connectorGroupPoolName = "BC-Connector";
 
-  /** Netty client connector，默认：1 */
-  @Positive private int connectorGroupThreads = 1;
+  /** Netty client connector，默认：2 */
+  @Positive private int connectorGroupThreads = 2;
 
   /** 请求超时时间，默认：3秒 */
   @NotNull private Duration requestTimeout = Duration.of(3, SECONDS);
