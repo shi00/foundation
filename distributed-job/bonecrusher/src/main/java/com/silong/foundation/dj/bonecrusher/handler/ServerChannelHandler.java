@@ -21,12 +21,12 @@
 
 package com.silong.foundation.dj.bonecrusher.handler;
 
-import static com.silong.foundation.dj.bonecrusher.enu.ErrorCode.AUTHENTICATION_FAILED;
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.AUTHENTICATION_FAILED_RESP;
 import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
+import com.silong.foundation.dj.bonecrusher.enu.ErrorCode;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
@@ -63,6 +63,11 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
   static final String CLUSTER_KEY = "cluster";
 
   static final String GENERATOR_KEY = "generator";
+
+  private static final Messages.Result.Builder AUTHENTICATION_FAILED =
+      Messages.Result.newBuilder()
+          .setCode(ErrorCode.AUTHENTICATION_FAILED.getCode())
+          .setDesc(ErrorCode.AUTHENTICATION_FAILED.getDesc());
 
   /** 鉴权工具 */
   @Getter private final JwtAuthenticator jwtAuthenticator;
@@ -145,10 +150,8 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
         ResponseHeader responseHeader =
             ResponseHeader.newBuilder()
                 .setType(AUTHENTICATION_FAILED_RESP)
-                .setResult(
-                    Messages.Result.newBuilder()
-                        .setCode(AUTHENTICATION_FAILED.getCode())
-                        .setDesc(AUTHENTICATION_FAILED.getDesc()))
+                .setResult(AUTHENTICATION_FAILED)
+                .setUuid(request.getUuid())
                 .build();
         ctx.writeAndFlush(
             Tuple2.<ResponseHeader, ByteBuf>builder().t1(responseHeader).t2(EMPTY_BUFFER).build());
