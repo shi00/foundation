@@ -22,13 +22,11 @@
 package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING_CLASS_RESP;
-import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 import static org.apache.commons.lang3.StringUtils.replaceChars;
 
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.enu.ErrorCode;
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
-import com.silong.foundation.lambda.Tuple2;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -136,14 +134,12 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
     String classFqdn = request.getClassFqdn();
     try (InputStream inputStream = getClass().getResourceAsStream(classFqdn2Path(classFqdn))) {
       if (inputStream == null) {
-        ResponseHeader responseHeader =
+        ctx.writeAndFlush(
             ResponseHeader.newBuilder()
                 .setType(LOADING_CLASS_RESP)
                 .setResult(CLASS_NOT_FOUND)
                 .setUuid(requestId)
-                .build();
-        ctx.writeAndFlush(
-            Tuple2.<ResponseHeader, ByteBuf>builder().t1(responseHeader).t2(EMPTY_BUFFER).build());
+                .build());
         return;
       }
 
@@ -175,12 +171,14 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                             .build();
 
                     // 拼装组合bytebuf，第一个组件为protobuf响应
+                    byte[] headerData = responseHeader.toByteArray();
                     fileDataBlock =
                         allocator
-                            .compositeBuffer(3)
+                            .compositeBuffer(5) // 此处为编码时预留
                             .addComponents(
                                 true,
-                                Unpooled.wrappedBuffer(responseHeader.toByteArray()),
+                                Unpooled.buffer(Integer.BYTES).writeInt(headerData.length),
+                                Unpooled.wrappedBuffer(headerData),
                                 fileDataBlock);
                   }
                   return fileDataBlock;
