@@ -22,7 +22,6 @@
 package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.AUTHENTICATION_FAILED_RESP;
-import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
@@ -31,10 +30,8 @@ import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
-import com.silong.foundation.lambda.Tuple2;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import com.silong.foundation.utilities.jwt.Result;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -147,14 +144,12 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
 
       // 鉴权成功后消息往后续pipeline中的handler传递，处理，否则返回错误响应
       if (!result.isValid()) {
-        ResponseHeader responseHeader =
+        ctx.writeAndFlush(
             ResponseHeader.newBuilder()
                 .setType(AUTHENTICATION_FAILED_RESP)
                 .setResult(AUTHENTICATION_FAILED)
                 .setUuid(request.getUuid())
-                .build();
-        ctx.writeAndFlush(
-            Tuple2.<ResponseHeader, ByteBuf>builder().t1(responseHeader).t2(EMPTY_BUFFER).build());
+                .build());
         return;
       }
     }
