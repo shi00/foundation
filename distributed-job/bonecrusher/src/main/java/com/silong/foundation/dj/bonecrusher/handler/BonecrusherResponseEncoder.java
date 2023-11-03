@@ -27,14 +27,12 @@ import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.EncoderException;
 import java.io.IOException;
-import java.util.function.Supplier;
 
 /**
  * 响应消息编码器，magic->totalbytes->headerBytes->header->datablock
@@ -45,22 +43,6 @@ import java.util.function.Supplier;
  */
 @Sharable
 public class BonecrusherResponseEncoder extends ChannelOutboundHandlerAdapter {
-
-  private static final Supplier<ByteBuf> PREFIX_BYTE_BUF_SUPPLIER =
-      () -> Unpooled.buffer(Integer.BYTES * 3);
-
-  private static final ThreadLocal<ByteBuf> PREFIX_BYTE_BUF_THREAD_LOCAL =
-      ThreadLocal.withInitial(PREFIX_BYTE_BUF_SUPPLIER);
-
-  private ByteBuf getPrefixByteBuf() {
-    // 虚拟线程不使用，直接新建
-    if (Thread.currentThread().isVirtual()) {
-      PREFIX_BYTE_BUF_THREAD_LOCAL.remove();
-      return PREFIX_BYTE_BUF_SUPPLIER.get();
-    } else {
-      return PREFIX_BYTE_BUF_THREAD_LOCAL.get().clear();
-    }
-  }
 
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
@@ -73,7 +55,7 @@ public class BonecrusherResponseEncoder extends ChannelOutboundHandlerAdapter {
           throw new EncoderException(e);
         }
 
-        ByteBuf prefixBuf = getPrefixByteBuf();
+        ByteBuf prefixBuf = ctx.alloc().buffer(Integer.BYTES * 3);
         prefixBuf
             .writeInt(RESPONSE.getMagic()) // 魔数
             .writeInt(prefixBuf.capacity() + headerBuf.readableBytes()) // 响应数据总长，单位：字节
@@ -81,11 +63,11 @@ public class BonecrusherResponseEncoder extends ChannelOutboundHandlerAdapter {
         msg = ctx.alloc().compositeBuffer(2).addComponents(true, prefixBuf, headerBuf);
       }
       case CompositeByteBuf buf -> {
-        ByteBuf prefixBuf = getPrefixByteBuf();
+        ByteBuf prefixBuf = ctx.alloc().buffer(Integer.BYTES * 2);
         prefixBuf
             .writeInt(RESPONSE.getMagic()) // 魔数
-            .writeInt(prefixBuf.capacity() - Integer.BYTES + buf.readableBytes()); // 响应数据总长，单位：字节
-        msg = buf.addComponents(0, prefixBuf);
+            .writeInt(prefixBuf.capacity() + buf.readableBytes()); // 响应数据总长，单位：字节
+        msg = buf.addComponent(true, 0, prefixBuf);
       }
       case null -> throw new IllegalArgumentException("msg must not be null or empty.");
       default -> {}
