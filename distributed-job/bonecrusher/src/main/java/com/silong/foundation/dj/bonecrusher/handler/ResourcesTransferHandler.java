@@ -29,11 +29,12 @@ import com.silong.foundation.dj.bonecrusher.enu.ErrorCode;
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.udt.nio.NioUdtProvider;
+import io.netty.handler.codec.EncoderException;
 import io.netty.handler.stream.ChunkedStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -170,16 +171,20 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                                     .setBlockNo(dataBlockNoCount++))
                             .build();
 
+                    int size = responseHeader.getSerializedSize() + Integer.BYTES;
+                    ByteBuf buffer = allocator.buffer(size);
+                    buffer.writeInt(responseHeader.getSerializedSize());
+                    try (ByteBufOutputStream outputStream = new ByteBufOutputStream(buffer)) {
+                      responseHeader.writeTo(outputStream);
+                    } catch (IOException e) {
+                      throw new EncoderException(e);
+                    }
+
                     // 拼装组合bytebuf，第一个组件为protobuf响应
-                    byte[] headerData = responseHeader.toByteArray();
                     fileDataBlock =
                         allocator
-                            .compositeBuffer(5) // 此处为编码时预留
-                            .addComponents(
-                                true,
-                                Unpooled.buffer(Integer.BYTES).writeInt(headerData.length),
-                                Unpooled.wrappedBuffer(headerData),
-                                fileDataBlock);
+                            .compositeBuffer(3) // 此处为编码时预留
+                            .addComponents(true, buffer, fileDataBlock);
                   }
                   return fileDataBlock;
                 }
