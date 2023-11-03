@@ -88,6 +88,11 @@ public class BonecrusherAutoConfiguration {
   }
 
   @Bean
+  public BonecrusherResponseDecoder bonecrusherResponseDecoder() {
+    return new BonecrusherResponseDecoder();
+  }
+
+  @Bean
   public ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender() {
     return new ProtobufVarint32LengthFieldPrepender();
   }
