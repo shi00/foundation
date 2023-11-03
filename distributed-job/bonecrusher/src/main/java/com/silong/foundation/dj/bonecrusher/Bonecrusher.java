@@ -26,6 +26,7 @@ import static com.silong.foundation.dj.bonecrusher.enu.ClientState.CONNECTED;
 import static com.silong.foundation.dj.bonecrusher.enu.ServerState.*;
 import static io.netty.channel.ChannelOption.*;
 import static io.netty.channel.udt.UdtChannelOption.*;
+import static io.netty.channel.udt.nio.NioUdtProvider.*;
 
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
@@ -41,7 +42,6 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.udt.UdtChannel;
-import io.netty.channel.udt.nio.NioUdtProvider;
 import io.netty.handler.codec.compression.SnappyFrameDecoder;
 import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
@@ -135,14 +135,14 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                       new NioEventLoopGroup(
                           serverProperties.getBossGroupThreads(),
                           new DefaultThreadFactory(serverProperties.getBossGroupPoolName()),
-                          NioUdtProvider.BYTE_PROVIDER),
+                          BYTE_PROVIDER),
                   this.serverConnectorsGroup =
                       new NioEventLoopGroup(
                           serverProperties.getWorkerGroupThreads(),
                           new DefaultThreadFactory(serverProperties.getConnectorGroupPoolName()),
-                          NioUdtProvider.BYTE_PROVIDER))
+                          BYTE_PROVIDER))
               // 设置服务端通道实现类型
-              .channelFactory(NioUdtProvider.BYTE_ACCEPTOR)
+              .channelFactory(BYTE_ACCEPTOR)
               .handler(serverLoggingHandler)
               // 设置子channel的缓冲区分配器
               .option(SO_REUSEADDR, serverProperties.getNetty().isSO_REUSEADDR())
@@ -236,6 +236,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   }
 
   /** 异步关闭服务 */
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public void shutdown() {
     // 只有初始化状态或运行状态才能关闭
     if (serverState.compareAndSet(INITIALIZED, SHUTDOWN)
@@ -352,9 +353,9 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                       new NioEventLoopGroup(
                           clientProperties.getConnectorGroupThreads(),
                           new DefaultThreadFactory(clientProperties.getConnectorGroupPoolName()),
-                          NioUdtProvider.BYTE_PROVIDER))
+                          BYTE_PROVIDER))
               // 设置服务端通道实现类型
-              .channelFactory(NioUdtProvider.BYTE_CONNECTOR)
+              .channelFactory(BYTE_CONNECTOR)
               // 设置子channel的缓冲区分配器
               .option(SO_REUSEADDR, clientProperties.getNetty().isSO_REUSEADDR())
               .option(SO_LINGER, clientProperties.getNetty().getSO_LINGER())
