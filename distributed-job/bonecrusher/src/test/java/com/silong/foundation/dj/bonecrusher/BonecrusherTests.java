@@ -24,11 +24,18 @@ package com.silong.foundation.dj.bonecrusher;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
+import com.silong.foundation.dj.bonecrusher.message.Messages.Request.Builder;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.ViewId;
 import org.jgroups.stack.IpAddress;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,18 +75,27 @@ public class BonecrusherTests {
     publisher.publishEvent(new ClusterViewChangedEvent("cluster-test", creator, oldView, newView));
     bonecrusher.start(false);
 
-    DataSyncClient client =
-        bonecrusher.client().connect(properties.getAddress(), properties.getPort());
+    try (DataSyncClient client =
+        bonecrusher.client().connect(properties.getAddress(), properties.getPort())) {
+      ByteBuf byteBuf =
+          client.<Builder, ByteBuf>sendSync(
+              Messages.Request.newBuilder()
+                  .setType(Messages.Type.LOADING_CLASS_REQ)
+                  .setLoadingClass(
+                      Messages.LoadingClassReq.newBuilder()
+                          .setClassFqdn("com.silong.foundation.dj.bonecrusher.Bonecrusher")));
 
-    Object o =
-        client.sendSync(
-            Messages.Request.newBuilder()
-                .setType(Messages.Type.LOADING_CLASS_REQ)
-                .setLoadingClass(
-                    Messages.LoadingClassReq.newBuilder()
-                        .setClassFqdn("com.silong.foundation.dj.bonecrusher.Bonecrusher")));
-    System.out.println(o.toString());
+      try (InputStream inputStream =
+          Objects.requireNonNull(
+              getClass()
+                  .getResourceAsStream(
+                      "/com/silong/foundation/dj/bonecrusher/Bonecrusher.class"))) {
+        int available = inputStream.available();
+        byte[] bytes = new byte[available];
+        inputStream.read(bytes);
 
-    Thread.sleep(500000);
+        Assertions.assertTrue(ByteBufUtil.equals(byteBuf, Unpooled.wrappedBuffer(bytes)));
+      }
+    }
   }
 }
