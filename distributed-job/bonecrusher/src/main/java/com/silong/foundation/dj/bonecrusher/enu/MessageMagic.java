@@ -21,6 +21,8 @@
 
 package com.silong.foundation.dj.bonecrusher.enu;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import lombok.Getter;
 
 /**
@@ -38,9 +40,14 @@ public enum MessageMagic {
   /** 响应头魔数 */
   RESPONSE(0xB0BA0);
 
+  /** 魔数 */
   private final int magic;
+
+  /** 魔数ByteBuf */
+  private final ByteBuf magicBuf;
 
   MessageMagic(int magic) {
     this.magic = magic;
+    this.magicBuf = Unpooled.buffer(Integer.BYTES).writeInt(magic).asReadOnly();
   }
 }
