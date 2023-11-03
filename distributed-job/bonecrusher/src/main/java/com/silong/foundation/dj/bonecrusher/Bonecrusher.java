@@ -32,9 +32,7 @@ import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerPr
 import com.silong.foundation.dj.bonecrusher.enu.ClientState;
 import com.silong.foundation.dj.bonecrusher.enu.ServerState;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
-import com.silong.foundation.dj.bonecrusher.handler.ClientChannelHandler;
-import com.silong.foundation.dj.bonecrusher.handler.ResourcesTransferHandler;
-import com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler;
+import com.silong.foundation.dj.bonecrusher.handler.*;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
 import com.silong.foundation.lambda.Tuple3;
 import io.netty.bootstrap.Bootstrap;
@@ -95,7 +93,9 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
   private LoggingHandler clientLoggingHandler;
 
-  private ProtobufDecoder responseProtobufDecoder;
+  private BonecrusherResponseEncoder bonecrusherResponseEncoder;
+
+  private BonecrusherResponseDecoder bonecrusherResponseDecoder;
 
   private ProtobufDecoder requestProtobufDecoder;
 
@@ -164,8 +164,9 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                           .addLast(
                               "protobufVarint32FrameDecoder",
                               new ProtobufVarint32FrameDecoder()) // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
-                          //                          .addLast("protobufEncoder", protobufEncoder)
-                          // // protobuf编码器
+                          .addLast(
+                              "bonecrusherResponseEncoder",
+                              bonecrusherResponseEncoder) // bonecrusherResponseEncoder编码器
                           .addLast("protobufDecoder", requestProtobufDecoder) // protobuf请求解码器
                           .addLast("serverLogging", serverLoggingHandler)
                           .addLast(
@@ -360,8 +361,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                           //                              new ProtobufVarint32FrameDecoder()) //
                           // 用于decode前解决半包和粘包问题（利用包头中的包含数组长度来识别半包粘包）
                           .addLast("protobufEncoder", protobufEncoder)
-                          //                          .addLast("protobufDecoder",
-                          // responseProtobufDecoder)
+                          .addLast("compositeMessageDecoder", bonecrusherResponseDecoder)
                           .addLast("clientLogging", clientLoggingHandler)
                           .addLast(
                               "clientHandler",
@@ -430,12 +430,6 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   }
 
   @Autowired
-  public void setResponseProtobufDecoder(
-      @Qualifier("responseProtobufDecoder") ProtobufDecoder responseProtobufDecoder) {
-    this.responseProtobufDecoder = responseProtobufDecoder;
-  }
-
-  @Autowired
   public void setServerProperties(BonecrusherServerProperties serverProperties) {
     this.serverProperties = serverProperties;
   }
@@ -454,5 +448,15 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
   public void setProtobufVarint32LengthFieldPrepender(
       ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender) {
     this.protobufVarint32LengthFieldPrepender = protobufVarint32LengthFieldPrepender;
+  }
+
+  @Autowired
+  public void setBonecrusherResponseEncoder(BonecrusherResponseEncoder bonecrusherResponseEncoder) {
+    this.bonecrusherResponseEncoder = bonecrusherResponseEncoder;
+  }
+
+  @Autowired
+  public void setBonecrusherResponseDecoder(BonecrusherResponseDecoder bonecrusherResponseDecoder) {
+    this.bonecrusherResponseDecoder = bonecrusherResponseDecoder;
   }
 }
