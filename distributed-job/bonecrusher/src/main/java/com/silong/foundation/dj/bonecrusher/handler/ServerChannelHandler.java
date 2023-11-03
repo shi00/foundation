@@ -23,15 +23,18 @@ package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.enu.ErrorCode.AUTHENTICATION_FAILED;
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.AUTHENTICATION_FAILED_RESP;
+import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 
 import com.auth0.jwt.interfaces.Claim;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
+import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
+import com.silong.foundation.lambda.Tuple2;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import com.silong.foundation.utilities.jwt.Result;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -137,12 +140,10 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
       // 执行签名认证
       Result result = jwtAuthenticator.verify(request.getToken(), this::checkTokenPayload);
 
-      // 鉴权成功后消息往后续pipeline中的handler传递，处理
-      if (result.isValid()) {
-        ctx.fireChannelRead(request);
-      } else {
-        Messages.ResponseHeader responseHeader =
-            Messages.ResponseHeader.newBuilder()
+      // 鉴权成功后消息往后续pipeline中的handler传递，处理，否则返回错误响应
+      if (!result.isValid()) {
+        ResponseHeader responseHeader =
+            ResponseHeader.newBuilder()
                 .setType(AUTHENTICATION_FAILED_RESP)
                 .setResult(
                     Messages.Result.newBuilder()
@@ -150,13 +151,11 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
                         .setDesc(AUTHENTICATION_FAILED.getDesc()))
                 .build();
         ctx.writeAndFlush(
-            ctx.alloc()
-                .compositeBuffer(1)
-                .addComponent(true, Unpooled.wrappedBuffer(responseHeader.toByteArray())));
+            Tuple2.<ResponseHeader, ByteBuf>builder().t1(responseHeader).t2(EMPTY_BUFFER).build());
+        return;
       }
-    } else {
-      ctx.fireChannelRead(msg);
     }
+    ctx.fireChannelRead(msg);
   }
 
   private Result checkTokenPayload(Map<String, Claim> claims) {
