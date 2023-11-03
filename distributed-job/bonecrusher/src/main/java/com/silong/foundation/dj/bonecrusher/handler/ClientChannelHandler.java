@@ -29,12 +29,13 @@ import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientPr
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.exception.ConcurrentRequestLimitExceededException;
 import com.silong.foundation.dj.bonecrusher.exception.RequestResponseException;
-import com.silong.foundation.dj.bonecrusher.message.Messages;
+import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
+import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
+import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
 import com.silong.foundation.lambda.Tuple2;
 import com.silong.foundation.lambda.Tuple3;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -43,6 +44,8 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.udt.nio.NioUdtProvider;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Promise;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
@@ -69,15 +72,21 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
   @Accessors(fluent = true)
   private Supplier<ClusterViewChangedEvent> clusterViewChangedEventSupplier;
 
+  /** 请求缓存 */
+  @SuppressWarnings("rawtypes")
+  private final Cache<String, Tuple3<Request, Promise, LinkedList<Tuple2<Integer, ByteBuf>>>> cache;
+
   /** 鉴权工具 */
   private final JwtAuthenticator jwtAuthenticator;
+
+  private final Comparator<Tuple2<Integer, ByteBuf>> dataBlockComparing =
+      Comparator.comparing(Tuple2::t1);
 
   /** 配置 */
   private final BonecrusherClientProperties clientProperties;
 
+  /** 执行器 */
   private final Executor executor;
-
-  private final Cache<String, Tuple2<Messages.Request, Promise>> cache;
 
   /**
    * 构造方法
@@ -98,37 +107,45 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
             .initialCapacity(clientProperties.getExpectedConcurrentRequests())
             .maximumSize(clientProperties.getMaximumConcurrentRequests())
             .executor(executor)
-            .expireAfterWrite(clientProperties.getRequestTimeout())
+            .expireAfterAccess(clientProperties.getRequestTimeout())
             .scheduler(Scheduler.systemScheduler())
             .evictionListener(buildRemovalListener(clientProperties))
             .build();
   }
 
-  private RemovalListener<String, Tuple2<Messages.Request, Promise>> buildRemovalListener(
-      BonecrusherClientProperties clientProperties) {
-    return (uuid, tuple2, cause) -> {
-      // 只有垃圾收集导致的淘汰promise才会为null，因此过滤此种场景
-      if (tuple2 != null) {
+  @SuppressWarnings("rawtypes")
+  private RemovalListener<String, Tuple3<Request, Promise, LinkedList<Tuple2<Integer, ByteBuf>>>>
+      buildRemovalListener(BonecrusherClientProperties clientProperties) {
+    return (uuid, tuple3, cause) -> {
+      // 只有垃圾收集导致的淘汰tuples才会为null，因此过滤此种场景
+      if (tuple3 != null) {
         switch (cause) {
-          case EXPLICIT -> {
-            log.info("Request canceled: {}", tuple2.t1());
-            tuple2.t2().setFailure(new CancellationException());
-          }
-          case EXPIRED -> // 请求超时
-          {
-            log.info(
-                "Timeout Threshold: {}s, Request: {}",
-                clientProperties.getRequestTimeout().toSeconds(),
-                tuple2.t1());
-            tuple2.t2().setFailure(new TimeoutException());
+          case EXPIRED -> { // 请求超时
+            try {
+              tuple3
+                  .t2()
+                  .setFailure(
+                      new TimeoutException(
+                          String.format(
+                              "Timeout Threshold: %ss, Request: %s",
+                              clientProperties.getRequestTimeout().toSeconds(), tuple3.t1())));
+            } finally {
+              release(tuple3.t3());
+            }
           }
           case SIZE -> // 超出并发请求数上限淘汰
           {
-            log.info(
-                "The number of concurrent requests exceeded the limit of {}. Discard Request: {}",
-                clientProperties.getMaximumConcurrentRequests(),
-                tuple2.t1());
-            tuple2.t2().setFailure(new ConcurrentRequestLimitExceededException());
+            try {
+              tuple3
+                  .t2()
+                  .setFailure(
+                      new ConcurrentRequestLimitExceededException(
+                          String.format(
+                              "The number of concurrent requests exceeded the limit of %d. Discard Request: %s",
+                              clientProperties.getMaximumConcurrentRequests(), tuple3.t1())));
+            } finally {
+              release(tuple3.t3());
+            }
           }
         }
       }
@@ -136,42 +153,66 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
   }
 
   @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    if (msg instanceof CompositeByteBuf compositeByteBuf) {
-      try {
-        ByteBuf respBuf = compositeByteBuf.component(0);
-        byte[] array;
-        int offset;
-        int length = respBuf.readableBytes();
-        if (respBuf.hasArray()) {
-          array = respBuf.array();
-          offset = respBuf.arrayOffset() + respBuf.readerIndex();
-        } else {
-          array = ByteBufUtil.getBytes(respBuf, respBuf.readerIndex(), length, false);
-          offset = 0;
-        }
-        Messages.ResponseHeader responseHeader =
-            Messages.ResponseHeader.parser().parseFrom(array, offset, length);
-        Tuple2<Messages.Request, Promise> value = cache.asMap().remove(responseHeader.getUuid());
-        if (value != null) {
-          log.info("Request: {}, Response: {}", value.t1(), responseHeader);
-          if (responseHeader.hasResult()) {
-            value.t2().setFailure(new RequestResponseException());
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    switch (msg) {
+      case Tuple2 t -> {
+        Tuple2<ResponseHeader, ByteBuf> tuple2 = (Tuple2<ResponseHeader, ByteBuf>) t;
+        ResponseHeader header = tuple2.t1();
+        ByteBuf buf = tuple2.t2();
+        try {
+          // 失败响应
+          if (header.hasResult()) {
+            Tuple3<Request, Promise, LinkedList<Tuple2<Integer, ByteBuf>>> tuple3 =
+                cache.asMap().remove(header.getUuid());
+            if (tuple3 != null) {
+              try {
+                tuple3
+                    .t2()
+                    .setFailure(
+                        new RequestResponseException(
+                            "Abnormal response: " + header.getResult().getDesc()));
+              } finally {
+                release(tuple3.t3());
+              }
+            }
           } else {
-            ByteBuf data = compositeByteBuf.component(1);
-            array = ByteBufUtil.getBytes(data, data.readerIndex(), data.readableBytes(), true);
-            value.t2().setSuccess(array);
+            Tuple3<Request, Promise, LinkedList<Tuple2<Integer, ByteBuf>>> tuple3 =
+                cache.getIfPresent(header.getUuid());
+            if (tuple3 != null) {
+              DataBlockMetadata metadata = header.getDataBlockMetadata();
+              LinkedList<Tuple2<Integer, ByteBuf>> bufList = tuple3.t3();
+              Promise promise = tuple3.t2();
+              int blockNo = metadata.getBlockNo();
+              bufList.add(
+                  Tuple2.<Integer, ByteBuf>builder()
+                      .t1(blockNo)
+                      .t2(buf.retain()) // 引用计数+1，避免被netty内存管理回收
+                      .build());
+
+              // 所有数据块都收到后设置结果
+              if (metadata.getTotalBlocks() == bufList.size()) {
+                CompositeByteBuf byteBufs =
+                    ctx.alloc()
+                        .compositeBuffer(bufList.size())
+                        .addComponents(
+                            true,
+                            bufList.stream().sorted(dataBlockComparing).map(Tuple2::t2).toList());
+                promise.setSuccess(byteBufs);
+              }
+            }
           }
+        } finally {
+          ReferenceCountUtil.release(buf);
         }
-      } finally {
-        ReferenceCountUtil.release(compositeByteBuf);
       }
-      return;
+      case null -> throw new IllegalArgumentException("msg must not be null or empty.");
+      default -> ctx.fireChannelRead(msg);
     }
-    ctx.fireChannelRead(msg);
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
     if (msg instanceof Tuple3 tuple3) {
       Object req = tuple3.t1();
@@ -180,9 +221,9 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
       String token = getToken();
 
       // 为请求添加鉴权token和uuid
-      if (req instanceof Messages.Request request) {
+      if (req instanceof Request request) {
         msg = cache(request.toBuilder().setToken(token).setUuid(uuid).build(), cPromise);
-      } else if (req instanceof Messages.Request.Builder builder) {
+      } else if (req instanceof Request.Builder builder) {
         msg = cache(builder.setToken(token).setUuid(uuid).build(), cPromise);
       }
     }
@@ -194,8 +235,21 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
    *
    * @param reqUuid 请求uuid
    */
+  @SuppressWarnings("rawtypes")
   public void cancelRequest(@NonNull String reqUuid) {
-    cache.invalidate(reqUuid);
+    Tuple3<Request, Promise, LinkedList<Tuple2<Integer, ByteBuf>>> tuple3 =
+        cache.asMap().remove(reqUuid);
+    if (tuple3 != null) {
+      try {
+        tuple3
+            .t2()
+            .setFailure(
+                new CancellationException(String.format("Request canceled: %s", tuple3.t1())));
+      } finally {
+        // 取消请求，清理已缓存的结果
+        release(tuple3.t3());
+      }
+    }
   }
 
   @Override
@@ -211,11 +265,22 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
     ctx.close();
   }
 
-  private Messages.Request cache(Messages.Request request, Promise<?> promise) {
+  @SuppressWarnings("rawtypes")
+  private Request cache(Request request, Promise promise) {
     cache.put(
         request.getUuid(),
-        Tuple2.<Messages.Request, Promise>builder().t1(request).t2(promise).build());
+        Tuple3.<Request, Promise, LinkedList<Tuple2<Integer, ByteBuf>>>builder()
+            .t1(request)
+            .t2(promise)
+            .t3(new LinkedList<>())
+            .build());
     return request;
+  }
+
+  private void release(LinkedList<Tuple2<Integer, ByteBuf>> list) {
+    if (list != null && !list.isEmpty()) {
+      list.stream().map(Tuple2::t2).forEach(ReferenceCountUtil::release);
+    }
   }
 
   private String getToken() {
