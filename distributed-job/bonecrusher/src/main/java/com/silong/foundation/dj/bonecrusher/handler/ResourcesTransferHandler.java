@@ -177,7 +177,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                     // 拼装组合bytebuf，第一个组件为protobuf响应
                     fileDataBlock =
                         allocator
-                            .compositeBuffer(2)
+                            .compositeBuffer(3)
                             .addComponents(
                                 true,
                                 Unpooled.wrappedBuffer(responseHeader.toByteArray()),
