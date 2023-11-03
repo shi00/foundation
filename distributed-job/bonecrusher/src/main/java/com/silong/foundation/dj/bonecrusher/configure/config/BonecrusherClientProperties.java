@@ -60,6 +60,9 @@ public class BonecrusherClientProperties {
   /** 日志级别，默认：INFO */
   @NotNull private io.netty.handler.logging.LogLevel LogLevel = INFO;
 
+  /** Connector Group线程池线程命名前缀，默认：BC-Connector */
+  @NotEmpty private String connectorGroupPoolName = "BC-Connector";
+
   /** Netty client connector，默认：1 */
   @Positive private int connectorGroupThreads = 1;
 

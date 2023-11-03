@@ -95,6 +95,12 @@ public class BonecrusherServerProperties {
   @Min(1025)
   private int port = 6118;
 
+  /** Boss Group线程池线程命名前缀，默认：BS-Acceptor */
+  @NotEmpty private String bossGroupPoolName = "BS-Acceptor";
+
+  /** Connector Group线程池线程命名前缀，默认：BS-Connector */
+  @NotEmpty private String connectorGroupPoolName = "BS-Connector";
+
   /** 文件传输时，数据分块大小，默认：8KB */
   @NotNull
   @DataSizeUnit(KILOBYTES)

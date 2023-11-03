@@ -133,12 +133,12 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                   this.serverBossGroup =
                       new NioEventLoopGroup(
                           serverProperties.getBossGroupThreads(),
-                          new DefaultThreadFactory("BS-Acceptor"),
+                          new DefaultThreadFactory(serverProperties.getBossGroupPoolName()),
                           NioUdtProvider.BYTE_PROVIDER),
                   this.serverConnectorsGroup =
                       new NioEventLoopGroup(
                           serverProperties.getWorkerGroupThreads(),
-                          new DefaultThreadFactory("BS-Connector"),
+                          new DefaultThreadFactory(serverProperties.getConnectorGroupPoolName()),
                           NioUdtProvider.BYTE_PROVIDER))
               // 设置服务端通道实现类型
               .channelFactory(NioUdtProvider.BYTE_ACCEPTOR)
@@ -337,7 +337,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                   this.clientConnectorsGroup =
                       new NioEventLoopGroup(
                           clientProperties.getConnectorGroupThreads(),
-                          new DefaultThreadFactory("BC-Connector"),
+                          new DefaultThreadFactory(clientProperties.getConnectorGroupPoolName()),
                           NioUdtProvider.BYTE_PROVIDER))
               // 设置服务端通道实现类型
               .channelFactory(NioUdtProvider.BYTE_CONNECTOR)
