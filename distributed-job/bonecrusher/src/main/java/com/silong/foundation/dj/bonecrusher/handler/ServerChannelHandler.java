@@ -137,21 +137,24 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
-    // 处理请求，否则传递给pipeline中后续handler
-    if (msg instanceof Request request) {
-      // 执行签名认证
-      Result result = jwtAuthenticator.verify(request.getToken(), this::checkTokenPayload);
+    switch (msg) {
+      case Request request -> {
+        // 执行签名认证
+        Result result = jwtAuthenticator.verify(request.getToken(), this::checkTokenPayload);
 
-      // 鉴权成功后消息往后续pipeline中的handler传递，处理，否则返回错误响应
-      if (!result.isValid()) {
-        ctx.writeAndFlush(
-            ResponseHeader.newBuilder()
-                .setType(AUTHENTICATION_FAILED_RESP)
-                .setResult(AUTHENTICATION_FAILED)
-                .setUuid(request.getUuid())
-                .build());
-        return;
+        // 鉴权成功后消息往后续pipeline中的handler传递，处理，否则返回错误响应
+        if (!result.isValid()) {
+          ctx.writeAndFlush(
+              ResponseHeader.newBuilder()
+                  .setType(AUTHENTICATION_FAILED_RESP)
+                  .setResult(AUTHENTICATION_FAILED)
+                  .setUuid(request.getUuid())
+                  .build());
+          return;
+        }
       }
+      case null -> throw new IllegalArgumentException("msg must not be null or empty.");
+      default -> {}
     }
     ctx.fireChannelRead(msg);
   }
