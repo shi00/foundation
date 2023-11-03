@@ -222,7 +222,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
    * @param classFqdn fqdn
    * @return class文件加载路径
    */
-  private String classFqdn2Path(String classFqdn) {
+  public static String classFqdn2Path(@NonNull String classFqdn) {
     return "/" + replaceChars(classFqdn, '.', '/') + ".class";
   }
 
