@@ -22,11 +22,13 @@
 package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING_CLASS_RESP;
+import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 import static org.apache.commons.lang3.StringUtils.replaceChars;
 
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.enu.ErrorCode;
 import com.silong.foundation.dj.bonecrusher.message.Messages.*;
+import com.silong.foundation.lambda.Tuple2;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -116,6 +118,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
         case DATA_SYNC_REQ -> handleSyncDataReq(ctx, request.getSyncData(), request.getUuid());
         case LOADING_CLASS_REQ -> handleLoadingClassReq(
             ctx, request.getLoadingClass(), request.getUuid());
+        default -> throw new IllegalArgumentException("Unknown Request Type: " + request.getType());
       }
     } else {
       ctx.fireChannelRead(msg);
@@ -140,9 +143,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                 .setUuid(requestId)
                 .build();
         ctx.writeAndFlush(
-            ctx.alloc()
-                .compositeBuffer(1)
-                .addComponent(true, Unpooled.wrappedBuffer(responseHeader.toByteArray())));
+            Tuple2.<ResponseHeader, ByteBuf>builder().t1(responseHeader).t2(EMPTY_BUFFER).build());
         return;
       }
 
