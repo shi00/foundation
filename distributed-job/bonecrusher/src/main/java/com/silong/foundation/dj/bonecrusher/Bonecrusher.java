@@ -337,7 +337,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
           this::newPromise,
           this::generateUuid,
           (promise, uuid) ->
-              Tuple3.<T, Promise<R>, String>builder().t1(req).t2(promise).t3(uuid).build());
+              Tuple3.<T, Promise<R>, String>Tuple3Builder().t1(req).t2(promise).t3(uuid).build());
     }
 
     @Override
@@ -347,7 +347,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
           this::newPromise,
           this::generateUuid,
           (promise, uuid) ->
-              Tuple4.<T, Promise<Void>, String, Consumer<ByteBuf>>builder()
+              Tuple4.<T, Promise<Void>, String, Consumer<ByteBuf>>Tuple4Builder()
                   .t1(req)
                   .t2(promise)
                   .t3(uuid)
