@@ -84,7 +84,7 @@ public class BonecrusherResponseDecoder extends ChannelInboundHandlerAdapter {
           }
 
           msg =
-              Tuple2.<Messages.ResponseHeader, ByteBuf>builder()
+              Tuple2.<Messages.ResponseHeader, ByteBuf>Tuple2Builder()
                   .t1(responseHeader)
                   .t2(dataBlock)
                   .build();
