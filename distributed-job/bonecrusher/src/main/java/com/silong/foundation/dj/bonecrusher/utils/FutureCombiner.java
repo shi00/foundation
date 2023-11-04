@@ -47,8 +47,8 @@ public class FutureCombiner<R, T extends Future<R>> {
   /** netty future list */
   private final List<T> futures;
 
-  /** 执行不成功的future列表 */
-  private final Object[] unsuccessfulFutures;
+  /** 执行不成功或取消执行的future列表 */
+  private final Object[] unsuccessfulOrCancelledFutures;
 
   private final AtomicInteger index = new AtomicInteger(0);
 
@@ -65,7 +65,7 @@ public class FutureCombiner<R, T extends Future<R>> {
       throw new IllegalArgumentException("futures must not be null or empty.");
     }
     this.futures = List.of(futures);
-    this.unsuccessfulFutures = new Object[futures.length];
+    this.unsuccessfulOrCancelledFutures = new Object[futures.length];
   }
 
   /**
@@ -88,7 +88,10 @@ public class FutureCombiner<R, T extends Future<R>> {
     }
     return futures.stream()
         .filter(
-            f -> Arrays.stream(unsuccessfulFutures).filter(Objects::nonNull).allMatch(o -> o != f))
+            f ->
+                Arrays.stream(unsuccessfulOrCancelledFutures)
+                    .filter(Objects::nonNull)
+                    .allMatch(o -> o != f))
         .toList();
   }
 
@@ -97,11 +100,12 @@ public class FutureCombiner<R, T extends Future<R>> {
    *
    * @return 执行失败的future列表
    */
+  @SuppressWarnings("unchecked")
   public List<T> getFailedFutures() {
     if (index.get() == 0) {
       return List.of();
     }
-    return Arrays.stream(unsuccessfulFutures)
+    return Arrays.stream(unsuccessfulOrCancelledFutures)
         .filter(Objects::nonNull)
         .map(o -> (T) o)
         .filter(f -> !f.isCancelled())
@@ -113,11 +117,12 @@ public class FutureCombiner<R, T extends Future<R>> {
    *
    * @return 取消执行的future列表
    */
+  @SuppressWarnings("unchecked")
   public List<T> getCancelledFutures() {
     if (index.get() == 0) {
       return List.of();
     }
-    return Arrays.stream(unsuccessfulFutures)
+    return Arrays.stream(unsuccessfulOrCancelledFutures)
         .filter(Objects::nonNull)
         .map(o -> (T) o)
         .filter(java.util.concurrent.Future::isCancelled)
@@ -238,9 +243,9 @@ public class FutureCombiner<R, T extends Future<R>> {
             f.addListener(
                 future -> {
                   // 执行完毕可能3种原因：成功，取消，异常结束
-                  if (!future.isSuccess()) {
+                  if (!future.isSuccess() || future.isCancelled()) {
                     // 保存不成功的future
-                    unsuccessfulFutures[index.getAndIncrement()] = f;
+                    unsuccessfulOrCancelledFutures[index.getAndIncrement()] = f;
                   }
                   latch.countDown();
                 }));
