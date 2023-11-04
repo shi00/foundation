@@ -32,9 +32,14 @@ import lombok.experimental.Accessors;
  * @param <T2> 二元组类型
  */
 @Data
-@Builder
 @Accessors(fluent = true)
 public class Tuple2<T1, T2> {
   private T1 t1;
   private T2 t2;
+
+  @Builder(builderMethodName = "Tuple2Builder")
+  public Tuple2(T1 t1, T2 t2) {
+    this.t1 = t1;
+    this.t2 = t2;
+  }
 }

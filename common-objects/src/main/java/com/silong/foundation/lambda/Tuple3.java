@@ -18,8 +18,7 @@
  */
 package com.silong.foundation.lambda;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 /**
@@ -32,11 +31,17 @@ import lombok.experimental.Accessors;
  * @param <T2> 三元组类型
  * @param <T3> 三元组类型
  */
-@Data
-@Builder
+@Getter
+@Setter
+@ToString(callSuper = true)
 @Accessors(fluent = true)
-public class Tuple3<T1, T2, T3> {
-  private T1 t1;
-  private T2 t2;
+@EqualsAndHashCode(callSuper = true)
+public class Tuple3<T1, T2, T3> extends Tuple2<T1, T2> {
   private T3 t3;
+
+  @Builder(builderMethodName = "Tuple3Builder")
+  public Tuple3(T1 t1, T2 t2, T3 t3) {
+    super(t1, t2);
+    this.t3 = t3;
+  }
 }
