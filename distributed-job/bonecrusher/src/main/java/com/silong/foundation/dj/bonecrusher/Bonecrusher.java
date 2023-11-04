@@ -295,12 +295,9 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
     public <T, R> Future<R> sendAsync(@NonNull T req) {
       if (clientState.get() == CONNECTED) {
         Promise<R> promise = eventExecutor.newPromise();
+        String reqUuid = UUID.randomUUID().toString();
         Tuple3<T, Promise<R>, String> tuple3 =
-            Tuple3.<T, Promise<R>, String>builder()
-                .t1(req)
-                .t2(promise)
-                .t3(UUID.randomUUID().toString())
-                .build();
+            Tuple3.<T, Promise<R>, String>builder().t1(req).t2(promise).t3(reqUuid).build();
 
         // 异步发送请求
         ChannelFuture channelFuture =
@@ -308,16 +305,17 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                 .writeAndFlush(tuple3)
                 .addListener(
                     future -> {
-                      // 取消或者失败时通知
-                      if (!future.isSuccess()) {
-                        clientChannelHandler.cancelRequest(tuple3.t3());
+                      // 取消或者失败时通知取消发送
+                      if (!future.isSuccess() || future.isCancelled()) {
+                        clientChannelHandler.tryCancelRequest(tuple3.t3());
                       }
                     });
         return promise.addListener(
             future -> {
-              // 第三方通过promise执行取消时，执行取消
+              // 第三方通过promise执行取消时，通知channelFuture取消
               if (future.isCancelled()) {
-                channelFuture.cancel(true);
+                channelFuture.cancel(true); // 取消请求发送
+                log.info("The request was canceled by promise. {}{}", System.lineSeparator(), req);
               }
             });
       } else {

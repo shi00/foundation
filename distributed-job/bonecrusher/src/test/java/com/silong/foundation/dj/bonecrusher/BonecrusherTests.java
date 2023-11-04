@@ -22,15 +22,18 @@
 package com.silong.foundation.dj.bonecrusher;
 
 import static com.silong.foundation.dj.bonecrusher.handler.ResourcesTransferHandler.classFqdn2Path;
+import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.LOADING_CLASS_REQ;
 
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
+import com.silong.foundation.dj.bonecrusher.message.Messages.LoadingClassReq;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.concurrent.Future;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,8 +68,8 @@ public class BonecrusherTests {
       ByteBuf byteBuf =
           client.sendSync(
               Messages.Request.newBuilder()
-                  .setType(Messages.Type.LOADING_CLASS_REQ)
-                  .setLoadingClass(Messages.LoadingClassReq.newBuilder().setClassFqdn(fqdn)));
+                  .setType(LOADING_CLASS_REQ)
+                  .setLoadingClass(LoadingClassReq.newBuilder().setClassFqdn(fqdn)));
 
       try (InputStream inputStream =
           Objects.requireNonNull(getClass().getResourceAsStream(classFqdn2Path(fqdn)))) {
@@ -88,8 +91,8 @@ public class BonecrusherTests {
       Future<ByteBuf> bufFuture =
           client.sendAsync(
               Messages.Request.newBuilder()
-                  .setType(Messages.Type.LOADING_CLASS_REQ)
-                  .setLoadingClass(Messages.LoadingClassReq.newBuilder().setClassFqdn(fqdn)));
+                  .setType(LOADING_CLASS_REQ)
+                  .setLoadingClass(LoadingClassReq.newBuilder().setClassFqdn(fqdn)));
 
       try (InputStream inputStream =
           Objects.requireNonNull(getClass().getResourceAsStream(classFqdn2Path(fqdn)))) {
@@ -99,6 +102,28 @@ public class BonecrusherTests {
 
         Assertions.assertTrue(ByteBufUtil.equals(bufFuture.get(), Unpooled.wrappedBuffer(bytes)));
       }
+    }
+  }
+
+  @Test
+  @DisplayName("cancelRequest")
+  public void test3() throws Exception {
+    try (DataSyncClient client =
+        bonecrusher.client().connect(properties.getAddress(), properties.getPort())) {
+      String fqdn = Bonecrusher.class.getName();
+      Future<ByteBuf> bufFuture =
+          client.sendAsync(
+              Messages.Request.newBuilder()
+                  .setType(LOADING_CLASS_REQ)
+                  .setLoadingClass(LoadingClassReq.newBuilder().setClassFqdn(fqdn)));
+
+      Thread.sleep(100);
+
+      bufFuture.cancel(true);
+      Assertions.assertTrue(
+          CancellationException.class.isAssignableFrom(bufFuture.cause().getClass()));
+
+      Thread.sleep(5000);
     }
   }
 }

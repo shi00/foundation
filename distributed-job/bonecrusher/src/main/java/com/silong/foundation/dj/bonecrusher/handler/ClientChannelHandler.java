@@ -23,6 +23,7 @@ package com.silong.foundation.dj.bonecrusher.handler;
 
 import static com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler.CLUSTER_KEY;
 import static com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler.GENERATOR_KEY;
+import static io.netty.channel.udt.nio.NioUdtProvider.socketUDT;
 
 import com.github.benmanes.caffeine.cache.*;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
@@ -41,7 +42,6 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.udt.nio.NioUdtProvider;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Promise;
 import java.util.Comparator;
@@ -122,7 +122,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
             try {
               tuple3
                   .t2()
-                  .setFailure(
+                  .tryFailure(
                       new TimeoutException(
                           String.format(
                               "Timeout Threshold: %ss, Request: %s",
@@ -136,7 +136,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
             try {
               tuple3
                   .t2()
-                  .setFailure(
+                  .tryFailure(
                       new ConcurrentRequestLimitExceededException(
                           String.format(
                               "The number of concurrent requests exceeded the limit of %d. Discard Request: %s",
@@ -167,7 +167,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
               try {
                 tuple3
                     .t2()
-                    .setFailure(
+                    .tryFailure(
                         new RequestResponseException(
                             "Abnormal response: " + header.getResult().getDesc()));
               } finally {
@@ -196,7 +196,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
                         .addComponents(
                             true,
                             bufList.stream().sorted(dataBlockComparing).map(Tuple2::t2).toList());
-                promise.setSuccess(byteBufs);
+                promise.trySuccess(byteBufs);
               }
             }
           }
@@ -225,31 +225,34 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
         msg = cache(builder.setToken(token).setUuid(uuid).build(), cPromise);
       }
 
-      log.info("Send Request: {}", msg);
+      log.info("Send Request: {}{}", System.lineSeparator(), msg);
     }
     ctx.write(msg, promise);
   }
 
   /**
-   * 取消请求
+   * 尝试取消请求
    *
    * @param reqUuid 请求uuid
    */
   @SuppressWarnings("rawtypes")
-  public void cancelRequest(@NonNull String reqUuid) {
+  public void tryCancelRequest(@NonNull String reqUuid) {
     Tuple3<Request, Promise, LinkedList<Tuple2<Integer, ByteBuf>>> tuple3 =
         cache.asMap().remove(reqUuid);
     if (tuple3 != null) {
+      Request request = tuple3.t1();
+      Promise promise = tuple3.t2();
+      LinkedList<Tuple2<Integer, ByteBuf>> dataBlocks = tuple3.t3();
+      log.info("Try to cancel the request: {}{}", System.lineSeparator(), request);
       try {
-        tuple3
-            .t2()
-            .setFailure(
-                new CancellationException(String.format("Request canceled: %s", tuple3.t1())));
+        promise.tryFailure(
+            new CancellationException(String.format("Request canceled: %s", request)));
       } finally {
         // 取消请求，清理已缓存的结果
-        release(tuple3.t3());
-        log.info("Request canceled: {}", tuple3.t1());
+        release(dataBlocks);
       }
+    } else {
+      log.info("Unable to find request[{}] record based on uuid.", reqUuid);
     }
   }
 
@@ -261,7 +264,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
         ctx.channel().localAddress(),
         ctx.channel().remoteAddress(),
         System.lineSeparator(),
-        NioUdtProvider.socketUDT(ctx.channel()).toStringOptions(),
+        socketUDT(ctx.channel()).toStringOptions(),
         cause);
     ctx.close();
   }
