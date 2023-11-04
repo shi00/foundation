@@ -32,7 +32,7 @@ message ResponseHeader {
   Type type = 1; //响应类型
   string uuid = 4; //请求uuid，标识那个请求的响应
   oneof body {
-    Result result = 2;
+    Result result = 2;  //结果
     DataBlockMetadata data_block_metadata = 3 ; //数据块
   }
 }
