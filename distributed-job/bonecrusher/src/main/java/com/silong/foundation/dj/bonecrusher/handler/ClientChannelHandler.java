@@ -117,32 +117,31 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
     return (uuid, tuple3, cause) -> {
       // 只有垃圾收集导致的淘汰tuples才会为null，因此过滤此种场景
       if (tuple3 != null) {
+        Promise promise = tuple3.t2();
+        Request request = tuple3.t1();
+        LinkedList<Tuple2<Integer, ByteBuf>> list = tuple3.t3();
         switch (cause) {
           case EXPIRED -> { // 请求超时
             try {
-              tuple3
-                  .t2()
-                  .tryFailure(
-                      new TimeoutException(
-                          String.format(
-                              "Timeout Threshold: %ss, Request: %s",
-                              clientProperties.getRequestTimeout().toSeconds(), tuple3.t1())));
+              promise.tryFailure(
+                  new TimeoutException(
+                      String.format(
+                          "Timeout Threshold: %ss, Request: %s",
+                          clientProperties.getRequestTimeout().toSeconds(), request)));
             } finally {
-              release(tuple3.t3());
+              release(list);
             }
           }
           case SIZE -> // 超出并发请求数上限淘汰
           {
             try {
-              tuple3
-                  .t2()
-                  .tryFailure(
-                      new ConcurrentRequestLimitExceededException(
-                          String.format(
-                              "The number of concurrent requests exceeded the limit of %d. Discard Request: %s",
-                              clientProperties.getMaximumConcurrentRequests(), tuple3.t1())));
+              promise.tryFailure(
+                  new ConcurrentRequestLimitExceededException(
+                      String.format(
+                          "The number of concurrent requests exceeded the limit of %d. Discard Request: %s",
+                          clientProperties.getMaximumConcurrentRequests(), request)));
             } finally {
-              release(tuple3.t3());
+              release(list);
             }
           }
         }
