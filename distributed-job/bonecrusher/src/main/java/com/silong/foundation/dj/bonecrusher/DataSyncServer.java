@@ -55,7 +55,7 @@ public interface DataSyncServer {
   void shutdown() throws Exception;
 
   /**
-   * 数据同步服务客户端
+   * 创建并返回数据同步服务客户端
    *
    * @return 客户端
    */

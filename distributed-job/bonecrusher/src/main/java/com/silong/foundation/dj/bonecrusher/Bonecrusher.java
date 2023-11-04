@@ -35,6 +35,7 @@ import com.silong.foundation.dj.bonecrusher.enu.ServerState;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.*;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
+import com.silong.foundation.lambda.Consumer3;
 import com.silong.foundation.lambda.Tuple3;
 import com.silong.foundation.lambda.Tuple4;
 import io.netty.bootstrap.Bootstrap;
@@ -63,7 +64,6 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.NonNull;
@@ -296,11 +296,22 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
       return this.<T, R>sendAsync(req).get();
     }
 
+    /**
+     * 发送异步请求
+     *
+     * @param req 请求
+     * @param promiseSupplier promise supplier
+     * @param uuidSupplier uuid supplier
+     * @param msgGenerator msg generator
+     * @return Future
+     * @param <T> 请求类型
+     * @param <R> 结果类型
+     */
     private <T, R> Future<R> doSendAsync(
         @NonNull T req,
         @NonNull Supplier<Promise<R>> promiseSupplier,
         @NonNull Supplier<String> uuidSupplier,
-        @NonNull BiFunction<Promise<R>, String, Object> msgFunction) {
+        @NonNull BiFunction<Promise<R>, String, Object> msgGenerator) {
       if (clientState.get() == CONNECTED) {
         Promise<R> promise = promiseSupplier.get();
         String uuid = uuidSupplier.get();
@@ -308,7 +319,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
         // 异步发送请求
         ChannelFuture channelFuture =
             clientChannel
-                .writeAndFlush(msgFunction.apply(promise, uuid))
+                .writeAndFlush(msgGenerator.apply(promise, uuid))
                 .addListener(
                     future -> {
                       // 取消或者失败时通知取消发送
@@ -341,13 +352,14 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
     }
 
     @Override
-    public <T> Future<Void> sendAsync(@NonNull T req, @NonNull Consumer<ByteBuf> consumer) {
+    public <T> Future<Void> sendAsync(
+        @NonNull T req, @NonNull Consumer3<ByteBuf, Integer, Integer> consumer) {
       return doSendAsync(
           req,
           this::newPromise,
           this::generateUuid,
           (promise, uuid) ->
-              Tuple4.<T, Promise<Void>, String, Consumer<ByteBuf>>Tuple4Builder()
+              Tuple4.<T, Promise<Void>, String, Consumer3<ByteBuf, Integer, Integer>>Tuple4Builder()
                   .t1(req)
                   .t2(promise)
                   .t3(uuid)
@@ -454,7 +466,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
    */
   @Async
   @Override
-  public void onApplicationEvent(ClusterViewChangedEvent event) {
+  public void onApplicationEvent(@NonNull ClusterViewChangedEvent event) {
     log.info("{}The cluster view has changed: {}", System.lineSeparator(), event);
     clusterViewChangedEventRef.set(event);
     joinClusterLatch.countDown();
