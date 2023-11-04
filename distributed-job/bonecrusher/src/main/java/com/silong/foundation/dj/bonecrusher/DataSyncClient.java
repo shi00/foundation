@@ -22,7 +22,9 @@
 package com.silong.foundation.dj.bonecrusher;
 
 import com.silong.foundation.dj.bonecrusher.enu.ClientState;
+import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.Future;
+import java.util.function.Consumer;
 
 /**
  * 数据同步客户端接口
@@ -61,7 +63,7 @@ public interface DataSyncClient extends AutoCloseable {
   <T, R> R sendSync(T req) throws Exception;
 
   /**
-   * 异步发送消息
+   * 异步发送消息，如果数据量过大，通过Future获取所有结果可能会导致OOM异常
    *
    * @param req 请求
    * @return 异步任务Future
@@ -70,4 +72,15 @@ public interface DataSyncClient extends AutoCloseable {
    * @throws Exception 异常
    */
   <T, R> Future<R> sendAsync(T req) throws Exception;
+
+  /**
+   * 发送请求，异步处理返回数据，处理大数据量请求，会分批返回数据块，所有返回的数据块都会调用consumer
+   *
+   * @param req 请求
+   * @param consumer 数据块处理器
+   * @return future
+   * @param <T> 请求类型
+   * @throws Exception 异常
+   */
+  <T> Future<Void> sendAsync(T req, Consumer<ByteBuf> consumer) throws Exception;
 }
