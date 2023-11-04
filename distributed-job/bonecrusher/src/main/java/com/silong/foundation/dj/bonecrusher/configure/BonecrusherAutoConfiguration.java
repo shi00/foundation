@@ -117,9 +117,11 @@ public class BonecrusherAutoConfiguration {
 
   @Bean
   EventExecutor eventExecutor() {
-    ThreadFactory factory = new DefaultThreadFactory("Bonecrusher", true);
-    return properties.getEventExecutorType() == UNORDERED
-        ? new UnorderedThreadPoolEventExecutor(properties.getEventExecutorThreads(), factory)
+    ThreadFactory factory =
+        new DefaultThreadFactory(properties.getEventExecutor().getEventExecutorPoolName(), true);
+    return properties.getEventExecutor().getEventExecutorType() == UNORDERED
+        ? new UnorderedThreadPoolEventExecutor(
+            properties.getEventExecutor().getEventExecutorThreads(), factory)
         : new DefaultEventExecutor(factory);
   }
 

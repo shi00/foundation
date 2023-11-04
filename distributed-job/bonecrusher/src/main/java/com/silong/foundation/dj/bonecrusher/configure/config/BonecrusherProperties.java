@@ -21,10 +21,8 @@
 
 package com.silong.foundation.dj.bonecrusher.configure.config;
 
-import static com.silong.foundation.dj.bonecrusher.enu.EventExecutorType.UNORDERED;
 import static java.time.temporal.ChronoUnit.DAYS;
 
-import com.silong.foundation.dj.bonecrusher.enu.EventExecutorType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Duration;
@@ -67,11 +65,9 @@ public class BonecrusherProperties {
     private Duration expires = Duration.of(1, DAYS);
   }
 
-  /** 事件执行器线程数量 */
-  @Positive private int eventExecutorThreads = 4;
-
-  /** 事件执行器类型 */
-  @NotNull private EventExecutorType eventExecutorType = UNORDERED;
+  /** 事件处理器配置 */
+  @Valid @NestedConfigurationProperty
+  private EventExecutorProperties eventExecutor = new EventExecutorProperties();
 
   /** 鉴权配置 */
   @Valid @NestedConfigurationProperty private AuthProperties auth = new AuthProperties();
