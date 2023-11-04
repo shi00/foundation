@@ -36,8 +36,10 @@ import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.*;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
 import com.silong.foundation.lambda.Tuple3;
+import com.silong.foundation.lambda.Tuple4;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -60,6 +62,9 @@ import java.net.SocketAddress;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -291,23 +296,24 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
       return this.<T, R>sendAsync(req).get();
     }
 
-    @Override
-    public <T, R> Future<R> sendAsync(@NonNull T req) {
+    private <T, R> Future<R> doSendAsync(
+        @NonNull T req,
+        @NonNull Supplier<Promise<R>> promiseSupplier,
+        @NonNull Supplier<String> uuidSupplier,
+        @NonNull BiFunction<Promise<R>, String, Object> msgFunction) {
       if (clientState.get() == CONNECTED) {
-        Promise<R> promise = eventExecutor.newPromise();
-        String reqUuid = UUID.randomUUID().toString();
-        Tuple3<T, Promise<R>, String> tuple3 =
-            Tuple3.<T, Promise<R>, String>builder().t1(req).t2(promise).t3(reqUuid).build();
+        Promise<R> promise = promiseSupplier.get();
+        String uuid = uuidSupplier.get();
 
         // 异步发送请求
         ChannelFuture channelFuture =
             clientChannel
-                .writeAndFlush(tuple3)
+                .writeAndFlush(msgFunction.apply(promise, uuid))
                 .addListener(
                     future -> {
                       // 取消或者失败时通知取消发送
                       if (!future.isSuccess() || future.isCancelled()) {
-                        clientChannelHandler.tryCancelRequest(tuple3.t3());
+                        clientChannelHandler.tryCancelRequest(uuid);
                       }
                     });
         return promise.addListener(
@@ -322,6 +328,44 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
         throw new IllegalStateException(
             String.format("The current status of the client is not %s.", CONNECTED));
       }
+    }
+
+    @Override
+    public <T, R> Future<R> sendAsync(T req) {
+      return doSendAsync(
+          req,
+          this::newPromise,
+          this::generateUuid,
+          (promise, uuid) ->
+              Tuple3.<T, Promise<R>, String>builder().t1(req).t2(promise).t3(uuid).build());
+    }
+
+    @Override
+    public <T> Future<Void> sendAsync(@NonNull T req, @NonNull Consumer<ByteBuf> consumer) {
+      return doSendAsync(
+          req,
+          this::newPromise,
+          this::generateUuid,
+          (promise, uuid) ->
+              Tuple4.<T, Promise<Void>, String, Consumer<ByteBuf>>builder()
+                  .t1(req)
+                  .t2(promise)
+                  .t3(uuid)
+                  .t4(consumer)
+                  .build());
+    }
+
+    private <R> Promise<R> newPromise() {
+      return eventExecutor.newPromise();
+    }
+
+    /**
+     * 生成uuid
+     *
+     * @return uuid
+     */
+    private String generateUuid() {
+      return UUID.randomUUID().toString();
     }
 
     @Override
