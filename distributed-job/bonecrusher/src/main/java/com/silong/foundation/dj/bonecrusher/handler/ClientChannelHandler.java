@@ -47,9 +47,7 @@ import io.netty.util.concurrent.Promise;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 import lombok.NonNull;
 import lombok.Setter;
@@ -216,7 +214,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
     if (msg instanceof Tuple3 tuple3) {
       Object req = tuple3.t1();
-      Promise<?> cPromise = (Promise<?>) tuple3.t2();
+      Promise cPromise = (Promise) tuple3.t2();
       String uuid = (String) tuple3.t3();
       String token = getToken();
 
@@ -226,6 +224,8 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
       } else if (req instanceof Request.Builder builder) {
         msg = cache(builder.setToken(token).setUuid(uuid).build(), cPromise);
       }
+
+      log.info("Send Request: {}", msg);
     }
     ctx.write(msg, promise);
   }
@@ -248,6 +248,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
       } finally {
         // 取消请求，清理已缓存的结果
         release(tuple3.t3());
+        log.info("Request canceled: {}", tuple3.t1());
       }
     }
   }
