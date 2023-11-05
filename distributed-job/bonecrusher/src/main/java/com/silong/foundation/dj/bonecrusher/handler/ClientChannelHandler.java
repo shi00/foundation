@@ -26,6 +26,10 @@ import static com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler.
 import static io.netty.channel.udt.nio.NioUdtProvider.socketUDT;
 
 import com.github.benmanes.caffeine.cache.*;
+import com.silong.foundation.common.lambda.Consumer3;
+import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.common.lambda.Tuple3;
+import com.silong.foundation.common.lambda.Tuple4;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.exception.ConcurrentRequestLimitExceededException;
@@ -33,10 +37,6 @@ import com.silong.foundation.dj.bonecrusher.exception.RequestResponseException;
 import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
-import com.silong.foundation.lambda.Consumer3;
-import com.silong.foundation.lambda.Tuple2;
-import com.silong.foundation.lambda.Tuple3;
-import com.silong.foundation.lambda.Tuple4;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
@@ -86,7 +86,8 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
   /** 鉴权工具 */
   private final JwtAuthenticator jwtAuthenticator;
 
-  private final Comparator<Tuple2<Integer, ByteBuf>> dataBlockComparing =
+  /** 数据块序号排序 */
+  private final Comparator<Tuple2<Integer, ByteBuf>> dataBlockNoComparing =
       Comparator.comparing(Tuple2::t1);
 
   /** 配置 */
@@ -156,23 +157,6 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
     };
   }
 
-  @SuppressWarnings("rawtypes")
-  private void notifyFailure(
-      Promise promise,
-      Exception e,
-      Tuple4<
-              Request,
-              Promise,
-              LinkedList<Tuple2<Integer, ByteBuf>>,
-              Consumer3<ByteBuf, Integer, Integer>>
-          tuple4) {
-    try {
-      promise.tryFailure(e);
-    } finally {
-      release(tuple4);
-    }
-  }
-
   @Override
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void channelRead(ChannelHandlerContext ctx, Object msg) {
@@ -221,16 +205,20 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
 
                 // 所有数据块都收到后合并结果返回
                 if (metadata.getTotalBlocks() == bufList.size()) {
-                  CompositeByteBuf bufs =
+                  CompositeByteBuf byteBuf =
                       ctx.alloc()
                           .compositeBuffer(bufList.size())
                           .addComponents(
                               true,
-                              bufList.stream().sorted(dataBlockComparing).map(Tuple2::t2).toList());
-                  promise.trySuccess(bufs);
+                              bufList.stream()
+                                  .sorted(dataBlockNoComparing)
+                                  .map(Tuple2::t2)
+                                  .toList());
+                  promise.trySuccess(byteBuf);
                 }
               } else {
                 byteBufConsumer.accept(buf, metadata.getTotalBlocks(), metadata.getBlockNo());
+                if (metadata.getTotalBlocks() - 1 == metadata.getBlockNo()) {}
               }
             }
           }
@@ -247,39 +235,36 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
   @SuppressWarnings("rawtypes")
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
     switch (msg) {
-      case Tuple4 tuple4 -> msg = processMsg(msg, tuple4);
-      case Tuple3 tuple3 -> msg = processMsg(msg, tuple3);
+      case Tuple4 tuple4 -> msg = unpackMsg(msg, tuple4);
+      case Tuple3 tuple3 -> msg = unpackMsg(msg, tuple3);
       case null -> throw new IllegalArgumentException("msg must not be null or empty.");
       default -> {}
     }
     ctx.write(msg, promise);
   }
 
+  /**
+   * 消息拆包
+   *
+   * @param msg 请求消息
+   * @param tuple3 消息包
+   * @return 拆包后的消息
+   */
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private Object processMsg(Object msg, Tuple3 tuple3) {
+  private Object unpackMsg(Object msg, Tuple3 tuple3) {
     Object req = tuple3.t1();
     Promise cPromise = (Promise) tuple3.t2();
     String uuid = (String) tuple3.t3();
+    Consumer3<ByteBuf, Integer, Integer> consumer =
+        tuple3 instanceof Tuple4 tuple4 ? (Consumer3<ByteBuf, Integer, Integer>) tuple4.t4() : null;
     String token = generateToken();
 
     // 为请求添加鉴权token和uuid
     if (req instanceof Request request) {
-      msg =
-          cache(
-              request.toBuilder().setToken(token).setUuid(uuid).build(),
-              cPromise,
-              tuple3 instanceof Tuple4 tuple4
-                  ? (Consumer3<ByteBuf, Integer, Integer>) tuple4.t4()
-                  : null);
+      msg = cache(request.toBuilder().setToken(token).setUuid(uuid).build(), cPromise, consumer);
       log.info("Send Request: {}{}", System.lineSeparator(), msg);
     } else if (req instanceof Request.Builder builder) {
-      msg =
-          cache(
-              builder.setToken(token).setUuid(uuid).build(),
-              cPromise,
-              tuple3 instanceof Tuple4 tuple4
-                  ? (Consumer3<ByteBuf, Integer, Integer>) tuple4.t4()
-                  : null);
+      msg = cache(builder.setToken(token).setUuid(uuid).build(), cPromise, consumer);
       log.info("Send Request: {}{}", System.lineSeparator(), msg);
     }
     return msg;
@@ -369,6 +354,23 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
       }
     } else {
       log.info("Unable to find request[{}] record based on uuid.", reqUuid);
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  private void notifyFailure(
+      Promise promise,
+      Exception e,
+      Tuple4<
+              Request,
+              Promise,
+              LinkedList<Tuple2<Integer, ByteBuf>>,
+              Consumer3<ByteBuf, Integer, Integer>>
+          tuple4) {
+    try {
+      promise.tryFailure(e);
+    } finally {
+      release(tuple4);
     }
   }
 
