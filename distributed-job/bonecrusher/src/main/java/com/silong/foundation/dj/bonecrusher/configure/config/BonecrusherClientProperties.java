@@ -50,6 +50,9 @@ public class BonecrusherClientProperties {
   /** Connector Group线程池线程命名前缀，默认：BC-Connector */
   @NotEmpty private String connectorGroupPoolName = "BC-Connector";
 
+  /** 是否开启自动重联，默认：true */
+  private boolean enabledAutoReconnection = true;
+
   /** Netty client connector，默认：2 */
   @Positive private int connectorGroupThreads = 2;
 

@@ -299,7 +299,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
           .addListener(
               future -> {
                 // 断联后重联
-                if (future.isSuccess()) {
+                if (future.isSuccess() && clientProperties.isEnabledAutoReconnection()) {
                   log.info(
                       "Start automatically reconnecting to the server[{}:{}]",
                       remoteAddress,
