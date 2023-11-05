@@ -65,6 +65,9 @@ public class BonecrusherClientProperties {
   /** 最大并发请求数，默认：500/s */
   @Positive private int maximumConcurrentRequests = 500;
 
+  /** 握手间隔时间，默认：30秒 */
+  @NotNull private Duration handshakeInterval = Duration.ofSeconds(30);
+
   /** netty调优配置 */
   @Valid @NestedConfigurationProperty
   private NettyTuningProperties netty = new NettyTuningProperties();
