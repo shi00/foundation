@@ -65,6 +65,9 @@ public class BonecrusherClientProperties {
   /** 最大并发请求数，默认：500/s */
   @Positive private int maximumConcurrentRequests = 500;
 
+  /** 是否开启握手消息，默认：true */
+  private boolean enabledHandShake = true;
+
   /** 握手间隔时间，默认：30秒 */
   @NotNull private Duration handshakeInterval = Duration.ofSeconds(30);
 

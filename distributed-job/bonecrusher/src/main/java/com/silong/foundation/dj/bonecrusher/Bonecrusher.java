@@ -24,10 +24,13 @@ package com.silong.foundation.dj.bonecrusher;
 import static com.silong.foundation.dj.bonecrusher.enu.ClientState.CLOSED;
 import static com.silong.foundation.dj.bonecrusher.enu.ClientState.CONNECTED;
 import static com.silong.foundation.dj.bonecrusher.enu.ServerState.*;
+import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.HAND_SHAKE_REQ;
 import static io.netty.channel.ChannelOption.*;
 import static io.netty.channel.udt.UdtChannelOption.*;
 import static io.netty.channel.udt.nio.NioUdtProvider.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
+import com.google.protobuf.UnsafeByteOperations;
 import com.silong.foundation.common.lambda.Tuple3;
 import com.silong.foundation.common.lambda.Tuple4;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
@@ -37,6 +40,8 @@ import com.silong.foundation.dj.bonecrusher.enu.ServerState;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.*;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
+import com.silong.foundation.dj.bonecrusher.message.Messages.HandShake;
+import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -45,6 +50,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.udt.UdtChannel;
+import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.compression.SnappyFrameDecoder;
 import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
@@ -58,7 +64,9 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
+import io.netty.util.concurrent.ScheduledFuture;
 import jakarta.annotation.PostConstruct;
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -69,6 +77,8 @@ import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jgroups.Address;
+import org.jgroups.util.ByteArrayDataOutputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationListener;
@@ -206,7 +216,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
         serverProperties.getIdleState().getReaderIdleTime().toSeconds(),
         serverProperties.getIdleState().getWriterIdleTime().toSeconds(),
         serverProperties.getIdleState().getAllIdleTime().toSeconds(),
-        TimeUnit.SECONDS);
+        SECONDS);
   }
 
   @Override
@@ -269,6 +279,8 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     private final Bootstrap bootstrap;
 
+    private volatile ScheduledFuture<?> handshakeScheduledFuture;
+
     private volatile Channel clientChannel;
 
     /** 客户端状态 */
@@ -280,11 +292,33 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
       return clientState.get();
     }
 
+    private Request.Builder buildHandShakeMsg() {
+      Address localAddress = clusterViewChangedEventRef.get().localAddress();
+      ByteArrayDataOutputStream output =
+          new ByteArrayDataOutputStream(localAddress.serializedSize());
+      try {
+        localAddress.writeTo(output);
+      } catch (IOException e) {
+        throw new EncoderException(e);
+      }
+      return Request.newBuilder()
+          .setType(HAND_SHAKE_REQ)
+          .setHandShake(
+              HandShake.newBuilder().setSelfUuid(UnsafeByteOperations.unsafeWrap(output.buffer())));
+    }
+
     @Override
     public DataSyncClient connect(String remoteAddress, int remotePort) throws Exception {
       if (clientState.compareAndSet(ClientState.INITIALIZED, CONNECTED)) {
         joinClusterLatch.await(); // 加入集群后才能创建客户端
         doConnect(remoteAddress, remotePort);
+        // 开启握手消息定期发送
+        if (clientProperties.isEnabledHandShake()) {
+          long delay = clientProperties.getHandshakeInterval().getSeconds();
+          handshakeScheduledFuture =
+              eventExecutor.scheduleWithFixedDelay(
+                  () -> clientChannel.writeAndFlush(buildHandShakeMsg()), delay, delay, SECONDS);
+        }
         return this;
       } else {
         throw new IllegalStateException(
