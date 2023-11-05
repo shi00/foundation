@@ -280,14 +280,23 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
         tuple3 instanceof Tuple4 tuple4
             ? (BiConsumer<ByteBuf, DataBlockMetadata>) tuple4.t4()
             : null;
+    long timestamp = System.currentTimeMillis();
     String token = generateToken();
 
     // 为请求添加鉴权token和uuid
     if (req instanceof Request request) {
-      msg = cache(request.toBuilder().setToken(token).setUuid(uuid).build(), cPromise, consumer);
+      msg =
+          cache(
+              request.toBuilder().setToken(token).setUuid(uuid).setTimestamp(timestamp).build(),
+              cPromise,
+              consumer);
       log.info("Send Request: {}{}", System.lineSeparator(), msg);
     } else if (req instanceof Request.Builder builder) {
-      msg = cache(builder.setToken(token).setUuid(uuid).build(), cPromise, consumer);
+      msg =
+          cache(
+              builder.setToken(token).setUuid(uuid).setTimestamp(timestamp).build(),
+              cPromise,
+              consumer);
       log.info("Send Request: {}{}", System.lineSeparator(), msg);
     }
     return msg;
