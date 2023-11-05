@@ -76,7 +76,11 @@ public class BonecrusherServerProperties {
    * UDT Server监听地址，目前支持ipv4<br>
    * 默认：127.0.0.1
    */
-  @NotEmpty private String address = "127.0.0.1";
+  @NotEmpty
+  @Pattern(
+      regexp =
+          "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
+  private String address = "127.0.0.1";
 
   // 服务监听端口，默认：6118
   @Max(65535)
