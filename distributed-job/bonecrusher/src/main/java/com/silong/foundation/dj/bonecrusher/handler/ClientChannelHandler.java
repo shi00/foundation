@@ -34,12 +34,13 @@ import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientPr
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.exception.ConcurrentRequestLimitExceededException;
 import com.silong.foundation.dj.bonecrusher.exception.RequestResponseException;
+import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -164,63 +165,14 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
       case Tuple2 t -> {
         // 读取响应数据块
         Tuple2<ResponseHeader, ByteBuf> tuple2 = (Tuple2<ResponseHeader, ByteBuf>) t;
-        ResponseHeader header = tuple2.t1();
         ByteBuf buf = tuple2.t2();
         try {
-          // 处理失败响应
+          ResponseHeader header = tuple2.t1();
+          // 响应结果和数据块互斥，有响应结果则表明为失败响应
           if (header.hasResult()) {
-            Tuple4<
-                    Request,
-                    Promise,
-                    LinkedList<Tuple2<Integer, ByteBuf>>,
-                    Consumer3<ByteBuf, Integer, Integer>>
-                tuple4 = cache.asMap().remove(header.getUuid());
-            if (tuple4 != null) {
-              notifyFailure(
-                  tuple4.t2(),
-                  new RequestResponseException(
-                      "Abnormal response: " + header.getResult().getDesc()),
-                  tuple4);
-            }
+            handleFailedResponse(header);
           } else {
-            // 读取请求记录，并做相应处理
-            Tuple4<
-                    Request,
-                    Promise,
-                    LinkedList<Tuple2<Integer, ByteBuf>>,
-                    Consumer3<ByteBuf, Integer, Integer>>
-                tuple4 = cache.getIfPresent(header.getUuid());
-            if (tuple4 != null) {
-              DataBlockMetadata metadata = header.getDataBlockMetadata();
-              Promise promise = tuple4.t2();
-              Consumer3<ByteBuf, Integer, Integer> byteBufConsumer = tuple4.t4();
-              if (byteBufConsumer == null) {
-                int blockNo = metadata.getBlockNo();
-                LinkedList<Tuple2<Integer, ByteBuf>> bufList = tuple4.t3();
-                bufList.add(
-                    Tuple2.<Integer, ByteBuf>Tuple2Builder()
-                        .t1(blockNo)
-                        .t2(buf.retain()) // 引用计数+1，避免被netty内存管理回收
-                        .build());
-
-                // 所有数据块都收到后合并结果返回
-                if (metadata.getTotalBlocks() == bufList.size()) {
-                  CompositeByteBuf byteBuf =
-                      ctx.alloc()
-                          .compositeBuffer(bufList.size())
-                          .addComponents(
-                              true,
-                              bufList.stream()
-                                  .sorted(dataBlockNoComparing)
-                                  .map(Tuple2::t2)
-                                  .toList());
-                  promise.trySuccess(byteBuf);
-                }
-              } else {
-                byteBufConsumer.accept(buf, metadata.getTotalBlocks(), metadata.getBlockNo());
-                if (metadata.getTotalBlocks() - 1 == metadata.getBlockNo()) {}
-              }
-            }
+            handleDataBlockResponse(ctx.alloc(), header, buf);
           }
         } finally {
           ReferenceCountUtil.release(buf);
@@ -228,6 +180,75 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
       }
       case null -> throw new IllegalArgumentException("msg must not be null or empty.");
       default -> ctx.fireChannelRead(msg);
+    }
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private void handleDataBlockResponse(
+      ByteBufAllocator allocator, ResponseHeader header, ByteBuf buf) {
+    Tuple4<
+            Request,
+            Promise,
+            LinkedList<Tuple2<Integer, ByteBuf>>,
+            Consumer3<ByteBuf, Integer, Integer>>
+        tuple4 = cache.getIfPresent(header.getUuid());
+    // 读取请求记录，并做相应处理，如果请求记录不存在则表明请求已经超时或者由于 超出处理能力丢弃
+    if (tuple4 != null) {
+      DataBlockMetadata metadata = header.getDataBlockMetadata();
+      int blockNo = metadata.getBlockNo();
+      Consumer3<ByteBuf, Integer, Integer> byteBufConsumer = tuple4.t4();
+
+      // 如果没有字节消费者则表明不是回调处理流程
+      if (byteBufConsumer == null) {
+        LinkedList<Tuple2<Integer, ByteBuf>> buffersList = tuple4.t3();
+        buffersList.add(
+            Tuple2.<Integer, ByteBuf>Tuple2Builder()
+                .t1(blockNo)
+                .t2(buf.retain()) // 引用计数+1，避免被内存管理回收
+                .build());
+
+        // 所有数据块都收到后合并结果返回
+        if (metadata.getTotalBlocks() == buffersList.size()) {
+          tuple4
+              .t2()
+              .trySuccess(
+                  allocator
+                      .compositeBuffer(buffersList.size())
+                      .addComponents(
+                          true,
+                          buffersList.stream()
+                              .sorted(dataBlockNoComparing)
+                              .map(Tuple2::t2)
+                              .toList()));
+        }
+      } else {
+        // 回调，数据块，数据块总数，数据块序号
+        byteBufConsumer.accept(buf, metadata.getTotalBlocks(), blockNo);
+        if (metadata.getTotalBlocks() - 1 == metadata.getBlockNo()) {
+          tuple4.t2().trySuccess(null);
+        }
+      }
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  private void handleFailedResponse(ResponseHeader header) {
+    Tuple4<
+            Request,
+            Promise,
+            LinkedList<Tuple2<Integer, ByteBuf>>,
+            Consumer3<ByteBuf, Integer, Integer>>
+        tuple4 = cache.asMap().remove(header.getUuid());
+
+    // 如果缓存内没有请求记录，则可能请求已超时或者超出处理能力已丢弃此请求
+    if (tuple4 != null) {
+      Messages.Result result = header.getResult();
+      notifyFailure(
+          tuple4.t2(),
+          new RequestResponseException(
+              String.format(
+                  "Abnormal response: [code:%d, desc=%s]", result.getCode(), result.getDesc())),
+          tuple4);
     }
   }
 
