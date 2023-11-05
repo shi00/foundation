@@ -18,24 +18,32 @@
  *  * under the License.
  *
  */
+package com.silong.foundation.common.lambda;
 
-package com.silong.foundation.lambda;
+import lombok.*;
+import lombok.experimental.Accessors;
 
 /**
- * consumer with 3 parameters
+ * 三元组
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-11-04 20:28
+ * @since 2022-01-03 20:20
+ * @param <T1> 三元组类型
+ * @param <T2> 三元组类型
+ * @param <T3> 三元组类型
  */
-@FunctionalInterface
-public interface Consumer3<T1, T2, T3> {
-  /**
-   * Performs this operation on the given argument.
-   *
-   * @param t1 the input argument
-   * @param t2 the input argument
-   * @param t3 the input argument
-   */
-  void accept(T1 t1, T2 t2, T3 t3);
+@Getter
+@Setter
+@ToString(callSuper = true)
+@Accessors(fluent = true)
+@EqualsAndHashCode(callSuper = true)
+public class Tuple3<T1, T2, T3> extends Tuple2<T1, T2> {
+  private T3 t3;
+
+  @Builder(builderMethodName = "Tuple3Builder")
+  public Tuple3(T1 t1, T2 t2, T3 t3) {
+    super(t1, t2);
+    this.t3 = t3;
+  }
 }
