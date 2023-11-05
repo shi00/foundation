@@ -21,8 +21,9 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import com.silong.foundation.common.lambda.Consumer3;
+import com.silong.foundation.common.utils.Converter;
 import com.silong.foundation.dj.bonecrusher.enu.ClientState;
-import com.silong.foundation.lambda.Consumer3;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.Future;
 
@@ -55,23 +56,25 @@ public interface DataSyncClient extends AutoCloseable {
    * 发送同步消息
    *
    * @param req 请求
+   * @param converter 类型转换
    * @return 响应
    * @param <T> 请求类型
    * @param <R> 响应类型
    * @throws Exception 异常
    */
-  <T, R> R sendSync(T req) throws Exception;
+  <T, R> R sendSync(T req, Converter<ByteBuf, R> converter) throws Exception;
 
   /**
    * 异步发送消息，如果数据量过大，通过Future获取所有结果可能会导致OOM异常
    *
    * @param req 请求
+   * @param converter 类型转换
    * @return 异步任务Future
    * @param <T> 请求类型
    * @param <R> 响应类型
    * @throws Exception 异常
    */
-  <T, R> Future<R> sendAsync(T req) throws Exception;
+  <T, R> Future<R> sendAsync(T req, Converter<ByteBuf, R> converter) throws Exception;
 
   /**
    * 发送请求，异步处理返回数据，处理大数据量请求，会分批返回数据块，所有返回的数据块都会调用consumer
