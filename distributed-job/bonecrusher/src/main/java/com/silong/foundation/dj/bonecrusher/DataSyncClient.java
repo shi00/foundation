@@ -21,10 +21,11 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
-import com.silong.foundation.common.lambda.Consumer3;
 import com.silong.foundation.dj.bonecrusher.enu.ClientState;
+import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 /**
  * 数据同步客户端接口
@@ -82,5 +83,6 @@ public interface DataSyncClient extends AutoCloseable {
    * @param <T> 请求类型
    * @throws Exception 异常
    */
-  <T> Future<Void> sendAsync(T req, Consumer3<ByteBuf, Integer, Integer> consumer) throws Exception;
+  <T> Future<Void> sendAsync(T req, BiConsumer<ByteBuf, DataBlockMetadata> consumer)
+      throws Exception;
 }
