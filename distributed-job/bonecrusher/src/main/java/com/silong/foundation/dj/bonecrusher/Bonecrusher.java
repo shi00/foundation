@@ -269,7 +269,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     private final Bootstrap bootstrap;
 
-    private Channel clientChannel;
+    private volatile Channel clientChannel;
 
     /** 客户端状态 */
     private final AtomicReference<ClientState> clientState =
@@ -284,12 +284,29 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
     public DataSyncClient connect(String remoteAddress, int remotePort) throws Exception {
       if (clientState.compareAndSet(ClientState.INITIALIZED, CONNECTED)) {
         joinClusterLatch.await(); // 加入集群后才能创建客户端
-        this.clientChannel = bootstrap.connect(remoteAddress, remotePort).sync().channel();
+        doConnect(remoteAddress, remotePort);
         return this;
       } else {
         throw new IllegalStateException(
             String.format("The current status of the client is not %s.", ClientState.INITIALIZED));
       }
+    }
+
+    private void doConnect(String remoteAddress, int remotePort) throws InterruptedException {
+      clientChannel = bootstrap.connect(remoteAddress, remotePort).sync().channel();
+      clientChannel
+          .closeFuture()
+          .addListener(
+              future -> {
+                // 断联后重联
+                if (future.isSuccess()) {
+                  log.info(
+                      "Start automatically reconnecting to the server[{}:{}]",
+                      remoteAddress,
+                      remotePort);
+                  doConnect(remoteAddress, remotePort);
+                }
+              });
     }
 
     @Override
