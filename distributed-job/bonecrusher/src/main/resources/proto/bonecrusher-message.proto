@@ -10,11 +10,18 @@ option java_outer_classname = "Messages";
 message Request {
   Type type = 1; //请求类型
   string token = 2; //鉴权令牌
-  string uuid = 5; //请求Uuid
+  string uuid = 3; //请求Uuid
+  int64 timestamp = 4; //时间戳
   oneof body{
-    LoadingClassReq loading_class = 3; // 类加载请求
-    SyncDataReq sync_data = 4; // 数据同步请求
+    SyncDataReq sync_data = 5; // 数据同步请求
+    LoadingClassReq loading_class = 6; // 类加载请求
+    HandShake hand_shake = 7; //握手消息
   }
+}
+
+//握手消息请求
+message HandShake {
+  bytes self_uuid = 1; // 集群成员自己在集群内的uuid
 }
 
 //加载类请求
@@ -30,10 +37,12 @@ message SyncDataReq {
 //响应头
 message ResponseHeader {
   Type type = 1; //响应类型
-  string uuid = 4; //请求uuid，标识那个请求的响应
+  string uuid = 2; //请求uuid，标识那个请求的响应
+  int64 timestamp = 3; //时间戳
   oneof body {
-    Result result = 2;  //结果
-    DataBlockMetadata data_block_metadata = 3 ; //数据块
+    Result result = 4;  //结果
+    DataBlockMetadata data_block_metadata = 5; //数据块
+    HandShake hand_shake = 6; //握手消息
   }
 }
 
@@ -56,7 +65,9 @@ message Result
 enum Type{
   LOADING_CLASS_REQ = 0; //类加载请求
   LOADING_CLASS_RESP = 1; //类加载响应
-  DATA_SYNC_REQ = 3; //数据同步请求
-  DATA_SYNC_RESP = 4; //数据同步响应
-  AUTHENTICATION_FAILED_RESP = 5; //鉴权失败
+  DATA_SYNC_REQ = 2; //数据同步请求
+  DATA_SYNC_RESP = 3; //数据同步响应
+  AUTHENTICATION_FAILED_RESP = 4; //鉴权失败
+  HAND_SHAKE_REQ = 5; //握手消息请求
+  HAND_SHAKE_RESP = 6; //握手消息响应
 }
