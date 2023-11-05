@@ -24,8 +24,8 @@ package com.silong.foundation.dj.bonecrusher.handler;
 import static com.silong.foundation.dj.bonecrusher.enu.MessageMagic.RESPONSE;
 import static io.netty.buffer.Unpooled.EMPTY_BUFFER;
 
+import com.silong.foundation.common.lambda.Tuple2;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
-import com.silong.foundation.lambda.Tuple2;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandler.Sharable;
