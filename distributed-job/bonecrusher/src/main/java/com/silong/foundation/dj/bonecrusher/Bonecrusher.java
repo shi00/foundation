@@ -28,6 +28,9 @@ import static io.netty.channel.ChannelOption.*;
 import static io.netty.channel.udt.UdtChannelOption.*;
 import static io.netty.channel.udt.nio.NioUdtProvider.*;
 
+import com.silong.foundation.common.lambda.Consumer3;
+import com.silong.foundation.common.lambda.Tuple3;
+import com.silong.foundation.common.lambda.Tuple4;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.enu.ClientState;
@@ -35,9 +38,6 @@ import com.silong.foundation.dj.bonecrusher.enu.ServerState;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.*;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
-import com.silong.foundation.lambda.Consumer3;
-import com.silong.foundation.lambda.Tuple3;
-import com.silong.foundation.lambda.Tuple4;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -296,6 +296,16 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
       return this.<T, R>sendAsync(req).get();
     }
 
+    @Override
+    public <T, R> Future<R> sendAsync(T req) {
+      return doSendAsync(
+          req,
+          this::newPromise,
+          this::generateUuid,
+          (promise, uuid) ->
+              Tuple3.<T, Promise<R>, String>Tuple3Builder().t1(req).t2(promise).t3(uuid).build());
+    }
+
     /**
      * 发送异步请求
      *
@@ -342,18 +352,8 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
     }
 
     @Override
-    public <T, R> Future<R> sendAsync(T req) {
-      return doSendAsync(
-          req,
-          this::newPromise,
-          this::generateUuid,
-          (promise, uuid) ->
-              Tuple3.<T, Promise<R>, String>Tuple3Builder().t1(req).t2(promise).t3(uuid).build());
-    }
-
-    @Override
     public <T> Future<Void> sendAsync(
-        @NonNull T req, @NonNull Consumer3<ByteBuf, Integer, Integer> consumer) {
+        T req, @NonNull Consumer3<ByteBuf, Integer, Integer> consumer) {
       return doSendAsync(
           req,
           this::newPromise,
@@ -367,6 +367,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
                   .build());
     }
 
+    @NonNull
     private <R> Promise<R> newPromise() {
       return eventExecutor.newPromise();
     }
@@ -376,6 +377,7 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
      *
      * @return uuid
      */
+    @NonNull
     private String generateUuid() {
       return UUID.randomUUID().toString();
     }
