@@ -148,6 +148,7 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
               ResponseHeader.newBuilder()
                   .setType(AUTHENTICATION_FAILED_RESP)
                   .setResult(AUTHENTICATION_FAILED)
+                  .setTimestamp(System.currentTimeMillis())
                   .setUuid(request.getUuid())
                   .build());
           return;

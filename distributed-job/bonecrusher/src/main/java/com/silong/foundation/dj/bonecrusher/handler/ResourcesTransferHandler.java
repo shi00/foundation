@@ -139,6 +139,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
             ResponseHeader.newBuilder()
                 .setType(LOADING_CLASS_RESP)
                 .setResult(CLASS_NOT_FOUND)
+                .setTimestamp(System.currentTimeMillis())
                 .setUuid(requestId)
                 .build());
         return;
@@ -163,6 +164,7 @@ public class ResourcesTransferHandler extends ChannelInboundHandlerAdapter {
                         ResponseHeader.newBuilder()
                             .setType(respType)
                             .setUuid(requestId)
+                            .setTimestamp(System.currentTimeMillis())
                             .setDataBlockMetadata(
                                 DataBlockMetadata.newBuilder()
                                     .setDataUuid(classFqdn)
