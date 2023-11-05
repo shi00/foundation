@@ -26,7 +26,6 @@ import static com.silong.foundation.dj.bonecrusher.handler.ServerChannelHandler.
 import static io.netty.channel.udt.nio.NioUdtProvider.socketUDT;
 
 import com.github.benmanes.caffeine.cache.*;
-import com.silong.foundation.common.lambda.Consumer3;
 import com.silong.foundation.common.lambda.Tuple2;
 import com.silong.foundation.common.lambda.Tuple3;
 import com.silong.foundation.common.lambda.Tuple4;
@@ -51,6 +50,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import lombok.NonNull;
 import lombok.Setter;
@@ -81,7 +81,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
               Request,
               Promise,
               LinkedList<Tuple2<Integer, ByteBuf>>,
-              Consumer3<ByteBuf, Integer, Integer>>>
+              BiConsumer<ByteBuf, DataBlockMetadata>>>
       cache;
 
   /** 鉴权工具 */
@@ -129,7 +129,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
               Request,
               Promise,
               LinkedList<Tuple2<Integer, ByteBuf>>,
-              Consumer3<ByteBuf, Integer, Integer>>>
+              BiConsumer<ByteBuf, DataBlockMetadata>>>
       buildRemovalListener(BonecrusherClientProperties clientProperties) {
     return (uuid, tuple4, cause) -> {
       // 只有垃圾收集导致的淘汰tuples才会为null，因此过滤此种场景
@@ -190,13 +190,13 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
             Request,
             Promise,
             LinkedList<Tuple2<Integer, ByteBuf>>,
-            Consumer3<ByteBuf, Integer, Integer>>
+            BiConsumer<ByteBuf, DataBlockMetadata>>
         tuple4 = cache.getIfPresent(header.getUuid());
     // 读取请求记录，并做相应处理，如果请求记录不存在则表明请求已经超时或者由于 超出处理能力丢弃
     if (tuple4 != null) {
       DataBlockMetadata metadata = header.getDataBlockMetadata();
       int blockNo = metadata.getBlockNo();
-      Consumer3<ByteBuf, Integer, Integer> byteBufConsumer = tuple4.t4();
+      BiConsumer<ByteBuf, DataBlockMetadata> byteBufConsumer = tuple4.t4();
 
       // 如果没有字节消费者则表明不是回调处理流程
       if (byteBufConsumer == null) {
@@ -223,7 +223,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
         }
       } else {
         // 回调，数据块，数据块总数，数据块序号
-        byteBufConsumer.accept(buf, metadata.getTotalBlocks(), blockNo);
+        byteBufConsumer.accept(buf, metadata);
         if (metadata.getTotalBlocks() - 1 == metadata.getBlockNo()) {
           tuple4.t2().trySuccess(null);
         }
@@ -237,7 +237,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
             Request,
             Promise,
             LinkedList<Tuple2<Integer, ByteBuf>>,
-            Consumer3<ByteBuf, Integer, Integer>>
+            BiConsumer<ByteBuf, DataBlockMetadata>>
         tuple4 = cache.asMap().remove(header.getUuid());
 
     // 如果缓存内没有请求记录，则可能请求已超时或者超出处理能力已丢弃此请求
@@ -276,8 +276,10 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
     Object req = tuple3.t1();
     Promise cPromise = (Promise) tuple3.t2();
     String uuid = (String) tuple3.t3();
-    Consumer3<ByteBuf, Integer, Integer> consumer =
-        tuple3 instanceof Tuple4 tuple4 ? (Consumer3<ByteBuf, Integer, Integer>) tuple4.t4() : null;
+    BiConsumer<ByteBuf, DataBlockMetadata> consumer =
+        tuple3 instanceof Tuple4 tuple4
+            ? (BiConsumer<ByteBuf, DataBlockMetadata>) tuple4.t4()
+            : null;
     String token = generateToken();
 
     // 为请求添加鉴权token和uuid
@@ -301,16 +303,16 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
    */
   @SuppressWarnings("rawtypes")
   private Request cache(
-      Request request, Promise promise, Consumer3<ByteBuf, Integer, Integer> consumer) {
+      Request request, Promise promise, BiConsumer<ByteBuf, DataBlockMetadata> consumer) {
     Tuple4.Tuple4Builder<
             Request,
             Promise,
             LinkedList<Tuple2<Integer, ByteBuf>>,
-            Consumer3<ByteBuf, Integer, Integer>>
+            BiConsumer<ByteBuf, DataBlockMetadata>>
         builder =
             Tuple4
                 .<Request, Promise, LinkedList<Tuple2<Integer, ByteBuf>>,
-                    Consumer3<ByteBuf, Integer, Integer>>
+                    BiConsumer<ByteBuf, DataBlockMetadata>>
                     Tuple4Builder()
                 .t1(request)
                 .t2(promise);
@@ -336,7 +338,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
               Request,
               Promise,
               LinkedList<Tuple2<Integer, ByteBuf>>,
-              Consumer3<ByteBuf, Integer, Integer>>
+              BiConsumer<ByteBuf, DataBlockMetadata>>
           tuple4) {
     LinkedList<Tuple2<Integer, ByteBuf>> list = tuple4.t3();
     if (list != null && !list.isEmpty()) {
@@ -360,7 +362,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
             Request,
             Promise,
             LinkedList<Tuple2<Integer, ByteBuf>>,
-            Consumer3<ByteBuf, Integer, Integer>>
+            BiConsumer<ByteBuf, DataBlockMetadata>>
         tuple4 = cache.asMap().remove(reqUuid);
     if (tuple4 != null) {
       Request request = tuple4.t1();
@@ -386,7 +388,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
               Request,
               Promise,
               LinkedList<Tuple2<Integer, ByteBuf>>,
-              Consumer3<ByteBuf, Integer, Integer>>
+              BiConsumer<ByteBuf, DataBlockMetadata>>
           tuple4) {
     try {
       promise.tryFailure(e);

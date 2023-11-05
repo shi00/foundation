@@ -28,7 +28,6 @@ import static io.netty.channel.ChannelOption.*;
 import static io.netty.channel.udt.UdtChannelOption.*;
 import static io.netty.channel.udt.nio.NioUdtProvider.*;
 
-import com.silong.foundation.common.lambda.Consumer3;
 import com.silong.foundation.common.lambda.Tuple3;
 import com.silong.foundation.common.lambda.Tuple4;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
@@ -37,6 +36,7 @@ import com.silong.foundation.dj.bonecrusher.enu.ClientState;
 import com.silong.foundation.dj.bonecrusher.enu.ServerState;
 import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.*;
+import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -63,6 +63,7 @@ import java.net.SocketAddress;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -353,13 +354,15 @@ class Bonecrusher implements ApplicationListener<ClusterViewChangedEvent>, DataS
 
     @Override
     public <T> Future<Void> sendAsync(
-        T req, @NonNull Consumer3<ByteBuf, Integer, Integer> consumer) {
+        T req, @NonNull BiConsumer<ByteBuf, Messages.DataBlockMetadata> consumer) {
       return doSendAsync(
           req,
           this::newPromise,
           this::generateUuid,
           (promise, uuid) ->
-              Tuple4.<T, Promise<Void>, String, Consumer3<ByteBuf, Integer, Integer>>Tuple4Builder()
+              Tuple4
+                  .<T, Promise<Void>, String, BiConsumer<ByteBuf, Messages.DataBlockMetadata>>
+                      Tuple4Builder()
                   .t1(req)
                   .t2(promise)
                   .t3(uuid)
