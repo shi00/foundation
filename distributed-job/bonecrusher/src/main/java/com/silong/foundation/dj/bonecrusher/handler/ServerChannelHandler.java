@@ -26,10 +26,10 @@ import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.AUTHENT
 import com.auth0.jwt.interfaces.Claim;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.enu.ErrorCode;
-import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
+import com.silong.foundation.dj.bonecrusher.vo.ClusterInfo;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import com.silong.foundation.utilities.jwt.Result;
 import io.netty.channel.ChannelDuplexHandler;
@@ -72,10 +72,10 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
   /** 配置 */
   private final BonecrusherServerProperties properties;
 
-  /** 集群视图 */
+  /** 集群信息 */
   @Setter
   @Accessors(fluent = true)
-  private Supplier<ClusterViewChangedEvent> clusterViewChangedEventSupplier;
+  private Supplier<ClusterInfo> clusterInfoSupplier;
 
   /**
    * 构造方法
@@ -161,23 +161,24 @@ public class ServerChannelHandler extends ChannelDuplexHandler {
   }
 
   private Result checkTokenPayload(Map<String, Claim> claims) {
-    ClusterViewChangedEvent event = clusterViewChangedEventSupplier.get();
+    ClusterInfo clusterInfo = clusterInfoSupplier.get();
     if (log.isDebugEnabled()) {
-      log.debug("clusterViewChangedEvent: {}, claims: {}", event, claims);
+      log.debug("clusterInfo: {}, claims: {}", clusterInfo, claims);
     }
 
-    if (event == null) {
+    if (clusterInfo.clusterName() == null) {
       log.error("The local node has not joined the cluster or has left the cluster.");
     } else {
       Claim cluster = claims.get(CLUSTER_KEY);
       Claim generator = claims.get(GENERATOR_KEY);
       if (cluster != null
           && generator != null
-          && Objects.equals(cluster.asString(), event.cluster())
-          && Arrays.stream(event.newView().getMembersRaw())
+          && Objects.equals(cluster.asString(), clusterInfo.clusterName())
+          && Arrays.stream(clusterInfo.view().getMembersRaw())
               .anyMatch(
-                  memberAddress -> memberAddress.equals(event.localAddress())) // 确保服务端归属节点在集群内
-          && Arrays.stream(event.newView().getMembersRaw())
+                  memberAddress ->
+                      memberAddress.equals(clusterInfo.localAddress())) // 确保服务端归属节点在集群内
+          && Arrays.stream(clusterInfo.view().getMembersRaw())
               .anyMatch(
                   memberAddress ->
                       memberAddress.toString().equals(generator.asString())) // 确保请求客户端节点在集群内
