@@ -27,11 +27,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
 import org.jgroups.Address;
-import org.jgroups.View;
-import org.springframework.context.ApplicationEvent;
 
 /**
- * 集群视图变化通知事件
+ * 离开集群通知事件
  *
  * @author louis sin
  * @version 1.0.0
@@ -40,51 +38,25 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 @Accessors(fluent = true)
 @EqualsAndHashCode(callSuper = true)
-public class ClusterViewChangedEvent extends ApplicationEvent {
+public class LeftClusterEvent extends JoinClusterEvent {
 
-  @Serial private static final long serialVersionUID = 314_447_926_653_736_236L;
-
-  /** 新视图 */
-  private final View newView;
-
-  /** 集群名 */
-  private final String cluster;
-
-  /** 本地节点地址 */
-  private final Address localAddress;
+  @Serial private static final long serialVersionUID = -5_577_213_471_548_732_899L;
 
   /**
    * 构造方法
    *
+   * @param source 事件源
    * @param cluster 集群
    * @param localAddress 本地地址
-   * @param oldView 旧视图
-   * @param newView 当前新视图
    */
-  public ClusterViewChangedEvent(
-      @NonNull String cluster,
-      @NonNull Address localAddress,
-      @NonNull View oldView,
-      @NonNull View newView) {
-    super(oldView);
-    this.localAddress = localAddress;
-    this.cluster = cluster;
-    this.newView = newView;
-  }
-
-  /**
-   * 旧视图
-   *
-   * @return 旧视图
-   */
-  public View oldView() {
-    return (View) getSource();
+  public LeftClusterEvent(
+      @NonNull Object source, @NonNull String cluster, @NonNull Address localAddress) {
+    super(source, cluster, localAddress);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "ClusterViewChangedEvent{cluster:%s, localAddress:%s, oldView:[%s], newView:[%s]}",
-        cluster, localAddress, getSource(), newView);
+        "LeftClusterEvent{cluster:%s, localAddress:%s}", cluster(), localAddress());
   }
 }
