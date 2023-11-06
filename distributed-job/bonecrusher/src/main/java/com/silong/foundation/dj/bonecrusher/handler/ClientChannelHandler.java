@@ -30,13 +30,13 @@ import com.silong.foundation.common.lambda.Tuple2;
 import com.silong.foundation.common.lambda.Tuple3;
 import com.silong.foundation.common.lambda.Tuple4;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
-import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.exception.ConcurrentRequestLimitExceededException;
 import com.silong.foundation.dj.bonecrusher.exception.RequestResponseException;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
+import com.silong.foundation.dj.bonecrusher.vo.ClusterInfo;
 import com.silong.foundation.utilities.jwt.JwtAuthenticator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -71,7 +71,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
   /** 集群视图 */
   @Setter
   @Accessors(fluent = true)
-  private Supplier<ClusterViewChangedEvent> clusterViewChangedEventSupplier;
+  private Supplier<ClusterInfo> clusterInfoSupplier;
 
   /** 请求缓存信息 */
   @SuppressWarnings("rawtypes")
@@ -412,9 +412,13 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
    * @return token
    */
   private String generateToken() {
-    ClusterViewChangedEvent event = clusterViewChangedEventSupplier.get();
+    ClusterInfo clusterInfo = clusterInfoSupplier.get();
     return jwtAuthenticator.generate(
-        Map.of(CLUSTER_KEY, event.cluster(), GENERATOR_KEY, event.localAddress().toString()));
+        Map.of(
+            CLUSTER_KEY,
+            clusterInfo.clusterName(),
+            GENERATOR_KEY,
+            clusterInfo.localAddress().toString()));
   }
 
   @Override
