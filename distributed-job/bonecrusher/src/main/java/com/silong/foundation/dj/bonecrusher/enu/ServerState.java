@@ -29,15 +29,27 @@ package com.silong.foundation.dj.bonecrusher.enu;
  * @since 2023-11-02 9:23
  */
 public enum ServerState {
-  // 已创建
-  CREATED,
+  /** 新创建 */
+  NEW,
 
-  // 初始化完毕
+  /** 初始化过程中 */
+  INITIALIZING,
+
+  /** 初始化完毕 */
   INITIALIZED,
 
-  // 运行中
+  /** 启动中 */
+  STARTING,
+
+  /** 运行中 */
   RUNNING,
 
-  // 已关闭
+  /** 关闭中 */
+  SHUTDOWNING,
+
+  /** 异常状态 */
+  EXCEPTION,
+
+  /** 已关闭 */
   SHUTDOWN
 }
