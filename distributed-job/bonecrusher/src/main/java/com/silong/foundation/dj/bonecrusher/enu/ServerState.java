@@ -32,20 +32,11 @@ public enum ServerState {
   /** 新创建 */
   NEW,
 
-  /** 初始化过程中 */
-  INITIALIZING,
-
   /** 初始化完毕 */
   INITIALIZED,
 
-  /** 启动中 */
-  STARTING,
-
   /** 运行中 */
   RUNNING,
-
-  /** 关闭中 */
-  SHUTDOWNING,
 
   /** 异常状态 */
   EXCEPTION,
