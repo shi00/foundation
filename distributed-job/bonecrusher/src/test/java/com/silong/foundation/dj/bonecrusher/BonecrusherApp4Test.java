@@ -53,9 +53,7 @@ public class BonecrusherApp4Test {
 
   private void fireViewChangedEvent() throws Exception {
     Address creator = new IpAddress("127.0.0.1:43434");
-    ViewId oldViewId = new ViewId(creator, 1);
-    ViewId newViewId = new ViewId(creator, 2);
-    View oldView = new View(oldViewId, List.of(creator));
+    ViewId newViewId = new ViewId(creator, 1);
     View newView = new View(newViewId, List.of(new IpAddress("127.0.0.1:43436"), creator));
     publisher.publishEvent(new ViewChangedEvent(this, newView));
     publisher.publishEvent(new JoinClusterEvent(this, "test-cluster", creator));
