@@ -29,8 +29,8 @@ package com.silong.foundation.dj.bonecrusher.enu;
  * @since 2023-11-02 9:19
  */
 public enum ClientState {
-  // 新建
-  NEW,
+  // 初始化完成
+  INITIALIZED,
 
   // 连接等待中
   WAITING,
