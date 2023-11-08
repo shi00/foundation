@@ -21,6 +21,7 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import com.silong.foundation.dj.bonecrusher.enu.NodeClusterState;
 import com.silong.foundation.dj.bonecrusher.enu.ServerState;
 
 /**
@@ -30,7 +31,21 @@ import com.silong.foundation.dj.bonecrusher.enu.ServerState;
  * @version 1.0.0
  * @since 2023-10-28 17:54
  */
-public interface DataSyncServer {
+public interface DataSyncServer extends Lifecycle {
+
+  /**
+   * 注册生命周期监听器
+   *
+   * @param lifecycleListeners 监听器
+   */
+  void registerListener(LifecycleListener... lifecycleListeners);
+
+  /**
+   * 删除生命周期监听器
+   *
+   * @param lifecycleListener 监听器
+   */
+  void removeListener(LifecycleListener lifecycleListener);
 
   /**
    * 获取服务器状态
@@ -40,19 +55,11 @@ public interface DataSyncServer {
   ServerState state();
 
   /**
-   * 启动服务
+   * 获取节点集群状态
    *
-   * @param block 是否阻塞当前线程，等待服务器关闭
-   * @throws Exception 异常
+   * @return 集群状态
    */
-  void start(boolean block) throws Exception;
-
-  /**
-   * 关闭服务器
-   *
-   * @throws Exception 异常
-   */
-  void shutdown() throws Exception;
+  NodeClusterState clusterState();
 
   /**
    * 新建并返回数据同步服务客户端
