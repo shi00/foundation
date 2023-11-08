@@ -385,7 +385,7 @@ public class ClientChannelHandler extends ChannelDuplexHandler {
         release(tuple4);
       }
     } else {
-      log.info("Unable to find request[{}] record based on uuid.", reqUuid);
+      log.info("Unable to find request[{}] record by uuid.", reqUuid);
     }
   }
 
