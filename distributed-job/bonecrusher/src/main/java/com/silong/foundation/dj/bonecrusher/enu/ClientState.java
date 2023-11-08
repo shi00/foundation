@@ -35,8 +35,12 @@ public enum ClientState {
   // 连接等待中
   WAITING,
 
+  // 异常
+  ABNORMAL,
+
   // 已连接
   CONNECTED,
+
   // 已关闭
   CLOSED
 }
