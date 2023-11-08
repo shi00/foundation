@@ -86,6 +86,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 import org.jgroups.util.ByteArrayDataOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEvent;
@@ -509,8 +511,9 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
    * @version 1.0.0
    * @since 2023-11-06 17:22
    */
-  @Slf4j
   class BonecrusherClient implements DataSyncClient {
+
+    private static final Logger log = LoggerFactory.getLogger(BonecrusherClient.class);
 
     /** 客户端状态 */
     private final AtomicReference<ClientState> clientState = new AtomicReference<>();
