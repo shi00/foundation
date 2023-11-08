@@ -39,7 +39,7 @@ public enum ServerState {
   RUNNING,
 
   /** 异常状态 */
-  EXCEPTION,
+  ABNORMAL,
 
   /** 已关闭 */
   SHUTDOWN
