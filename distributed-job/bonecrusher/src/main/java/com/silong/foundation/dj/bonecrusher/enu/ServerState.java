@@ -35,6 +35,9 @@ public enum ServerState {
   /** 初始化完毕 */
   INITIALIZED,
 
+  /** 等待服务器启动 */
+  WAITING,
+
   /** 运行中 */
   RUNNING,
 
