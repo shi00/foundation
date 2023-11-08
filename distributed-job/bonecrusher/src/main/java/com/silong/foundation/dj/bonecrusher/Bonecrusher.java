@@ -21,31 +21,43 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
+import static com.silong.foundation.dj.bonecrusher.enu.ClientState.*;
+import static com.silong.foundation.dj.bonecrusher.enu.ClientState.CLOSED;
 import static com.silong.foundation.dj.bonecrusher.enu.NodeClusterState.JOINED;
 import static com.silong.foundation.dj.bonecrusher.enu.NodeClusterState.LEFT;
 import static com.silong.foundation.dj.bonecrusher.enu.ServerState.*;
+import static com.silong.foundation.dj.bonecrusher.message.Messages.Type.HAND_SHAKE_REQ;
 import static io.netty.channel.ChannelOption.*;
 import static io.netty.channel.udt.UdtChannelOption.*;
 import static io.netty.channel.udt.nio.NioUdtProvider.*;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import com.google.protobuf.UnsafeByteOperations;
+import com.silong.foundation.common.lambda.Tuple3;
+import com.silong.foundation.common.lambda.Tuple4;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherClientProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperties;
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
+import com.silong.foundation.dj.bonecrusher.enu.ClientState;
 import com.silong.foundation.dj.bonecrusher.enu.NodeClusterState;
 import com.silong.foundation.dj.bonecrusher.enu.ServerState;
 import com.silong.foundation.dj.bonecrusher.event.JoinClusterEvent;
 import com.silong.foundation.dj.bonecrusher.event.LeftClusterEvent;
 import com.silong.foundation.dj.bonecrusher.event.ViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.*;
+import com.silong.foundation.dj.bonecrusher.message.Messages;
+import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
 import com.silong.foundation.dj.bonecrusher.vo.ClusterInfo;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.udt.UdtChannel;
+import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.compression.SnappyFrameDecoder;
 import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
@@ -55,19 +67,25 @@ import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.DefaultThreadFactory;
-import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.*;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jgroups.Address;
+import org.jgroups.util.ByteArrayDataOutputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEvent;
@@ -84,19 +102,19 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServer {
-  BonecrusherClientProperties clientProperties;
+  private BonecrusherClientProperties clientProperties;
 
-  EventExecutor eventExecutor;
+  private EventExecutor eventExecutor;
 
-  BonecrusherResponseDecoder bonecrusherResponseDecoder;
+  private BonecrusherResponseDecoder bonecrusherResponseDecoder;
 
-  ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender;
+  private ProtobufVarint32LengthFieldPrepender protobufVarint32LengthFieldPrepender;
 
-  ProtobufEncoder protobufEncoder;
+  private ProtobufEncoder protobufEncoder;
 
-  ClientChannelHandler clientChannelHandler;
+  private ClientChannelHandler clientChannelHandler;
 
-  LoggingHandler clientLoggingHandler;
+  private LoggingHandler clientLoggingHandler;
 
   /** 保存当前集群视图变化事件 */
   final AtomicReference<ClusterInfo> clusterInfoRef = new AtomicReference<>(new ClusterInfo());
@@ -124,13 +142,10 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
   private volatile Channel serverChannel;
 
   /** 服务器初始状态 */
-  private final AtomicReference<ServerState> serverState = new AtomicReference<>(NEW);
+  private final AtomicReference<ServerState> serverState = new AtomicReference<>(ServerState.NEW);
 
   /** 节点集群状态 */
   private final AtomicReference<NodeClusterState> nodeClusterState = new AtomicReference<>(LEFT);
-
-  /** 监听器列表 */
-  private final LinkedList<ClusterStateChangeListener> listeners = new LinkedList<>();
 
   /** 监听器列表 */
   private final LinkedList<LifecycleListener> lifecycleListeners = new LinkedList<>();
@@ -140,7 +155,7 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
 
   /** 构造方法 */
   public Bonecrusher() {
-    notifyLifeCycleListener(NEW, null);
+    notifyLifeCycleListener(ServerState.NEW, null);
   }
 
   @Override
@@ -174,34 +189,12 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
     }
   }
 
-  /**
-   * 注册监听器
-   *
-   * @param listener 监听器
-   */
-  public void registerListener(@NonNull ClusterStateChangeListener listener) {
-    synchronized (listeners) {
-      listeners.add(listener);
-    }
-  }
-
-  /**
-   * 删除监听器
-   *
-   * @param listener 监听器
-   */
-  public void removeListener(@NonNull ClusterStateChangeListener listener) {
-    synchronized (listeners) {
-      listeners.remove(listener);
-    }
-  }
-
   /** 初始化服务 */
   @PostConstruct
   @Override
   public void initialize() {
     // 状态变化
-    if (serverState.compareAndSet(NEW, INITIALIZED)) {
+    if (serverState.compareAndSet(ServerState.NEW, ServerState.INITIALIZED)) {
       try {
         this.serverBootstrap =
             new ServerBootstrap()
@@ -270,10 +263,10 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
         log.info("The bonecrusher has been initialized successfully.");
 
         // 通知初始化完成
-        notifyLifeCycleListener(INITIALIZED, null);
+        notifyLifeCycleListener(ServerState.INITIALIZED, null);
       } catch (Exception e) {
-        serverState.set(ABNORMAL);
-        notifyLifeCycleListener(ABNORMAL, e);
+        serverState.set(ServerState.ABNORMAL);
+        notifyLifeCycleListener(ServerState.ABNORMAL, e);
         throw e;
       }
     } else {
@@ -304,7 +297,7 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
   @Override
   public void start(boolean block) throws Exception {
     // 状态变化
-    if (serverState.compareAndSet(INITIALIZED, WAITING)) {
+    if (serverState.compareAndSet(ServerState.INITIALIZED, ServerState.WAITING)) {
       try {
 
         // 只有本地节点加入集群后才能启动
@@ -320,9 +313,10 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
             listenPort,
             serverChannel.id());
 
-        if (!serverState.compareAndSet(WAITING, RUNNING)) {
+        if (!serverState.compareAndSet(ServerState.WAITING, RUNNING)) {
           throw new IllegalStateException(
-              String.format("CurrentStatus:[%s], ExpectedStatus:[%s].", state(), WAITING));
+              String.format(
+                  "CurrentStatus:[%s], ExpectedStatus:[%s].", state(), ServerState.WAITING));
         }
 
         notifyLifeCycleListener(RUNNING, null);
@@ -332,8 +326,8 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
           serverChannel.closeFuture().sync();
         }
       } catch (Exception e) {
-        serverState.set(ABNORMAL);
-        notifyLifeCycleListener(ABNORMAL, e);
+        serverState.set(ServerState.ABNORMAL);
+        notifyLifeCycleListener(ServerState.ABNORMAL, e);
         throw e;
       }
     } else {
@@ -346,9 +340,9 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void shutdown() {
     if (serverState.compareAndSet(RUNNING, SHUTDOWN)
-        || serverState.compareAndSet(INITIALIZED, SHUTDOWN)
-        || serverState.compareAndSet(WAITING, SHUTDOWN)
-        || serverState.compareAndSet(ABNORMAL, SHUTDOWN)) {
+        || serverState.compareAndSet(ServerState.INITIALIZED, SHUTDOWN)
+        || serverState.compareAndSet(ServerState.WAITING, SHUTDOWN)
+        || serverState.compareAndSet(ServerState.ABNORMAL, SHUTDOWN)) {
       ChannelId id = serverChannel.id();
       FutureCombiner<?, Future<?>> futureCombiner =
           serverBossGroup != null && serverConnectorsGroup != null
@@ -372,13 +366,11 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
 
   @Override
   public DataSyncClient newClient() {
-    BonecrusherClient client = new BonecrusherClient(this);
-    registerListener(client);
-    return client;
+    return new BonecrusherClient();
   }
 
   /** 等待local节点加入集群，如果当前已经加入集群则直接返回，否则当前线程阻塞，等待加入集群 */
-  void waitJoiningCluster(Duration timeout) throws InterruptedException, TimeoutException {
+  private void waitJoiningCluster(Duration timeout) throws InterruptedException, TimeoutException {
     joinClusterPhaser.awaitAdvanceInterruptibly(
         joinClusterPhaser.arrive(), timeout.toMillis(), MILLISECONDS);
   }
@@ -396,10 +388,6 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
         // 更新集群视图
         ClusterInfo clusterInfo = clusterInfoRef.get();
         clusterInfo.view(viewChangedEvent.newView());
-        // 通知所有注册的监听器
-        synchronized (listeners) {
-          listeners.forEach(listener -> listener.viewChanged(clusterInfo));
-        }
       }
       case LeftClusterEvent leftClusterEvent -> {
         String clusterName = leftClusterEvent.cluster();
@@ -413,11 +401,6 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
         } else {
           throw new IllegalStateException(
               String.format("CurrentStatus:[%s], ExpectedStatus:[%s].", state(), JOINED));
-        }
-
-        // 通知所有注册的监听器
-        synchronized (listeners) {
-          listeners.forEach(listener -> listener.left(clusterName));
         }
       }
       case JoinClusterEvent joinClusterEvent -> {
@@ -439,11 +422,6 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
         } else {
           throw new IllegalStateException(
               String.format("CurrentStatus:[%s], ExpectedStatus:[%s].", state(), LEFT));
-        }
-
-        // 通知所有注册的监听器
-        synchronized (listeners) {
-          listeners.forEach(listener -> listener.joined(clusterInfo));
         }
       }
       default -> {}
@@ -522,5 +500,281 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
   @Autowired
   public void setProperties(BonecrusherProperties properties) {
     this.properties = properties;
+  }
+
+  /**
+   * 数据同步客户端
+   *
+   * @author louis sin
+   * @version 1.0.0
+   * @since 2023-11-06 17:22
+   */
+  @Slf4j
+  class BonecrusherClient implements DataSyncClient {
+
+    /** 客户端状态 */
+    private final AtomicReference<ClientState> clientState = new AtomicReference<>();
+
+    private EventLoopGroup clientConnectorsGroup;
+
+    private Bootstrap bootstrap;
+
+    private volatile Channel clientChannel;
+
+    private volatile ScheduledFuture<?> handshakeScheduledFuture;
+
+    /** 构造方法 */
+    public BonecrusherClient() {
+      try {
+        if (clientState.compareAndSet(null, ClientState.INITIALIZED)) {
+          this.bootstrap =
+              new Bootstrap()
+                  .group(
+                      this.clientConnectorsGroup =
+                          new NioEventLoopGroup(
+                              clientProperties.getConnectorGroupThreads(),
+                              new DefaultThreadFactory(
+                                  clientProperties.getConnectorGroupPoolName()),
+                              BYTE_PROVIDER))
+                  // 设置服务端通道实现类型
+                  .channelFactory(BYTE_CONNECTOR)
+                  // 设置子channel的缓冲区分配器
+                  .option(SO_REUSEADDR, clientProperties.getNetty().isSO_REUSEADDR())
+                  .option(SO_LINGER, clientProperties.getNetty().getSO_LINGER())
+                  .option(SO_RCVBUF, (int) clientProperties.getNetty().getSO_RCVBUF().toBytes())
+                  .option(SO_SNDBUF, (int) clientProperties.getNetty().getSO_SNDBUF().toBytes())
+                  .option(
+                      PROTOCOL_RECEIVE_BUFFER_SIZE,
+                      (int) clientProperties.getNetty().getPROTOCOL_RECEIVE_BUFFER_SIZE().toBytes())
+                  .option(
+                      PROTOCOL_SEND_BUFFER_SIZE,
+                      (int) clientProperties.getNetty().getPROTOCOL_SEND_BUFFER_SIZE().toBytes())
+                  .option(
+                      SYSTEM_RECEIVE_BUFFER_SIZE,
+                      (int) clientProperties.getNetty().getSYSTEM_RECEIVE_BUFFER_SIZE().toBytes())
+                  .option(
+                      SYSTEM_SEND_BUFFER_SIZE,
+                      (int) clientProperties.getNetty().getSYSTEM_SEND_BUFFER_SIZE().toBytes())
+                  .handler(
+                      new ChannelInitializer<UdtChannel>() {
+                        @Override
+                        public void initChannel(UdtChannel ch) {
+                          ch.pipeline()
+                              .addLast("snappyFrameEncoder", new SnappyFrameEncoder())
+                              .addLast("snappyFrameDecoder", new SnappyFrameDecoder())
+                              .addLast(
+                                  "protobufVarint32LengthFieldPrepender",
+                                  protobufVarint32LengthFieldPrepender) // 用于在序列化的字节数组前加上一个简单的包头，只包含序列化的字节长度
+                              .addLast("protobufEncoder", protobufEncoder)
+                              .addLast("compositeMessageDecoder", bonecrusherResponseDecoder)
+                              .addLast("clientLogging", clientLoggingHandler)
+                              .addLast(
+                                  "clientHandler",
+                                  clientChannelHandler.clusterInfoSupplier(clusterInfoRef::get));
+                        }
+                      })
+                  .validate();
+        }
+      } catch (Exception e) {
+        clientState.set(ClientState.ABNORMAL);
+        throw e;
+      }
+    }
+
+    @Override
+    public ClientState state() {
+      return clientState.get();
+    }
+
+    /**
+     * 构造握手消息
+     *
+     * @return 握手消息
+     */
+    private Messages.Request.Builder buildHandShakeMsg() {
+      Address localAddress = clusterInfoRef.get().localAddress();
+      ByteArrayDataOutputStream output =
+          new ByteArrayDataOutputStream(localAddress.serializedSize());
+      try {
+        localAddress.writeTo(output);
+      } catch (IOException e) {
+        throw new EncoderException(e);
+      }
+      return Messages.Request.newBuilder()
+          .setType(HAND_SHAKE_REQ)
+          .setHandShake(
+              Messages.HandShake.newBuilder()
+                  .setSelfUuid(UnsafeByteOperations.unsafeWrap(output.buffer())));
+    }
+
+    private void doConnect(String remoteAddress, int remotePort)
+        throws InterruptedException, TimeoutException {
+      waitJoiningCluster(properties.getJoinClusterTimeout()); // 加入集群后才能连接到服务器
+      clientChannel = bootstrap.connect(remoteAddress, remotePort).sync().channel();
+      clientChannel
+          .closeFuture()
+          .addListener(
+              future -> {
+                // 断联后重联
+                if (!future.isCancelled() && clientProperties.isEnabledAutoReconnection()) {
+                  log.info(
+                      "Start automatically reconnecting to the server[{}:{}]",
+                      remoteAddress,
+                      remotePort);
+                  doConnect(remoteAddress, remotePort);
+                }
+              });
+    }
+
+    @Override
+    public DataSyncClient connect(String remoteAddress, int remotePort) throws Exception {
+      if (clientState.compareAndSet(ClientState.INITIALIZED, ClientState.WAITING)) {
+        try {
+          doConnect(remoteAddress, remotePort);
+
+          // 开启握手消息定期发送
+          if (clientProperties.isEnabledHandShake()) {
+            long delay = clientProperties.getHandshakeInterval().getSeconds();
+            handshakeScheduledFuture =
+                eventExecutor.scheduleWithFixedDelay(
+                    () -> clientChannel.writeAndFlush(buildHandShakeMsg()), delay, delay, SECONDS);
+          }
+
+          if (!clientState.compareAndSet(ClientState.WAITING, CONNECTED)) {
+            throw new IllegalStateException(
+                String.format(
+                    "CurrentStatus:[%s], ExpectedStatus:[%s].", state(), ClientState.WAITING));
+          }
+          return this;
+        } catch (Exception e) {
+          clientState.set(ClientState.ABNORMAL);
+          throw e;
+        }
+      } else {
+        throw new IllegalStateException(
+            String.format(
+                "CurrentState:%s, Only the initialized state can connect to the server.", state()));
+      }
+    }
+
+    @Override
+    public <T, R> R sendSync(T req) throws Exception {
+      return this.<T, R>sendAsync(req).get();
+    }
+
+    @Override
+    public <T, R> Future<R> sendAsync(T req) throws Exception {
+      return doSendAsync(
+          req,
+          this::newPromise,
+          this::generateUuid,
+          (promise, uuid) ->
+              Tuple3.<T, Promise<R>, String>Tuple3Builder().t1(req).t2(promise).t3(uuid).build());
+    }
+
+    /**
+     * 发送异步请求
+     *
+     * @param req 请求
+     * @param promiseSupplier promise supplier
+     * @param uuidSupplier uuid supplier
+     * @param msgGenerator msg generator
+     * @return Future
+     * @param <T> 请求类型
+     * @param <R> 结果类型
+     */
+    private <T, R> Future<R> doSendAsync(
+        @NonNull T req,
+        @NonNull Supplier<Promise<R>> promiseSupplier,
+        @NonNull Supplier<String> uuidSupplier,
+        @NonNull BiFunction<Promise<R>, String, Object> msgGenerator)
+        throws InterruptedException, TimeoutException {
+      if (clientState.get() == CONNECTED) {
+        // 等待加入集群
+        waitJoiningCluster(properties.getJoinClusterTimeout());
+
+        Promise<R> promise = promiseSupplier.get();
+        String uuid = uuidSupplier.get();
+
+        // 异步发送请求
+        ChannelFuture channelFuture =
+            clientChannel
+                .writeAndFlush(msgGenerator.apply(promise, uuid))
+                .addListener(
+                    future -> {
+                      // 取消或者失败时通知取消发送
+                      if (!future.isSuccess() || future.isCancelled()) {
+                        clientChannelHandler.tryCancelRequest(uuid);
+                      }
+                    });
+        return promise.addListener(
+            future -> {
+              // 第三方通过promise执行取消时，通知channelFuture取消
+              if (future.isCancelled()) {
+                channelFuture.cancel(true); // 取消请求发送
+                log.info("The request was canceled by promise. {}{}", System.lineSeparator(), req);
+              }
+            });
+      } else {
+        throw new IllegalStateException(
+            String.format("CurrentState:%s, Only the connected state can send request.", state()));
+      }
+    }
+
+    @Override
+    public <T> Future<Void> sendAsync(
+        T req, @NonNull BiConsumer<ByteBuf, DataBlockMetadata> consumer)
+        throws InterruptedException, TimeoutException {
+      return doSendAsync(
+          req,
+          this::newPromise,
+          this::generateUuid,
+          (promise, uuid) ->
+              Tuple4
+                  .<T, Promise<Void>, String, BiConsumer<ByteBuf, DataBlockMetadata>>Tuple4Builder()
+                  .t1(req)
+                  .t2(promise)
+                  .t3(uuid)
+                  .t4(consumer)
+                  .build());
+    }
+
+    @Override
+    public void close() {
+      if (clientState.compareAndSet(CONNECTED, CLOSED)
+          || clientState.compareAndSet(ClientState.INITIALIZED, CLOSED)) {
+        // 如果启用了握手则取消
+        if (handshakeScheduledFuture != null) {
+          handshakeScheduledFuture.cancel(true);
+        }
+
+        ChannelId id = clientChannel.id();
+        SocketAddress localAddress = clientChannel.localAddress();
+        clientConnectorsGroup
+            .shutdownGracefully()
+            .addListener(
+                future ->
+                    log.info(
+                        "The client[{}--->id:{}] of bonecrusher has been shutdown {}.",
+                        localAddress,
+                        id,
+                        future.isSuccess() ? "successfully" : "unsuccessfully"));
+      }
+    }
+
+    @NonNull
+    private <R> Promise<R> newPromise() {
+      return eventExecutor.newPromise();
+    }
+
+    /**
+     * 生成uuid
+     *
+     * @return uuid
+     */
+    @NonNull
+    private String generateUuid() {
+      return UUID.randomUUID().toString();
+    }
   }
 }
