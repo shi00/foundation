@@ -21,7 +21,8 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
-import com.silong.foundation.dj.bonecrusher.event.ClusterViewChangedEvent;
+import com.silong.foundation.dj.bonecrusher.event.JoinClusterEvent;
+import com.silong.foundation.dj.bonecrusher.event.ViewChangedEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.List;
@@ -56,7 +57,8 @@ public class BonecrusherApp4Test {
     ViewId newViewId = new ViewId(creator, 2);
     View oldView = new View(oldViewId, List.of(creator));
     View newView = new View(newViewId, List.of(new IpAddress("127.0.0.1:43436"), creator));
-    publisher.publishEvent(new ClusterViewChangedEvent("cluster-test", creator, oldView, newView));
+    publisher.publishEvent(new ViewChangedEvent(this, newView));
+    publisher.publishEvent(new JoinClusterEvent(this, "test-cluster", creator));
   }
 
   @PostConstruct
