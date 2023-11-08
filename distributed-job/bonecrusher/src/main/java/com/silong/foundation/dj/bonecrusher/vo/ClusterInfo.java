@@ -36,6 +36,7 @@ import org.jgroups.View;
 @ToString
 @EqualsAndHashCode
 @NoArgsConstructor
+@AllArgsConstructor
 public class ClusterInfo {
   private static final AtomicReferenceFieldUpdater<ClusterInfo, Address> LOCAL_ADDRESS_UPDATER =
       AtomicReferenceFieldUpdater.newUpdater(ClusterInfo.class, Address.class, "localAddress");
@@ -54,13 +55,6 @@ public class ClusterInfo {
 
   /** 当前集群视图 */
   private volatile View view;
-
-  /** 清空 */
-  public void clear() {
-    CLUSTER_VIEW_UPDATER.set(this, null);
-    CLUSTER_NAME_UPDATER.set(this, null);
-    LOCAL_ADDRESS_UPDATER.set(this, null);
-  }
 
   /**
    * 原子更新集群名称

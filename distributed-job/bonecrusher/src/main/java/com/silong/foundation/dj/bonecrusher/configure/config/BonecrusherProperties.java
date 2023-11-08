@@ -22,6 +22,7 @@
 package com.silong.foundation.dj.bonecrusher.configure.config;
 
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -64,6 +65,11 @@ public class BonecrusherProperties {
     @DurationUnit(DAYS)
     private Duration expires = Duration.of(1, DAYS);
   }
+
+  /** 等待加入集群超时时间 */
+  @NotNull
+  @DurationUnit(SECONDS)
+  private Duration joinClusterTimeout = Duration.ofSeconds(30);
 
   /** 事件处理器配置 */
   @Valid @NestedConfigurationProperty

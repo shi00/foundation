@@ -31,8 +31,10 @@ package com.silong.foundation.dj.bonecrusher.enu;
 public enum ClientState {
   // 新建
   NEW,
-  // 初始化完毕
-  INITIALIZED,
+
+  // 连接等待中
+  WAITING,
+
   // 已连接
   CONNECTED,
   // 已关闭
