@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.crypto.utils;
 
-import com.silong.foundation.lambda.Function4;
+import com.silong.foundation.common.lambda.Function4;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
