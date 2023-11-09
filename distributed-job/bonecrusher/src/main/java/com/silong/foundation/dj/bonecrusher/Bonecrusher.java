@@ -42,14 +42,14 @@ import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerPr
 import com.silong.foundation.dj.bonecrusher.enu.ClientState;
 import com.silong.foundation.dj.bonecrusher.enu.NodeClusterState;
 import com.silong.foundation.dj.bonecrusher.enu.ServerState;
-import com.silong.foundation.dj.bonecrusher.event.JoinClusterEvent;
-import com.silong.foundation.dj.bonecrusher.event.LeftClusterEvent;
-import com.silong.foundation.dj.bonecrusher.event.ViewChangedEvent;
 import com.silong.foundation.dj.bonecrusher.handler.*;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
 import com.silong.foundation.dj.bonecrusher.vo.ClusterInfo;
+import com.silong.foundation.dj.hook.event.JoinClusterEvent;
+import com.silong.foundation.dj.hook.event.LeftClusterEvent;
+import com.silong.foundation.dj.hook.event.ViewChangedEvent;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
