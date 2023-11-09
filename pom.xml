@@ -99,7 +99,6 @@
         <module>plugins/maven/video-frame-capture</module>
         <module>utilities/random-password</module>
         <module>utilities/simple-object-pool</module>
-        <module>utilities/jwt-auth</module>
         <module>utilities/hashed-wheel-timer</module>
         <module>utilities/concurrent-extends</module>
         <module>utilities/xxhash-ffm</module>
