@@ -19,7 +19,7 @@
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.silong.foundation.model.ErrorDetail;
+import com.silong.foundation.common.model.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import static com.silong.foundation.constants.CommonErrorCode.AUTHENTICATION_FAILED;
+import static com.silong.foundation.common.constants.CommonErrorCode.AUTHENTICATION_FAILED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
