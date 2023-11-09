@@ -185,6 +185,7 @@
         <java-jwt.version>4.4.0</java-jwt.version>
         <p3c-pmd.version>2.1.1.5x</p3c-pmd.version>
         <guice.version>7.0.0</guice.version>
+        <oshi-core.version>6.4.7</oshi-core.version>
         <!--开源组件-->
 
         <checkstyle.skip>false</checkstyle.skip>
@@ -359,6 +360,14 @@
                 <version>${rocksdbjni.version}</version>
             </dependency>
             <!-- rocksdb -->
+
+            <!-- 硬件信息获取 -->
+            <dependency>
+                <groupId>com.github.oshi</groupId>
+                <artifactId>oshi-core</artifactId>
+                <version>${oshi-core.version}</version>
+            </dependency>
+            <!-- 硬件信息获取 -->
 
             <!-- 集群通信组件 -->
             <dependency>
