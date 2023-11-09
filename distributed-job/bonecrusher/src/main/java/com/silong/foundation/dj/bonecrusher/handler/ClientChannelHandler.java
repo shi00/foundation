@@ -37,7 +37,7 @@ import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
 import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
 import com.silong.foundation.dj.bonecrusher.vo.ClusterInfo;
-import com.silong.foundation.utilities.jwt.JwtAuthenticator;
+import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelDuplexHandler;
