@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.event;
+package com.silong.foundation.dj.hook.event;
 
 import java.io.Serial;
 import lombok.EqualsAndHashCode;
@@ -27,9 +27,10 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
 import org.jgroups.Address;
+import org.springframework.context.ApplicationEvent;
 
 /**
- * 离开集群通知事件
+ * 加入集群通知事件
  *
  * @author louis sin
  * @version 1.0.0
@@ -38,9 +39,15 @@ import org.jgroups.Address;
 @Getter
 @Accessors(fluent = true)
 @EqualsAndHashCode(callSuper = true)
-public class LeftClusterEvent extends JoinClusterEvent {
+public class JoinClusterEvent extends ApplicationEvent {
 
-  @Serial private static final long serialVersionUID = -5_577_213_471_548_732_899L;
+  @Serial private static final long serialVersionUID = 4_285_425_499_689_811_118L;
+
+  /** 本地节点地址 */
+  private final Address localAddress;
+
+  /** 集群名 */
+  private final String cluster;
 
   /**
    * 构造方法
@@ -49,14 +56,24 @@ public class LeftClusterEvent extends JoinClusterEvent {
    * @param cluster 集群
    * @param localAddress 本地地址
    */
-  public LeftClusterEvent(
+  public JoinClusterEvent(
       @NonNull Object source, @NonNull String cluster, @NonNull Address localAddress) {
-    super(source, cluster, localAddress);
+    super(source);
+    this.localAddress = localAddress;
+    this.cluster = cluster;
+  }
+
+  /**
+   * 旧视图
+   *
+   * @return 旧视图
+   */
+  public String cluster() {
+    return cluster;
   }
 
   @Override
   public String toString() {
-    return String.format(
-        "LeftClusterEvent{cluster:%s, localAddress:%s}", cluster(), localAddress());
+    return String.format("JoinClusterEvent{cluster:%s, localAddress:%s}", cluster, localAddress);
   }
 }

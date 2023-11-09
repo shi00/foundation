@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.event;
+package com.silong.foundation.dj.hook.event;
 
 import java.io.Serial;
 import lombok.EqualsAndHashCode;
@@ -49,12 +49,21 @@ public class ViewChangedEvent extends ApplicationEvent {
   /**
    * 构造方法
    *
-   * @param source 事件源
+   * @param oldView 事件源
    * @param newView 当前新视图
    */
-  public ViewChangedEvent(@NonNull Object source, @NonNull View newView) {
-    super(source);
+  public ViewChangedEvent(@NonNull Object oldView, @NonNull View newView) {
+    super(oldView);
     this.newView = newView;
+  }
+
+  /**
+   * 获取旧视图
+   *
+   * @return 旧视图
+   */
+  public View oldView() {
+    return (View) getSource();
   }
 
   @Override
