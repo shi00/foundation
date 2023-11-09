@@ -31,7 +31,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
-import static com.silong.foundation.constants.CommonErrorCode.SERVICE_INTERNAL_ERROR;
+import static com.silong.foundation.common.constants.CommonErrorCode.SERVICE_INTERNAL_ERROR;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
