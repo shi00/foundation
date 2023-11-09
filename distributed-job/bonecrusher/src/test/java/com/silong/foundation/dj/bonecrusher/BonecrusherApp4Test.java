@@ -21,8 +21,8 @@
 
 package com.silong.foundation.dj.bonecrusher;
 
-import com.silong.foundation.dj.bonecrusher.event.JoinClusterEvent;
-import com.silong.foundation.dj.bonecrusher.event.ViewChangedEvent;
+import com.silong.foundation.dj.hook.event.JoinClusterEvent;
+import com.silong.foundation.dj.hook.event.ViewChangedEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.List;
