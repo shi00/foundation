@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.duuid.server.configure;
 
-import static com.silong.foundation.constants.HttpStatusCode.*;
+import static com.silong.foundation.common.constants.HttpStatusCode.*;
 import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.SYSTEM_CLOCK_PROVIDER;
 import static com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator.*;
 import static com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator.*;
@@ -42,7 +42,7 @@ import com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator;
 import com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerInfo;
-import com.silong.foundation.model.ErrorDetail;
+import com.silong.foundation.common.model.ErrorDetail;
 import com.silong.foundation.springboot.starter.simpleauth.configure.SecurityAutoConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.core.instrument.MeterRegistry;
