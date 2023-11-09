@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package djs;
+option java_package = "com.silong.foundation.dj.mixmaster.message";
+option java_outer_classname = "Messages";
+
+//////////////////////////////////////////////////////////
+//集群成员信息
+message MemberInfo {
+  uint64 startup_time = 1; //启动时间，UTC时间
+  optional string version = 2; //软件版本
+  optional  uint64 pid = 3;  //服务进程id
+  string cluster_name = 4; //集群名
+  string instance_name = 5; //成员实例名
+  optional MemberAttributes attributes = 6; //节点属性
+  optional Host host = 7; //主机信息
+}
+
+//成员属性
+message MemberAttributes {
+  map<string, bytes> attributes = 1; //成员属性
+}
+
+//host信息
+message Host{
+  string name = 1; //主机名
+  string os = 2; //操作系统名
+  uint64 total_memory = 3; //内存总量，单位：字节
+  uint32 available_processors = 4; //可用cpu数量
+}
+
