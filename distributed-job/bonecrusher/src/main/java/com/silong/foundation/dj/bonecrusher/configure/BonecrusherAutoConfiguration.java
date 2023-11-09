@@ -31,8 +31,8 @@ import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherProperti
 import com.silong.foundation.dj.bonecrusher.configure.config.BonecrusherServerProperties;
 import com.silong.foundation.dj.bonecrusher.handler.*;
 import com.silong.foundation.dj.bonecrusher.message.Messages;
-import com.silong.foundation.utilities.jwt.JwtAuthenticator;
-import com.silong.foundation.utilities.jwt.SimpleJwtAuthenticator;
+import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
+import com.silong.foundation.dj.hook.auth.SimpleJwtAuthenticator;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
 import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
