@@ -119,7 +119,7 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
   private LoggingHandler clientLoggingHandler;
 
   /** 保存当前集群视图变化事件 */
-  final AtomicReference<ClusterInfo> clusterInfoRef = new AtomicReference<>(new ClusterInfo());
+  private final ClusterInfo clusterInfo = new ClusterInfo();
 
   private BonecrusherServerProperties serverProperties;
 
@@ -255,7 +255,7 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
                             .addLast("serverLogging", serverLoggingHandler) // 日志打印
                             .addLast(
                                 "serverHandler",
-                                serverChannelHandler.clusterInfoSupplier(clusterInfoRef::get))
+                                serverChannelHandler.clusterInfoSupplier(() -> clusterInfo))
                             .addLast("chunkedWriter", new ChunkedWriteHandler())
                             .addLast("resourcesTransfer", resourcesTransferHandler);
                       }
@@ -378,7 +378,7 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
   }
 
   /**
-   * 接收集群视图变化事件
+   * 接收集群状态变化事件，为保证事件时序，不能启用异步事件
    *
    * @param event the event to respond to 集群视图变化
    */
@@ -388,17 +388,17 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
       case ViewChangedEvent viewChangedEvent -> {
         log.info("The cluster view has changed: {}", viewChangedEvent.newView());
         // 更新集群视图
-        ClusterInfo clusterInfo = clusterInfoRef.get();
         clusterInfo.view(viewChangedEvent.newView());
       }
       case LeftClusterEvent leftClusterEvent -> {
-        String clusterName = leftClusterEvent.cluster();
         log.info(
-            "The node{} has left the cluster of {}.", leftClusterEvent.localAddress(), clusterName);
+            "The node{} has left the cluster of {}.",
+            leftClusterEvent.localAddress(),
+            leftClusterEvent.cluster());
 
         // 离开集群，清空集群信息
         if (nodeClusterState.compareAndSet(JOINED, LEFT)) {
-          clusterInfoRef.set(new ClusterInfo()); // 清空集群信息
+          clusterInfo.clusterName(null).view(null).localAddress(null); // 清空集群信息
           joinClusterPhaser.register(); // 脱离集群后，增加是否已经加入集群的控制条件
         } else {
           throw new IllegalStateException(
@@ -411,15 +411,11 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
             joinClusterEvent.localAddress(),
             joinClusterEvent.cluster());
 
-        ClusterInfo clusterInfo =
-            new ClusterInfo(
-                joinClusterEvent.localAddress(),
-                joinClusterEvent.cluster(),
-                clusterInfoRef.get().view());
-
         // 加入集群，更新集群信息
         if (nodeClusterState.compareAndSet(LEFT, JOINED)) {
-          clusterInfoRef.set(clusterInfo);
+          clusterInfo
+              .clusterName(joinClusterEvent.cluster())
+              .localAddress(joinClusterEvent.localAddress());
           joinClusterPhaser.arriveAndDeregister(); // 加入集群后，是否加入集群条件不再影响此phaser
         } else {
           throw new IllegalStateException(
@@ -573,7 +569,7 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
                               .addLast("clientLogging", clientLoggingHandler)
                               .addLast(
                                   "clientHandler",
-                                  clientChannelHandler.clusterInfoSupplier(clusterInfoRef::get));
+                                  clientChannelHandler.clusterInfoSupplier(() -> clusterInfo));
                         }
                       })
                   .validate();
@@ -595,7 +591,7 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
      * @return 握手消息
      */
     private Messages.Request.Builder buildHandShakeMsg() {
-      Address localAddress = clusterInfoRef.get().localAddress();
+      Address localAddress = clusterInfo.localAddress();
       ByteArrayDataOutputStream output =
           new ByteArrayDataOutputStream(localAddress.serializedSize());
       try {
