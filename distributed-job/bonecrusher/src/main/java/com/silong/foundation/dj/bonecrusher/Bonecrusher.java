@@ -745,7 +745,10 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
     @Override
     public void close() {
       if (clientState.compareAndSet(CONNECTED, CLOSED)
+          || clientState.compareAndSet(ClientState.ABNORMAL, CLOSED)
+          || clientState.compareAndSet(ClientState.WAITING, CLOSED)
           || clientState.compareAndSet(ClientState.INITIALIZED, CLOSED)) {
+
         // 如果启用了握手则取消
         if (handshakeScheduledFuture != null) {
           handshakeScheduledFuture.cancel(true);
@@ -753,15 +756,17 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
 
         ChannelId id = clientChannel.id();
         SocketAddress localAddress = clientChannel.localAddress();
-        clientConnectorsGroup
-            .shutdownGracefully()
-            .addListener(
-                future ->
-                    log.info(
-                        "The client[{}--->id:{}] of bonecrusher has been shutdown {}.",
-                        localAddress,
-                        id,
-                        future.isSuccess() ? "successfully" : "unsuccessfully"));
+        if (clientConnectorsGroup != null) {
+          clientConnectorsGroup
+              .shutdownGracefully()
+              .addListener(
+                  future ->
+                      log.info(
+                          "The client[{}--->id:{}] of bonecrusher has been shutdown {}.",
+                          localAddress,
+                          id,
+                          future.isSuccess() ? "successfully" : "unsuccessfully"));
+        }
       }
     }
 
