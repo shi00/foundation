@@ -45,8 +45,8 @@ import org.springframework.validation.annotation.Validated;
  * @since 2023-10-24 19:01
  */
 @Data
-@Accessors(fluent = true)
 @Validated
+@Accessors(fluent = true)
 @ConfigurationProperties(prefix = "mixmaster")
 public class MixmasterProperties {
 
