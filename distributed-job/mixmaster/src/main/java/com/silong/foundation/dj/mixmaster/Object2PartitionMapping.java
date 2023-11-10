@@ -28,7 +28,6 @@ package com.silong.foundation.dj.mixmaster;
  * @since 2022-05-01 10:39
  */
 public interface Object2PartitionMapping {
-
   /**
    * 集群内的分区总数量
    *
@@ -41,7 +40,7 @@ public interface Object2PartitionMapping {
    *
    * @param partitions 分区数
    */
-  void resetPartitions(int partitions);
+  void partitions(int partitions);
 
   /**
    * 数据key映射到分区
