@@ -21,19 +21,31 @@
 package com.silong.foundation.dj.scrapper;
 
 import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.dj.scrapper.config.PersistStorageConfig;
 import com.silong.foundation.dj.scrapper.vo.KvPair;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
+import lombok.NonNull;
 
 /**
- * 持久化存储
+ * 持久化存储接口
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-10 17:14
  */
 public interface PersistStorage {
+
+  /**
+   * 根据配置创建持久化存储
+   *
+   * @param config 配置
+   * @return 持久化存储
+   */
+  static PersistStorage getInstance(@NonNull PersistStorageConfig config) {
+    return new RocksDbPersistStorage(config);
+  }
 
   /**
    * 创建列族，如果已经存在则直接返回
