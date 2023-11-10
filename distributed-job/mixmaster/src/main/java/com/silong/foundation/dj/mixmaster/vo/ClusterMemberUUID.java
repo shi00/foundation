@@ -45,24 +45,25 @@ import org.jgroups.util.Util;
  * @version 1.0.0
  * @since 2022-04-11 22:49
  */
-public class MemberUUID extends UUID implements Identity<Address>, Serializable {
+@Getter
+public class ClusterMemberUUID extends UUID implements Identity<Address>, Serializable {
 
   static {
     // it will need to get registered with the ClassConfigurator in order to marshal it correctly
     // Note that the ID should be chosen such that it doesn’t collide with any IDs defined in
     // jg-magic-map.xml
-    ClassConfigurator.add((short) 5674, MemberUUID.class);
+    ClassConfigurator.add((short) 5674, ClusterMemberUUID.class);
   }
 
   @Serial private static final long serialVersionUID = -3_208_132_295_684_059_186L;
 
   /** 类型转换器 */
-  private static final BiConverter<MemberUUID, byte[]> INSTANCE =
+  private static final BiConverter<ClusterMemberUUID, byte[]> INSTANCE =
       new BiConverter<>() {
 
         @Override
         @SneakyThrows
-        public byte[] to(MemberUUID uuid) {
+        public byte[] to(ClusterMemberUUID uuid) {
           if (uuid == null) {
             return null;
           }
@@ -73,11 +74,11 @@ public class MemberUUID extends UUID implements Identity<Address>, Serializable 
 
         @Override
         @SneakyThrows
-        public MemberUUID from(byte[] bytes) {
+        public ClusterMemberUUID from(byte[] bytes) {
           if (bytes == null || bytes.length == 0) {
             return null;
           }
-          MemberUUID uuid = new MemberUUID();
+          ClusterMemberUUID uuid = new ClusterMemberUUID();
           uuid.readFrom(new ByteArrayDataInputStream(bytes));
           return uuid;
         }
@@ -85,12 +86,11 @@ public class MemberUUID extends UUID implements Identity<Address>, Serializable 
 
   /** 节点信息 */
   @Setter
-  @Getter
   @Accessors(fluent = true)
   private MemberInfo memberInfo;
 
   /** 默认构造方法 */
-  public MemberUUID() {
+  public ClusterMemberUUID() {
     super();
   }
 
@@ -99,13 +99,13 @@ public class MemberUUID extends UUID implements Identity<Address>, Serializable 
    *
    * @param uuid uuid
    */
-  public MemberUUID(byte[] uuid) {
+  public ClusterMemberUUID(byte[] uuid) {
     super(uuid);
   }
 
   @Override
   @NonNull
-  public MemberUUID uuid() {
+  public ClusterMemberUUID uuid() {
     return this;
   }
 
@@ -114,8 +114,8 @@ public class MemberUUID extends UUID implements Identity<Address>, Serializable 
    *
    * @return @{@code ClusterNodeUUID}
    */
-  public static MemberUUID random() {
-    return new MemberUUID(generateRandomBytes());
+  public static ClusterMemberUUID random() {
+    return new ClusterMemberUUID(generateRandomBytes());
   }
 
   /**
@@ -125,7 +125,7 @@ public class MemberUUID extends UUID implements Identity<Address>, Serializable 
    */
   @Override
   public Supplier<? extends UUID> create() {
-    return MemberUUID::new;
+    return ClusterMemberUUID::new;
   }
 
   @Override
@@ -164,7 +164,7 @@ public class MemberUUID extends UUID implements Identity<Address>, Serializable 
    * @return 对象
    * @throws IOException 异常
    */
-  public static MemberUUID deserialize(byte[] bytes) throws IOException {
+  public static ClusterMemberUUID deserialize(byte[] bytes) throws IOException {
     return INSTANCE.from(bytes);
   }
 
