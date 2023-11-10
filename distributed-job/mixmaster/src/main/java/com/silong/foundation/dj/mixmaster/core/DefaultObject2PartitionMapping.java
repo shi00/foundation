@@ -20,12 +20,15 @@
  */
 package com.silong.foundation.dj.mixmaster.core;
 
+import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.MAX_PARTITIONS_COUNT;
+import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.MIN_PARTITIONS_COUNT;
+
 import com.silong.foundation.dj.mixmaster.Object2PartitionMapping;
+import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import java.io.Serial;
 import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,12 +38,12 @@ import org.springframework.stereotype.Component;
  * @version 1.0.0
  * @since 2022-05-01 10:41
  */
-@Component
 @ToString
+@Component
 @EqualsAndHashCode
 class DefaultObject2PartitionMapping implements Object2PartitionMapping, Serializable {
 
-  @Serial private static final long serialVersionUID = -4_230_565_279_234_269_084L;
+  @Serial private static final long serialVersionUID = 7_951_756_865_125_501_707L;
 
   /** 分区数量 */
   private int partitions;
@@ -48,31 +51,38 @@ class DefaultObject2PartitionMapping implements Object2PartitionMapping, Seriali
   /** 标识分区数值是否为2的指数，-1表示非2的指数 */
   @ToString.Exclude private int mask;
 
-  /**
-   * 构造方法
-   *
-   * @param partitions 分区数，此分区数应远大于集群节点数，但是必须小于等于{@code 8192}，大于等于{@code 1}
-   */
-  public DefaultObject2PartitionMapping(@Value("${mixmaster.partitions}") int partitions) {
-    resetPartitions(partitions);
+  /** 默认构造方法 */
+  public DefaultObject2PartitionMapping(MixmasterProperties properties) {
+    this(properties.getPartitions());
   }
 
   /**
-   * 设置分区数量，其中partitions值必须大于0，小于等于{@code 8192}<br>
+   * 构造方法
+   *
+   * @param partitions 分区数，此分区数应远大于集群节点数，但是必须小于等于{@code
+   *     ClusterDataAllocator.MAX_PARTITIONS_COUNT}，大于等于{@code
+   *     ClusterDataAllocator.MIN_PARTITIONS_COUNT}
+   */
+  public DefaultObject2PartitionMapping(int partitions) {
+    partitions(partitions);
+  }
+
+  /**
+   * 设置分区数量，其中partitions值必须大于0，小于等于{@code MAX_PARTITIONS_COUNT}<br>
    * 推荐分区为2的指数值，提升计算性能
    *
    * @param partitions 分区数
    */
-  @Override
-  public void resetPartitions(int partitions) {
-    if (partitions <= 8192 && partitions >= 1) {
+  public void partitions(int partitions) {
+    if (partitions <= MAX_PARTITIONS_COUNT && partitions >= MIN_PARTITIONS_COUNT) {
       this.partitions = partitions;
       this.mask = calculateMask(partitions);
       return;
     }
     throw new IllegalArgumentException(
         String.format(
-            "partitions must be greater than or equal to %d less than or equal to %d", 1, 8192));
+            "partitions must be greater than or equal to %d less than or equal to %d",
+            MIN_PARTITIONS_COUNT, MAX_PARTITIONS_COUNT));
   }
 
   /**
