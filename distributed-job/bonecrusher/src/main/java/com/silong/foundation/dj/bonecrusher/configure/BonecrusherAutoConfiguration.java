@@ -40,6 +40,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.*;
 import java.util.concurrent.ThreadFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -103,6 +104,7 @@ public class BonecrusherAutoConfiguration {
    * @return 鉴权处理器
    */
   @Bean
+  @ConditionalOnMissingBean
   public JwtAuthenticator jwtAuthenticator() {
     return SimpleJwtAuthenticator.builder()
         // 设置签名密钥
