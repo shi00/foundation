@@ -66,14 +66,6 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
 
   private final DBOptions options;
 
-  private final Cache blockCache;
-
-  private final Filter bloomFilter;
-
-  private final RateLimiter rateLimiter;
-
-  private final Statistics statistics;
-
   private final Map<String, ColumnFamilyHandle> columnFamilyHandlesMap = new ConcurrentHashMap<>();
 
   /**
@@ -83,15 +75,6 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
    */
   public RocksDbPersistStorage(PersistStorageProperties properties) {
     validate(properties == null, "properties must not be null.");
-    blockCache = new LRUCache(properties.getBlockBaseTable().getCache().getBlockCacheCapacity());
-    bloomFilter =
-        new BloomFilter(
-            properties.getBlockBaseTable().getBloomFilter().getBloomFilterBitsPerKey(), false);
-    rateLimiter =
-        new RateLimiter(
-            properties.getRateLimiter().getRateBytesPerSecond(),
-            properties.getRateLimiter().getRefillPeriodMicros(),
-            properties.getRateLimiter().getFairness());
 
     cfOpts =
         new ColumnFamilyOptions()
@@ -100,15 +83,6 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
             .setBottommostCompressionType(ZSTD_COMPRESSION)
             .optimizeLevelStyleCompaction(properties.getMemtableMemoryBudget())
             .setWriteBufferSize(properties.getColumnFamilyWriteBufferSize())
-            .setTableFormatConfig(
-                new BlockBasedTableConfig()
-                    .setBlockSize(properties.getBlockBaseTable().getBlockSize())
-                    .setCacheIndexAndFilterBlocks(true)
-                    .setPinL0FilterAndIndexBlocksInCache(true)
-                    .setFormatVersion(properties.getBlockBaseTable().getFormatVersion())
-                    .setBlockCache(blockCache)
-                    .setOptimizeFiltersForMemory(true)
-                    .setFilterPolicy(bloomFilter))
             .setMaxWriteBufferNumber(properties.getMaxWriteBufferNumber());
 
     // list of column family descriptors, first entry must always be default column family
@@ -122,20 +96,11 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
 
     options =
         new DBOptions()
-            .setRateLimiter(rateLimiter)
             .setMaxBackgroundJobs(properties.getMaxBackgroundJobs())
             .setBytesPerSync(properties.getBytesPerSync())
             .setDbWriteBufferSize(properties.getDbWriteBufferSize())
             .setCreateIfMissing(true)
             .setCreateMissingColumnFamilies(true);
-
-    if (properties.getStatistics().isEnable()) {
-      statistics = new Statistics();
-      statistics.setStatsLevel(properties.getStatistics().getStatsLevel());
-      options.setStatistics(statistics);
-    } else {
-      statistics = null;
-    }
 
     List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
     try {
@@ -158,10 +123,6 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
     closeNativeResources(rocksDB);
     closeNativeResources(cfOpts);
     closeNativeResources(options);
-    closeNativeResources(blockCache);
-    closeNativeResources(bloomFilter);
-    closeNativeResources(rateLimiter);
-    closeNativeResources(statistics);
     columnFamilyHandlesMap.values().forEach(this::closeNativeResources);
     columnFamilyHandlesMap.clear();
   }
