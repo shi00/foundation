@@ -20,6 +20,8 @@
  */
 package com.silong.foundation.dj.mixmaster.vo;
 
+import static com.silong.foundation.dj.mixmaster.vo.WeightMemberTuple.WeightMemberTupleComparator.COMPARATOR;
+
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.Serial;
 import java.io.Serializable;
@@ -64,6 +66,6 @@ public record WeightMemberTuple(long weight, ClusterMemberUUID member)
 
   @Override
   public int compareTo(@NonNull WeightMemberTuple o) {
-    return WeightMemberTupleComparator.COMPARATOR.compare(this, o);
+    return COMPARATOR.compare(this, o);
   }
 }
