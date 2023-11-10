@@ -153,9 +153,8 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
    * 对象序列化
    *
    * @return 二进制
-   * @throws IOException 异常
    */
-  public byte[] serialize() throws IOException {
+  public byte[] serialize() {
     return INSTANCE.to(this);
   }
 
@@ -164,9 +163,8 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
    *
    * @param bytes 二进制
    * @return 对象
-   * @throws IOException 异常
    */
-  public static ClusterNodeUUID deserialize(byte[] bytes) throws IOException {
+  public static ClusterNodeUUID deserialize(byte[] bytes) {
     return INSTANCE.from(bytes);
   }
 
