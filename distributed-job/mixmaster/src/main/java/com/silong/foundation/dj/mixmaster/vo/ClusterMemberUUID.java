@@ -151,9 +151,8 @@ public class ClusterMemberUUID extends UUID implements Identity<Address>, Serial
    * 对象序列化
    *
    * @return 二进制
-   * @throws IOException 异常
    */
-  public byte[] serialize() throws IOException {
+  public byte[] serialize() {
     return INSTANCE.to(this);
   }
 
@@ -162,9 +161,8 @@ public class ClusterMemberUUID extends UUID implements Identity<Address>, Serial
    *
    * @param bytes 二进制
    * @return 对象
-   * @throws IOException 异常
    */
-  public static ClusterMemberUUID deserialize(byte[] bytes) throws IOException {
+  public static ClusterMemberUUID deserialize(byte[] bytes) {
     return INSTANCE.from(bytes);
   }
 
