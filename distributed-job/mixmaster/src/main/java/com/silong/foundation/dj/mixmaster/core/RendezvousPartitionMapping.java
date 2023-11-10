@@ -22,15 +22,17 @@ package com.silong.foundation.dj.mixmaster.core;
 
 import com.silong.foundation.dj.mixmaster.Identity;
 import com.silong.foundation.dj.mixmaster.Partition2NodesMapping;
-import com.silong.foundation.dj.mixmaster.utils.LambdaSerializable;
-import com.silong.foundation.dj.mixmaster.vo.MemberUUID;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import com.silong.foundation.dj.mixmaster.utils.LambdaSerializable.SerializableBiPredicate;
+import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
+import com.silong.foundation.dj.mixmaster.vo.WeightNodeTuple;
+import jakarta.annotation.Nullable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
+import org.springframework.stereotype.Component;
 
 /**
  *
@@ -53,18 +55,19 @@ import org.jgroups.Address;
  * @since 2022-04-06 22:29
  */
 @Slf4j
-class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, Serializable {
+@Component
+class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUUID>, Serializable {
 
-  @Serial private static final long serialVersionUID = -5940041940626753044L;
+  @Serial private static final long serialVersionUID = 8_142_384_185_333_518_222L;
 
   /** 最高随机权重分区节点映射器 */
   public static final RendezvousPartitionMapping INSTANCE = new RendezvousPartitionMapping();
 
   /** 备份节点过滤器，第一个参数为Primary节点, 第二个参数为被测试节点. */
-  private LambdaSerializable.SerializableBiPredicate<MemberUUID, MemberUUID> backupFilter;
+  private SerializableBiPredicate<ClusterNodeUUID, ClusterNodeUUID> backupFilter;
 
   /** 第一个参数为被测试节点，第二个参数为当前partition已经分配的节点列表 (列表中的第一个节点为Primary) */
-  private LambdaSerializable.SerializableBiPredicate<MemberUUID, Collection<MemberUUID>>
+  private SerializableBiPredicate<ClusterNodeUUID, Collection<ClusterNodeUUID>>
       affinityBackupFilter;
 
   /** 默认构造方法 */
@@ -77,7 +80,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
    * @return @{@code this}
    */
   public RendezvousPartitionMapping setBackupFilter(
-      LambdaSerializable.SerializableBiPredicate<MemberUUID, MemberUUID> backupFilter) {
+      SerializableBiPredicate<ClusterNodeUUID, ClusterNodeUUID> backupFilter) {
     this.backupFilter = backupFilter;
     return this;
   }
@@ -89,28 +92,27 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
    * @return @{@code this}
    */
   public RendezvousPartitionMapping setAffinityBackupFilter(
-      LambdaSerializable.SerializableBiPredicate<MemberUUID, Collection<MemberUUID>>
-          affinityBackupFilter) {
+      SerializableBiPredicate<ClusterNodeUUID, Collection<ClusterNodeUUID>> affinityBackupFilter) {
     this.affinityBackupFilter = affinityBackupFilter;
     return this;
   }
 
   private WeightNodeTuple[] calculateNodeWeight(
-      int partitionNum, Collection<MemberUUID> clusterNodes) {
+      int partitionNum, Collection<ClusterNodeUUID> clusterNodes) {
     int i = 0;
     WeightNodeTuple[] array = new WeightNodeTuple[clusterNodes.size()];
-    for (MemberUUID node : clusterNodes) {
+    for (ClusterNodeUUID node : clusterNodes) {
       array[i++] = new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node);
     }
     return array;
   }
 
   @Override
-  public List<MemberUUID> allocatePartition(
+  public List<ClusterNodeUUID> allocatePartition(
       int partitionNo,
       int backupNum,
-      Collection<MemberUUID> clusterNodes,
-      @Nullable Map<MemberUUID, Collection<MemberUUID>> neighborhood) {
+      Collection<ClusterNodeUUID> clusterNodes,
+      @Nullable Map<ClusterNodeUUID, Collection<ClusterNodeUUID>> neighborhood) {
     if (partitionNo < 0) {
       throw new IllegalArgumentException("partitionNo must be greater than or equal to 0.");
     }
@@ -136,13 +138,13 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
 
     // 延迟排序优化
     WeightNodeTuple[] weightNodeTuples = calculateNodeWeight(partitionNo, clusterNodes);
-    Iterable<MemberUUID> sortedNodes =
+    Iterable<ClusterNodeUUID> sortedNodes =
         new LazyLinearSortedContainer(weightNodeTuples, primaryAndBackups);
 
     // 先添加主(最高随机权重)
-    Iterator<MemberUUID> it = sortedNodes.iterator();
-    MemberUUID primary = it.next();
-    List<MemberUUID> res = new ArrayList<>(primaryAndBackups);
+    Iterator<ClusterNodeUUID> it = sortedNodes.iterator();
+    ClusterNodeUUID primary = it.next();
+    List<ClusterNodeUUID> res = new ArrayList<>(primaryAndBackups);
     res.add(primary);
 
     // 是否排除邻居节点
@@ -152,7 +154,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
     // 选取备份节点
     if (backupNum > 0) {
       while (it.hasNext() && res.size() < primaryAndBackups) {
-        MemberUUID node = it.next();
+        ClusterNodeUUID node = it.next();
         if (disableBackupNodeFilter()
             || isPassedBackupNodeFilter(primary, node)
             || isPassedAffinityBackupNodeFilter(node, res)) {
@@ -178,7 +180,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
       it.next();
 
       while (it.hasNext() && res.size() < primaryAndBackups) {
-        MemberUUID node = it.next();
+        ClusterNodeUUID node = it.next();
         if (!res.contains(node)) {
           res.add(node);
         }
@@ -194,11 +196,12 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
     return res;
   }
 
-  private boolean isPassedAffinityBackupNodeFilter(MemberUUID node, List<MemberUUID> res) {
+  private boolean isPassedAffinityBackupNodeFilter(
+      ClusterNodeUUID node, List<ClusterNodeUUID> res) {
     return affinityBackupFilter != null && affinityBackupFilter.test(node, res);
   }
 
-  private boolean isPassedBackupNodeFilter(MemberUUID primary, MemberUUID node) {
+  private boolean isPassedBackupNodeFilter(ClusterNodeUUID primary, ClusterNodeUUID node) {
     return backupFilter != null && backupFilter.test(primary, node);
   }
 
@@ -207,7 +210,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
   }
 
   /** Sorts the initial array with linear sort algorithm array */
-  private static class LazyLinearSortedContainer implements Iterable<MemberUUID> {
+  private static class LazyLinearSortedContainer implements Iterable<ClusterNodeUUID> {
     /** Initial node-hash array. */
     private final WeightNodeTuple[] arr;
 
@@ -229,12 +232,12 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
     /** {@inheritDoc} */
     @Override
     @NonNull
-    public Iterator<MemberUUID> iterator() {
+    public Iterator<ClusterNodeUUID> iterator() {
       return new SortIterator();
     }
 
     /** */
-    private class SortIterator implements Iterator<MemberUUID> {
+    private class SortIterator implements Iterator<ClusterNodeUUID> {
       /** Index of the first unsorted element. */
       private int cur;
 
@@ -246,13 +249,13 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
 
       /** {@inheritDoc} */
       @Override
-      public MemberUUID next() {
+      public ClusterNodeUUID next() {
         if (!hasNext()) {
           throw new NoSuchElementException();
         }
 
         if (cur < sorted) {
-          return arr[cur++].member();
+          return arr[cur++].node();
         }
 
         WeightNodeTuple min = arr[cur];
@@ -270,7 +273,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<MemberUUID>, 
         }
 
         sorted = cur++;
-        return min.member();
+        return min.node();
       }
 
       /** {@inheritDoc} */
