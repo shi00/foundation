@@ -20,16 +20,27 @@
  */
 package com.silong.foundation.dj.mixmaster.core;
 
+import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
+import static com.silong.foundation.dj.scrapper.utils.String2Bytes.INSTANCE;
+
+import com.google.protobuf.ByteString;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
-import com.silong.foundation.dj.mixmaster.message.Messages.MemberInfo;
-import com.silong.foundation.dj.mixmaster.vo.ClusterMemberUUID;
+import com.silong.foundation.dj.mixmaster.message.Messages.ClusterNodeInfo;
+import com.silong.foundation.dj.mixmaster.message.Messages.Host;
+import com.silong.foundation.dj.mixmaster.message.Messages.IpAddress;
+import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
+import com.silong.foundation.dj.scrapper.PersistStorage;
 import java.lang.management.ManagementFactory;
+import java.util.Map;
+import java.util.stream.Collectors;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 import org.jgroups.stack.AddressGenerator;
 import org.springframework.stereotype.Component;
 import oshi.SystemInfo;
+import oshi.software.os.OperatingSystem;
 
 /**
  * 默认集群节点地址生成器
@@ -42,24 +53,43 @@ import oshi.SystemInfo;
 @Component
 class DefaultAddressGenerator implements AddressGenerator {
 
-  /** jvm启动时间 */
-  private static final long STARTUP_TIME = ManagementFactory.getRuntimeMXBean().getStartTime();
+  /** 主机名 */
+  private static final String HOST_NAME;
 
-  private static final SystemInfo SYSTEM_INFO = new SystemInfo();
+  private static final String OS;
 
-  private static final String HOST_NAME =
-      SYSTEM_INFO.getOperatingSystem().getNetworkParams().getHostName();
+  static {
+    SystemInfo systemInfo = new SystemInfo();
+    OperatingSystem operatingSystem = systemInfo.getOperatingSystem();
+    HOST_NAME = operatingSystem.getNetworkParams().getHostName();
+    OS = operatingSystem.getFamily();
+  }
 
   /** 节点配置 */
   private final MixmasterProperties properties;
+
+  /** 持久化存储 */
+  private final PersistStorage persistStorage;
 
   /**
    * 构造方法
    *
    * @param properties 配置
    */
-  public DefaultAddressGenerator(MixmasterProperties properties) {
+  public DefaultAddressGenerator(
+      @NonNull MixmasterProperties properties, @NonNull PersistStorage persistStorage) {
     this.properties = properties;
+    this.persistStorage = persistStorage;
+  }
+
+  /**
+   * 构造节点持久化key
+   *
+   * @return key
+   */
+  private String buildClusterNodeUuidKey() {
+    return String.format(
+        "%s:%s:%s:node:uuid", properties.getClusterName(), HOST_NAME, properties.getInstanceName());
   }
 
   /**
@@ -70,22 +100,50 @@ class DefaultAddressGenerator implements AddressGenerator {
   @Override
   public Address generateAddress() {
     try {
+      ClusterNodeUUID uuid;
+      byte[] key = INSTANCE.to(buildClusterNodeUuidKey());
+      byte[] value = persistStorage.get(key);
+      if (value != null) {
+        uuid = ClusterNodeUUID.deserialize(value);
+      } else {
+        // 保存uuid
+        uuid = ClusterNodeUUID.random();
+        persistStorage.put(key, uuid.serialize());
+      }
+
       // 更新节点附加信息
-      return ClusterMemberUUID.random().memberInfo(buildMemberInfo());
+      return uuid.clusterNodeInfo(buildClusterNodeInfo());
     } catch (Exception e) {
       throw new DistributedEngineException(
-          String.format(
-              "Failed to generate uuid for member[%s:%s] of cluster.",
-              HOST_NAME, properties.instanceName()),
+          "Failed to generate ClusterNodeUUID for node"
+              + String.format("(%s:%s)", HOST_NAME, properties.getInstanceName()),
           e);
     }
   }
 
-  private MemberInfo buildMemberInfo() {
-    return MemberInfo.newBuilder()
-        .setClusterName(properties.clusterName())
-        .setStartupTime(STARTUP_TIME)
-        .setInstanceName(properties.instanceName())
+  private ClusterNodeInfo buildClusterNodeInfo() {
+    return ClusterNodeInfo.newBuilder()
+        .setStartupTime(ManagementFactory.getRuntimeMXBean().getStartTime())
+        .setInstanceName(properties.getInstanceName())
+        .setClusterName(properties.getClusterName())
+        .putAllAttributes(getNodeAttributes())
+        .setHost(
+            Host.newBuilder()
+                .setName(HOST_NAME)
+                .setOs(OS)
+                .setDataPlaneAddress(
+                    IpAddress.newBuilder()
+                        .setPort(properties.getDataPlaneAddress().getPort())
+                        .setIpAddress(properties.getDataPlaneAddress().getIpAddress()))
+                .setManagementPlaneAddress(
+                    IpAddress.newBuilder()
+                        .setPort(properties.getManagerPlaneAddress().getPort())
+                        .setIpAddress(properties.getManagerPlaneAddress().getIpAddress())))
         .build();
+  }
+
+  private Map<String, ByteString> getNodeAttributes() {
+    return properties.getClusterNodeAttributes().entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> unsafeWrap(INSTANCE.to(e.getValue()))));
   }
 }
