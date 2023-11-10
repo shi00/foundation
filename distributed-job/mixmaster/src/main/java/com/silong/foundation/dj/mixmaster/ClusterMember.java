@@ -18,55 +18,55 @@
  *  * under the License.
  *
  */
+package com.silong.foundation.dj.mixmaster;
 
-package com.silong.foundation.dj.mixmaster.enu;
-
-import java.io.Serializable;
-import java.util.Arrays;
-import lombok.Getter;
+import com.silong.foundation.dj.mixmaster.message.Messages.MemberRole;
+import java.util.Map;
+import org.jgroups.Address;
 
 /**
- * 集群成员的角色
+ * 集群成员
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-10-24 19:05
+ * @since 2022-04-07 21:33
+ * @param <T> 唯一标识类型
  */
-@Getter
-public enum MemberRole implements Serializable {
-
-  /** 工作节点 */
-  WORKER(1),
-
-  /** 领导节点 */
-  LEADER(2);
-
-  /** 角色值 */
-  private final int value;
+public interface ClusterMember<T extends Comparable<T>> extends Identity<T> {
 
   /**
-   * 构造方法
+   * 节点角色
    *
-   * @param value 角色值
-   */
-  MemberRole(int value) {
-    this.value = value;
-  }
-
-  /**
-   * 查找角色
-   *
-   * @param value 角色值
    * @return 角色
-   * @throws IllegalArgumentException 未知角色值
    */
-  public static MemberRole find(int value) {
-    return Arrays.stream(MemberRole.values())
-        .filter(r -> r.value == value)
-        .findAny()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    String.format("Unknown member role, value:%d.", value)));
-  }
+  MemberRole role();
+
+  /**
+   * 获取集群成员名称
+   *
+   * @return 成员名称
+   */
+  String name();
+
+  /**
+   * 获取集群成员本地地址
+   *
+   * @return local地址，非IP
+   */
+  Address localAddress();
+
+  /**
+   * 获取节点属性
+   *
+   * @param attributeKey 属性key
+   * @return 属性值
+   */
+  Object attribute(String attributeKey);
+
+  /**
+   * 获取节点属性集合
+   *
+   * @return 属性集合
+   */
+  Map<String, Object> attributes();
 }
