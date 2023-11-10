@@ -33,7 +33,7 @@ import java.util.Map;
  * 为了解决此问题，分布式调度器采用以下数据映射模型：
  *
  *        节点数取模           一致性hash
- * 数据key ------->  partition ------->  cluster-member
+ * 数据key ------->  partition ------->  cluster-node
  *
  * </pre>
  *
@@ -45,17 +45,17 @@ import java.util.Map;
 public interface Partition2NodesMapping<T> {
 
   /**
-   * 分区到集群成员映射
+   * 分区到集群节点映射
    *
    * @param partitionNo 分区编号，大于等于0
    * @param backupNum 副本数量(不含主)，副本数大于等于0
-   * @param clusterMembers 集群节点列表，节点列表大于等于1
+   * @param clusterNodes 集群节点列表，节点列表大于等于1
    * @param neighborhood 各节点邻居关系表，如果此参数不为null，则避免把主备数据映射到互为邻居的节点，确保数据可靠性
    * @return 保存分区的节点列表，其中第一个节点为primary partition节点，后续为backup partition
    */
   List<T> allocatePartition(
       int partitionNo,
       int backupNum,
-      Collection<T> clusterMembers,
+      Collection<T> clusterNodes,
       @Nullable Map<T, Collection<T>> neighborhood);
 }
