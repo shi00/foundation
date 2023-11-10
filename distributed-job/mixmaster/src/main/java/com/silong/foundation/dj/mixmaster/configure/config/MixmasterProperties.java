@@ -21,6 +21,7 @@
 
 package com.silong.foundation.dj.mixmaster.configure.config;
 
+import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
@@ -49,6 +50,10 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "mixmaster")
 public class MixmasterProperties {
 
+  public static final int MAX_PARTITIONS_COUNT = 8192;
+
+  public static final int MIN_PARTITIONS_COUNT = 1;
+
   /** 鉴权配置 */
   @NotNull @Valid @NestedConfigurationProperty private AuthProperties auth = new AuthProperties();
 
@@ -65,11 +70,11 @@ public class MixmasterProperties {
   private ServiceAddress dataPlaneAddress = new ServiceAddress();
 
   /** 数据副本数量，默认：3 */
-  @Positive private int backupNums = 3;
+  @Positive private int backupNum = 3;
 
   /** 数据分区数量，为了获得良好性能和数据均匀分布，建议分区说远大于集群节点数量，并且是2的指数值，取值范围[1,8192]。默认：1024 */
-  @Max(8192)
-  @Min(1)
+  @Max(MAX_PARTITIONS_COUNT)
+  @Min(MIN_PARTITIONS_COUNT)
   private int partitions = 1024;
 
   /** jgroups配置文件 */
@@ -104,6 +109,11 @@ public class MixmasterProperties {
 
     /** 工作密钥 */
     @NotEmpty @ToString.Exclude private String workKey;
+
+    /** token有效期，默认：1天 */
+    @NotNull
+    @DurationUnit(DAYS)
+    private Duration expires = Duration.of(1, DAYS);
   }
 
   /** 服务地址 */

@@ -21,10 +21,15 @@
 
 package com.silong.foundation.dj.mixmaster.configure;
 
+import com.auth0.jwt.algorithms.Algorithm;
 import com.silong.foundation.crypto.RootKey;
+import com.silong.foundation.crypto.aes.AesGcmToolkit;
+import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
+import com.silong.foundation.dj.hook.auth.SimpleJwtAuthenticator;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.scrapper.PersistStorage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,6 +51,25 @@ public class MixmasterAutoConfiguration {
 
   /** 配置 */
   private MixmasterProperties properties;
+
+  /**
+   * jwt 鉴权处理器
+   *
+   * @return 鉴权处理器
+   */
+  @Bean
+  @ConditionalOnMissingBean
+  public JwtAuthenticator jwtAuthenticator() {
+    return SimpleJwtAuthenticator.builder()
+        // 设置签名密钥
+        .signatureAlgorithm(
+            Algorithm.HMAC256(
+                AesGcmToolkit.decrypt(
+                    properties.getAuth().getSignKey(), properties.getAuth().getWorkKey())))
+        // 设置超期时间
+        .period(properties.getAuth().getExpires())
+        .build();
+  }
 
   /**
    * 注册持久化存储
