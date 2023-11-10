@@ -20,53 +20,43 @@
  */
 package com.silong.foundation.dj.mixmaster;
 
-import com.silong.foundation.dj.mixmaster.message.Messages.MemberRole;
-import java.util.Map;
-import org.jgroups.Address;
+import jakarta.annotation.Nullable;
 
 /**
- * 集群成员
+ * Devastator分布式引擎
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-07 21:33
- * @param <T> 唯一标识类型
+ * @since 2022-04-10 09:01
  */
-public interface ClusterMember<T extends Comparable<T>> extends Identity<T> {
+public interface DistributedEngine {
 
   /**
-   * 节点角色
+   * 异步发送集群消息
    *
-   * @return 角色
+   * @param msg 消息字节数组
+   * @param offset 消息偏移位置
+   * @param length 消息长度
+   * @param dest 目标地址
+   * @return this
+   * @param <T> 地址类型
+   * @throws Exception 当前节点为连接集群或已关闭时抛出，参数异常时抛出
    */
-  MemberRole role();
+  <T extends Comparable<T>> DistributedEngine asyncSend(
+      byte[] msg, int offset, int length, @Nullable ClusterNode<T> dest) throws Exception;
 
   /**
-   * 获取集群成员名称
+   * 获取集群
    *
-   * @return 成员名称
+   * @return 集群
    */
-  String name();
+  Cluster cluster();
 
   /**
-   * 获取集群成员本地地址
+   * 获取分布式调度器
    *
-   * @return local地址，非IP
+   * @param name 调度器名
+   * @return 分布式调度器
    */
-  Address localAddress();
-
-  /**
-   * 获取节点属性
-   *
-   * @param attributeKey 属性key
-   * @return 属性值
-   */
-  Object attribute(String attributeKey);
-
-  /**
-   * 获取节点属性集合
-   *
-   * @return 属性集合
-   */
-  Map<String, Object> attributes();
+  DistributedJobScheduler scheduler(String name);
 }
