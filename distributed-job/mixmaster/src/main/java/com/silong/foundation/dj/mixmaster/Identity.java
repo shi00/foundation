@@ -21,7 +21,7 @@
 package com.silong.foundation.dj.mixmaster;
 
 /**
- * 唯一标识接口，提供一个可比较的唯一标识作为集群成员的唯一标识
+ * 唯一标识接口
  *
  * @author louis sin
  * @version 1.0.0
