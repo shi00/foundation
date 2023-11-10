@@ -39,18 +39,18 @@ public interface Cluster {
   String name();
 
   /**
-   * 获取集群成员列表
+   * 获取集群节点列表
    *
    * @return 集群节点列表
    * @param <T> 唯一标识类型
    */
-  <T extends Comparable<T>> Collection<ClusterMember<T>> members();
+  <T extends Comparable<T>> Collection<ClusterNode<T>> clusterNodes();
 
   /**
-   * 获取本地成员
+   * 获取本地节点
    *
    * @return 本地节点
    * @param <T> 唯一标识类型
    */
-  <T extends Comparable<T>> ClusterMember<T> localMember();
+  <T extends Comparable<T>> ClusterNode<T> localNode();
 }
