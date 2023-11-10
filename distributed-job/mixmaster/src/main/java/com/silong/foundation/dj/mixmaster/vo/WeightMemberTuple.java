@@ -18,23 +18,22 @@
  *  * under the License.
  *
  */
-package com.silong.foundation.dj.mixmaster.core;
+package com.silong.foundation.dj.mixmaster.vo;
 
-import com.silong.foundation.dj.mixmaster.vo.MemberUUID;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Comparator;
 
 /**
- * 节点权重二元组
+ * 集群成员权重二元组
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2022-04-30 09:35
  */
-record WeightNodeTuple(long weight, MemberUUID member)
-    implements Comparable<WeightNodeTuple>, Serializable {
+public record WeightMemberTuple(long weight, ClusterMemberUUID member)
+    implements Comparable<WeightMemberTuple>, Serializable {
   @Serial private static final long serialVersionUID = 8_765_028_695_386_717_365L;
 
   /**
@@ -44,19 +43,19 @@ record WeightNodeTuple(long weight, MemberUUID member)
    * @version 1.0.0
    * @since 2022-04-30 09:35
    */
-  public static class WeightNodeTupleComparator
-      implements Comparator<WeightNodeTuple>, Serializable {
+  public static class WeightMemberTupleComparator
+      implements Comparator<WeightMemberTuple>, Serializable {
 
     @Serial private static final long serialVersionUID = 0L;
 
-    public static final WeightNodeTupleComparator COMPARATOR = new WeightNodeTupleComparator();
+    public static final WeightMemberTupleComparator COMPARATOR = new WeightMemberTupleComparator();
 
     /** forbidden */
-    private WeightNodeTupleComparator() {}
+    private WeightMemberTupleComparator() {}
 
     /** {@inheritDoc} */
     @Override
-    public int compare(WeightNodeTuple o1, WeightNodeTuple o2) {
+    public int compare(WeightMemberTuple o1, WeightMemberTuple o2) {
       return o1.weight < o2.weight
           ? -1
           : o1.weight > o2.weight ? 1 : o1.member.uuid().compareTo(o2.member.uuid());
@@ -64,7 +63,7 @@ record WeightNodeTuple(long weight, MemberUUID member)
   }
 
   @Override
-  public int compareTo(@NonNull WeightNodeTuple o) {
-    return WeightNodeTupleComparator.COMPARATOR.compare(this, o);
+  public int compareTo(@NonNull WeightMemberTuple o) {
+    return WeightMemberTupleComparator.COMPARATOR.compare(this, o);
   }
 }
