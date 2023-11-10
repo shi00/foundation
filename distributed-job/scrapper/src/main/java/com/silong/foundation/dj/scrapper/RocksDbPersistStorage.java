@@ -25,10 +25,11 @@ import static org.rocksdb.CompressionType.ZSTD_COMPRESSION;
 import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
 
 import com.silong.foundation.common.lambda.Tuple2;
-import com.silong.foundation.dj.scrapper.configure.config.PersistStorageProperties;
+import com.silong.foundation.dj.scrapper.config.PersistStorageConfig;
 import com.silong.foundation.dj.scrapper.exception.DataAccessException;
 import com.silong.foundation.dj.scrapper.exception.InitializationException;
 import com.silong.foundation.dj.scrapper.vo.KvPair;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.Serial;
 import java.io.Serializable;
@@ -41,7 +42,6 @@ import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.*;
-import org.springframework.stereotype.Component;
 
 /**
  * 基于RocksDB的持久化存储
@@ -51,7 +51,7 @@ import org.springframework.stereotype.Component;
  * @since 2022-04-10 17:52
  */
 @Slf4j
-@Component
+@SuppressFBWarnings({"PATH_TRAVERSAL_IN"})
 class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializable {
 
   @Serial private static final long serialVersionUID = -4_283_190_428_612_014_890L;
@@ -82,59 +82,59 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
   /**
    * 构造方法
    *
-   * @param config 持久化存储配置
+   * @param properties 持久化存储配置
    */
-  public RocksDbPersistStorage(PersistStorageProperties config) {
-    validate(config == null, "config must not be null.");
-    blockCache = new LRUCache(config.getBlockBaseTable().getCache().getBlockCacheCapacity());
+  public RocksDbPersistStorage(PersistStorageConfig properties) {
+    validate(properties == null, "properties must not be null.");
+    blockCache = new LRUCache(properties.getBlockBaseTable().getCache().getBlockCacheCapacity());
     bloomFilter =
         new BloomFilter(
-            config.getBlockBaseTable().getBloomFilter().getBloomFilterBitsPerKey(), false);
+            properties.getBlockBaseTable().getBloomFilter().getBloomFilterBitsPerKey(), false);
     rateLimiter =
         new RateLimiter(
-            config.getRateLimiter().getRateBytesPerSecond(),
-            config.getRateLimiter().getRefillPeriodMicros(),
-            config.getRateLimiter().getFairness());
+            properties.getRateLimiter().getRateBytesPerSecond(),
+            properties.getRateLimiter().getRefillPeriodMicros(),
+            properties.getRateLimiter().getFairness());
 
     cfOpts =
         new ColumnFamilyOptions()
             .setLevelCompactionDynamicLevelBytes(true)
             .setCompressionType(LZ4_COMPRESSION)
             .setBottommostCompressionType(ZSTD_COMPRESSION)
-            .optimizeLevelStyleCompaction(config.getMemtableMemoryBudget())
-            .setWriteBufferSize(config.getColumnFamilyWriteBufferSize())
+            .optimizeLevelStyleCompaction(properties.getMemtableMemoryBudget())
+            .setWriteBufferSize(properties.getColumnFamilyWriteBufferSize())
             .setTableFormatConfig(
                 new BlockBasedTableConfig()
-                    .setBlockSize(config.getBlockBaseTable().getBlockSize())
+                    .setBlockSize(properties.getBlockBaseTable().getBlockSize())
                     .setCacheIndexAndFilterBlocks(true)
                     .setPinL0FilterAndIndexBlocksInCache(true)
-                    .setFormatVersion(config.getBlockBaseTable().getFormatVersion())
+                    .setFormatVersion(properties.getBlockBaseTable().getFormatVersion())
                     .setBlockCache(blockCache)
                     .setOptimizeFiltersForMemory(true)
                     .setFilterPolicy(bloomFilter))
-            .setMaxWriteBufferNumber(config.getMaxWriteBufferNumber());
+            .setMaxWriteBufferNumber(properties.getMaxWriteBufferNumber());
 
     // list of column family descriptors, first entry must always be default column family
     ArrayList<ColumnFamilyDescriptor> columnFamilyDescriptors =
-        new ArrayList<>(1 + config.getColumnFamilyNames().size());
+        new ArrayList<>(1 + properties.getColumnFamilyNames().size());
     columnFamilyDescriptors.add(new ColumnFamilyDescriptor(DEFAULT_COLUMN_FAMILY, cfOpts));
     columnFamilyDescriptors.addAll(
-        config.getColumnFamilyNames().stream()
+        properties.getColumnFamilyNames().stream()
             .map(name -> new ColumnFamilyDescriptor(name.getBytes(), cfOpts))
             .toList());
 
     options =
         new DBOptions()
             .setRateLimiter(rateLimiter)
-            .setMaxBackgroundJobs(config.getMaxBackgroundJobs())
-            .setBytesPerSync(config.getBytesPerSync())
-            .setDbWriteBufferSize(config.getDbWriteBufferSize())
+            .setMaxBackgroundJobs(properties.getMaxBackgroundJobs())
+            .setBytesPerSync(properties.getBytesPerSync())
+            .setDbWriteBufferSize(properties.getDbWriteBufferSize())
             .setCreateIfMissing(true)
             .setCreateMissingColumnFamilies(true);
 
-    if (config.getStatistics().isEnable()) {
+    if (properties.getStatistics().isEnable()) {
       statistics = new Statistics();
-      statistics.setStatsLevel(config.getStatistics().getStatsLevel());
+      statistics.setStatsLevel(properties.getStatistics().getStatsLevel());
       options.setStatistics(statistics);
     } else {
       statistics = null;
@@ -145,7 +145,7 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
       rocksDB =
           RocksDB.open(
               options,
-              new File(config.getPersistDataPath()).getCanonicalPath(),
+              new File(properties.getPersistDataPath()).getCanonicalPath(),
               columnFamilyDescriptors,
               columnFamilyHandles);
       for (ColumnFamilyHandle handle : columnFamilyHandles) {
