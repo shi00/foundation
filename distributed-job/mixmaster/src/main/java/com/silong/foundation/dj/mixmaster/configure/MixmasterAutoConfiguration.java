@@ -22,8 +22,10 @@
 package com.silong.foundation.dj.mixmaster.configure;
 
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
+import com.silong.foundation.dj.scrapper.PersistStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -39,6 +41,16 @@ public class MixmasterAutoConfiguration {
 
   /** 配置 */
   private MixmasterProperties properties;
+
+  /**
+   * 注册持久化存储
+   *
+   * @return 持久化存储
+   */
+  @Bean
+  public PersistStorage persistStorage() {
+    return PersistStorage.getInstance(properties.getScrapper());
+  }
 
   @Autowired
   public void setProperties(MixmasterProperties properties) {
