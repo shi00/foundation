@@ -23,6 +23,7 @@ package com.silong.foundation.dj.mixmaster.configure.config;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Duration;
@@ -31,7 +32,6 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.Data;
 import lombok.ToString;
-import lombok.experimental.Accessors;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.boot.convert.DurationUnit;
@@ -46,12 +46,23 @@ import org.springframework.validation.annotation.Validated;
  */
 @Data
 @Validated
-@Accessors(fluent = true)
 @ConfigurationProperties(prefix = "mixmaster")
 public class MixmasterProperties {
 
   /** 鉴权配置 */
-  @Valid @NestedConfigurationProperty private AuthProperties auth = new AuthProperties();
+  @NotNull @Valid @NestedConfigurationProperty private AuthProperties auth = new AuthProperties();
+
+  /** 持久化存储配置 */
+  @NotNull @Valid @NestedConfigurationProperty
+  private PersistStorageProperties scrapper = new PersistStorageProperties();
+
+  /** 服务管理平面地址 */
+  @NotNull @Valid @NestedConfigurationProperty
+  private ServiceAddress managerPlaneAddress = new ServiceAddress();
+
+  /** 服务数据平面地址 */
+  @NotNull @Valid @NestedConfigurationProperty
+  private ServiceAddress dataPlaneAddress = new ServiceAddress();
 
   /** 数据副本数量，默认：3 */
   @Positive private int backupNums = 3;
@@ -93,5 +104,21 @@ public class MixmasterProperties {
 
     /** 工作密钥 */
     @NotEmpty @ToString.Exclude private String workKey;
+  }
+
+  /** 服务地址 */
+  @Data
+  public static class ServiceAddress {
+    /** ip地址 */
+    @NotEmpty
+    @Pattern(
+        regexp =
+            "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
+    private String ipAddress;
+
+    /** 监听端口 */
+    @Min(1025)
+    @Max(65535)
+    private int port;
   }
 }
