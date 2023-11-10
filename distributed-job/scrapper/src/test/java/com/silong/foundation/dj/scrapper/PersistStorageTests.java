@@ -21,7 +21,7 @@ package com.silong.foundation.dj.scrapper;
 import static com.silong.foundation.dj.scrapper.RocksDbPersistStorage.DEFAULT_COLUMN_FAMILY_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.silong.foundation.dj.scrapper.config.PersistStorageConfig;
+import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import com.silong.foundation.dj.scrapper.utils.Long2Bytes;
 import com.silong.foundation.dj.scrapper.vo.KvPair;
 import java.util.*;
@@ -39,14 +39,14 @@ import org.junit.jupiter.api.*;
  */
 public class PersistStorageTests {
 
-  private static final PersistStorageConfig config;
+  private static final PersistStorageProperties config;
 
   private static final RocksDbPersistStorage persistStorage;
 
   private static final String JOBS = "jobs";
 
   static {
-    config = new PersistStorageConfig();
+    config = new PersistStorageProperties();
     config.setColumnFamilyNames(List.of(JOBS));
     config.setPersistDataPath("./target/devastator-data/");
     persistStorage = new RocksDbPersistStorage(config);
