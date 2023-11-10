@@ -21,7 +21,7 @@
 package com.silong.foundation.dj.scrapper;
 
 import com.silong.foundation.common.lambda.Tuple2;
-import com.silong.foundation.dj.scrapper.config.PersistStorageConfig;
+import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import com.silong.foundation.dj.scrapper.vo.KvPair;
 import java.util.Collection;
 import java.util.List;
@@ -37,14 +37,17 @@ import lombok.NonNull;
  */
 public interface PersistStorage {
 
+  /** 默认列族 */
+  String DEFAULT_COLUMN_FAMILY_NAME = "default";
+
   /**
    * 根据配置创建持久化存储
    *
-   * @param config 配置
+   * @param properties 配置
    * @return 持久化存储
    */
-  static PersistStorage getInstance(@NonNull PersistStorageConfig config) {
-    return new RocksDbPersistStorage(config);
+  static PersistStorage getInstance(@NonNull PersistStorageProperties properties) {
+    return new RocksDbPersistStorage(properties);
   }
 
   /**

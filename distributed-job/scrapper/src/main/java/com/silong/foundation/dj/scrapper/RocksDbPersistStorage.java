@@ -25,7 +25,7 @@ import static org.rocksdb.CompressionType.ZSTD_COMPRESSION;
 import static org.rocksdb.RocksDB.DEFAULT_COLUMN_FAMILY;
 
 import com.silong.foundation.common.lambda.Tuple2;
-import com.silong.foundation.dj.scrapper.config.PersistStorageConfig;
+import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import com.silong.foundation.dj.scrapper.exception.DataAccessException;
 import com.silong.foundation.dj.scrapper.exception.InitializationException;
 import com.silong.foundation.dj.scrapper.vo.KvPair;
@@ -56,9 +56,6 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
 
   @Serial private static final long serialVersionUID = -4_283_190_428_612_014_890L;
 
-  /** 默认列族 */
-  public static final String DEFAULT_COLUMN_FAMILY_NAME = "default";
-
   static {
     RocksDB.loadLibrary();
   }
@@ -84,7 +81,7 @@ class RocksDbPersistStorage implements PersistStorage, AutoCloseable, Serializab
    *
    * @param properties 持久化存储配置
    */
-  public RocksDbPersistStorage(PersistStorageConfig properties) {
+  public RocksDbPersistStorage(PersistStorageProperties properties) {
     validate(properties == null, "properties must not be null.");
     blockCache = new LRUCache(properties.getBlockBaseTable().getCache().getBlockCacheCapacity());
     bloomFilter =
