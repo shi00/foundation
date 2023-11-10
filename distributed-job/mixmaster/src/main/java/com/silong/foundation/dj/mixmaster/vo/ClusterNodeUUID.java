@@ -23,7 +23,7 @@ package com.silong.foundation.dj.mixmaster.vo;
 import com.google.protobuf.TextFormat;
 import com.silong.foundation.common.utils.BiConverter;
 import com.silong.foundation.dj.mixmaster.Identity;
-import com.silong.foundation.dj.mixmaster.message.Messages.MemberInfo;
+import com.silong.foundation.dj.mixmaster.message.Messages.ClusterNodeInfo;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.*;
 import java.util.function.Supplier;
@@ -46,51 +46,52 @@ import org.jgroups.util.Util;
  * @since 2022-04-11 22:49
  */
 @Getter
-public class ClusterMemberUUID extends UUID implements Identity<Address>, Serializable {
+public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializable {
+
+  @Serial private static final long serialVersionUID = -1_588_683_866_996_767_650L;
 
   static {
     // it will need to get registered with the ClassConfigurator in order to marshal it correctly
     // Note that the ID should be chosen such that it doesn’t collide with any IDs defined in
     // jg-magic-map.xml
-    ClassConfigurator.add((short) 5674, ClusterMemberUUID.class);
+    ClassConfigurator.add((short) 5674, ClusterNodeUUID.class);
   }
 
-  @Serial private static final long serialVersionUID = -3_208_132_295_684_059_186L;
-
   /** 类型转换器 */
-  private static final BiConverter<ClusterMemberUUID, byte[]> INSTANCE =
+  private static final BiConverter<ClusterNodeUUID, byte[]> INSTANCE =
       new BiConverter<>() {
 
         @Override
         @SneakyThrows
-        public byte[] to(ClusterMemberUUID uuid) {
-          if (uuid == null) {
+        public byte[] to(ClusterNodeUUID clusterNodeUUID) {
+          if (clusterNodeUUID == null) {
             return null;
           }
-          ByteArrayDataOutputStream out = new ByteArrayDataOutputStream(uuid.serializedSize());
-          uuid.writeTo(out);
+          ByteArrayDataOutputStream out =
+              new ByteArrayDataOutputStream(clusterNodeUUID.serializedSize());
+          clusterNodeUUID.writeTo(out);
           return out.buffer();
         }
 
         @Override
         @SneakyThrows
-        public ClusterMemberUUID from(byte[] bytes) {
+        public ClusterNodeUUID from(byte[] bytes) {
           if (bytes == null || bytes.length == 0) {
             return null;
           }
-          ClusterMemberUUID uuid = new ClusterMemberUUID();
-          uuid.readFrom(new ByteArrayDataInputStream(bytes));
-          return uuid;
+          ClusterNodeUUID clusterNodeUUID = new ClusterNodeUUID();
+          clusterNodeUUID.readFrom(new ByteArrayDataInputStream(bytes));
+          return clusterNodeUUID;
         }
       };
 
   /** 节点信息 */
   @Setter
   @Accessors(fluent = true)
-  private MemberInfo memberInfo;
+  private ClusterNodeInfo clusterNodeInfo;
 
   /** 默认构造方法 */
-  public ClusterMemberUUID() {
+  public ClusterNodeUUID() {
     super();
   }
 
@@ -99,13 +100,13 @@ public class ClusterMemberUUID extends UUID implements Identity<Address>, Serial
    *
    * @param uuid uuid
    */
-  public ClusterMemberUUID(byte[] uuid) {
+  public ClusterNodeUUID(byte[] uuid) {
     super(uuid);
   }
 
   @Override
   @NonNull
-  public ClusterMemberUUID uuid() {
+  public ClusterNodeUUID uuid() {
     return this;
   }
 
@@ -114,8 +115,8 @@ public class ClusterMemberUUID extends UUID implements Identity<Address>, Serial
    *
    * @return @{@code ClusterNodeUUID}
    */
-  public static ClusterMemberUUID random() {
-    return new ClusterMemberUUID(generateRandomBytes());
+  public static ClusterNodeUUID random() {
+    return new ClusterNodeUUID(generateRandomBytes());
   }
 
   /**
@@ -125,18 +126,19 @@ public class ClusterMemberUUID extends UUID implements Identity<Address>, Serial
    */
   @Override
   public Supplier<? extends UUID> create() {
-    return ClusterMemberUUID::new;
+    return ClusterNodeUUID::new;
   }
 
   @Override
   public int serializedSize() {
-    return super.serializedSize() + (memberInfo == null ? 0 : memberInfo.getSerializedSize());
+    return super.serializedSize()
+        + (clusterNodeInfo == null ? 0 : clusterNodeInfo.getSerializedSize());
   }
 
   @Override
   public void writeTo(DataOutput out) throws IOException {
     super.writeTo(out);
-    byte[] buf = memberInfo != null ? memberInfo.toByteArray() : null;
+    byte[] buf = clusterNodeInfo != null ? clusterNodeInfo.toByteArray() : null;
     Util.writeByteBuffer(buf, 0, buf != null ? buf.length : -1, out);
   }
 
@@ -144,15 +146,16 @@ public class ClusterMemberUUID extends UUID implements Identity<Address>, Serial
   public void readFrom(DataInput in) throws IOException {
     super.readFrom(in);
     byte[] bytes = Util.readByteBuffer(in);
-    memberInfo = bytes == null ? null : MemberInfo.parseFrom(bytes);
+    clusterNodeInfo = bytes == null ? null : ClusterNodeInfo.parseFrom(bytes);
   }
 
   /**
    * 对象序列化
    *
    * @return 二进制
+   * @throws IOException 异常
    */
-  public byte[] serialize() {
+  public byte[] serialize() throws IOException {
     return INSTANCE.to(this);
   }
 
@@ -161,8 +164,9 @@ public class ClusterMemberUUID extends UUID implements Identity<Address>, Serial
    *
    * @param bytes 二进制
    * @return 对象
+   * @throws IOException 异常
    */
-  public static ClusterMemberUUID deserialize(byte[] bytes) {
+  public static ClusterNodeUUID deserialize(byte[] bytes) throws IOException {
     return INSTANCE.from(bytes);
   }
 
@@ -171,7 +175,7 @@ public class ClusterMemberUUID extends UUID implements Identity<Address>, Serial
    *
    * @return 描述信息
    */
-  public String memberInfoDesc() {
-    return TextFormat.printer().printToString(this.memberInfo);
+  public String clusterNodeInfoDesc() {
+    return TextFormat.printer().printToString(this.clusterNodeInfo);
   }
 }
