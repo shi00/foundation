@@ -21,6 +21,7 @@
 
 package com.silong.foundation.dj.mixmaster.configure;
 
+import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.scrapper.PersistStorage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(MixmasterProperties.class)
 public class MixmasterAutoConfiguration {
+
+  static {
+    RootKey.initialize();
+  }
 
   /** 配置 */
   private MixmasterProperties properties;
