@@ -82,6 +82,7 @@
         <module>distributed-job/bonecrusher</module>
         <module>distributed-job/mixmaster</module>
         <module>distributed-job/hook</module>
+        <module>distributed-job/scrapper</module>
         <module>distributed-job/discovery</module>
         <module>crypto</module>
         <module>complex-job/framework</module>
