@@ -56,13 +56,13 @@ class DefaultAddressGenerator implements AddressGenerator {
   /** 主机名 */
   static final String HOST_NAME;
 
-  static final String OS;
+  static final String OS_NAME;
 
   static {
     SystemInfo systemInfo = new SystemInfo();
     OperatingSystem operatingSystem = systemInfo.getOperatingSystem();
     HOST_NAME = operatingSystem.getNetworkParams().getHostName();
-    OS = operatingSystem.getFamily();
+    OS_NAME = systemInfo.getOperatingSystem().toString();
   }
 
   /** 节点配置 */
@@ -130,7 +130,7 @@ class DefaultAddressGenerator implements AddressGenerator {
         .setHost(
             Host.newBuilder()
                 .setName(HOST_NAME)
-                .setOs(OS)
+                .setOs(OS_NAME)
                 .setDataPlaneAddress(
                     IpAddress.newBuilder()
                         .setPort(properties.getDataPlaneAddress().getPort())
