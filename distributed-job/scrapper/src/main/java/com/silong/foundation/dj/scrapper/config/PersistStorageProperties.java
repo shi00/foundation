@@ -27,6 +27,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 import lombok.Data;
 
@@ -47,7 +48,7 @@ public class PersistStorageProperties {
 
   /** 列族名列表，不指定则只有default列族 */
   @Valid @NotEmpty
-  private List<@NotEmpty String> columnFamilyNames = List.of(DEFAULT_COLUMN_FAMILY_NAME);
+  private Collection<@NotEmpty String> columnFamilyNames = List.of(DEFAULT_COLUMN_FAMILY_NAME);
 
   /** memtable memory budget. Default: 32MB */
   @Positive private long memtableMemoryBudget = 32 * MB;
