@@ -130,7 +130,10 @@ class DefaultAddressGenerator implements AddressGenerator {
         .setHost(
             Host.newBuilder()
                 .setName(HOST_NAME)
-                .setOs(OS_NAME)
+                .setOsName(OS_NAME)
+                .setTotalMemory(Runtime.getRuntime().totalMemory())
+                .setAvailableProcessors(Runtime.getRuntime().availableProcessors())
+                .setPid(ManagementFactory.getRuntimeMXBean().getPid())
                 .setDataPlaneAddress(
                     IpAddress.newBuilder()
                         .setPort(properties.getDataPlaneAddress().getPort())
