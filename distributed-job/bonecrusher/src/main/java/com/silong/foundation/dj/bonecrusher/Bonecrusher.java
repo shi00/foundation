@@ -47,6 +47,7 @@ import com.silong.foundation.dj.bonecrusher.message.Messages;
 import com.silong.foundation.dj.bonecrusher.message.Messages.DataBlockMetadata;
 import com.silong.foundation.dj.bonecrusher.utils.FutureCombiner;
 import com.silong.foundation.dj.bonecrusher.vo.ClusterInfo;
+import com.silong.foundation.dj.hook.event.ChannelClosedEvent;
 import com.silong.foundation.dj.hook.event.JoinClusterEvent;
 import com.silong.foundation.dj.hook.event.LeftClusterEvent;
 import com.silong.foundation.dj.hook.event.ViewChangedEvent;
@@ -421,6 +422,11 @@ class Bonecrusher implements ApplicationListener<ApplicationEvent>, DataSyncServ
           throw new IllegalStateException(
               String.format("CurrentStatus:[%s], ExpectedStatus:[%s].", state(), LEFT));
         }
+      }
+        // 关闭事件
+      case ChannelClosedEvent channelClosedEvent -> {
+        log.info("The bonecrusher shutdown immediately.");
+        shutdown();
       }
       default -> {}
     }
