@@ -28,7 +28,9 @@ import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import java.io.Serial;
 import java.io.Serializable;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,6 +42,7 @@ import org.springframework.stereotype.Component;
  */
 @ToString
 @Component
+@NoArgsConstructor
 @EqualsAndHashCode
 class DefaultObject2PartitionMapping implements Object2PartitionMapping, Serializable {
 
@@ -51,20 +54,9 @@ class DefaultObject2PartitionMapping implements Object2PartitionMapping, Seriali
   /** 标识分区数值是否为2的指数，-1表示非2的指数 */
   @ToString.Exclude private int mask;
 
-  /** 默认构造方法 */
-  public DefaultObject2PartitionMapping(MixmasterProperties properties) {
-    this(properties.getPartitions());
-  }
-
-  /**
-   * 构造方法
-   *
-   * @param partitions 分区数，此分区数应远大于集群节点数，但是必须小于等于{@code
-   *     ClusterDataAllocator.MAX_PARTITIONS_COUNT}，大于等于{@code
-   *     ClusterDataAllocator.MIN_PARTITIONS_COUNT}
-   */
-  public DefaultObject2PartitionMapping(int partitions) {
-    partitions(partitions);
+  @Autowired
+  public void initialize(MixmasterProperties properties) {
+    partitions(properties.getPartitions());
   }
 
   /**
