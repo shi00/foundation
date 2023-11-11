@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.mixmaster.core;
+package com.silong.foundation.dj.mixmaster.vo;
 
 import java.io.DataInput;
 import java.io.DataOutput;
