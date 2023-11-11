@@ -35,7 +35,7 @@ import lombok.NonNull;
  * @version 1.0.0
  * @since 2022-04-10 17:14
  */
-public interface PersistStorage {
+public interface PersistStorage extends AutoCloseable {
 
   /** 默认列族 */
   String DEFAULT_COLUMN_FAMILY_NAME = "default";
