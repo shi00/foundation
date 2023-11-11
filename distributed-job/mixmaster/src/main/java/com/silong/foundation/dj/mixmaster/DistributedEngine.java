@@ -20,6 +20,7 @@
  */
 package com.silong.foundation.dj.mixmaster;
 
+import com.google.protobuf.MessageLite;
 import jakarta.annotation.Nullable;
 
 /**
@@ -34,16 +35,14 @@ public interface DistributedEngine {
   /**
    * 异步发送集群消息
    *
-   * @param msg 消息字节数组
-   * @param offset 消息偏移位置
-   * @param length 消息长度
-   * @param dest 目标地址
+   * @param msg 消息
+   * @param dest 目标地址，如果null则标识集群内发送
    * @return this
-   * @param <T> 地址类型
-   * @throws Exception 当前节点为连接集群或已关闭时抛出，参数异常时抛出
+   * @param <T> 消息类型
+   * @throws Exception 异常
    */
-  <T extends Comparable<T>> DistributedEngine asyncSend(
-      byte[] msg, int offset, int length, @Nullable ClusterNode<T> dest) throws Exception;
+  <T extends MessageLite> DistributedEngine send(T msg, @Nullable ClusterNode<?> dest)
+      throws Exception;
 
   /**
    * 获取集群
