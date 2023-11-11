@@ -60,18 +60,12 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
 
   @Serial private static final long serialVersionUID = 8_142_384_185_333_518_222L;
 
-  /** 最高随机权重分区节点映射器 */
-  public static final RendezvousPartitionMapping INSTANCE = new RendezvousPartitionMapping();
-
   /** 备份节点过滤器，第一个参数为Primary节点, 第二个参数为被测试节点. */
   private SerializableBiPredicate<ClusterNodeUUID, ClusterNodeUUID> backupFilter;
 
   /** 第一个参数为被测试节点，第二个参数为当前partition已经分配的节点列表 (列表中的第一个节点为Primary) */
   private SerializableBiPredicate<ClusterNodeUUID, Collection<ClusterNodeUUID>>
       affinityBackupFilter;
-
-  /** 默认构造方法 */
-  private RendezvousPartitionMapping() {}
 
   /**
    * 设置备份节点过滤器
