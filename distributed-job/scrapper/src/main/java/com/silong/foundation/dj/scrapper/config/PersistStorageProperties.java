@@ -54,17 +54,17 @@ public class PersistStorageProperties {
   @Valid @NotEmpty
   private Collection<@NotEmpty String> columnFamilyNames = List.of(DEFAULT_COLUMN_FAMILY_NAME);
 
-  /** memtable memory budget. Default: 32MB */
-  @Positive private long memtableMemoryBudget = 32 * MB;
+  /** memtable memory budget. Default: 1MB */
+  @Positive private long memtableMemoryBudget = MB;
 
-  /** 列族写入缓存大小，默认：32MB */
-  @Positive private long columnFamilyWriteBufferSize = 32 * MB;
+  /** 列族写入缓存大小，默认：1MB */
+  @Positive private long columnFamilyWriteBufferSize = MB;
 
-  /** db写入缓存大小，默认：128MB */
-  @Positive private long dbWriteBufferSize = 128 * MB;
+  /** db写入缓存大小，默认：1MB */
+  @Positive private long dbWriteBufferSize = MB;
 
-  /** 最大写缓存数量，默认：4 */
-  @Positive private int maxWriteBufferNumber = 4;
+  /** 最大写缓存数量，默认：3 */
+  @Positive private int maxWriteBufferNumber = 3;
 
   /** 最大后台任务数，默认：6 */
   @Positive private int maxBackgroundJobs = 6;
