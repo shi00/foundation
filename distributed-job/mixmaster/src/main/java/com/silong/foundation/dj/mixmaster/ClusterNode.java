@@ -20,7 +20,8 @@
  */
 package com.silong.foundation.dj.mixmaster;
 
-import java.util.Map;
+import com.silong.foundation.dj.mixmaster.enu.ClusterNodeRole;
+import com.silong.foundation.dj.mixmaster.vo.AttributionKey;
 
 /**
  * 集群节点
@@ -31,6 +32,13 @@ import java.util.Map;
  * @param <T> 唯一标识类型
  */
 public interface ClusterNode<T extends Comparable<T>> extends Identity<T> {
+
+  /**
+   * 角色
+   *
+   * @return 角色
+   */
+  ClusterNodeRole role();
 
   /**
    * 集群名
@@ -66,12 +74,5 @@ public interface ClusterNode<T extends Comparable<T>> extends Identity<T> {
    * @param attributeKey 属性名
    * @return 属性值
    */
-  <R> R attribute(String attributeKey);
-
-  /**
-   * 获取节点属性集合
-   *
-   * @return 属性集合
-   */
-  Map<String, Object> attributes();
+  <R> R attribute(AttributionKey<R> attributeKey);
 }
