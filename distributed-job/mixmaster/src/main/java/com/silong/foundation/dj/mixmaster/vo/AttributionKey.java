@@ -23,6 +23,7 @@ package com.silong.foundation.dj.mixmaster.vo;
 
 import com.google.protobuf.ByteString;
 import com.silong.foundation.common.utils.Converter;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -32,14 +33,15 @@ import lombok.Data;
  * @author louis sin
  * @version 1.0.0
  * @since 2023-11-11 12:54
- * @param <T> 属性值类型
+ * @param <R> 属性值类型
  */
 @Data
 @Builder
-public class AttributioniKey<T> {
+@AllArgsConstructor
+public class AttributionKey<R> {
   /** 属性key */
   private String key;
 
   /** 类型转换器 */
-  private Converter<ByteString, T> converter;
+  private Converter<ByteString, R> converter;
 }
