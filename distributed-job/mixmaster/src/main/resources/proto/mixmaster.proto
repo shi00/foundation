@@ -32,7 +32,7 @@ message Host {
   string name = 1; //主机名
   IpAddress management_plane_address = 2; //管理平面ip
   IpAddress data_plane_address = 3; //数据平面ip
-  optional string os = 4; //操作系统名
+  optional string os_name = 4; //操作系统名
   optional uint64 total_memory = 5; //内存总量，单位：字节
   optional uint32 available_processors = 6; //可用cpu数量
   optional uint64 pid = 7;  //服务进程id
