@@ -44,7 +44,11 @@ public class PersistStorageProperties {
   /** 持久化数据保存路径 */
   @NotEmpty
   private String persistDataPath =
-      Paths.get(System.getProperty("user.dir")).resolve("scrapper-data").toFile().getAbsolutePath();
+      Paths.get(System.getProperty("user.dir"))
+          .resolve("target")
+          .resolve("scrapper-data")
+          .toFile()
+          .getAbsolutePath();
 
   /** 列族名列表，不指定则只有default列族 */
   @Valid @NotEmpty
