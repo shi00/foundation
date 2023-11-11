@@ -258,7 +258,7 @@ class DefaultDistributedEngine
   private URL locateConfig(String confFile) throws MalformedURLException {
     try {
       return new URI(confFile).toURL();
-    } catch (MalformedURLException | URISyntaxException e) {
+    } catch (Exception e) {
       File file = new File(confFile);
       if (file.exists() && file.isFile()) {
         return file.toURI().toURL();
