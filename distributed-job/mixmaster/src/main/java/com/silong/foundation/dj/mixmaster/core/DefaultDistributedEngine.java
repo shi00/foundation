@@ -120,6 +120,9 @@ class DefaultDistributedEngine
 
       // 启动
       jChannel.connect(properties.getClusterName());
+
+      // 同步集群配置
+      syncClusterConfig();
     } catch (Exception e) {
       throw new DistributedEngineException("Failed to start distributed engine.", e);
     }
@@ -268,8 +271,8 @@ class DefaultDistributedEngine
     }
   }
 
-  /** 向coordinator请求，同步集群状态 */
-  public void syncClusterState() throws Exception {
+  /** 向coordinator请求，同步集群配置 */
+  public void syncClusterConfig() throws Exception {
     jChannel.getState(null, properties.getClusterStateSyncTimeout().toMillis());
   }
 
