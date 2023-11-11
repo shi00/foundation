@@ -48,7 +48,7 @@ public class PersistStorageTests {
   static {
     config = new PersistStorageProperties();
     config.setColumnFamilyNames(List.of(JOBS));
-    config.setPersistDataPath("./target/devastator-data/");
+    config.setPersistDataPath("./target/scrapper-data/");
     persistStorage = new RocksDbPersistStorage(config);
   }
 
