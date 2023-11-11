@@ -91,6 +91,7 @@ public class MixmasterAutoConfiguration {
    * @return 持久化存储
    */
   @Bean
+  @ConditionalOnMissingBean
   public PersistStorage persistStorage() {
     // 把分区都创建好column family
     PersistStorageProperties scrapper = properties.getScrapper();
