@@ -28,6 +28,10 @@ import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
 import com.silong.foundation.dj.hook.auth.SimpleJwtAuthenticator;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.scrapper.PersistStorage;
+import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -72,13 +76,30 @@ public class MixmasterAutoConfiguration {
   }
 
   /**
+   * 根据分区号生成存储列族名称
+   *
+   * @param partitionNo 分区号
+   * @return 保存任务数据使用的列族名
+   */
+  private String getPartitionCf(int partitionNo) {
+    return String.format("%s-partition%d", properties.getClusterName(), partitionNo);
+  }
+
+  /**
    * 注册持久化存储
    *
    * @return 持久化存储
    */
   @Bean
   public PersistStorage persistStorage() {
-    return PersistStorage.getInstance(properties.getScrapper());
+    // 把分区都创建好column family
+    PersistStorageProperties scrapper = properties.getScrapper();
+    Collection<String> columnFamilyNames = scrapper.getColumnFamilyNames();
+    LinkedHashSet<String> cfs = new LinkedHashSet<>(columnFamilyNames);
+    IntStream.range(0, properties.getPartitions())
+        .forEach(partition -> cfs.add(getPartitionCf(partition)));
+    scrapper.setColumnFamilyNames(cfs);
+    return PersistStorage.getInstance(scrapper);
   }
 
   @Autowired
