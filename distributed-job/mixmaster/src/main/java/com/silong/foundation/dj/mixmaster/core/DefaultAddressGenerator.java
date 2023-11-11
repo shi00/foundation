@@ -54,9 +54,9 @@ import oshi.software.os.OperatingSystem;
 class DefaultAddressGenerator implements AddressGenerator {
 
   /** 主机名 */
-  private static final String HOST_NAME;
+  static final String HOST_NAME;
 
-  private static final String OS;
+  static final String OS;
 
   static {
     SystemInfo systemInfo = new SystemInfo();
