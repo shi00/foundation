@@ -27,6 +27,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
 import org.jgroups.Address;
+import org.jgroups.View;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -61,6 +62,15 @@ public class JoinClusterEvent extends ApplicationEvent {
     super(source);
     this.localAddress = localAddress;
     this.cluster = cluster;
+  }
+
+  /**
+   * 获取当前集群视图
+   *
+   * @return 当前视图
+   */
+  public View currentView() {
+    return (View) getSource();
   }
 
   /**
