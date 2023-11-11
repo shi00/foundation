@@ -22,6 +22,7 @@ package com.silong.foundation.dj.mixmaster;
 
 import com.google.protobuf.MessageLite;
 import jakarta.annotation.Nullable;
+import org.jgroups.Address;
 
 /**
  * Devastator分布式引擎
@@ -36,6 +37,29 @@ public interface DistributedEngine {
    * 异步发送集群消息
    *
    * @param msg 消息
+   * @param offset 偏移量
+   * @param length 长度
+   * @param dest 目标地址，如果null则标识集群内发送
+   * @return this
+   * @throws Exception 异常
+   */
+  DistributedEngine send(byte[] msg, int offset, int length, @Nullable ClusterNode<?> dest)
+      throws Exception;
+
+  /**
+   * 异步发送集群消息
+   *
+   * @param msg 消息
+   * @param dest 目标地址，如果null则标识集群内发送
+   * @return this
+   * @throws Exception 异常
+   */
+  DistributedEngine send(byte[] msg, @Nullable ClusterNode<?> dest) throws Exception;
+
+  /**
+   * 异步发送集群消息
+   *
+   * @param msg 消息
    * @param dest 目标地址，如果null则标识集群内发送
    * @return this
    * @param <T> 消息类型
@@ -43,6 +67,20 @@ public interface DistributedEngine {
    */
   <T extends MessageLite> DistributedEngine send(T msg, @Nullable ClusterNode<?> dest)
       throws Exception;
+
+  /**
+   * 加入集群后返回集群名，否则null
+   *
+   * @return 集群名
+   */
+  String clusterName();
+
+  /**
+   * 获取本地节点地址
+   *
+   * @return 地址
+   */
+  Address localAddress();
 
   /**
    * 获取集群
