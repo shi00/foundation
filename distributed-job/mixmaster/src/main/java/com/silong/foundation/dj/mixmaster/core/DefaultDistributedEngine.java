@@ -545,7 +545,8 @@ class DefaultDistributedEngine
   }
 
   @Autowired
-  public void setPersistStorage(PersistStorage persistStorage) {
+  public void setPersistStorage(
+      @Qualifier("mixmasterPersistStorage") PersistStorage persistStorage) {
     this.persistStorage = persistStorage;
   }
 
