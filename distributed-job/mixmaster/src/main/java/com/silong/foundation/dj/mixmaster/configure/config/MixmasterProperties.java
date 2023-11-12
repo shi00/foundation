@@ -70,8 +70,8 @@ public class MixmasterProperties {
   @NotNull @Valid @NestedConfigurationProperty
   private ServiceAddress dataPlaneAddress = new ServiceAddress();
 
-  /** 数据副本数量，默认：3 */
-  @Positive private int backupNum = 3;
+  /** 数据副本数量，默认：2 */
+  @Positive private int backupNum = 2;
 
   /** 数据分区数量，为了获得良好性能和数据均匀分布，建议分区说远大于集群节点数量，并且是2的指数值，取值范围[1,8192]。默认：1024 */
   @Max(MAX_PARTITIONS_COUNT)
