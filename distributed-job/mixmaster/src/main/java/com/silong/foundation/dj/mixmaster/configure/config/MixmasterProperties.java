@@ -92,7 +92,7 @@ public class MixmasterProperties {
   @DurationUnit(SECONDS)
   private Duration clusterStateSyncTimeout = Duration.ofSeconds(15);
 
-  /** 内部事件分发队列长度，默认：32 */
+  /** 内部事件分发队列长度，取指定值最接近的2次方，默认：32 */
   @Min(1)
   @Max(MAX_VALUE)
   private int eventDispatchQueueSize = 32;
