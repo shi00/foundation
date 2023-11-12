@@ -91,10 +91,9 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     return this;
   }
 
-  private WeightNodeTuple[] calculateNodeWeight(
-      int partitionNum, Collection<ClusterNodeUUID> clusterNodes) {
+  private WeightNodeTuple[] calculateNodeWeight(int partitionNum, ClusterNodeUUID[] clusterNodes) {
     int i = 0;
-    WeightNodeTuple[] array = new WeightNodeTuple[clusterNodes.size()];
+    WeightNodeTuple[] array = new WeightNodeTuple[clusterNodes.length];
     for (ClusterNodeUUID node : clusterNodes) {
       array[i++] = new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node);
     }
@@ -102,11 +101,11 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
   }
 
   @Override
-  public List<ClusterNodeUUID> allocatePartition(
+  public Collection<ClusterNodeUUID> allocatePartition(
       int partitionNo,
       int backupNum,
-      Collection<ClusterNodeUUID> clusterNodes,
-      @Nullable Map<ClusterNodeUUID, Collection<ClusterNodeUUID>> neighborhood) {
+      ClusterNodeUUID[] clusterNodes,
+      @Nullable Map<ClusterNodeUUID, ClusterNodeUUID[]> neighborhood) {
     if (partitionNo < 0) {
       throw new IllegalArgumentException("partitionNo must be greater than or equal to 0.");
     }
@@ -115,19 +114,19 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
       throw new IllegalArgumentException("backupNum must be greater than or equal to 0");
     }
 
-    if (clusterNodes == null || clusterNodes.isEmpty()) {
+    if (clusterNodes == null || clusterNodes.length == 0) {
       throw new IllegalArgumentException("clusterNodes must not be null or empty.");
     }
 
     // 计算集群中真实保存的数据份数，含主
     final int primaryAndBackups =
         backupNum == Integer.MAX_VALUE
-            ? clusterNodes.size()
-            : Math.min(backupNum + 1, clusterNodes.size());
+            ? clusterNodes.length
+            : Math.min(backupNum + 1, clusterNodes.length);
 
     // 如果是同步复制到所有节点，则直接返回所有节点
-    if (primaryAndBackups == clusterNodes.size()) {
-      return new ArrayList<>(clusterNodes);
+    if (primaryAndBackups == clusterNodes.length) {
+      return List.of(clusterNodes);
     }
 
     // 延迟排序优化
@@ -155,7 +154,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
           if (exclNeighbors) {
             if (!allNeighbors.contains(node)) {
               res.add(node);
-              allNeighbors.addAll(neighborhood.get(node));
+              allNeighbors.addAll(Arrays.asList(neighborhood.get(node)));
             }
           } else {
             res.add(node);
@@ -167,7 +166,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     // Need to iterate again in case if there are no nodes which pass exclude neighbors backups
     // criteria.
     if (res.size() < primaryAndBackups
-        && clusterNodes.size() >= primaryAndBackups
+        && clusterNodes.length >= primaryAndBackups
         && exclNeighbors) {
       // 剔除primary
       it = sortedNodes.iterator();
