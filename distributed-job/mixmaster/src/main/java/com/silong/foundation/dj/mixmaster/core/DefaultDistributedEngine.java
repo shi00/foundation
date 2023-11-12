@@ -150,6 +150,7 @@ class DefaultDistributedEngine
   /** 事件派发循环 */
   @Override
   public void run() {
+    log.info("Start event dispatch processing......");
     while (!jChannel.isClosed()) {
       ApplicationEvent event;
       while ((event = eventQueue.poll()) != null) {
@@ -157,6 +158,7 @@ class DefaultDistributedEngine
       }
       Thread.onSpinWait();
     }
+    log.info("End event dispatch processing......");
   }
 
   /**
