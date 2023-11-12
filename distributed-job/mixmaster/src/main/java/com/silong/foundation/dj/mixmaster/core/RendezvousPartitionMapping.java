@@ -101,7 +101,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
   }
 
   @Override
-  public Collection<ClusterNodeUUID> allocatePartition(
+  public ClusterNodeUUID[] allocatePartition(
       int partitionNo,
       int backupNum,
       ClusterNodeUUID[] clusterNodes,
@@ -123,11 +123,6 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
         backupNum == Integer.MAX_VALUE
             ? clusterNodes.length
             : Math.min(backupNum + 1, clusterNodes.length);
-
-    // 如果是同步复制到所有节点，则直接返回所有节点
-    if (primaryAndBackups == clusterNodes.length) {
-      return List.of(clusterNodes);
-    }
 
     // 延迟排序优化
     WeightNodeTuple[] weightNodeTuples = calculateNodeWeight(partitionNo, clusterNodes);
@@ -186,7 +181,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
       throw new IllegalStateException(
           "The number of primary and backup nodes must be greater than or equal to the number of mapping nodes.");
     }
-    return res;
+    return res.toArray(new ClusterNodeUUID[0]);
   }
 
   private boolean isPassedAffinityBackupNodeFilter(
