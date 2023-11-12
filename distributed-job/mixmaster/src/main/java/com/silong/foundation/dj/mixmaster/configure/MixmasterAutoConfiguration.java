@@ -77,16 +77,9 @@ public class MixmasterAutoConfiguration {
         .build();
   }
 
-  /** Returns a power of two size for the given target capacity. */
-  private int tableSizeFor(int cap) {
-    int maximumCapacity = Short.MAX_VALUE;
-    int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
-    return (n < 0) ? 1 : (n >= maximumCapacity) ? maximumCapacity : n + 1;
-  }
-
   @Bean
   public MpscAtomicArrayQueue<ApplicationEvent> mixmasterEventQueue() {
-    return new MpscAtomicArrayQueue<>(tableSizeFor(properties.getEventDispatchQueueSize()));
+    return new MpscAtomicArrayQueue<>(properties.getEventDispatchQueueSize());
   }
 
   /**
