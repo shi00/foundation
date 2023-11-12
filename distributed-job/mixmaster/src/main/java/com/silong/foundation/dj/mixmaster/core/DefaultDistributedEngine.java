@@ -497,11 +497,12 @@ class DefaultDistributedEngine
         localIdentity(),
         lineSeparator(),
         clusterConfig);
+    int partitions = properties.getPartitions();
     if (clusterConfig.getBackupNum() != properties.getBackupNum()
-        || clusterConfig.getTotalPartition() != properties.getPartitions()) {
+        || clusterConfig.getTotalPartition() != partitions) {
       log.error(
           "The number of partitions[{}] and backupNum[{}] configured on the node{} are inconsistent with the cluster coordinator[partitions:{}, backupNum:{}].",
-          properties.getPartitions(),
+          partitions,
           properties.getBackupNum(),
           localIdentity(),
           clusterConfig.getTotalPartition(),
