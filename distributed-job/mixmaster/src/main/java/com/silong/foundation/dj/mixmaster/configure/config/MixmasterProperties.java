@@ -25,6 +25,7 @@ import static java.lang.Short.MAX_VALUE;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import com.silong.foundation.dj.hook.validation.Power2;
 import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -76,6 +77,7 @@ public class MixmasterProperties {
   /** 数据分区数量，为了获得良好性能和数据均匀分布，建议分区说远大于集群节点数量，并且是2的指数值，取值范围[1,8192]。默认：1024 */
   @Max(MAX_PARTITIONS_COUNT)
   @Min(MIN_PARTITIONS_COUNT)
+  @Power2
   private int partitions = 1024;
 
   /** jgroups配置文件 */
@@ -95,6 +97,7 @@ public class MixmasterProperties {
   /** 内部事件分发队列长度，取指定值最接近的2次方，默认：32 */
   @Min(1)
   @Max(MAX_VALUE)
+  @Power2
   private int eventDispatchQueueSize = 32;
 
   /** 节点属性 */
