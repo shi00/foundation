@@ -23,6 +23,7 @@ package com.silong.foundation.dj.mixmaster;
 import com.google.protobuf.MessageLite;
 import jakarta.annotation.Nullable;
 import org.jgroups.Address;
+import org.jgroups.Message;
 
 /**
  * Devastator分布式引擎
@@ -55,6 +56,15 @@ public interface DistributedEngine {
    * @throws Exception 异常
    */
   DistributedEngine send(byte[] msg, @Nullable ClusterNode<?> dest) throws Exception;
+
+  /**
+   * 异步发送集群消息
+   *
+   * @param msg 消息
+   * @return this
+   * @throws Exception 异常
+   */
+  DistributedEngine send(Message msg) throws Exception;
 
   /**
    * 异步发送集群消息
