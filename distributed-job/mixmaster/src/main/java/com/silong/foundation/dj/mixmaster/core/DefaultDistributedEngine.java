@@ -121,12 +121,18 @@ class DefaultDistributedEngine
   @PostConstruct
   public void initialize() {
     try {
+      // 初始化配置
+      clusterConfig =
+          ClusterConfig.newBuilder()
+              .setTotalPartition(properties.getPartitions())
+              .setBackupNum(properties.getBackupNum())
+              .build();
+
       // 构建配置
       jChannel =
-          buildDistributedEngine(properties.getConfigFile()).connect(properties.getClusterName());
-
-      // 同步集群配置
-      syncClusterConfig();
+          buildDistributedEngine(properties.getConfigFile())
+              .connect(properties.getClusterName())
+              .getState(null, properties.getClusterStateSyncTimeout().toMillis());
 
       // 启动事件派发线程
       startEventDispatcherThread();
@@ -312,11 +318,6 @@ class DefaultDistributedEngine
     }
   }
 
-  /** 向coordinator请求，同步集群配置 */
-  public void syncClusterConfig() throws Exception {
-    jChannel.getState(null, properties.getClusterStateSyncTimeout().toMillis());
-  }
-
   /**
    * 获取集群绑定的通讯地址
    *
@@ -476,13 +477,6 @@ class DefaultDistributedEngine
 
   @Override
   public void getState(OutputStream output) throws Exception {
-    if (clusterConfig == null) {
-      clusterConfig =
-          ClusterConfig.newBuilder()
-              .setTotalPartition(properties.getPartitions())
-              .setBackupNum(properties.getBackupNum())
-              .build();
-    }
     clusterConfig.writeTo(output);
     log.info(
         "The node{} sends the config to member of cluster. {}clusterConfig:[{}]",
