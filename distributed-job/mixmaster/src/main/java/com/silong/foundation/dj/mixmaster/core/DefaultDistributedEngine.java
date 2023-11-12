@@ -36,6 +36,7 @@ import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
 import com.silong.foundation.dj.mixmaster.message.Messages.ClusterConfig;
 import com.silong.foundation.dj.mixmaster.message.Messages.ClusterNodeInfo;
+import com.silong.foundation.dj.mixmaster.message.PbMessage;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import com.silong.foundation.dj.scrapper.PersistStorage;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -45,10 +46,10 @@ import java.io.*;
 import java.net.*;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.jctools.queues.atomic.MpscAtomicArrayQueue;
 import org.jgroups.*;
 import org.jgroups.auth.AuthToken;
 import org.jgroups.protocols.AUTH;
@@ -59,6 +60,8 @@ import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.MembershipChangePolicy;
 import org.jgroups.util.MessageBatch;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
@@ -74,12 +77,12 @@ import org.springframework.stereotype.Component;
 @Accessors(fluent = true)
 @SuppressFBWarnings({"PATH_TRAVERSAL_IN", "URLCONNECTION_SSRF_FD"})
 class DefaultDistributedEngine
-    implements DistributedEngine, Receiver, ChannelListener, Serializable, AutoCloseable {
+    implements DistributedEngine, Receiver, ChannelListener, Runnable, Serializable, AutoCloseable {
 
   @Serial private static final long serialVersionUID = -1_291_263_774_210_047_896L;
 
   /** 事件发布器 */
-  private ApplicationEventPublisher publisher;
+  private ApplicationEventPublisher eventPublisher;
 
   /** 集群通信信道 */
   private JChannel jChannel;
@@ -96,6 +99,9 @@ class DefaultDistributedEngine
   /** 对象分区映射器 */
   private Object2PartitionMapping objectPartitionMapping;
 
+  /** 消息队列，多生产者单消费者，异步保序处理事件 */
+  private MpscAtomicArrayQueue<ApplicationEvent> eventQueue;
+
   /** 集群成员变更策略 */
   private MembershipChangePolicy membershipChangePolicy;
 
@@ -109,22 +115,42 @@ class DefaultDistributedEngine
   private volatile ClusterConfig clusterConfig;
 
   /** 最后一个集群视图 */
-  private final AtomicReference<View> lastViewRef = new AtomicReference<>(EMPTY_VIEW);
+  private volatile View lastView = EMPTY_VIEW;
 
   /** 初始化方法 */
   @PostConstruct
   public void initialize() {
     try {
+      // 构建
+      jChannel = buildDistributedEngine(properties.getConfigFile());
+
       // 配置
-      configureDistributedEngine(jChannel = buildDistributedEngine(properties.getConfigFile()));
+      configureDistributedEngine(jChannel);
 
       // 启动
       jChannel.connect(properties.getClusterName());
 
       // 同步集群配置
       syncClusterConfig();
+
+      // 启动事件派发线程
+      Thread thread = new Thread(Thread.currentThread().getThreadGroup(), this, "Event-Dispatcher");
+      thread.setDaemon(true);
+      thread.start();
     } catch (Exception e) {
       throw new DistributedEngineException("Failed to start distributed engine.", e);
+    }
+  }
+
+  /** 事件派发循环 */
+  @Override
+  public void run() {
+    while (!jChannel.isClosed()) {
+      ApplicationEvent event;
+      while ((event = eventQueue.poll()) != null) {
+        eventPublisher.publishEvent(event);
+      }
+      Thread.onSpinWait();
     }
   }
 
@@ -173,6 +199,9 @@ class DefaultDistributedEngine
     jChannel.addChannelListener(this);
     jChannel.setName(properties.getInstanceName());
 
+    // 注册自定义消息
+    registerMessages(jChannel);
+
     // 自定义集群节点策略
     getGmsProtocol(jChannel).setMembershipChangePolicy(membershipChangePolicy);
 
@@ -189,6 +218,11 @@ class DefaultDistributedEngine
         HOST_NAME, properties.getInstanceName(), bindAddress().getHostAddress(), bindPort());
   }
 
+  /** 注册自定义消息类型 */
+  private void registerMessages(JChannel jChannel) {
+    PbMessage.register(getMessageFactory(jChannel));
+  }
+
   private String printViewMembers(JChannel channel) {
     return channel.getView().getMembers().stream()
         .map(
@@ -201,17 +235,15 @@ class DefaultDistributedEngine
         .collect(joining(",", "[", "]"));
   }
 
-  /**
-   * 接收集群视图变化
-   *
-   * @param newView 新视图
-   */
   @Override
   public void viewAccepted(View newView) {
     if (log.isDebugEnabled()) {
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
-    publisher.publishEvent(new ViewChangedEvent(lastViewRef.getAndSet(newView), newView));
+    ViewChangedEvent event = new ViewChangedEvent(lastView, lastView = newView);
+    if (!eventQueue.offer(event)) {
+      log.error("The event queue is full and new events are discarded. event:{}.", event);
+    }
   }
 
   @Override
@@ -221,7 +253,10 @@ class DefaultDistributedEngine
       log.debug(
           "The node{} has successfully joined the cluster[{}].", localIdentity(), clusterName);
     }
-    publisher.publishEvent(new JoinClusterEvent(lastViewRef.get(), clusterName, channel.address()));
+    JoinClusterEvent event = new JoinClusterEvent(lastView, clusterName, channel.address());
+    if (!eventQueue.offer(event)) {
+      log.error("The event queue is full and new events are discarded. event:{}.", event);
+    }
   }
 
   @Override
@@ -230,13 +265,19 @@ class DefaultDistributedEngine
     if (log.isDebugEnabled()) {
       log.debug("The node{} has left the cluster[{}].", localIdentity(), clusterName);
     }
-    publisher.publishEvent(new LeftClusterEvent(lastViewRef.get(), clusterName, channel.address()));
+    LeftClusterEvent event = new LeftClusterEvent(lastView, clusterName, channel.address());
+    if (!eventQueue.offer(event)) {
+      log.error("The event queue is full and new events are discarded. event:{}.", event);
+    }
   }
 
   @Override
   public void channelClosed(JChannel channel) {
     log.info("The node{} has been closed.", localIdentity());
-    publisher.publishEvent(new ChannelClosedEvent(channel));
+    ChannelClosedEvent event = new ChannelClosedEvent(channel);
+    if (!eventQueue.offer(event)) {
+      log.error("The event queue is full and new events are discarded. event:{}.", event);
+    }
   }
 
   /**
@@ -312,6 +353,12 @@ class DefaultDistributedEngine
   @Override
   public DistributedEngine send(byte[] msg, @Nullable ClusterNode<?> dest) throws Exception {
     return send(msg, 0, msg.length, dest);
+  }
+
+  @Override
+  public DistributedEngine send(@NonNull Message msg) throws Exception {
+    jChannel.send(msg);
+    return this;
   }
 
   @Override
@@ -523,7 +570,14 @@ class DefaultDistributedEngine
   }
 
   @Autowired
-  public void setPublisher(ApplicationEventPublisher publisher) {
-    this.publisher = publisher;
+  public void setEventQueue(
+      @Qualifier("mixmasterEventQueue")
+          MpscAtomicArrayQueue<ApplicationEvent> mpscAtomicArrayQueue) {
+    this.eventQueue = mpscAtomicArrayQueue;
+  }
+
+  @Autowired
+  public void setEventPublisher(ApplicationEventPublisher publisher) {
+    this.eventPublisher = publisher;
   }
 }
