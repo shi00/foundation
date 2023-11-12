@@ -121,14 +121,9 @@ class DefaultDistributedEngine
   @PostConstruct
   public void initialize() {
     try {
-      // 构建
-      jChannel = buildDistributedEngine(properties.getConfigFile());
-
-      // 配置
-      configureDistributedEngine(jChannel);
-
-      // 启动
-      jChannel.connect(properties.getClusterName());
+      // 构建配置
+      jChannel =
+          buildDistributedEngine(properties.getConfigFile()).connect(properties.getClusterName());
 
       // 同步集群配置
       syncClusterConfig();
@@ -192,7 +187,7 @@ class DefaultDistributedEngine
     return jChannel.getProtocolStack().getTransport().getMessageFactory();
   }
 
-  private void configureDistributedEngine(JChannel jChannel) {
+  private JChannel configureDistributedEngine(JChannel jChannel) {
     jChannel.setReceiver(this);
     jChannel.addAddressGenerator(addressGenerator);
     jChannel.setDiscardOwnMessages(false);
@@ -210,6 +205,7 @@ class DefaultDistributedEngine
     if (at != null) {
       ((DefaultAuthToken) at).initialize(jwtAuthenticator, properties);
     }
+    return jChannel;
   }
 
   private String localIdentity() {
@@ -295,7 +291,7 @@ class DefaultDistributedEngine
       throw new IllegalArgumentException(String.format("Failed to load %s.", configFile), e);
     }
     try (InputStream inputStream = configUrl.openStream()) {
-      return new JChannel(inputStream);
+      return configureDistributedEngine(new JChannel(inputStream));
     }
   }
 
