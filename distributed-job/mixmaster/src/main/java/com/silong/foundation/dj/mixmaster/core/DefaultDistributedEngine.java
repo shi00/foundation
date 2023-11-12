@@ -132,6 +132,7 @@ class DefaultDistributedEngine
       jChannel =
           buildDistributedEngine(properties.getConfigFile())
               .connect(properties.getClusterName())
+              // 同步coordinator集群配置
               .getState(null, properties.getClusterStateSyncTimeout().toMillis());
 
       // 启动事件派发线程
