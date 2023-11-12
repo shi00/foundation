@@ -32,9 +32,11 @@ import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.stream.IntStream;
+import org.jctools.queues.atomic.MpscAtomicArrayQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -73,6 +75,18 @@ public class MixmasterAutoConfiguration {
         // 设置超期时间
         .period(properties.getAuth().getExpires())
         .build();
+  }
+
+  /** Returns a power of two size for the given target capacity. */
+  private int tableSizeFor(int cap) {
+    int maximumCapacity = Short.MAX_VALUE;
+    int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+    return (n < 0) ? 1 : (n >= maximumCapacity) ? maximumCapacity : n + 1;
+  }
+
+  @Bean
+  public MpscAtomicArrayQueue<ApplicationEvent> mixmasterEventQueue() {
+    return new MpscAtomicArrayQueue<>(tableSizeFor(properties.getEventDispatchQueueSize()));
   }
 
   /**
