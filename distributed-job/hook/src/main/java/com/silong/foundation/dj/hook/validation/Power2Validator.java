@@ -40,8 +40,7 @@ public class Power2Validator implements ConstraintValidator<Power2, Integer> {
 
   /** Returns a power of two size for the given target capacity. */
   private int tableSizeFor(int cap) {
-    int maximumCapacity = Short.MAX_VALUE;
     int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
-    return (n < 0) ? 1 : (n >= maximumCapacity) ? maximumCapacity : n + 1;
+    return (n < 0) ? 1 : (n == Integer.MAX_VALUE) ? Integer.MAX_VALUE : n + 1;
   }
 }
