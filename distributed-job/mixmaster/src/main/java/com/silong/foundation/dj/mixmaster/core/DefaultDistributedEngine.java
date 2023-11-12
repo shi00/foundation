@@ -129,12 +129,16 @@ class DefaultDistributedEngine
       syncClusterConfig();
 
       // 启动事件派发线程
-      Thread thread = new Thread(Thread.currentThread().getThreadGroup(), this, "Event-Dispatcher");
-      thread.setDaemon(true);
-      thread.start();
+      startEventDispatcherThread();
     } catch (Exception e) {
       throw new DistributedEngineException("Failed to start distributed engine.", e);
     }
+  }
+
+  private void startEventDispatcherThread() {
+    Thread thread = new Thread(Thread.currentThread().getThreadGroup(), this, "Event-Dispatcher");
+    thread.setDaemon(true);
+    thread.start();
   }
 
   /** 事件派发循环 */
