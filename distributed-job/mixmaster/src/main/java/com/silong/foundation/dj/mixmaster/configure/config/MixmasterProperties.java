@@ -21,6 +21,7 @@
 
 package com.silong.foundation.dj.mixmaster.configure.config;
 
+import static java.lang.Short.MAX_VALUE;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -90,6 +91,11 @@ public class MixmasterProperties {
   @NotNull
   @DurationUnit(SECONDS)
   private Duration clusterStateSyncTimeout = Duration.ofSeconds(15);
+
+  /** 内部事件分发队列长度，默认：32 */
+  @Min(1)
+  @Max(MAX_VALUE)
+  private int eventDispatchQueueSize = 32;
 
   /** 节点属性 */
   @Valid @NotNull
