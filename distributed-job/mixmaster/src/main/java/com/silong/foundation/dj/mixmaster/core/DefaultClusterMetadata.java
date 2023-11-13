@@ -22,9 +22,12 @@
 package com.silong.foundation.dj.mixmaster.core;
 
 import com.silong.foundation.dj.mixmaster.ClusterMetadata;
+import com.silong.foundation.dj.mixmaster.Object2PartitionMapping;
 import com.silong.foundation.dj.mixmaster.Partition2NodesMapping;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -52,7 +55,11 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
 
   @ToString.Exclude private final Lock readLock;
 
+  /** 分区节点映射器 */
   @ToString.Exclude private Partition2NodesMapping<ClusterNodeUUID> partition2NodesMapping;
+
+  /** 对象分区映射器 */
+  @ToString.Exclude private Object2PartitionMapping objectPartitionMapping;
 
   /** 备份数量，不含主 */
   private int backupNum;
@@ -61,7 +68,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   private int totalPartition;
 
   /** 分区映射至集群节点映射表 */
-  private NonBlockingHashMap<Integer, ClusterNodeUUID[]> partition2NodesMap;
+  private NonBlockingHashMap<Integer, Collection<ClusterNodeUUID>> partition2NodesMap;
 
   /** 构造方法 */
   public DefaultClusterMetadata() {
@@ -76,6 +83,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
    * @param oldView 旧的集群视图
    * @param newView 新的集群视图
    */
+  @Override
   public void update(@NonNull View oldView, @NonNull View newView) {
     writeLock.lock();
     try {
@@ -88,7 +96,9 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
                       partition2NodesMapping.allocatePartition(
                           partition,
                           backupNum,
-                          (ClusterNodeUUID[]) newView.getMembersRaw(),
+                          Arrays.stream(newView.getMembersRaw())
+                              .map(address -> (ClusterNodeUUID) address)
+                              .toList(),
                           null)));
     } finally {
       writeLock.unlock();
@@ -108,8 +118,13 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
     this.partition2NodesMap = new NonBlockingHashMap<>(totalPartition);
   }
 
+  @Autowired
+  public void setObjectPartitionMapping(Object2PartitionMapping objectPartitionMapping) {
+    this.objectPartitionMapping = objectPartitionMapping;
+  }
+
   @Override
-  public ClusterNodeUUID[] getPrimaryAndBackupNodes(int partition) {
+  public Collection<ClusterNodeUUID> mapPartition2Nodes(int partition) {
     if (partition < 0 || partition >= totalPartition) {
       throw new IllegalArgumentException(
           String.format("partition(%d) exceeds boundary[%d, %d).", partition, 0, totalPartition));
@@ -120,5 +135,15 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
     } finally {
       readLock.unlock();
     }
+  }
+
+  @Override
+  public Collection<ClusterNodeUUID> mapObj2Nodes(Object obj) {
+    return mapPartition2Nodes(mapObj2Partition(obj));
+  }
+
+  @Override
+  public int mapObj2Partition(Object obj) {
+    return objectPartitionMapping.partition(obj);
   }
 }
