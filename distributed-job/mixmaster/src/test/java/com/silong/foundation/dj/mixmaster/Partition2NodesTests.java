@@ -21,14 +21,16 @@
 
 package com.silong.foundation.dj.mixmaster;
 
+import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.MAX_PARTITIONS_COUNT;
+
 import com.github.javafaker.Faker;
-import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.message.Messages.ClusterNodeInfo;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,45 +53,39 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @TestPropertySource(locations = "classpath:application.properties")
 @ExtendWith(SpringExtension.class)
 @ComponentScan
-public class MixmasterTests {
+public class Partition2NodesTests {
 
   private static final Faker FAKER = new Faker();
 
-  @Autowired private DistributedEngine distributedEngine;
-
-  @Autowired private MixmasterProperties properties;
-
   @Autowired private Partition2NodesMapping<ClusterNodeUUID> mapping;
 
+  /** 单节点映射 */
   @Test
   @DisplayName("partition2Nodes-1")
   public void test1() {
-    int totalPartition = 8192;
+    int totalPartition = MAX_PARTITIONS_COUNT;
     int backupNum = 0;
     List<ClusterNodeUUID> nodes = randomNodes(1);
-    String instanceName = nodes.getFirst().clusterNodeInfo().getInstanceName();
+
     Map<String, AtomicInteger> count = new HashMap<>();
 
     for (int i = 0; i < totalPartition; i++) {
       SequencedCollection<ClusterNodeUUID> clusterNodeUUIDS =
           mapping.allocatePartition(i, backupNum, nodes, null);
-
+      String instanceName = clusterNodeUUIDS.getFirst().clusterNodeInfo().getInstanceName();
       count.computeIfAbsent(instanceName, k -> new AtomicInteger()).getAndIncrement();
-
-      System.out.println(
-          clusterNodeUUIDS.stream()
-              .map(u -> u.clusterNodeInfo().getInstanceName())
-              .collect(Collectors.joining(",", "[", "]")));
     }
-    Assertions.assertEquals(totalPartition, count.get(instanceName).get());
+    Assertions.assertEquals(
+        totalPartition, count.get(nodes.getFirst().clusterNodeInfo().getInstanceName()).get());
   }
 
+  /** 同样的节点乱序 */
   @Test
   @DisplayName("partition2Nodes-2")
   public void test2() {
-    int totalPartition = 8192;
-    int backupNum = 3;
-    List<ClusterNodeUUID> nodes = randomNodes(89);
+    int totalPartition = MAX_PARTITIONS_COUNT;
+    int backupNum = 1;
+    List<ClusterNodeUUID> nodes = randomNodes(9);
 
     Map<Integer, SequencedCollection<ClusterNodeUUID>> result1 = new HashMap<>();
 
@@ -114,18 +110,92 @@ public class MixmasterTests {
     Assertions.assertEquals(result2, result1);
   }
 
+  /** 集群节点脱离 */
+  @Test
+  @DisplayName("partition2Nodes-3")
+  public void test3() {
+    int totalPartition = 1024;
+    int backupNum = 9;
+    List<ClusterNodeUUID> nodes = randomNodes(10);
+
+    Map<Integer, SequencedCollection<ClusterNodeUUID>> result1 = new HashMap<>();
+
+    for (int i = 0; i < totalPartition; i++) {
+      SequencedCollection<ClusterNodeUUID> clusterNodeUUIDS =
+          mapping.allocatePartition(i, backupNum, nodes, null);
+
+      result1.put(i, clusterNodeUUIDS);
+    }
+
+    // 随机删除一个节点
+    ClusterNodeUUID clusterNodeUUID = nodes.remove(RandomUtils.nextInt(0, nodes.size()));
+
+    Map<Integer, SequencedCollection<ClusterNodeUUID>> result2 = new HashMap<>();
+
+    for (int i = 0; i < totalPartition; i++) {
+      SequencedCollection<ClusterNodeUUID> clusterNodeUUIDS =
+          mapping.allocatePartition(i, backupNum, nodes, null);
+      result2.put(i, clusterNodeUUIDS);
+    }
+
+    result1.values().forEach(ns -> ns.remove(clusterNodeUUID));
+
+    Assertions.assertEquals(result2, result1);
+  }
+
+  /** 集群节点脱离 */
+  @Test
+  @DisplayName("partition2Nodes-4")
+  public void test4() {
+    int totalPartition = 1024;
+    int backupNum = 1;
+    List<ClusterNodeUUID> nodes = randomNodes(5);
+
+    Map<Integer, SequencedCollection<ClusterNodeUUID>> result1 = new HashMap<>();
+
+    for (int i = 0; i < totalPartition; i++) {
+      SequencedCollection<ClusterNodeUUID> clusterNodeUUIDS =
+          mapping.allocatePartition(i, backupNum, nodes, null);
+
+      result1.put(i, clusterNodeUUIDS);
+    }
+
+    // 随机删除一个节点
+    ClusterNodeUUID clusterNodeUUID = nodes.remove(RandomUtils.nextInt(0, nodes.size()));
+
+    Map<Integer, SequencedCollection<ClusterNodeUUID>> result2 = new HashMap<>();
+
+    for (int i = 0; i < totalPartition; i++) {
+      SequencedCollection<ClusterNodeUUID> clusterNodeUUIDS =
+          mapping.allocatePartition(i, backupNum, nodes, null);
+      result2.put(i, clusterNodeUUIDS);
+    }
+
+    for (int i = 0; i < totalPartition; i++) {
+      SequencedCollection<ClusterNodeUUID> clusterNodeUUIDS = result1.get(i);
+      if (clusterNodeUUIDS.contains(clusterNodeUUID)) {
+        clusterNodeUUIDS.remove(clusterNodeUUID);
+        Assertions.assertEquals(
+            clusterNodeUUIDS, CollectionUtils.intersection(clusterNodeUUIDS, result2.get(i)));
+      }
+    }
+  }
+
   private static List<ClusterNodeUUID> randomNodes(int count) {
     LinkedList<ClusterNodeUUID> res = new LinkedList<>();
     for (int i = 0; i < count; i++) {
-      res.add(
-          ClusterNodeUUID.random()
-              .clusterNodeInfo(
-                  ClusterNodeInfo.newBuilder()
-                      .setInstanceName(FAKER.animal().name())
-                      .setClusterName("test-cluster")
-                      .setStartupTime(System.currentTimeMillis())
-                      .build()));
+      res.add(randomNode());
     }
     return res;
+  }
+
+  private static ClusterNodeUUID randomNode() {
+    return ClusterNodeUUID.random()
+        .clusterNodeInfo(
+            ClusterNodeInfo.newBuilder()
+                .setInstanceName(FAKER.animal().name())
+                .setClusterName("test-cluster")
+                .setStartupTime(System.currentTimeMillis())
+                .build());
   }
 }
