@@ -120,7 +120,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     }
 
     // 计算集群中真实保存的数据份数，含主
-    final int primaryAndBackups =
+    int primaryAndBackups =
         backupNum == Integer.MAX_VALUE
             ? clusterNodes.size()
             : Math.min(backupNum + 1, clusterNodes.size());
