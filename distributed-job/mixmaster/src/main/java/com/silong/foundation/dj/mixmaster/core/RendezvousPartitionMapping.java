@@ -119,7 +119,12 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
       throw new IllegalArgumentException("clusterNodes must not be null or empty.");
     }
 
-    // 计算集群中真实保存的数据份数，含主
+    // 主备分区数量超出集群节点数
+    if (backupNum + 1 > clusterNodes.size()) {
+      log.warn("The number of primary and backup nodes greater than the number of mapping nodes.");
+    }
+
+    // 主备数量大于集群节点数量则按节点数量保存
     int primaryAndBackups =
         backupNum == Integer.MAX_VALUE
             ? clusterNodes.size()
