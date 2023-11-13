@@ -21,13 +21,16 @@
 
 package com.silong.foundation.dj.mixmaster.core;
 
+import static com.silong.foundation.dj.mixmaster.vo.EmptyView.EMPTY_VIEW;
+
 import com.silong.foundation.dj.mixmaster.ClusterMetadata;
 import com.silong.foundation.dj.mixmaster.Object2PartitionMapping;
 import com.silong.foundation.dj.mixmaster.Partition2NodesMapping;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
+import com.silong.foundation.dj.mixmaster.vo.Partition;
+import com.silong.foundation.dj.mixmaster.vo.StoreNodes;
 import java.util.Arrays;
-import java.util.SequencedCollection;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -36,6 +39,7 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jctools.maps.NonBlockingHashMap;
+import org.jgroups.Address;
 import org.jgroups.View;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -67,8 +71,8 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   /** 分区总数 */
   private int totalPartition;
 
-  /** 分区映射至集群节点映射表 */
-  private NonBlockingHashMap<Integer, SequencedCollection<ClusterNodeUUID>> partition2NodesMap;
+  /** 分区映射表 */
+  private NonBlockingHashMap<Integer, Partition<StoreNodes<ClusterNodeUUID>>> partitionsMap;
 
   /** 构造方法 */
   public DefaultClusterMetadata() {
@@ -87,22 +91,47 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   public void update(@NonNull View oldView, @NonNull View newView) {
     writeLock.lock();
     try {
-      IntStream.range(0, totalPartition)
-          .parallel()
-          .forEach(
-              partition ->
-                  partition2NodesMap.put(
-                      partition,
-                      partition2NodesMapping.allocatePartition(
-                          partition,
-                          backupNum,
-                          Arrays.stream(newView.getMembersRaw())
-                              .map(address -> (ClusterNodeUUID) address)
-                              .toList(),
-                          null)));
+      // 如果是首次加入集群，则完全重新计算分区映射关系
+      if (oldView == EMPTY_VIEW) {
+        IntStream.range(0, totalPartition)
+            .parallel()
+            .forEach(
+                partition -> {
+                  // 获取存储分区
+                  Partition<StoreNodes<ClusterNodeUUID>> part =
+                      partitionsMap.computeIfAbsent(
+                          partition, key -> new Partition<>(partition, 3));
+
+                  StoreNodes<ClusterNodeUUID> nodes =
+                      StoreNodes.<ClusterNodeUUID>builder()
+                          .primaryAndBackups(
+                              partition2NodesMapping.allocatePartition(
+                                  partition,
+                                  backupNum,
+                                  Arrays.stream(newView.getMembersRaw())
+                                      .map(ClusterNodeUUID.class::cast)
+                                      .toList(),
+                                  null))
+                          .build();
+
+                  // 记录当前分区对应的存储节点列表
+                  part.record(nodes);
+                });
+      } else {
+        Address[][] diff = View.diff(oldView, newView);
+        Address[] join = diff[0];
+        Address[] left = diff[1];
+      }
     } finally {
       writeLock.unlock();
     }
+  }
+
+  @Autowired
+  public void initialize(MixmasterProperties properties) {
+    this.backupNum = properties.getBackupNum();
+    this.totalPartition = properties.getPartitions();
+    this.partitionsMap = new NonBlockingHashMap<>(totalPartition);
   }
 
   @Autowired
@@ -112,33 +141,26 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   }
 
   @Autowired
-  public void initialize(MixmasterProperties properties) {
-    this.backupNum = properties.getBackupNum();
-    this.totalPartition = properties.getPartitions();
-    this.partition2NodesMap = new NonBlockingHashMap<>(totalPartition);
-  }
-
-  @Autowired
   public void setObjectPartitionMapping(Object2PartitionMapping objectPartitionMapping) {
     this.objectPartitionMapping = objectPartitionMapping;
   }
 
   @Override
-  public SequencedCollection<ClusterNodeUUID> mapPartition2Nodes(int partition) {
+  public StoreNodes<ClusterNodeUUID> mapPartition2Nodes(int partition) {
     if (partition < 0 || partition >= totalPartition) {
       throw new IllegalArgumentException(
           String.format("partition(%d) exceeds boundary[%d, %d).", partition, 0, totalPartition));
     }
     readLock.lock();
     try {
-      return partition2NodesMap.get(partition);
+      return partitionsMap.get(partition).currentRecord();
     } finally {
       readLock.unlock();
     }
   }
 
   @Override
-  public SequencedCollection<ClusterNodeUUID> mapObj2Nodes(Object obj) {
+  public StoreNodes<ClusterNodeUUID> mapObj2Nodes(Object obj) {
     return mapPartition2Nodes(mapObj2Partition(obj));
   }
 
