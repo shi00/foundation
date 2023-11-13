@@ -21,6 +21,7 @@
 
 package com.silong.foundation.dj.mixmaster;
 
+import java.util.SequencedCollection;
 import org.jgroups.View;
 
 /**
@@ -42,10 +43,26 @@ public interface ClusterMetadata<T> {
   void update(View oldView, View newView);
 
   /**
+   * 对象到分区映射
+   *
+   * @param obj 对象
+   * @return 分区编号
+   */
+  int mapObj2Partition(Object obj);
+
+  /**
+   * 对象映射至存储节点
+   *
+   * @param obj 对象
+   * @return 存储对象的节点列表，第一位为primary
+   */
+  SequencedCollection<T> mapObj2Nodes(Object obj);
+
+  /**
    * 查询分区对应的节点列表
    *
    * @param partition 分区编号
    * @return 主备节点列表，第一位为primary
    */
-  T[] getPrimaryAndBackupNodes(int partition);
+  SequencedCollection<T> mapPartition2Nodes(int partition);
 }

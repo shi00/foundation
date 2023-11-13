@@ -27,7 +27,7 @@ import com.silong.foundation.dj.mixmaster.Partition2NodesMapping;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.SequencedCollection;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -68,7 +68,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   private int totalPartition;
 
   /** 分区映射至集群节点映射表 */
-  private NonBlockingHashMap<Integer, Collection<ClusterNodeUUID>> partition2NodesMap;
+  private NonBlockingHashMap<Integer, SequencedCollection<ClusterNodeUUID>> partition2NodesMap;
 
   /** 构造方法 */
   public DefaultClusterMetadata() {
@@ -124,7 +124,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   }
 
   @Override
-  public Collection<ClusterNodeUUID> mapPartition2Nodes(int partition) {
+  public SequencedCollection<ClusterNodeUUID> mapPartition2Nodes(int partition) {
     if (partition < 0 || partition >= totalPartition) {
       throw new IllegalArgumentException(
           String.format("partition(%d) exceeds boundary[%d, %d).", partition, 0, totalPartition));
@@ -138,7 +138,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   }
 
   @Override
-  public Collection<ClusterNodeUUID> mapObj2Nodes(Object obj) {
+  public SequencedCollection<ClusterNodeUUID> mapObj2Nodes(Object obj) {
     return mapPartition2Nodes(mapObj2Partition(obj));
   }
 
