@@ -102,11 +102,11 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
   }
 
   @Override
-  public Collection<ClusterNodeUUID> allocatePartition(
+  public SequencedCollection<ClusterNodeUUID> allocatePartition(
       int partitionNo,
       int backupNum,
-      Collection<ClusterNodeUUID> clusterNodes,
-      @Nullable Map<ClusterNodeUUID, Collection<ClusterNodeUUID>> neighborhood) {
+      SequencedCollection<ClusterNodeUUID> clusterNodes,
+      @Nullable Map<ClusterNodeUUID, SequencedCollection<ClusterNodeUUID>> neighborhood) {
     if (partitionNo < 0) {
       throw new IllegalArgumentException("partitionNo must be greater than or equal to 0.");
     }
