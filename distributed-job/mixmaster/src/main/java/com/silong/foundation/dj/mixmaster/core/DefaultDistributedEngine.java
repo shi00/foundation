@@ -23,7 +23,6 @@ package com.silong.foundation.dj.mixmaster.core;
 import static com.silong.foundation.dj.mixmaster.core.DefaultAddressGenerator.HOST_NAME;
 import static com.silong.foundation.dj.mixmaster.vo.EmptyView.EMPTY_VIEW;
 import static java.lang.System.lineSeparator;
-import static java.util.stream.Collectors.joining;
 
 import com.google.protobuf.MessageLite;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
@@ -35,7 +34,6 @@ import com.silong.foundation.dj.mixmaster.*;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
 import com.silong.foundation.dj.mixmaster.message.Messages.ClusterConfig;
-import com.silong.foundation.dj.mixmaster.message.Messages.ClusterNodeInfo;
 import com.silong.foundation.dj.mixmaster.message.PbMessage;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import com.silong.foundation.dj.scrapper.PersistStorage;
@@ -90,14 +88,11 @@ class DefaultDistributedEngine
   /** 配置 */
   private MixmasterProperties properties;
 
-  /** 分区节点映射器 */
-  private Partition2NodesMapping<ClusterNodeUUID> partitionMapping;
-
   /** 持久化存储 */
   private PersistStorage persistStorage;
 
-  /** 对象分区映射器 */
-  private Object2PartitionMapping objectPartitionMapping;
+  /** 集群元数据 */
+  private ClusterMetadata<ClusterNodeUUID> clusterMetadata;
 
   /** 消息队列，多生产者单消费者，异步保序处理事件 */
   private MpscAtomicArrayQueue<ApplicationEvent> eventQueue;
@@ -233,23 +228,12 @@ class DefaultDistributedEngine
     PbMessage.register(getMessageFactory(jChannel));
   }
 
-  private String printViewMembers(JChannel channel) {
-    return channel.getView().getMembers().stream()
-        .map(
-            address -> {
-              ClusterNodeInfo clusterNodeInfo = ((ClusterNodeUUID) address).clusterNodeInfo();
-              return String.format(
-                  "(%s:%s)",
-                  clusterNodeInfo.getHost().getName(), clusterNodeInfo.getInstanceName());
-            })
-        .collect(joining(",", "[", "]"));
-  }
-
   @Override
   public void viewAccepted(View newView) {
     if (log.isDebugEnabled()) {
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
+    clusterMetadata.update(lastView, newView); // 更新集群元数据
     ViewChangedEvent event = new ViewChangedEvent(lastView, lastView = newView);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
@@ -539,19 +523,9 @@ class DefaultDistributedEngine
   }
 
   @Autowired
-  public void setPartitionMapping(Partition2NodesMapping<ClusterNodeUUID> partitionMapping) {
-    this.partitionMapping = partitionMapping;
-  }
-
-  @Autowired
   public void setPersistStorage(
       @Qualifier("mixmasterPersistStorage") PersistStorage persistStorage) {
     this.persistStorage = persistStorage;
-  }
-
-  @Autowired
-  public void setObjectPartitionMapping(Object2PartitionMapping objectPartitionMapping) {
-    this.objectPartitionMapping = objectPartitionMapping;
   }
 
   @Autowired
@@ -574,6 +548,11 @@ class DefaultDistributedEngine
       @Qualifier("mixmasterEventQueue")
           MpscAtomicArrayQueue<ApplicationEvent> mpscAtomicArrayQueue) {
     this.eventQueue = mpscAtomicArrayQueue;
+  }
+
+  @Autowired
+  public void setClusterMetadata(ClusterMetadata<ClusterNodeUUID> clusterMetadata) {
+    this.clusterMetadata = clusterMetadata;
   }
 
   @Autowired
