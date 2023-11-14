@@ -90,6 +90,11 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   @Accessors(fluent = true)
   private ClusterNodeInfo clusterNodeInfo;
 
+  /** 节点权重，用于计算数据分区分布，不参与集群通讯的序列化内容 */
+  @Getter
+  @Accessors(fluent = true)
+  private final ThreadLocal<Long> rendezvousWeight = new ThreadLocal<>();
+
   /** 默认构造方法 */
   public ClusterNodeUUID() {
     super();
