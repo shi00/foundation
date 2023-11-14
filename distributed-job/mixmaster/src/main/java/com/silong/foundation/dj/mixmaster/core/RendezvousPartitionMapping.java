@@ -24,12 +24,10 @@ import com.silong.foundation.dj.mixmaster.Identity;
 import com.silong.foundation.dj.mixmaster.Partition2NodesMapping;
 import com.silong.foundation.dj.mixmaster.utils.LambdaSerializable.SerializableBiPredicate;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
-import com.silong.foundation.dj.mixmaster.vo.WeightNodeTuple;
 import jakarta.annotation.Nullable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 import org.springframework.stereotype.Component;
@@ -59,6 +57,15 @@ import org.springframework.stereotype.Component;
 class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUUID>, Serializable {
 
   @Serial private static final long serialVersionUID = 8_142_384_185_333_518_222L;
+
+  /** 配套优先级队列，取最高优先级TopK */
+  private static final Comparator<ClusterNodeUUID> COMPARATOR =
+      Collections.reverseOrder(Comparator.comparingLong(k -> k.rendezvousWeight().get()));
+
+  private static final ThreadLocal<PriorityQueue<ClusterNodeUUID>> PRIORITY_QUEUE =
+      new ThreadLocal<>();
+
+  private static final ThreadLocal<Collection<Identity<Address>>> NEIGHBORS = new ThreadLocal<>();
 
   /** 备份节点过滤器，第一个参数为Primary节点, 第二个参数为被测试节点. */
   private SerializableBiPredicate<ClusterNodeUUID, ClusterNodeUUID> backupFilter;
@@ -91,14 +98,26 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     return this;
   }
 
-  private WeightNodeTuple[] calculateNodeWeight(
-      int partitionNum, Collection<ClusterNodeUUID> clusterNodes) {
-    int i = 0;
-    WeightNodeTuple[] array = new WeightNodeTuple[clusterNodes.size()];
-    for (ClusterNodeUUID node : clusterNodes) {
-      array[i++] = new WeightNodeTuple(mixHash(node.uuid().hashCode(), partitionNum), node);
+  private PriorityQueue<ClusterNodeUUID> getPriorityQueue(int initSize) {
+    if (Thread.currentThread().isVirtual()) {
+      return new PriorityQueue<>(initSize);
+    } else {
+      if (PRIORITY_QUEUE.get() == null) {
+        PRIORITY_QUEUE.set(new PriorityQueue<>(initSize, COMPARATOR));
+      }
+      return PRIORITY_QUEUE.get();
     }
-    return array;
+  }
+
+  private Collection<Identity<Address>> getNeighbors() {
+    if (Thread.currentThread().isVirtual()) {
+      return new HashSet<>();
+    } else {
+      if (NEIGHBORS.get() == null) {
+        NEIGHBORS.set(new HashSet<>());
+      }
+      return NEIGHBORS.get();
+    }
   }
 
   @Override
@@ -121,7 +140,7 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
 
     // 主备分区数量超出集群节点数
     if (backupNum + 1 > clusterNodes.size()) {
-      log.warn("The number of primary and backup nodes greater than the number of mapping nodes.");
+      log.warn("The number of primary and backup nodes greater than the number of cluster nodes.");
     }
 
     // 主备数量大于集群节点数量则按节点数量保存
@@ -130,151 +149,61 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
             ? clusterNodes.size()
             : Math.min(backupNum + 1, clusterNodes.size());
 
-    // 延迟排序优化
-    WeightNodeTuple[] weightNodeTuples = calculateNodeWeight(partitionNo, clusterNodes);
-    Iterable<ClusterNodeUUID> sortedNodes =
-        new LazyLinearSortedContainer(weightNodeTuples, primaryAndBackups);
-
-    // 先添加主(最高随机权重)
-    Iterator<ClusterNodeUUID> it = sortedNodes.iterator();
-    ClusterNodeUUID primary = it.next();
-    List<ClusterNodeUUID> res = new ArrayList<>(primaryAndBackups);
-    res.add(primary);
+    PriorityQueue<ClusterNodeUUID> priorityQueue = getPriorityQueue(clusterNodes.size());
 
     // 是否排除邻居节点
     boolean exclNeighbors = neighborhood != null && !neighborhood.isEmpty();
-    Collection<Identity<Address>> allNeighbors = exclNeighbors ? new HashSet<>() : null;
+    Collection<Identity<Address>> allNeighbors = exclNeighbors ? getNeighbors() : null;
 
-    // 选取备份节点
-    if (backupNum > 0) {
-      while (it.hasNext() && res.size() < primaryAndBackups) {
-        ClusterNodeUUID node = it.next();
-        if (disableBackupNodeFilter()
-            || isPassedBackupNodeFilter(primary, node)
-            || isPassedAffinityBackupNodeFilter(node, res)) {
-          if (exclNeighbors) {
-            if (!allNeighbors.contains(node)) {
+    try {
+      // 使用优先级队列，解决TopK问题，权重最大的k个元素
+      for (ClusterNodeUUID node : clusterNodes) {
+        node.rendezvousWeight().set(mixHash(node.uuid().hashCode(), partitionNo));
+        priorityQueue.offer(node);
+      }
+
+      // 先添加主(最高随机权重)
+      ClusterNodeUUID primary = priorityQueue.remove();
+      List<ClusterNodeUUID> res = new ArrayList<>(primaryAndBackups);
+      res.add(primary);
+
+      // 选取备份节点
+      if (backupNum > 0) {
+        ClusterNodeUUID node;
+        while ((node = priorityQueue.poll()) != null && res.size() < primaryAndBackups) {
+          // 启用备份节点过滤器，亲和性过滤器
+          if ((backupFilter != null && backupFilter.test(primary, node))
+              || (affinityBackupFilter != null && affinityBackupFilter.test(node, res))
+              || (affinityBackupFilter == null && backupFilter == null)) {
+            // 开启邻居过滤
+            if (exclNeighbors) {
+              if (!allNeighbors.contains(node)) {
+                res.add(node);
+                allNeighbors.addAll(neighborhood.get(node));
+              }
+            } else {
               res.add(node);
-              allNeighbors.addAll(neighborhood.get(node));
             }
-          } else {
-            res.add(node);
           }
         }
       }
-    }
 
-    // Need to iterate again in case if there are no nodes which pass exclude neighbors backups
-    // criteria.
-    if (res.size() < primaryAndBackups
-        && clusterNodes.size() >= primaryAndBackups
-        && exclNeighbors) {
-      // 剔除primary
-      it = sortedNodes.iterator();
-      it.next();
-
-      while (it.hasNext() && res.size() < primaryAndBackups) {
-        ClusterNodeUUID node = it.next();
-        if (!res.contains(node)) {
-          res.add(node);
-        }
-      }
-      log.warn(
-          "RendezvousPartitionMapping excludeNeighbors is ignored because topology has no enough nodes to assign backups.");
-    }
-
-    if (res.size() > primaryAndBackups) {
-      throw new IllegalStateException(
-          "The number of primary and backup nodes must be greater than or equal to the number of mapping nodes.");
-    }
-    return res;
-  }
-
-  private boolean isPassedAffinityBackupNodeFilter(
-      ClusterNodeUUID node, List<ClusterNodeUUID> res) {
-    return affinityBackupFilter != null && affinityBackupFilter.test(node, res);
-  }
-
-  private boolean isPassedBackupNodeFilter(ClusterNodeUUID primary, ClusterNodeUUID node) {
-    return backupFilter != null && backupFilter.test(primary, node);
-  }
-
-  private boolean disableBackupNodeFilter() {
-    return affinityBackupFilter == null && backupFilter == null;
-  }
-
-  /** Sorts the initial array with linear sort algorithm array */
-  private static class LazyLinearSortedContainer implements Iterable<ClusterNodeUUID> {
-    /** Initial node-hash array. */
-    private final WeightNodeTuple[] arr;
-
-    /** Count of the sorted elements */
-    private int sorted;
-
-    /**
-     * @param arr Node / partition hash list.
-     * @param needFirstSortedCnt Estimate count of elements to return by iterator.
-     */
-    LazyLinearSortedContainer(WeightNodeTuple[] arr, int needFirstSortedCnt) {
-      this.arr = arr;
-      if (needFirstSortedCnt > (int) Math.log(arr.length)) {
-        Arrays.sort(arr);
-        sorted = arr.length;
-      }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    @NonNull
-    public Iterator<ClusterNodeUUID> iterator() {
-      return new SortIterator();
-    }
-
-    /** */
-    private class SortIterator implements Iterator<ClusterNodeUUID> {
-      /** Index of the first unsorted element. */
-      private int cur;
-
-      /** {@inheritDoc} */
-      @Override
-      public boolean hasNext() {
-        return cur < arr.length;
+      // 如果分配的主备节点数量不足，则可能是集群节点数量不足，或者是使用了节点排他条件过滤掉了可用节点
+      if (res.size() < primaryAndBackups) {
+        log.error(
+            "There are not enough nodes in the cluster to assign to the backup partition. enableBackupFilter:{}, enableAffinityBackupFilter:{}, excludeNeighbor:{}.",
+            backupFilter != null,
+            affinityBackupFilter != null,
+            exclNeighbors);
       }
 
-      /** {@inheritDoc} */
-      @Override
-      public ClusterNodeUUID next() {
-        if (!hasNext()) {
-          throw new NoSuchElementException();
-        }
-
-        if (cur < sorted) {
-          return arr[cur++].node();
-        }
-
-        WeightNodeTuple min = arr[cur];
-        int minIdx = cur;
-        for (int i = cur + 1; i < arr.length; i++) {
-          if (WeightNodeTuple.WeightNodeTupleComparator.COMPARATOR.compare(arr[i], min) < 0) {
-            minIdx = i;
-            min = arr[i];
-          }
-        }
-
-        if (minIdx != cur) {
-          arr[minIdx] = arr[cur];
-          arr[cur] = min;
-        }
-
-        sorted = cur++;
-        return min.node();
+      return res;
+    } finally {
+      if (allNeighbors != null) {
+        allNeighbors.clear();
       }
-
-      /** {@inheritDoc} */
-      @Override
-      public void remove() {
-        throw new UnsupportedOperationException();
-      }
+      clusterNodes.forEach(node -> node.rendezvousWeight().remove());
+      priorityQueue.clear();
     }
   }
 
