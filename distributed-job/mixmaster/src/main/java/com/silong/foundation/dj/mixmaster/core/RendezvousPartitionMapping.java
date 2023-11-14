@@ -62,7 +62,8 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
 
   /** 配套优先级队列，取最高权重TopK个节点 */
   private static final Comparator<ClusterNodeUUID> COMPARATOR =
-      reverseOrder(Comparator.comparingLong(k -> k.rendezvousWeight().get()));
+      reverseOrder(
+          Comparator.comparingLong(clusterNodeUUID -> clusterNodeUUID.rendezvousWeight().get()));
 
   private static final ThreadLocal<PriorityQueue<ClusterNodeUUID>> PRIORITY_QUEUE =
       new ThreadLocal<>();
