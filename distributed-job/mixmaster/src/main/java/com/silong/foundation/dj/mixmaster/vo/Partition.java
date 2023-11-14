@@ -24,7 +24,10 @@ package com.silong.foundation.dj.mixmaster.vo;
 import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.MAX_PARTITIONS_COUNT;
 
 import jakarta.annotation.Nullable;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import lombok.*;
 
 /**
@@ -36,7 +39,9 @@ import lombok.*;
  * @param <T> 节点类型
  */
 @Data
-public class Partition<T> implements Iterable<T> {
+public class Partition<T> implements Iterable<T>, Serializable {
+
+  @Serial private static final long serialVersionUID = -1_761_846_080_989_577_337L;
 
   /** 记录分区在节点间移动 */
   @Data
@@ -52,8 +57,7 @@ public class Partition<T> implements Iterable<T> {
 
     @Override
     public String toString() {
-      return String.format(
-          "[prev:%s|value:%s|next:%s]", getPrevRecord(), getValue(), getNextRecord());
+      return String.format("[prev:%s|value:%s|next:%s]", prevRecord, value, nextRecord);
     }
   }
 
@@ -190,6 +194,9 @@ public class Partition<T> implements Iterable<T> {
       @Override
       public T next() {
         ShiftRecord nextNode = cur.nextRecord;
+        if (nextNode == tail) {
+          throw new NoSuchElementException();
+        }
         cur = nextNode;
         return nextNode.value;
       }
