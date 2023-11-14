@@ -105,10 +105,11 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     if (Thread.currentThread().isVirtual()) {
       return new PriorityQueue<>(initSize);
     } else {
-      if (PRIORITY_QUEUE.get() == null) {
-        PRIORITY_QUEUE.set(new PriorityQueue<>(initSize, COMPARATOR));
+      PriorityQueue<ClusterNodeUUID> result;
+      if ((result = PRIORITY_QUEUE.get()) == null) {
+        PRIORITY_QUEUE.set(result = new PriorityQueue<>(initSize, COMPARATOR));
       }
-      return PRIORITY_QUEUE.get();
+      return result;
     }
   }
 
@@ -116,10 +117,11 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     if (Thread.currentThread().isVirtual()) {
       return new HashSet<>();
     } else {
-      if (NEIGHBORS.get() == null) {
-        NEIGHBORS.set(new HashSet<>());
+      Collection<Identity<Address>> result;
+      if ((result = NEIGHBORS.get()) == null) {
+        NEIGHBORS.set(result = new HashSet<>());
       }
-      return NEIGHBORS.get();
+      return result;
     }
   }
 
@@ -152,11 +154,10 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
             ? clusterNodes.size()
             : Math.min(backupNum + 1, clusterNodes.size());
 
-    PriorityQueue<ClusterNodeUUID> priorityQueue = getPriorityQueue(clusterNodes.size());
-
     // 是否排除邻居节点
     boolean exclNeighbors = neighborhood != null && !neighborhood.isEmpty();
     Collection<Identity<Address>> allNeighbors = exclNeighbors ? getNeighbors() : null;
+    PriorityQueue<ClusterNodeUUID> priorityQueue = getPriorityQueue(clusterNodes.size());
 
     try {
       // 使用优先级队列，解决TopK问题，权重最大的k个元素
