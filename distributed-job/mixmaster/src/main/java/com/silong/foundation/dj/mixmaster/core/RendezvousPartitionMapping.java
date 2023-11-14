@@ -30,6 +30,7 @@ import jakarta.annotation.Nullable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 import org.springframework.stereotype.Component;
@@ -101,25 +102,14 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     return this;
   }
 
-  private PriorityQueue<ClusterNodeUUID> getPriorityQueue(int initSize) {
+  private <T> T getThreadLocalValue(ThreadLocal<T> threadLocal, Supplier<T> supplier) {
+    // 协程数量可能很多，不复用，所以直接创建，不缓存
     if (Thread.currentThread().isVirtual()) {
-      return new PriorityQueue<>(initSize);
+      return supplier.get();
     } else {
-      PriorityQueue<ClusterNodeUUID> result;
-      if ((result = PRIORITY_QUEUE.get()) == null) {
-        PRIORITY_QUEUE.set(result = new PriorityQueue<>(initSize, COMPARATOR));
-      }
-      return result;
-    }
-  }
-
-  private Collection<Identity<Address>> getNeighbors() {
-    if (Thread.currentThread().isVirtual()) {
-      return new HashSet<>();
-    } else {
-      Collection<Identity<Address>> result;
-      if ((result = NEIGHBORS.get()) == null) {
-        NEIGHBORS.set(result = new HashSet<>());
+      T result;
+      if ((result = threadLocal.get()) == null) {
+        threadLocal.set(result = supplier.get());
       }
       return result;
     }
@@ -156,8 +146,11 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
 
     // 是否排除邻居节点
     boolean exclNeighbors = neighborhood != null && !neighborhood.isEmpty();
-    Collection<Identity<Address>> allNeighbors = exclNeighbors ? getNeighbors() : null;
-    PriorityQueue<ClusterNodeUUID> priorityQueue = getPriorityQueue(clusterNodes.size());
+    Collection<Identity<Address>> allNeighbors =
+        exclNeighbors ? getThreadLocalValue(NEIGHBORS, HashSet::new) : null;
+    PriorityQueue<ClusterNodeUUID> priorityQueue =
+        getThreadLocalValue(
+            PRIORITY_QUEUE, () -> new PriorityQueue<>(clusterNodes.size(), COMPARATOR));
 
     try {
       // 使用优先级队列，解决TopK问题，权重最大的k个元素
