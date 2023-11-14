@@ -88,11 +88,6 @@
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>
-            <artifactId>simple-object-pool</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silong</groupId>
             <artifactId>scrapper</artifactId>
             <version>1.0.0</version>
         </dependency>
