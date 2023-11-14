@@ -54,6 +54,9 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
+  /** 视图变化记录数量 */
+  private static final int VIEW_CHANGED_RECORDS =
+      Integer.parseInt(System.getProperty("cluster.view.change.records", "10"));
 
   @ToString.Exclude private final Lock writeLock;
 
@@ -91,22 +94,23 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   public void update(@NonNull View oldView, @NonNull View newView) {
     writeLock.lock();
     try {
-      // 如果是首次加入集群，则完全重新计算分区映射关系
+      // 首次加入集群，则完全重新计算分区映射关系
       if (oldView == EMPTY_VIEW) {
         IntStream.range(0, totalPartition)
             .parallel()
             .forEach(
-                partition -> {
+                partitionNo -> {
                   // 获取存储分区
-                  Partition<StoreNodes<ClusterNodeUUID>> part =
+                  Partition<StoreNodes<ClusterNodeUUID>> partition =
                       partitionsMap.computeIfAbsent(
-                          partition, key -> new Partition<>(partition, 3));
+                          partitionNo, key -> new Partition<>(partitionNo, VIEW_CHANGED_RECORDS));
 
                   StoreNodes<ClusterNodeUUID> nodes =
                       StoreNodes.<ClusterNodeUUID>builder()
+                          .version(newView.getViewId().getId())
                           .primaryAndBackups(
                               partition2NodesMapping.allocatePartition(
-                                  partition,
+                                  partitionNo,
                                   backupNum,
                                   Arrays.stream(newView.getMembersRaw())
                                       .map(ClusterNodeUUID.class::cast)
@@ -115,7 +119,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
                           .build();
 
                   // 记录当前分区对应的存储节点列表
-                  part.record(nodes);
+                  partition.record(nodes);
                 });
       } else {
         Address[][] diff = View.diff(oldView, newView);
