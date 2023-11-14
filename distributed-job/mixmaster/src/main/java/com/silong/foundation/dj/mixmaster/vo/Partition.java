@@ -73,6 +73,27 @@ public class Partition<T> implements Iterable<T>, Serializable {
   /** 移动记录头 */
   private final ShiftRecord head =
       new ShiftRecord() {
+
+        @Override
+        public void setPrevRecord(ShiftRecord prevRecord) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setValue(T value) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ShiftRecord getPrevRecord() {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public T getValue() {
+          throw new UnsupportedOperationException();
+        }
+
         @Override
         public String toString() {
           return String.format("[head|next:%s]", getNextRecord());
@@ -82,6 +103,27 @@ public class Partition<T> implements Iterable<T>, Serializable {
   /** 移动记录尾 */
   private final ShiftRecord tail =
       new ShiftRecord() {
+
+        @Override
+        public ShiftRecord getNextRecord() {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setNextRecord(ShiftRecord nextRecord) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setValue(T value) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public T getValue() {
+          throw new UnsupportedOperationException();
+        }
+
         @Override
         public String toString() {
           return String.format("[tail|prev:%s]", getPrevRecord());
