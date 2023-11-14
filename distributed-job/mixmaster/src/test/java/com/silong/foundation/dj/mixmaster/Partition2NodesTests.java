@@ -59,6 +59,26 @@ public class Partition2NodesTests {
 
   @Autowired private Partition2NodesMapping<ClusterNodeUUID> mapping;
 
+  @Test
+  public void test10() {
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class,
+        () -> mapping.allocatePartition(0, -1, List.of(randomNode()), null));
+  }
+
+  @Test
+  public void test11() {
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class,
+        () -> mapping.allocatePartition(-1, 0, List.of(randomNode()), null));
+  }
+
+  @Test
+  public void test12() {
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class, () -> mapping.allocatePartition(0, 0, List.of(), null));
+  }
+
   /** 单节点映射 */
   @Test
   @DisplayName("partition2Nodes-1")
