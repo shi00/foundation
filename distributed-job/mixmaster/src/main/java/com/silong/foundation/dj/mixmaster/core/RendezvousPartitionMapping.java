@@ -20,6 +20,8 @@
  */
 package com.silong.foundation.dj.mixmaster.core;
 
+import static java.util.Collections.reverseOrder;
+
 import com.silong.foundation.dj.mixmaster.Identity;
 import com.silong.foundation.dj.mixmaster.Partition2NodesMapping;
 import com.silong.foundation.dj.mixmaster.utils.LambdaSerializable.SerializableBiPredicate;
@@ -58,9 +60,9 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
 
   @Serial private static final long serialVersionUID = 8_142_384_185_333_518_222L;
 
-  /** 配套优先级队列，取最高优先级TopK */
+  /** 配套优先级队列，取最高权重TopK个节点 */
   private static final Comparator<ClusterNodeUUID> COMPARATOR =
-      Collections.reverseOrder(Comparator.comparingLong(k -> k.rendezvousWeight().get()));
+      reverseOrder(Comparator.comparingLong(k -> k.rendezvousWeight().get()));
 
   private static final ThreadLocal<PriorityQueue<ClusterNodeUUID>> PRIORITY_QUEUE =
       new ThreadLocal<>();
