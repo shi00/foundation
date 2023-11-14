@@ -88,12 +88,22 @@
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>
+            <artifactId>simple-object-pool</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.silong</groupId>
             <artifactId>scrapper</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
