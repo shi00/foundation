@@ -177,6 +177,8 @@ public class Partition2NodesTests {
         clusterNodeUUIDS.remove(clusterNodeUUID);
         Assertions.assertEquals(
             clusterNodeUUIDS, CollectionUtils.intersection(clusterNodeUUIDS, result2.get(i)));
+      } else {
+        Assertions.assertEquals(clusterNodeUUIDS, result2.get(i));
       }
     }
   }
