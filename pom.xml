@@ -83,7 +83,7 @@
         <module>distributed-job/mixmaster</module>
         <module>distributed-job/hook</module>
         <module>distributed-job/scrapper</module>
-        <module>distributed-job/discovery</module>
+        <module>discovery</module>
         <module>crypto</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>
@@ -185,7 +185,6 @@
         <lz4-java.version>1.8.0</lz4-java.version>
         <java-jwt.version>4.4.0</java-jwt.version>
         <p3c-pmd.version>2.1.1.5x</p3c-pmd.version>
-        <guice.version>7.0.0</guice.version>
         <oshi-core.version>6.4.7</oshi-core.version>
         <!--开源组件-->
 
@@ -230,11 +229,6 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.inject</groupId>
-                <artifactId>guice</artifactId>
-                <version>${guice.version}</version>
             </dependency>
             <!-- google 基础库 -->
 
