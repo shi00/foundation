@@ -233,7 +233,7 @@ class DefaultDistributedEngine
     if (log.isDebugEnabled()) {
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
-    clusterMetadata.update(lastView, newView); // 更新集群元数据
+    clusterMetadata.update(lastView, newView, (ClusterNodeUUID) jChannel.address()); // 更新集群元数据
     ViewChangedEvent event = new ViewChangedEvent(lastView, lastView = newView);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
