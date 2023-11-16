@@ -39,15 +39,12 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   /** 历史版本记录上限 */
   final int recordLimit;
 
-  /** 当前记录数 */
-  int index;
-
   /** 移动记录头 */
-  final VersionObj<T> head =
-      new VersionObj<>() {
+  final Node<T> head =
+      new Node<>() {
 
         @Override
-        public void setPrev(VersionObj<T> prevRecord) {
+        public void setPrev(Node<T> prevRecord) {
           throw new UnsupportedOperationException();
         }
 
@@ -57,7 +54,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
         }
 
         @Override
-        public VersionObj<T> getPrev() {
+        public Node<T> getPrev() {
           throw new UnsupportedOperationException();
         }
 
@@ -73,16 +70,16 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
       };
 
   /** 移动记录尾 */
-  final VersionObj<T> tail =
-      new VersionObj<>() {
+  final Node<T> tail =
+      new Node<>() {
 
         @Override
-        public VersionObj<T> getNext() {
+        public Node<T> getNext() {
           throw new UnsupportedOperationException();
         }
 
         @Override
-        public void setNext(VersionObj<T> nextRecord) {
+        public void setNext(Node<T> nextRecord) {
           throw new UnsupportedOperationException();
         }
 
@@ -101,6 +98,9 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
           return String.format("[tail|prev:%s]", prev);
         }
       };
+
+  /** 当前记录数 */
+  int index;
 
   /**
    * 构造方法
@@ -157,7 +157,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   }
 
   private void recycle(T obj) {
-    VersionObj<T> recycleObj = tail.prev;
+    Node<T> recycleObj = tail.prev;
     tail.prev = recycleObj.prev;
     recycleObj.prev.next = tail;
 
@@ -170,8 +170,8 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   }
 
   private void push(T obj) {
-    VersionObj<T> nextObj = head.next;
-    VersionObj<T> obj1 = new VersionObj<>(head, obj, nextObj);
+    Node<T> nextObj = head.next;
+    Node<T> obj1 = new Node<>(head, obj, nextObj);
     head.next = obj1;
     nextObj.prev = obj1;
   }
@@ -181,7 +181,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   public Iterator<T> iterator() {
     return new Iterator<>() {
 
-      private VersionObj<T> cur = head;
+      private Node<T> cur = head;
 
       @Override
       public boolean hasNext() {
@@ -190,7 +190,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
 
       @Override
       public T next() {
-        VersionObj<T> nextObj = cur.next;
+        Node<T> nextObj = cur.next;
         if (nextObj == tail) {
           throw new NoSuchElementException();
         }

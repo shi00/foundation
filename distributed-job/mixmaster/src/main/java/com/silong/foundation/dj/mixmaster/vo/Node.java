@@ -28,7 +28,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 版本记录节点
+ * 链表节点
  *
  * @author louis sin
  * @version 1.0.0
@@ -38,15 +38,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-class VersionObj<T> implements Serializable {
+class Node<T> implements Serializable {
 
-  @Serial private static final long serialVersionUID = 8_881_115_044_919_369_958L;
+  @Serial private static final long serialVersionUID = -640_216_598_916_469_962L;
 
-  VersionObj<T> prev;
+  Node<T> prev;
 
   T value;
 
-  VersionObj<T> next;
+  Node<T> next;
 
   @Override
   public String toString() {
