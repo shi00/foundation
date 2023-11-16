@@ -19,18 +19,33 @@
  *
  */
 
-package com.silong.foundation.dj.mixmaster.enu;
+package com.silong.foundation.dj.mixmaster.vo;
+
+import java.io.Serial;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.jgroups.View;
 
 /**
- * 视图类型
+ * 集群视图
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-11-16 14:27
+ * @since 2023-11-16 17:35
  */
-public enum ViewType {
-  EMPTY, // EmptyView
-  MERGE, // MergeView
-  DELTA, // DeltaView
-  PROTO // View
+@EqualsAndHashCode(callSuper = true)
+@ToString
+public class ClusterView extends MultipleVersionObj<View> {
+
+  @Serial private static final long serialVersionUID = -240_752_712_356_040_731L;
+
+  /**
+   * 构造方法
+   *
+   * @param recordLimit 记录上限
+   */
+  public ClusterView(int recordLimit) {
+    super(recordLimit);
+    clear();
+  }
 }
