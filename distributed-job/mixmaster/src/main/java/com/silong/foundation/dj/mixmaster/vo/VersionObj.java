@@ -38,15 +38,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-class VersionNode<T> implements Serializable {
+class VersionObj<T> implements Serializable {
 
-  @Serial private static final long serialVersionUID = -3_627_105_280_919_533_879L;
+  @Serial private static final long serialVersionUID = 8_881_115_044_919_369_958L;
 
-  VersionNode<T> prev;
+  VersionObj<T> prev;
 
   T value;
 
-  VersionNode<T> next;
+  VersionObj<T> next;
 
   @Override
   public String toString() {
