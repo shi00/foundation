@@ -21,8 +21,6 @@
 package com.silong.foundation.dj.mixmaster.core;
 
 import static com.silong.foundation.dj.mixmaster.core.DefaultAddressGenerator.HOST_NAME;
-import static com.silong.foundation.dj.mixmaster.enu.ViewType.*;
-import static com.silong.foundation.dj.mixmaster.vo.EmptyView.EMPTY_VIEW;
 
 import com.google.protobuf.MessageLite;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
@@ -35,7 +33,6 @@ import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
 import com.silong.foundation.dj.mixmaster.message.PbMessage;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
-import com.silong.foundation.dj.mixmaster.vo.EmptyView;
 import com.silong.foundation.dj.scrapper.PersistStorage;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nullable;
@@ -53,11 +50,9 @@ import org.jgroups.auth.AuthToken;
 import org.jgroups.protocols.AUTH;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
-import org.jgroups.protocols.pbcast.DeltaView;
 import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.MembershipChangePolicy;
-import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.MessageBatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -81,11 +76,14 @@ class DefaultDistributedEngine
 
   @Serial private static final long serialVersionUID = -1_291_263_774_210_047_896L;
 
+  /** 初始空视图 */
+  public static final View EMPTY_VIEW = new View();
+
   /** 事件发布器 */
   private ApplicationEventPublisher eventPublisher;
 
   /** 集群通信信道 */
-  private JChannel jChannel;
+  private volatile JChannel jChannel;
 
   /** 配置 */
   private MixmasterProperties properties;
@@ -120,7 +118,7 @@ class DefaultDistributedEngine
           buildDistributedEngine(properties.getConfigFile())
               // 连接集群
               .connect(properties.getClusterName())
-              // 同步coordinator集群配置
+              // 从coordinator同步集群状态
               .getState(null, properties.getClusterStateSyncTimeout().toMillis());
 
       // 启动事件派发线程
@@ -139,10 +137,17 @@ class DefaultDistributedEngine
   /** 事件派发循环 */
   @Override
   public void run() {
+    // 等待jchannel状态为连接时启动事件派发
+    while (!jChannel.isConnected()) {
+      Thread.onSpinWait();
+    }
     log.info("Start event dispatch processing......");
     while (!jChannel.isClosed()) {
       ApplicationEvent event;
       while ((event = eventQueue.poll()) != null) {
+        if (event instanceof ViewChangedEvent viewChangedEvent) {
+          clusterMetadata.update(viewChangedEvent.oldView(), viewChangedEvent.newView()); // 更新集群元数据
+        }
         eventPublisher.publishEvent(event);
       }
       Thread.onSpinWait();
@@ -209,12 +214,6 @@ class DefaultDistributedEngine
     return jChannel;
   }
 
-  private String localIdentity() {
-    return String.format(
-        "(%s:%s|%s:%d)",
-        HOST_NAME, properties.getInstanceName(), bindAddress().getHostAddress(), bindPort());
-  }
-
   /** 注册自定义消息类型 */
   private void registerMessages(JChannel jChannel) {
     PbMessage.register(getMessageFactory(jChannel));
@@ -225,8 +224,8 @@ class DefaultDistributedEngine
     if (log.isDebugEnabled()) {
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
-    clusterMetadata.update(lastView, newView, (ClusterNodeUUID) jChannel.address()); // 更新集群元数据
-    ViewChangedEvent event = new ViewChangedEvent(lastView, lastView = newView);
+    ViewChangedEvent event = new ViewChangedEvent(lastView, newView);
+    lastView = newView;
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
@@ -320,6 +319,12 @@ class DefaultDistributedEngine
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastPort()
         : transport.getBindPort();
+  }
+
+  private String localIdentity() {
+    return String.format(
+        "(%s:%s|%s:%d)",
+        HOST_NAME, properties.getInstanceName(), bindAddress().getHostAddress(), bindPort());
   }
 
   String name() {
@@ -463,20 +468,9 @@ class DefaultDistributedEngine
    */
   @Override
   public void getState(OutputStream output) throws Exception {
-    ByteArrayDataOutputStream out;
-    switch (lastView) {
-      case EmptyView ignored -> (out = new ByteArrayDataOutputStream(lastView.serializedSize() + 1))
-          .write(EMPTY.ordinal());
-      case MergeView ignored -> (out = new ByteArrayDataOutputStream(lastView.serializedSize() + 1))
-          .write(MERGE.ordinal());
-      case DeltaView ignored -> (out = new ByteArrayDataOutputStream(lastView.serializedSize() + 1))
-          .write(DELTA.ordinal());
-      case View ignored -> (out = new ByteArrayDataOutputStream(lastView.serializedSize() + 1))
-          .write(PROTO.ordinal());
-      case null -> throw new IllegalStateException("lastView must not be null.");
-    }
-    output.write(out.buffer());
-    log.info("The node{} sends the lastView[{}] to member of cluster.", localIdentity(), lastView);
+
+    //    log.info("The node{} sends the lastView[{}] to member of cluster.", localIdentity(),
+    // lastView);
   }
 
   /**
@@ -487,24 +481,8 @@ class DefaultDistributedEngine
    */
   @Override
   public void setState(InputStream input) throws Exception {
-    DataInputStream inputStream = new DataInputStream(input);
-    int viewType = inputStream.readInt();
-    if (viewType == EMPTY.ordinal()) {
-      lastView = EMPTY_VIEW;
-    } else if (viewType == MERGE.ordinal()) {
-      lastView = new MergeView();
-      lastView.readFrom(inputStream);
-    } else if (viewType == PROTO.ordinal()) {
-      lastView = new View();
-      lastView.readFrom(inputStream);
-    } else if (viewType == DELTA.ordinal()) {
-      lastView = new View();
-      lastView.readFrom(inputStream);
-    } else {
-      throw new IllegalStateException("Unknown viewType: " + viewType);
-    }
 
-    log.info("The node{} receives the view[{}] from coordinator.", localIdentity(), lastView);
+    //    log.info("The node{} receives the view[{}] from coordinator.", localIdentity(), lastView);
   }
 
   @Override
@@ -564,6 +542,9 @@ class DefaultDistributedEngine
   @Autowired
   public void setClusterMetadata(ClusterMetadata<ClusterNodeUUID> clusterMetadata) {
     this.clusterMetadata = clusterMetadata;
+    if (clusterMetadata instanceof DefaultClusterMetadata metadata) {
+      metadata.setEngine(this);
+    }
   }
 
   @Autowired
