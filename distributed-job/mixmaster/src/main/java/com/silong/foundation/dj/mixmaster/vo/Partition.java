@@ -23,11 +23,7 @@ package com.silong.foundation.dj.mixmaster.vo;
 
 import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.MAX_PARTITIONS_COUNT;
 
-import jakarta.annotation.Nullable;
 import java.io.Serial;
-import java.io.Serializable;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import lombok.*;
 
 /**
@@ -38,79 +34,15 @@ import lombok.*;
  * @since 2023-11-13 10:41
  * @param <T> 节点类型
  */
-@Data
-public class Partition<T> implements Iterable<T>, Serializable {
+@Getter
+@EqualsAndHashCode(callSuper = true)
+@ToString
+public class Partition<T> extends MultipleVersionObj<T> {
 
-  @Serial private static final long serialVersionUID = -1_761_846_080_989_577_337L;
+  @Serial private static final long serialVersionUID = 7_579_895_742_844_967_261L;
 
   /** 分区编号 */
   private final int partitionNo;
-
-  /** 数据分区在节点间移动的记录上限 */
-  private final int shiftRecords;
-
-  /** 长度 */
-  private int curSize;
-
-  /** 移动记录头 */
-  private final VersionNode<T> head =
-      new VersionNode<>() {
-
-        @Override
-        public void setPrev(VersionNode<T> prevRecord) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setValue(T value) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public VersionNode<T> getPrev() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getValue() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String toString() {
-          return String.format("[head|next:%s]", getNext());
-        }
-      };
-
-  /** 移动记录尾 */
-  private final VersionNode<T> tail =
-      new VersionNode<>() {
-
-        @Override
-        public VersionNode<T> getNext() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setNext(VersionNode<T> nextRecord) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void setValue(T value) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getValue() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String toString() {
-          return String.format("[tail|prev:%s]", getPrev());
-        }
-      };
 
   /**
    * 构造方法
@@ -119,101 +51,14 @@ public class Partition<T> implements Iterable<T>, Serializable {
    * @param shiftRecords 移动记录上限
    */
   public Partition(int partitionNo, int shiftRecords) {
+    super(shiftRecords);
     if (partitionNo < 0 || partitionNo > MAX_PARTITIONS_COUNT) {
       throw new IllegalArgumentException(
           String.format(
               "partitionNo(%d) must be greater than or equals to 0 and less than or equals to %d.",
               partitionNo, MAX_PARTITIONS_COUNT));
     }
-    if (shiftRecords < 0) {
-      throw new IllegalArgumentException("shiftRecords must be greater than or equals to 0.");
-    }
     this.partitionNo = partitionNo;
-    this.shiftRecords = shiftRecords;
     clear();
-  }
-
-  /**
-   * 当前记录数
-   *
-   * @return 记录数
-   */
-  public int records() {
-    return curSize;
-  }
-
-  /** 清空记录 */
-  public void clear() {
-    head.next = tail;
-    tail.prev = head;
-  }
-
-  /**
-   * 获取当前生效的分区节点映射表
-   *
-   * @return 分区到节点的映射表
-   */
-  @Nullable
-  public T currentRecord() {
-    return head.next.value;
-  }
-
-  /**
-   * 记录数据分区归属的节点
-   *
-   * @param node 节点
-   */
-  public void record(@NonNull T node) {
-    if (curSize < shiftRecords) {
-      push(node);
-      curSize++;
-    } else {
-      // 循环利用
-      recycle(node);
-    }
-  }
-
-  private void recycle(T node) {
-    VersionNode<T> recycleRecord = tail.prev;
-    tail.prev = recycleRecord.prev;
-    recycleRecord.prev.next = tail;
-
-    recycleRecord.prev = head;
-    recycleRecord.value = node;
-    recycleRecord.next = head.next;
-
-    head.next.prev = recycleRecord;
-    head.next = recycleRecord;
-  }
-
-  private void push(T node) {
-    VersionNode<T> nextNode = head.next;
-    VersionNode<T> shiftRecord = new VersionNode<>(head, node, nextNode);
-    head.next = shiftRecord;
-    nextNode.prev = shiftRecord;
-  }
-
-  @Override
-  @NonNull
-  public Iterator<T> iterator() {
-    return new Iterator<>() {
-
-      private VersionNode<T> cur = head;
-
-      @Override
-      public boolean hasNext() {
-        return cur.next != tail;
-      }
-
-      @Override
-      public T next() {
-        VersionNode<T> nextNode = cur.next;
-        if (nextNode == tail) {
-          throw new NoSuchElementException();
-        }
-        cur = nextNode;
-        return nextNode.value;
-      }
-    };
   }
 }
