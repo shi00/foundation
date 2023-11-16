@@ -21,14 +21,8 @@
 
 package com.silong.foundation.dj.mixmaster.vo;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.util.Iterator;
-import java.util.List;
 import java.util.function.Supplier;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.ViewId;
@@ -40,81 +34,21 @@ import org.jgroups.ViewId;
  * @version 1.0.0
  * @since 2023-11-11 9:09
  */
-@Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 public class EmptyView extends View {
+  /** 初始空视图 */
   public static final EmptyView EMPTY_VIEW = new EmptyView();
 
-  private EmptyView() {}
+  private static final Address[] EMPTY_MEMBERS = new Address[0];
+
+  /** 默认构造方法 */
+  private EmptyView() {
+    this.members = EMPTY_MEMBERS;
+    this.view_id = new ViewId();
+  }
 
   @Override
   public Supplier<? extends View> create() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public ViewId getViewId() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Address getCreator() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Address getCoord() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public List<Address> getMembers() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Address[] getMembersRaw() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean containsMember(Address mbr) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public boolean containsMembers(Address... mbrs) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public int compareTo(View o) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public int size() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void writeTo(DataOutput out) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public void readFrom(DataInput in) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public int serializedSize() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  @NonNull
-  public Iterator<Address> iterator() {
-    throw new UnsupportedOperationException();
+    return () -> EMPTY_VIEW;
   }
 }
