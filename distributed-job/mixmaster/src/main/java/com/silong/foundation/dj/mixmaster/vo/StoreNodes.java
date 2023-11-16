@@ -22,6 +22,8 @@
 package com.silong.foundation.dj.mixmaster.vo;
 
 import jakarta.annotation.Nullable;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.SequencedCollection;
 import lombok.Builder;
@@ -38,10 +40,46 @@ import lombok.NonNull;
  */
 @Data
 @Builder
-public class StoreNodes<T> implements Iterable<T> {
+public class StoreNodes<T> implements Iterable<T>, Comparable<StoreNodes<T>>, Serializable {
+
+  @Serial private static final long serialVersionUID = -9_040_144_143_663_603_204L;
 
   /** 分区存储的节点列表 */
   @NonNull private SequencedCollection<T> primaryAndBackups;
+
+  /** 逻辑时钟，版本号，单调递增 */
+  private long version;
+
+  /**
+   * 分区布局是否包含给定节点
+   *
+   * @param node 节点
+   * @return true or false
+   */
+  public boolean contains(@NonNull T node) {
+    return primaryAndBackups.contains(node);
+  }
+
+  /**
+   * 给定节点是否为分区主节点
+   *
+   * @param node 节点
+   * @return true or false
+   */
+  public boolean isPrimary(@NonNull T node) {
+    return node.equals(primary());
+  }
+
+  /**
+   * 给定节点是否为分区备份节点
+   *
+   * @param node 节点
+   * @return true or false
+   */
+  public boolean isBackup(@NonNull T node) {
+    // 过滤分区主节点后查找
+    return primaryAndBackups.stream().skip(1).anyMatch(node::equals);
+  }
 
   /**
    * 返回分区对应的主节点
@@ -57,5 +95,10 @@ public class StoreNodes<T> implements Iterable<T> {
   @NonNull
   public Iterator<T> iterator() {
     return primaryAndBackups.iterator();
+  }
+
+  @Override
+  public int compareTo(@NonNull StoreNodes<T> nodes) {
+    return Long.compare(nodes.version, version);
   }
 }
