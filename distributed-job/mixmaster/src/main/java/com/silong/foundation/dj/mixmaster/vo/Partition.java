@@ -43,24 +43,6 @@ public class Partition<T> implements Iterable<T>, Serializable {
 
   @Serial private static final long serialVersionUID = -1_761_846_080_989_577_337L;
 
-  /** 记录分区在节点间移动 */
-  @Data
-  @NoArgsConstructor
-  @AllArgsConstructor
-  private class ShiftRecord {
-
-    private ShiftRecord prevRecord;
-
-    private T value;
-
-    private ShiftRecord nextRecord;
-
-    @Override
-    public String toString() {
-      return String.format("[prev:%s|value:%s|next:%s]", prevRecord, value, nextRecord);
-    }
-  }
-
   /** 分区编号 */
   private final int partitionNo;
 
@@ -71,11 +53,11 @@ public class Partition<T> implements Iterable<T>, Serializable {
   private int curSize;
 
   /** 移动记录头 */
-  private final ShiftRecord head =
-      new ShiftRecord() {
+  private final VersionNode<T> head =
+      new VersionNode<>() {
 
         @Override
-        public void setPrevRecord(ShiftRecord prevRecord) {
+        public void setPrev(VersionNode<T> prevRecord) {
           throw new UnsupportedOperationException();
         }
 
@@ -85,7 +67,7 @@ public class Partition<T> implements Iterable<T>, Serializable {
         }
 
         @Override
-        public ShiftRecord getPrevRecord() {
+        public VersionNode<T> getPrev() {
           throw new UnsupportedOperationException();
         }
 
@@ -96,21 +78,21 @@ public class Partition<T> implements Iterable<T>, Serializable {
 
         @Override
         public String toString() {
-          return String.format("[head|next:%s]", getNextRecord());
+          return String.format("[head|next:%s]", getNext());
         }
       };
 
   /** 移动记录尾 */
-  private final ShiftRecord tail =
-      new ShiftRecord() {
+  private final VersionNode<T> tail =
+      new VersionNode<>() {
 
         @Override
-        public ShiftRecord getNextRecord() {
+        public VersionNode<T> getNext() {
           throw new UnsupportedOperationException();
         }
 
         @Override
-        public void setNextRecord(ShiftRecord nextRecord) {
+        public void setNext(VersionNode<T> nextRecord) {
           throw new UnsupportedOperationException();
         }
 
@@ -126,7 +108,7 @@ public class Partition<T> implements Iterable<T>, Serializable {
 
         @Override
         public String toString() {
-          return String.format("[tail|prev:%s]", getPrevRecord());
+          return String.format("[tail|prev:%s]", getPrev());
         }
       };
 
@@ -162,8 +144,8 @@ public class Partition<T> implements Iterable<T>, Serializable {
 
   /** 清空记录 */
   public void clear() {
-    head.nextRecord = tail;
-    tail.prevRecord = head;
+    head.next = tail;
+    tail.prev = head;
   }
 
   /**
@@ -173,17 +155,7 @@ public class Partition<T> implements Iterable<T>, Serializable {
    */
   @Nullable
   public T currentRecord() {
-    return head.nextRecord.value;
-  }
-
-  /**
-   * 获取当前生效的分区节点映射表前一个集群视图时的映射表
-   *
-   * @return 前一个分区节点映射表
-   */
-  @Nullable
-  public T previousRecord() {
-    return head.nextRecord.nextRecord.value;
+    return head.next.value;
   }
 
   /**
@@ -202,23 +174,23 @@ public class Partition<T> implements Iterable<T>, Serializable {
   }
 
   private void recycle(T node) {
-    ShiftRecord recycleRecord = tail.prevRecord;
-    tail.prevRecord = recycleRecord.prevRecord;
-    recycleRecord.prevRecord.nextRecord = tail;
+    VersionNode<T> recycleRecord = tail.prev;
+    tail.prev = recycleRecord.prev;
+    recycleRecord.prev.next = tail;
 
-    recycleRecord.prevRecord = head;
+    recycleRecord.prev = head;
     recycleRecord.value = node;
-    recycleRecord.nextRecord = head.nextRecord;
+    recycleRecord.next = head.next;
 
-    head.nextRecord.prevRecord = recycleRecord;
-    head.nextRecord = recycleRecord;
+    head.next.prev = recycleRecord;
+    head.next = recycleRecord;
   }
 
   private void push(T node) {
-    ShiftRecord nextNode = head.nextRecord;
-    ShiftRecord shiftRecord = new ShiftRecord(head, node, nextNode);
-    head.nextRecord = shiftRecord;
-    nextNode.prevRecord = shiftRecord;
+    VersionNode<T> nextNode = head.next;
+    VersionNode<T> shiftRecord = new VersionNode<>(head, node, nextNode);
+    head.next = shiftRecord;
+    nextNode.prev = shiftRecord;
   }
 
   @Override
@@ -226,16 +198,16 @@ public class Partition<T> implements Iterable<T>, Serializable {
   public Iterator<T> iterator() {
     return new Iterator<>() {
 
-      private ShiftRecord cur = head;
+      private VersionNode<T> cur = head;
 
       @Override
       public boolean hasNext() {
-        return cur.nextRecord != tail;
+        return cur.next != tail;
       }
 
       @Override
       public T next() {
-        ShiftRecord nextNode = cur.nextRecord;
+        VersionNode<T> nextNode = cur.next;
         if (nextNode == tail) {
           throw new NoSuchElementException();
         }

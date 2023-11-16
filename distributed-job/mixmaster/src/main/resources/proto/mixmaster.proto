@@ -5,11 +5,8 @@ option java_package = "com.silong.foundation.dj.mixmaster.message";
 option java_outer_classname = "Messages";
 
 //////////////////////////////////////////////////////////
-//集群配置
-message ClusterConfig {
-  int32 total_partition = 1; //分区总数
-  int32 backup_num = 2; //副本数量
-}
+
+
 
 //////////////////////////////////////////////////////////
 //集群成员信息
