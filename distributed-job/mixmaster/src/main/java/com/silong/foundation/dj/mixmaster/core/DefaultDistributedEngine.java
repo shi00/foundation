@@ -152,6 +152,7 @@ class DefaultDistributedEngine
       ApplicationEvent event;
       while ((event = eventQueue.poll()) != null) {
         if (event instanceof ViewChangedEvent viewChangedEvent) {
+          clusterView.record(viewChangedEvent.newView());
           clusterMetadata.update(viewChangedEvent.oldView(), viewChangedEvent.newView()); // 更新集群元数据
         }
         eventPublisher.publishEvent(event);
@@ -231,7 +232,6 @@ class DefaultDistributedEngine
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
     ViewChangedEvent event = new ViewChangedEvent(clusterView.currentRecord(), newView);
-    clusterView.record(newView);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
