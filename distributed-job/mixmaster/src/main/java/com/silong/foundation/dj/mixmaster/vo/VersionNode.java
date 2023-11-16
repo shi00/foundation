@@ -21,34 +21,35 @@
 
 package com.silong.foundation.dj.mixmaster.vo;
 
-import java.util.function.Supplier;
-import lombok.EqualsAndHashCode;
-import org.jgroups.Address;
-import org.jgroups.View;
-import org.jgroups.ViewId;
+import java.io.Serial;
+import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * Empty View
+ * 版本记录节点
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-11-11 9:09
+ * @since 2023-11-16 17:51
+ * @param <T> 记录的版本实体类型
  */
-@EqualsAndHashCode(callSuper = true)
-public class EmptyView extends View {
-  /** 初始空视图 */
-  public static final EmptyView EMPTY_VIEW = new EmptyView();
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+class VersionNode<T> implements Serializable {
 
-  private static final Address[] EMPTY_MEMBERS = new Address[0];
+  @Serial private static final long serialVersionUID = -3_627_105_280_919_533_879L;
 
-  /** 默认构造方法 */
-  private EmptyView() {
-    this.members = EMPTY_MEMBERS;
-    this.view_id = new ViewId();
-  }
+  VersionNode<T> prev;
+
+  T value;
+
+  VersionNode<T> next;
 
   @Override
-  public Supplier<? extends View> create() {
-    return () -> EMPTY_VIEW;
+  public String toString() {
+    return String.format("[prev:%s|value:%s|next:%s]", prev, value, next);
   }
 }
