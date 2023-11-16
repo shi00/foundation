@@ -35,14 +35,18 @@ import lombok.*;
  * @param <T> 节点类型
  */
 @Getter
-@EqualsAndHashCode(callSuper = true)
+@Setter
 @ToString
+@EqualsAndHashCode(callSuper = true)
 public class Partition<T> extends MultipleVersionObj<T> {
 
   @Serial private static final long serialVersionUID = 7_579_895_742_844_967_261L;
 
   /** 分区编号 */
   private final int partitionNo;
+
+  /** 分区数据是否准备好 */
+  private volatile boolean isReady;
 
   /**
    * 构造方法
