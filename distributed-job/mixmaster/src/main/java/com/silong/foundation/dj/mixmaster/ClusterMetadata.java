@@ -35,7 +35,7 @@ import org.jgroups.View;
 public interface ClusterMetadata<T> {
 
   /**
-   * 更新元数据
+   * 由集群视图引起的更新元数据
    *
    * @param oldView 旧的集群视图
    * @param newView 新的集群视图
