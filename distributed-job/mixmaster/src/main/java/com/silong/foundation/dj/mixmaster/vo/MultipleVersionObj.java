@@ -145,7 +145,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
    *
    * @param obj 对象
    */
-  public void record(@NonNull T obj) {
+  public MultipleVersionObj<T> record(@NonNull T obj) {
     if (index < recordLimit) {
       push(obj);
       index++;
@@ -153,6 +153,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
       // 循环利用
       recycle(obj);
     }
+    return this;
   }
 
   private void recycle(T obj) {
