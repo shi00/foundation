@@ -43,26 +43,29 @@ public class SyncPartitionEvent extends ApplicationEvent {
 
   @Serial private static final long serialVersionUID = -6_617_291_978_925_234_769L;
 
-  /** 分区主节点地址 */
-  private final Address primaryPartitionOwner;
-
   /** 待同步的分区编号 */
   private final int partitionNo;
 
   /**
    * 构造方法
    *
-   * @param source 事件发生源
    * @param primaryPartitionOwner 主分区节点地址
    * @param partitionNo 待同步分区编号
    */
-  public SyncPartitionEvent(
-      @NonNull Object source, @NonNull Address primaryPartitionOwner, int partitionNo) {
-    super(source);
+  public SyncPartitionEvent(@NonNull Address primaryPartitionOwner, int partitionNo) {
+    super(primaryPartitionOwner);
     if (partitionNo < 0) {
       throw new IllegalArgumentException("partitionNo must be greater than or equals to 0.");
     }
-    this.primaryPartitionOwner = primaryPartitionOwner;
     this.partitionNo = partitionNo;
+  }
+
+  /**
+   * 获取分区主节点地址
+   *
+   * @return 地址
+   */
+  public Address getPrimaryPartitionOwner() {
+    return (Address) getSource();
   }
 }

@@ -53,13 +53,13 @@ public class JoinClusterEvent extends ApplicationEvent {
   /**
    * 构造方法
    *
-   * @param source 事件源
+   * @param view 集群视图
    * @param cluster 集群
    * @param localAddress 本地地址
    */
   public JoinClusterEvent(
-      @NonNull Object source, @NonNull String cluster, @NonNull Address localAddress) {
-    super(source);
+      @NonNull View view, @NonNull String cluster, @NonNull Address localAddress) {
+    super(view);
     this.localAddress = localAddress;
     this.cluster = cluster;
   }
@@ -69,7 +69,7 @@ public class JoinClusterEvent extends ApplicationEvent {
    *
    * @return 当前视图
    */
-  public View currentView() {
+  public View view() {
     return (View) getSource();
   }
 

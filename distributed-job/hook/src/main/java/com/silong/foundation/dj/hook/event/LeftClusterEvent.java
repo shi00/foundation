@@ -27,6 +27,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
 import org.jgroups.Address;
+import org.jgroups.View;
 
 /**
  * 离开集群通知事件
@@ -45,13 +46,13 @@ public class LeftClusterEvent extends JoinClusterEvent {
   /**
    * 构造方法
    *
-   * @param source 事件源
+   * @param view 集群视图
    * @param cluster 集群
    * @param localAddress 本地地址
    */
   public LeftClusterEvent(
-      @NonNull Object source, @NonNull String cluster, @NonNull Address localAddress) {
-    super(source, cluster, localAddress);
+      @NonNull View view, @NonNull String cluster, @NonNull Address localAddress) {
+    super(view, cluster, localAddress);
   }
 
   @Override

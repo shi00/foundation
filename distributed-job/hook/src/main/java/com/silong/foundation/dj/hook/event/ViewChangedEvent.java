@@ -52,7 +52,7 @@ public class ViewChangedEvent extends ApplicationEvent {
    * @param oldView 事件源
    * @param newView 当前新视图
    */
-  public ViewChangedEvent(@NonNull Object oldView, @NonNull View newView) {
+  public ViewChangedEvent(@NonNull View oldView, @NonNull View newView) {
     super(oldView);
     this.newView = newView;
   }

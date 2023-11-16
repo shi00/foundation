@@ -46,10 +46,10 @@ public class ChannelClosedEvent extends ApplicationEvent {
   /**
    * 构造方法
    *
-   * @param source 事件源
+   * @param jChannel jchannel
    */
-  public ChannelClosedEvent(@NonNull Object source) {
-    super(source);
+  public ChannelClosedEvent(@NonNull JChannel jChannel) {
+    super(jChannel);
   }
 
   /**
