@@ -33,6 +33,7 @@ import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
 import com.silong.foundation.dj.mixmaster.message.PbMessage;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
+import com.silong.foundation.dj.mixmaster.vo.ClusterView;
 import com.silong.foundation.dj.scrapper.PersistStorage;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nullable;
@@ -79,6 +80,10 @@ class DefaultDistributedEngine
   /** 初始空视图 */
   public static final View EMPTY_VIEW = new View();
 
+  /** 视图变化记录数量 */
+  public static final int VIEW_CHANGED_RECORDS =
+      Integer.parseInt(System.getProperty("cluster.view.change.records", "5"));
+
   /** 事件发布器 */
   private ApplicationEventPublisher eventPublisher;
 
@@ -106,8 +111,9 @@ class DefaultDistributedEngine
   /** 鉴权处理器 */
   private JwtAuthenticator jwtAuthenticator;
 
-  /** 最后一个集群视图 */
-  private volatile View lastView = EMPTY_VIEW;
+  /** 集群视图 */
+  private final ClusterView clusterView =
+      (ClusterView) new ClusterView(VIEW_CHANGED_RECORDS).record(EMPTY_VIEW);
 
   /** 初始化方法 */
   @PostConstruct
@@ -224,8 +230,8 @@ class DefaultDistributedEngine
     if (log.isDebugEnabled()) {
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
-    ViewChangedEvent event = new ViewChangedEvent(lastView, newView);
-    lastView = newView;
+    ViewChangedEvent event = new ViewChangedEvent(clusterView.currentRecord(), newView);
+    clusterView.record(newView);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
@@ -238,7 +244,8 @@ class DefaultDistributedEngine
       log.debug(
           "The node{} has successfully joined the cluster[{}].", localIdentity(), clusterName);
     }
-    JoinClusterEvent event = new JoinClusterEvent(lastView, clusterName, channel.address());
+    JoinClusterEvent event =
+        new JoinClusterEvent(clusterView.currentRecord(), clusterName, channel.address());
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
@@ -250,7 +257,8 @@ class DefaultDistributedEngine
     if (log.isDebugEnabled()) {
       log.debug("The node{} has left the cluster[{}].", localIdentity(), clusterName);
     }
-    LeftClusterEvent event = new LeftClusterEvent(lastView, clusterName, channel.address());
+    LeftClusterEvent event =
+        new LeftClusterEvent(clusterView.currentRecord(), clusterName, channel.address());
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
