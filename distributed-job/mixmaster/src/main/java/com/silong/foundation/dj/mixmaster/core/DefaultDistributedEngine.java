@@ -21,8 +21,8 @@
 package com.silong.foundation.dj.mixmaster.core;
 
 import static com.silong.foundation.dj.mixmaster.core.DefaultAddressGenerator.HOST_NAME;
+import static com.silong.foundation.dj.mixmaster.enu.ViewType.*;
 import static com.silong.foundation.dj.mixmaster.vo.EmptyView.EMPTY_VIEW;
-import static java.lang.System.lineSeparator;
 
 import com.google.protobuf.MessageLite;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
@@ -33,9 +33,9 @@ import com.silong.foundation.dj.hook.event.ViewChangedEvent;
 import com.silong.foundation.dj.mixmaster.*;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
-import com.silong.foundation.dj.mixmaster.message.Messages.ClusterConfig;
 import com.silong.foundation.dj.mixmaster.message.PbMessage;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
+import com.silong.foundation.dj.mixmaster.vo.EmptyView;
 import com.silong.foundation.dj.scrapper.PersistStorage;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nullable;
@@ -53,9 +53,11 @@ import org.jgroups.auth.AuthToken;
 import org.jgroups.protocols.AUTH;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
+import org.jgroups.protocols.pbcast.DeltaView;
 import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.MembershipChangePolicy;
+import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.MessageBatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -106,9 +108,6 @@ class DefaultDistributedEngine
   /** 鉴权处理器 */
   private JwtAuthenticator jwtAuthenticator;
 
-  /** 集群核心配置，以coordinator配置为准 */
-  private volatile ClusterConfig clusterConfig;
-
   /** 最后一个集群视图 */
   private volatile View lastView = EMPTY_VIEW;
 
@@ -116,13 +115,6 @@ class DefaultDistributedEngine
   @PostConstruct
   public void initialize() {
     try {
-      // 初始化配置
-      clusterConfig =
-          ClusterConfig.newBuilder()
-              .setTotalPartition(properties.getPartitions())
-              .setBackupNum(properties.getBackupNum())
-              .build();
-
       // 构建配置
       jChannel =
           buildDistributedEngine(properties.getConfigFile())
@@ -463,37 +455,56 @@ class DefaultDistributedEngine
     return jChannel.view().getCoord().equals(address);
   }
 
+  /**
+   * local节点作为集群coordinator时，把自己保存的最新集群视图传递给新加入集群的节点
+   *
+   * @param output The OutputStream
+   * @throws Exception 异常
+   */
   @Override
   public void getState(OutputStream output) throws Exception {
-    clusterConfig.writeTo(output);
-    log.info(
-        "The node{} sends the config to member of cluster. {}clusterConfig:[{}]",
-        localIdentity(),
-        lineSeparator(),
-        clusterConfig);
+    ByteArrayDataOutputStream out;
+    switch (lastView) {
+      case EmptyView ignored -> (out = new ByteArrayDataOutputStream(lastView.serializedSize() + 1))
+          .write(EMPTY.ordinal());
+      case MergeView ignored -> (out = new ByteArrayDataOutputStream(lastView.serializedSize() + 1))
+          .write(MERGE.ordinal());
+      case DeltaView ignored -> (out = new ByteArrayDataOutputStream(lastView.serializedSize() + 1))
+          .write(DELTA.ordinal());
+      case View ignored -> (out = new ByteArrayDataOutputStream(lastView.serializedSize() + 1))
+          .write(PROTO.ordinal());
+      case null -> throw new IllegalStateException("lastView must not be null.");
+    }
+    output.write(out.buffer());
+    log.info("The node{} sends the lastView[{}] to member of cluster.", localIdentity(), lastView);
   }
 
+  /**
+   * 从集群coordinator获取最新集群视图
+   *
+   * @param input The InputStream
+   * @throws Exception 异常
+   */
   @Override
   public void setState(InputStream input) throws Exception {
-    ClusterConfig clusterConfig = ClusterConfig.parseFrom(input);
-    log.info(
-        "The node{} receives the config from coordinator. {}clusterConfig:[{}]",
-        localIdentity(),
-        lineSeparator(),
-        clusterConfig);
-    int partitions = properties.getPartitions();
-    if (clusterConfig.getBackupNum() != properties.getBackupNum()
-        || clusterConfig.getTotalPartition() != partitions) {
-      log.error(
-          "The number of partitions[{}] and backupNum[{}] configured on the node{} are inconsistent with the cluster coordinator[partitions:{}, backupNum:{}].",
-          partitions,
-          properties.getBackupNum(),
-          localIdentity(),
-          clusterConfig.getTotalPartition(),
-          clusterConfig.getBackupNum());
+    DataInputStream inputStream = new DataInputStream(input);
+    int viewType = inputStream.readInt();
+    if (viewType == EMPTY.ordinal()) {
+      lastView = EMPTY_VIEW;
+    } else if (viewType == MERGE.ordinal()) {
+      lastView = new MergeView();
+      lastView.readFrom(inputStream);
+    } else if (viewType == PROTO.ordinal()) {
+      lastView = new View();
+      lastView.readFrom(inputStream);
+    } else if (viewType == DELTA.ordinal()) {
+      lastView = new View();
+      lastView.readFrom(inputStream);
     } else {
-      this.clusterConfig = clusterConfig;
+      throw new IllegalStateException("Unknown viewType: " + viewType);
     }
+
+    log.info("The node{} receives the view[{}] from coordinator.", localIdentity(), lastView);
   }
 
   @Override
