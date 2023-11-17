@@ -25,6 +25,7 @@ import jakarta.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 /**
@@ -34,10 +35,8 @@ import lombok.NonNull;
  * @version 1.0.0
  * @since 2023-11-16 19:10
  */
+@NoArgsConstructor
 abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
-
-  /** 历史版本记录上限 */
-  final int recordLimit;
 
   /** 移动记录头 */
   final Node<T> head =
@@ -102,6 +101,9 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   /** 当前记录数 */
   int index;
 
+  /** 历史版本记录上限 */
+  int recordLimit;
+
   /**
    * 构造方法
    *
@@ -138,6 +140,19 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
    */
   public int size() {
     return index;
+  }
+
+  /**
+   * 尾部追加节点
+   *
+   * @param obj 对象
+   */
+  void append(@NonNull T obj) {
+    Node<T> prevNode = tail.prev;
+    Node<T> newNode = new Node<>(prevNode, obj, tail);
+    tail.prev = newNode;
+    prevNode.next = newNode;
+    index++;
   }
 
   /**
