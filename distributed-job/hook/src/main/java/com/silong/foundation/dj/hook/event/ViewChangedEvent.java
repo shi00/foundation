@@ -22,6 +22,7 @@
 package com.silong.foundation.dj.hook.event;
 
 import java.io.Serial;
+import javax.annotation.Nullable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -43,18 +44,18 @@ public class ViewChangedEvent extends ApplicationEvent {
 
   @Serial private static final long serialVersionUID = -6_140_118_803_761_680_246L;
 
-  /** 新视图 */
-  private final View newView;
+  /** 旧视图 */
+  private final View oldView;
 
   /**
    * 构造方法
    *
-   * @param oldView 事件源
+   * @param oldView 旧视图
    * @param newView 当前新视图
    */
-  public ViewChangedEvent(@NonNull View oldView, @NonNull View newView) {
-    super(oldView);
-    this.newView = newView;
+  public ViewChangedEvent(@Nullable View oldView, @NonNull View newView) {
+    super(newView);
+    this.oldView = oldView;
   }
 
   /**
@@ -62,12 +63,12 @@ public class ViewChangedEvent extends ApplicationEvent {
    *
    * @return 旧视图
    */
-  public View oldView() {
+  public View newView() {
     return (View) getSource();
   }
 
   @Override
   public String toString() {
-    return String.format("ViewChangedEvent{newView:[%s]}", newView);
+    return String.format("ViewChangedEvent{newView:%s, oldView:%s}", newView(), oldView);
   }
 }
