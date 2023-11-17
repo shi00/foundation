@@ -21,10 +21,12 @@
 
 package com.silong.foundation.dj.mixmaster.vo;
 
+import static java.util.Spliterator.*;
+
 import jakarta.annotation.Nullable;
 import java.io.Serializable;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
+import java.util.stream.StreamSupport;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
@@ -213,5 +215,39 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
         return nextObj.value;
       }
     };
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof MultipleVersionObj<?> that) {
+      return index == that.index
+          && recordLimit == that.recordLimit
+          && compare(iterator(), that.iterator());
+    }
+    return false;
+  }
+
+  boolean compare(Iterator<?> a, Iterator<?> b) {
+    while (a.hasNext()) {
+      if (!b.hasNext()) {
+        return false;
+      }
+      if (!Objects.equals(a.next(), b.next())) {
+        return false;
+      }
+    }
+    return !b.hasNext();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        StreamSupport.stream(
+                Spliterators.spliterator(iterator(), index, ORDERED | SIZED | NONNULL), false)
+            .map(Object::hashCode)
+            .reduce(Objects::hash)
+            .orElse(0),
+        index,
+        recordLimit);
   }
 }
