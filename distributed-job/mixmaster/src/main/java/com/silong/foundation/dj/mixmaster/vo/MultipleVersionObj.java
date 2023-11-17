@@ -90,11 +90,6 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
         }
 
         @Override
-        public T getValue() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
         public String toString() {
           return String.format("[tail|prev:%s]", prev);
         }
@@ -145,6 +140,15 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   }
 
   /**
+   * 是否为空
+   *
+   * @return true or false
+   */
+  public boolean isEmpty() {
+    return index == 0;
+  }
+
+  /**
    * 尾部追加节点
    *
    * @param obj 对象
@@ -162,7 +166,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
    *
    * @param obj 对象
    */
-  public MultipleVersionObj<T> record(@NonNull T obj) {
+  public void record(@NonNull T obj) {
     if (index < recordLimit) {
       push(obj);
       index++;
@@ -170,7 +174,6 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
       // 循环利用
       recycle(obj);
     }
-    return this;
   }
 
   private void recycle(T obj) {
