@@ -55,8 +55,10 @@ public class BonecrusherApp4Test {
     Address creator = new IpAddress("127.0.0.1:43434");
     ViewId newViewId = new ViewId(creator, 1);
     View newView = new View(newViewId, List.of(new IpAddress("127.0.0.1:43436"), creator));
-    publisher.publishEvent(new ViewChangedEvent(this, newView));
-    publisher.publishEvent(new JoinClusterEvent(this, "test-cluster", creator));
+    View oldView =
+        new View(new ViewId(creator, 0), List.of(new IpAddress("127.0.0.1:43435"), creator));
+    publisher.publishEvent(new ViewChangedEvent(oldView, newView));
+    publisher.publishEvent(new JoinClusterEvent(newView, "test-cluster", creator));
   }
 
   @PostConstruct
