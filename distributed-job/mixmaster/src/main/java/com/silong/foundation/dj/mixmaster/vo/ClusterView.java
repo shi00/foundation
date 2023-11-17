@@ -28,8 +28,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serial;
-import java.util.Spliterators;
-import java.util.stream.StreamSupport;
+import java.util.List;
+import java.util.stream.Stream;
 import lombok.EqualsAndHashCode;
 import org.jgroups.View;
 import org.jgroups.util.SizeStreamable;
@@ -46,6 +46,11 @@ import org.jgroups.util.Util;
 public class ClusterView extends MultipleVersionObj<View> implements SizeStreamable {
 
   @Serial private static final long serialVersionUID = -240_752_712_356_040_731L;
+
+  /** 默认构造方法 */
+  public ClusterView() {
+    this(0);
+  }
 
   /**
    * 构造方法
@@ -90,11 +95,21 @@ public class ClusterView extends MultipleVersionObj<View> implements SizeStreama
   public String toString() {
     return String.format(
         "ClusterView{recordLimit:%d, size:%d, %s}",
-        recordLimit,
-        index,
-        StreamSupport.stream(
-                Spliterators.spliterator(iterator(), index, ORDERED | SIZED | NONNULL), false)
-            .map(View::toString)
-            .collect(joining(", ")));
+        recordLimit, index, toStream(iterator()).map(View::toString).collect(joining(", ")));
+  }
+
+  /**
+   * 合并集群视图
+   *
+   * @param cView 集群视图
+   */
+  public void merge(ClusterView cView) {
+    List<View> list =
+        Stream.concat(toStream(iterator()), toStream(cView.iterator()))
+            .distinct()
+            .sorted(View::compareTo)
+            .toList();
+    clear();
+    list.forEach(this::record);
   }
 }

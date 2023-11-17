@@ -21,9 +21,11 @@
 
 package com.silong.foundation.dj.mixmaster.core;
 
-import static com.silong.foundation.dj.mixmaster.vo.EmptyView.EMPTY_VIEW;
+import static com.silong.foundation.dj.mixmaster.core.DefaultDistributedEngine.VIEW_CHANGED_RECORDS;
 
+import com.silong.foundation.dj.hook.event.SyncPartitionEvent;
 import com.silong.foundation.dj.mixmaster.ClusterMetadata;
+import com.silong.foundation.dj.mixmaster.DistributedEngine;
 import com.silong.foundation.dj.mixmaster.Object2PartitionMapping;
 import com.silong.foundation.dj.mixmaster.Partition2NodesMapping;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
@@ -39,9 +41,9 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jctools.maps.NonBlockingHashMap;
-import org.jgroups.Address;
 import org.jgroups.View;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 /**
@@ -54,9 +56,6 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
-  /** 视图变化记录数量 */
-  private static final int VIEW_CHANGED_RECORDS =
-      Integer.parseInt(System.getProperty("cluster.view.change.records", "10"));
 
   @ToString.Exclude private final Lock writeLock;
 
@@ -77,6 +76,12 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   /** 分区映射表 */
   private NonBlockingHashMap<Integer, Partition<StoreNodes<ClusterNodeUUID>>> partitionsMap;
 
+  /** 事件发送器 */
+  private ApplicationEventPublisher eventPublisher;
+
+  /** 分布式引擎 */
+  private DistributedEngine engine;
+
   /** 构造方法 */
   public DefaultClusterMetadata() {
     ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
@@ -84,69 +89,67 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
     this.readLock = readWriteLock.readLock();
   }
 
-  /**
-   * 更新元数据
-   *
-   * @param oldView 旧的集群视图
-   * @param newView 新的集群视图
-   */
   @Override
   public void update(@NonNull View oldView, @NonNull View newView) {
     writeLock.lock();
     try {
-      // 首次加入集群，则完全重新计算分区映射关系
-      if (oldView == EMPTY_VIEW) {
-        IntStream.range(0, totalPartition)
-            .parallel()
-            .forEach(
-                partitionNo -> {
-                  // 获取存储分区
-                  Partition<StoreNodes<ClusterNodeUUID>> partition =
-                      partitionsMap.computeIfAbsent(
-                          partitionNo, key -> new Partition<>(partitionNo, VIEW_CHANGED_RECORDS));
+      IntStream.range(0, totalPartition)
+          .parallel()
+          .forEach(
+              partitionNo -> {
+                // 获取存储分区
+                Partition<StoreNodes<ClusterNodeUUID>> partition =
+                    partitionsMap.computeIfAbsent(
+                        partitionNo, key -> new Partition<>(partitionNo, VIEW_CHANGED_RECORDS));
 
-                  StoreNodes<ClusterNodeUUID> nodes =
-                      StoreNodes.<ClusterNodeUUID>builder()
-                          .version(newView.getViewId().getId())
-                          .primaryAndBackups(
-                              partition2NodesMapping.allocatePartition(
-                                  partitionNo,
-                                  backupNum,
-                                  Arrays.stream(newView.getMembersRaw())
-                                      .map(ClusterNodeUUID.class::cast)
-                                      .toList(),
-                                  null))
-                          .build();
+                // 计算分区映射的集群节点列表
+                StoreNodes<ClusterNodeUUID> newNodes =
+                    StoreNodes.<ClusterNodeUUID>builder()
+                        .version(newView.getViewId().getId())
+                        .primaryAndBackups(
+                            partition2NodesMapping.allocatePartition(
+                                partitionNo,
+                                backupNum,
+                                Arrays.stream(newView.getMembersRaw())
+                                    .map(ClusterNodeUUID.class::cast)
+                                    .toList(),
+                                null))
+                        .build();
 
-                  // 记录当前分区对应的存储节点列表
-                  partition.record(nodes);
-                });
-      } else {
-        Address[][] diff = View.diff(oldView, newView);
-        Address[] join = diff[0];
-        Address[] left = diff[1];
-      }
+                // 获取分区当前的节点分布记录
+                StoreNodes<ClusterNodeUUID> historyNodes = partition.currentRecord();
+
+                // 记录当前分区对应的存储节点列表
+                partition.record(newNodes);
+
+                ClusterNodeUUID local = (ClusterNodeUUID) engine.localAddress();
+
+                // 无历史视图表明本地节点是新加入集群
+                if (historyNodes == null) {
+                  // 新加入集群如果做为备分区，则向主分区请求同步数据
+                  if (newNodes.isBackup(local)) {
+                    Thread.ofVirtual()
+                        .start(
+                            () ->
+                                eventPublisher.publishEvent(
+                                    new SyncPartitionEvent(newNodes.primary(), partitionNo)));
+                  } else if (newNodes.isPrimary(local)) {
+
+                  }
+                }
+                // 如果旧的分区分布不包含本地节点，新分区分布包含本地节点
+                else if (!historyNodes.contains(local)) {
+
+                  if (newNodes.contains(local)) {
+
+                  } else {
+
+                  }
+                }
+              });
     } finally {
       writeLock.unlock();
     }
-  }
-
-  @Autowired
-  public void initialize(MixmasterProperties properties) {
-    this.backupNum = properties.getBackupNum();
-    this.totalPartition = properties.getPartitions();
-    this.partitionsMap = new NonBlockingHashMap<>(totalPartition);
-  }
-
-  @Autowired
-  public void setPartition2NodesMapping(
-      Partition2NodesMapping<ClusterNodeUUID> partition2NodesMapping) {
-    this.partition2NodesMapping = partition2NodesMapping;
-  }
-
-  @Autowired
-  public void setObjectPartitionMapping(Object2PartitionMapping objectPartitionMapping) {
-    this.objectPartitionMapping = objectPartitionMapping;
   }
 
   @Override
@@ -171,5 +174,32 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   @Override
   public int mapObj2Partition(Object obj) {
     return objectPartitionMapping.partition(obj);
+  }
+
+  public void setEngine(DistributedEngine engine) {
+    this.engine = engine;
+  }
+
+  @Autowired
+  public void initialize(MixmasterProperties properties) {
+    this.backupNum = properties.getBackupNum();
+    this.totalPartition = properties.getPartitions();
+    this.partitionsMap = new NonBlockingHashMap<>(totalPartition);
+  }
+
+  @Autowired
+  public void setPartition2NodesMapping(
+      Partition2NodesMapping<ClusterNodeUUID> partition2NodesMapping) {
+    this.partition2NodesMapping = partition2NodesMapping;
+  }
+
+  @Autowired
+  public void setEventPublisher(ApplicationEventPublisher eventPublisher) {
+    this.eventPublisher = eventPublisher;
+  }
+
+  @Autowired
+  public void setObjectPartitionMapping(Object2PartitionMapping objectPartitionMapping) {
+    this.objectPartitionMapping = objectPartitionMapping;
   }
 }

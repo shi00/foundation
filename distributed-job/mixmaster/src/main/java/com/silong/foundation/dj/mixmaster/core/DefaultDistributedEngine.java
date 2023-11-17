@@ -21,6 +21,7 @@
 package com.silong.foundation.dj.mixmaster.core;
 
 import static com.silong.foundation.dj.mixmaster.core.DefaultAddressGenerator.HOST_NAME;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.protobuf.MessageLite;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
@@ -42,7 +43,9 @@ import java.io.*;
 import java.net.*;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.atomic.MpscAtomicArrayQueue;
@@ -54,7 +57,10 @@ import org.jgroups.protocols.UDP;
 import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.MembershipChangePolicy;
+import org.jgroups.util.ByteArrayDataInputStream;
+import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.MessageBatch;
+import org.jgroups.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEvent;
@@ -76,9 +82,6 @@ class DefaultDistributedEngine
     implements DistributedEngine, Receiver, ChannelListener, Runnable, Serializable, AutoCloseable {
 
   @Serial private static final long serialVersionUID = -1_291_263_774_210_047_896L;
-
-  /** 初始空视图 */
-  public static final View EMPTY_VIEW = new View();
 
   /** 视图变化记录数量 */
   public static final int VIEW_CHANGED_RECORDS =
@@ -112,8 +115,9 @@ class DefaultDistributedEngine
   private JwtAuthenticator jwtAuthenticator;
 
   /** 集群视图 */
-  private final ClusterView clusterView =
-      (ClusterView) new ClusterView(VIEW_CHANGED_RECORDS).record(EMPTY_VIEW);
+  private final ClusterView clusterView = new ClusterView(VIEW_CHANGED_RECORDS);
+
+  private final CountDownLatch clusterViewLatch = new CountDownLatch(1);
 
   /** 初始化方法 */
   @PostConstruct
@@ -124,7 +128,7 @@ class DefaultDistributedEngine
           buildDistributedEngine(properties.getConfigFile())
               // 连接集群
               .connect(properties.getClusterName())
-              // 从coordinator同步集群状态
+              // 从coordinator同步集群视图
               .getState(null, properties.getClusterStateSyncTimeout().toMillis());
 
       // 启动事件派发线程
@@ -140,19 +144,31 @@ class DefaultDistributedEngine
     thread.start();
   }
 
-  /** 事件派发循环 */
-  @Override
-  public void run() {
-    // 等待jchannel状态为连接时启动事件派发
+  private void waitUntilConnected() {
     while (!jChannel.isConnected()) {
       Thread.onSpinWait();
     }
+  }
+
+  /** 事件派发循环 */
+  @Override
+  @SneakyThrows
+  public void run() {
+    // 等待jchannel状态为连接时启动事件派发
+    waitUntilConnected();
+
+    // 如果本地节点不是coordinator，则向coordinator请求
+    if (!Util.isCoordinator(jChannel)
+        && !clusterViewLatch.await(
+            properties.getClusterStateSyncTimeout().toMillis(), MILLISECONDS)) {
+      throw new IllegalStateException("Failed to synchronize clusterView from coordinator.");
+    }
+
     log.info("Start event dispatch processing......");
     while (!jChannel.isClosed()) {
       ApplicationEvent event;
       while ((event = eventQueue.poll()) != null) {
         if (event instanceof ViewChangedEvent viewChangedEvent) {
-          clusterView.record(viewChangedEvent.newView());
           clusterMetadata.update(viewChangedEvent.oldView(), viewChangedEvent.newView()); // 更新集群元数据
         }
         eventPublisher.publishEvent(event);
@@ -231,7 +247,10 @@ class DefaultDistributedEngine
     if (log.isDebugEnabled()) {
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
-    ViewChangedEvent event = new ViewChangedEvent(clusterView.currentRecord(), newView);
+
+    View oldView = clusterView.currentRecord();
+    clusterView.record(newView);
+    ViewChangedEvent event = new ViewChangedEvent(oldView, newView);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
@@ -461,11 +480,10 @@ class DefaultDistributedEngine
   /**
    * 给定节点是否为coordinator节点
    *
-   * @param address 节点地址
    * @return true or false
    */
-  boolean isCoordinator(Address address) {
-    return jChannel.view().getCoord().equals(address);
+  boolean isCoordinator() {
+    return Util.isCoordinator(jChannel);
   }
 
   /**
@@ -476,9 +494,11 @@ class DefaultDistributedEngine
    */
   @Override
   public void getState(OutputStream output) throws Exception {
-
-    //    log.info("The node{} sends the lastView[{}] to member of cluster.", localIdentity(),
-    // lastView);
+    ByteArrayDataOutputStream stream = new ByteArrayDataOutputStream(clusterView.serializedSize());
+    clusterView.writeTo(stream);
+    output.write(stream.buffer());
+    log.info(
+        "The node{} sends the lastView[{}] to member of cluster.", localIdentity(), clusterView);
   }
 
   /**
@@ -489,8 +509,18 @@ class DefaultDistributedEngine
    */
   @Override
   public void setState(InputStream input) throws Exception {
-
-    //    log.info("The node{} receives the view[{}] from coordinator.", localIdentity(), lastView);
+    int available = input.available();
+    byte[] bytes = new byte[available];
+    if (input.read(bytes) != available) {
+      throw new IllegalStateException("Failed to synchronize clusterView from coordinator.");
+    }
+    ClusterView cView = new ClusterView();
+    try (ByteArrayDataInputStream inputStream = new ByteArrayDataInputStream(bytes)) {
+      cView.readFrom(inputStream);
+    }
+    clusterView.merge(cView); // 合并集群视图
+    clusterViewLatch.countDown();
+    log.info("The node{} receives the view[{}] from coordinator.", localIdentity(), clusterView);
   }
 
   @Override

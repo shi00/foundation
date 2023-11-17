@@ -22,12 +22,9 @@
 package com.silong.foundation.dj.mixmaster.vo;
 
 import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.MAX_PARTITIONS_COUNT;
-import static java.util.Spliterator.*;
 import static java.util.stream.Collectors.joining;
 
 import java.io.Serial;
-import java.util.Spliterators;
-import java.util.stream.StreamSupport;
 import lombok.*;
 
 /**
@@ -77,9 +74,6 @@ public class Partition<T> extends MultipleVersionObj<T> {
         isReady,
         recordLimit,
         index,
-        StreamSupport.stream(
-                Spliterators.spliterator(iterator(), index, ORDERED | SIZED | NONNULL), false)
-            .map(Object::toString)
-            .collect(joining(", ")));
+        toStream(iterator()).map(Object::toString).collect(joining(", ")));
   }
 }

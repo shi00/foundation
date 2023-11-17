@@ -26,6 +26,7 @@ import static java.util.Spliterator.*;
 import jakarta.annotation.Nullable;
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -245,12 +246,13 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   @Override
   public int hashCode() {
     return Objects.hash(
-        StreamSupport.stream(
-                Spliterators.spliterator(iterator(), index, ORDERED | SIZED | NONNULL), false)
-            .map(Object::hashCode)
-            .reduce(Objects::hash)
-            .orElse(0),
+        toStream(iterator()).map(Object::hashCode).reduce(Objects::hash).orElse(0),
         index,
         recordLimit);
+  }
+
+  Stream<T> toStream(Iterator<T> iterator) {
+    return StreamSupport.stream(
+        Spliterators.spliterator(iterator, index, ORDERED | SIZED | NONNULL), false);
   }
 }
