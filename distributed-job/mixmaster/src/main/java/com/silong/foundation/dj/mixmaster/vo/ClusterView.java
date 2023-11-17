@@ -21,14 +21,14 @@
 
 package com.silong.foundation.dj.mixmaster.vo;
 
-import static java.util.Spliterator.ORDERED;
-import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.Spliterator.*;
 import static java.util.stream.Collectors.joining;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serial;
+import java.util.Spliterators;
 import java.util.stream.StreamSupport;
 import lombok.EqualsAndHashCode;
 import org.jgroups.View;
@@ -92,7 +92,8 @@ public class ClusterView extends MultipleVersionObj<View> implements SizeStreama
         "ClusterView{recordLimit:%d, size:%d, %s}",
         recordLimit,
         index,
-        StreamSupport.stream(spliteratorUnknownSize(iterator(), ORDERED), false)
+        StreamSupport.stream(
+                Spliterators.spliterator(iterator(), index, ORDERED | SIZED | NONNULL), false)
             .map(View::toString)
             .collect(joining(", ")));
   }
