@@ -21,10 +21,19 @@
 
 package com.silong.foundation.dj.mixmaster.vo;
 
+import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.stream.Collectors.joining;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serial;
+import java.util.stream.StreamSupport;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import org.jgroups.View;
+import org.jgroups.util.SizeStreamable;
+import org.jgroups.util.Util;
 
 /**
  * 集群视图
@@ -34,8 +43,7 @@ import org.jgroups.View;
  * @since 2023-11-16 17:35
  */
 @EqualsAndHashCode(callSuper = true)
-@ToString
-public class ClusterView extends MultipleVersionObj<View> {
+public class ClusterView extends MultipleVersionObj<View> implements SizeStreamable {
 
   @Serial private static final long serialVersionUID = -240_752_712_356_040_731L;
 
@@ -47,5 +55,45 @@ public class ClusterView extends MultipleVersionObj<View> {
   public ClusterView(int recordLimit) {
     super(recordLimit);
     clear();
+  }
+
+  @Override
+  public int serializedSize() {
+    int totalSize = Long.BYTES;
+    for (View view : this) {
+      totalSize += view.serializedSize();
+    }
+    // 历史视图列表 + recordLimit + size
+    return totalSize;
+  }
+
+  @Override
+  public void writeTo(DataOutput out) throws IOException {
+    out.write(recordLimit);
+    out.write(index);
+    for (View view : this) {
+      view.writeTo(out);
+    }
+  }
+
+  @Override
+  public void readFrom(DataInput in) throws IOException, ClassNotFoundException {
+    recordLimit = in.readInt();
+    int length = in.readInt();
+    for (int i = 0; i < length; i++) {
+      View view = Util.readView(in);
+      append(view);
+    }
+  }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "ClusterView{recordLimit:%d, size:%d, %s}",
+        recordLimit,
+        index,
+        StreamSupport.stream(spliteratorUnknownSize(iterator(), ORDERED), false)
+            .map(View::toString)
+            .collect(joining(", ")));
   }
 }
