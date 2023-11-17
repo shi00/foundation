@@ -68,7 +68,7 @@ class DefaultClusterNode implements ClusterNode<Address>, Serializable {
 
   @Override
   public ClusterNodeRole role() {
-    return engine.isCoordinator(clusterNode) ? LEADER : WORKER;
+    return engine.isCoordinator() ? LEADER : WORKER;
   }
 
   @Override
