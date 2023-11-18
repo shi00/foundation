@@ -21,18 +21,22 @@
 
 package com.silong.foundation.dj.mixmaster.vo;
 
-import static java.util.Spliterator.*;
+import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
+import static com.silong.foundation.dj.mixmaster.message.Messages.ClusterView.newBuilder;
 import static java.util.stream.Collectors.joining;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serial;
+import com.google.protobuf.ByteString;
+import com.silong.foundation.dj.mixmaster.message.Messages;
+import com.silong.foundation.dj.mixmaster.message.Messages.ViewList;
+import java.io.*;
 import java.util.List;
 import java.util.stream.Stream;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.jgroups.View;
-import org.jgroups.util.SizeStreamable;
+import org.jgroups.util.ByteArrayDataInputStream;
+import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.Util;
 
 /**
@@ -42,15 +46,11 @@ import org.jgroups.util.Util;
  * @version 1.0.0
  * @since 2023-11-16 17:35
  */
+@Slf4j
 @EqualsAndHashCode(callSuper = true)
-public class ClusterView extends MultipleVersionObj<View> implements SizeStreamable {
+public class ClusterView extends MultipleVersionObj<View> {
 
   @Serial private static final long serialVersionUID = -240_752_712_356_040_731L;
-
-  /** 默认构造方法 */
-  public ClusterView() {
-    this(0);
-  }
 
   /**
    * 构造方法
@@ -62,32 +62,53 @@ public class ClusterView extends MultipleVersionObj<View> implements SizeStreama
     clear();
   }
 
-  @Override
-  public int serializedSize() {
-    int totalSize = Long.BYTES;
-    for (View view : this) {
-      totalSize += view.serializedSize();
+  /**
+   * 序列化
+   *
+   * @param out 输出流
+   * @throws IOException 异常
+   */
+  public void writeTo(@NonNull OutputStream out) throws IOException {
+    Messages.ClusterView.Builder clusterViewBuilder = newBuilder().setRecordLimit(recordLimit);
+    if (size() > 0) {
+      ViewList.Builder viewListBuilder = ViewList.newBuilder();
+      for (View view : this) {
+        ByteArrayDataOutputStream bout = new ByteArrayDataOutputStream(Util.size(view));
+        Util.writeView(view, bout);
+        viewListBuilder.addViewBytes(unsafeWrap(bout.buffer()));
+        if (log.isDebugEnabled()) {
+          log.debug("writeTo: {}", view);
+        }
+      }
+      clusterViewBuilder.setViewList(viewListBuilder);
     }
-    // 历史视图列表 + recordLimit + size
-    return totalSize;
+    clusterViewBuilder.build().writeTo(out);
   }
 
-  @Override
-  public void writeTo(DataOutput out) throws IOException {
-    out.write(recordLimit);
-    out.write(index);
-    for (View view : this) {
-      view.writeTo(out);
-    }
-  }
+  /**
+   * 反序列化
+   *
+   * @param in 输入流
+   * @throws IOException 异常
+   * @throws ClassNotFoundException 异常
+   */
+  public void readFrom(@NonNull InputStream in) throws IOException, ClassNotFoundException {
+    Messages.ClusterView clusterView = Messages.ClusterView.parseFrom(in);
+    recordLimit = clusterView.getRecordLimit();
+    clear();
 
-  @Override
-  public void readFrom(DataInput in) throws IOException, ClassNotFoundException {
-    recordLimit = in.readInt();
-    int length = in.readInt();
-    for (int i = 0; i < length; i++) {
-      View view = Util.readView(in);
-      append(view);
+    if (clusterView.hasViewList()) {
+      ViewList viewList = clusterView.getViewList();
+      int views = viewList.getViewBytesCount();
+      for (int i = 0; i < views; i++) {
+        ByteString viewBytes = viewList.getViewBytes(i);
+        ByteArrayDataInputStream ins = new ByteArrayDataInputStream(viewBytes.toByteArray());
+        View view = Util.readView(ins);
+        if (log.isDebugEnabled()) {
+          log.debug("readFrom: {}", view);
+        }
+        append(view);
+      }
     }
   }
 
@@ -95,7 +116,9 @@ public class ClusterView extends MultipleVersionObj<View> implements SizeStreama
   public String toString() {
     return String.format(
         "ClusterView{recordLimit:%d, size:%d, %s}",
-        recordLimit, index, toStream(iterator()).map(View::toString).collect(joining(", ")));
+        recordLimit,
+        index,
+        toStream(iterator()).map(view -> "{" + view.toString() + "}").collect(joining(", ")));
   }
 
   /**
