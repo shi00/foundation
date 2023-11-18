@@ -134,17 +134,18 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     }
 
     // 主备分区数量超出集群节点数
-    int pab = backupNum + 1;
+    int primaryAndBackups = backupNum + 1;
     int nodesSize = clusterNodes.size();
-    if (pab > nodesSize) {
+    if (primaryAndBackups > nodesSize) {
       log.warn(
           "The number of primaryAndBackup({}) greater than the number of clusterNodes({}).",
-          pab,
+          primaryAndBackups,
           nodesSize);
     }
 
     // 主备数量大于集群节点数量则按节点数量保存
-    int primaryAndBackups = backupNum == Integer.MAX_VALUE ? nodesSize : Math.min(pab, nodesSize);
+    primaryAndBackups =
+        backupNum == Integer.MAX_VALUE ? nodesSize : Math.min(primaryAndBackups, nodesSize);
 
     // 是否排除邻居节点
     boolean exclNeighbors = neighborhood != null && !neighborhood.isEmpty();
