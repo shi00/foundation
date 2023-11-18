@@ -134,23 +134,24 @@ class RendezvousPartitionMapping implements Partition2NodesMapping<ClusterNodeUU
     }
 
     // 主备分区数量超出集群节点数
-    if (backupNum + 1 > clusterNodes.size()) {
-      log.warn("The number of primary and backup nodes greater than the number of cluster nodes.");
+    int pab = backupNum + 1;
+    int nodesSize = clusterNodes.size();
+    if (pab > nodesSize) {
+      log.warn(
+          "The number of primaryAndBackup({}) greater than the number of clusterNodes({}).",
+          pab,
+          nodesSize);
     }
 
     // 主备数量大于集群节点数量则按节点数量保存
-    int primaryAndBackups =
-        backupNum == Integer.MAX_VALUE
-            ? clusterNodes.size()
-            : Math.min(backupNum + 1, clusterNodes.size());
+    int primaryAndBackups = backupNum == Integer.MAX_VALUE ? nodesSize : Math.min(pab, nodesSize);
 
     // 是否排除邻居节点
     boolean exclNeighbors = neighborhood != null && !neighborhood.isEmpty();
     Collection<Identity<Address>> allNeighbors =
         exclNeighbors ? getThreadLocalValue(NEIGHBORS, HashSet::new) : null;
     PriorityQueue<ClusterNodeUUID> priorityQueue =
-        getThreadLocalValue(
-            PRIORITY_QUEUE, () -> new PriorityQueue<>(clusterNodes.size(), COMPARATOR));
+        getThreadLocalValue(PRIORITY_QUEUE, () -> new PriorityQueue<>(nodesSize, COMPARATOR));
 
     try {
       // 使用优先级队列，解决TopK问题，权重最大的k个元素
