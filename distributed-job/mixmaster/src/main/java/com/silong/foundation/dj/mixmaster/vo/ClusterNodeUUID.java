@@ -178,14 +178,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
    *
    * @return 附加属性
    */
-  public String attributes() {
+  public String printAttributes() {
     return TextFormat.printer().printToString(this.clusterNodeInfo);
-  }
-
-  @Override
-  public String toString() {
-    return String.format(
-        "ClusterNodeUUID:[uuid:%s, clusterName:%s, instanceName:%s]",
-        super.toString(), clusterNodeInfo.getClusterName(), clusterNodeInfo.getInstanceName());
   }
 }
