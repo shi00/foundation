@@ -40,13 +40,17 @@
         </encoder>
     </appender>
 
+    <logger name="org.jgroups" level="debug"/>
+
+    <logger name="com.silong" level="debug"/>
+
     <!--
     - 根logger
     - level:设置打印级别，大小写无关：TRACE, DEBUG, INFO, WARN, ERROR, ALL 和 OFF，不能设置为INHERITED或者同义词NULL。
     -       默认是DEBUG。
     -appender-ref:可以包含零个或多个<appender-ref>元素，标识这个appender将会添加到这个logger
     -->
-    <root level="DEBUG">
+    <root level="warn">
         <appender-ref ref="STDOUT"/>
         <!--<appender-ref ref="DEBUG"/>-->
         <!--<appender-ref ref="EXCEPTION"/>-->
