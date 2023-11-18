@@ -5,9 +5,15 @@ option java_package = "com.silong.foundation.dj.mixmaster.message";
 option java_outer_classname = "Messages";
 
 //////////////////////////////////////////////////////////
+//集群视图
+message ClusterView {
+  int32 recordLimit = 1;
+  optional ViewList viewList = 2;
+}
 
-
-
+message ViewList{
+  repeated bytes viewBytes = 1;
+}
 //////////////////////////////////////////////////////////
 //集群成员信息
 message ClusterNodeInfo {
