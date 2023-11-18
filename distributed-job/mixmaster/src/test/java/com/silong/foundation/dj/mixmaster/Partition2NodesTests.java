@@ -42,7 +42,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * 集成测试
+ * 测试
  *
  * @author louis sin
  * @version 1.0.0
