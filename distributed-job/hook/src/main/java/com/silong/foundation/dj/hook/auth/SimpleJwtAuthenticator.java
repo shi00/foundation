@@ -188,14 +188,14 @@ public class SimpleJwtAuthenticator implements JwtAuthenticator {
       DecodedJWT jwt = verifier.verify(jwtToken);
       return result = payloadsVerifier.apply(jwt.getClaims());
     } catch (JWTVerificationException e) {
-      log.warn("Failed to verify the jwtToken: {}.", jwtToken, e);
+      log.warn("Failed to verify the jwtToken: ******.", e);
       return new Result(false, e.getMessage());
     } finally {
       if (result != null) {
         if (!result.isValid()) {
-          log.warn("Failed to verify the jwtToken: {}, cause: {}", jwtToken, result.cause());
+          log.warn("Failed to verify the jwtToken: ******, cause: {}", result.cause());
         } else if (log.isDebugEnabled()) {
-          log.debug("Successfully authenticated the jwtToken: {}", jwtToken);
+          log.debug("Successfully authenticated the jwtToken: ******.");
         }
       }
     }
