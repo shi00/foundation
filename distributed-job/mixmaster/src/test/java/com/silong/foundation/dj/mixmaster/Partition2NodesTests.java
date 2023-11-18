@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -50,9 +49,13 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  */
 @Slf4j
 @SpringBootTest(classes = MixmasterApp4Test.class)
-@TestPropertySource(locations = "classpath:application.properties")
+@TestPropertySource(
+    locations = "classpath:application.properties",
+    properties = {
+      "mixmaster.scrapper.persist-data-path=./target/partitionTests",
+      "mixmaster.instance-name=monkey"
+    })
 @ExtendWith(SpringExtension.class)
-@ComponentScan
 public class Partition2NodesTests {
 
   private static final Faker FAKER = new Faker();
