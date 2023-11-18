@@ -48,7 +48,7 @@ import org.jgroups.util.Util;
 @Getter
 public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializable {
 
-  @Serial private static final long serialVersionUID = -1_588_683_866_996_767_650L;
+  @Serial private static final long serialVersionUID = 5_046_218_932_880_379_606L;
 
   static {
     // it will need to get registered with the ClassConfigurator in order to marshal it correctly
@@ -173,10 +173,19 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
     return INSTANCE.from(bytes);
   }
 
+  /**
+   * 获取附加属性
+   *
+   * @return 附加属性
+   */
+  public String attributes() {
+    return TextFormat.printer().printToString(this.clusterNodeInfo);
+  }
+
   @Override
   public String toString() {
     return String.format(
-        "ClusterNodeUUID:[uuid:%s, clusterNodeInfo:%s]",
-        super.toString(), TextFormat.printer().printToString(this.clusterNodeInfo));
+        "ClusterNodeUUID:[uuid:%s, clusterName:%s, instanceName:%s]",
+        super.toString(), clusterNodeInfo.getClusterName(), clusterNodeInfo.getInstanceName());
   }
 }
