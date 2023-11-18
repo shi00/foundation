@@ -22,7 +22,6 @@
 package com.silong.foundation.dj.mixmaster;
 
 import com.silong.foundation.dj.mixmaster.vo.StoreNodes;
-import org.jgroups.View;
 
 /**
  * 集群元数据
@@ -33,14 +32,6 @@ import org.jgroups.View;
  * @param <T> 地址类型
  */
 public interface ClusterMetadata<T> {
-
-  /**
-   * 由集群视图引起的更新元数据
-   *
-   * @param oldView 旧的集群视图
-   * @param newView 新的集群视图
-   */
-  void update(View oldView, View newView);
 
   /**
    * 对象到分区映射
