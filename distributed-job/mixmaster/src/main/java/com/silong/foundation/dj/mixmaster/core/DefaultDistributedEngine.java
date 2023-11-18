@@ -507,6 +507,9 @@ class DefaultDistributedEngine
     ClusterView cView = new ClusterView(0);
     cView.readFrom(input);
     clusterView.merge(cView); // 合并集群视图
+    if (log.isDebugEnabled()) {
+      log.debug("{} mergedView: {}", properties.getInstanceName(), clusterView);
+    }
     clusterMetadata.initialize(clusterView.currentRecord());
     clusterViewLatch.countDown();
     log.info("The node{} receives the {} from coordinator.", localIdentity(jChannel), clusterView);
