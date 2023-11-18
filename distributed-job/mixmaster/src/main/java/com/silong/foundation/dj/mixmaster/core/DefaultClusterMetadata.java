@@ -33,14 +33,17 @@ import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import com.silong.foundation.dj.mixmaster.vo.Partition;
 import com.silong.foundation.dj.mixmaster.vo.StoreNodes;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jctools.maps.NonBlockingHashMap;
+import org.jgroups.Address;
 import org.jgroups.View;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -89,8 +92,51 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
     this.readLock = readWriteLock.readLock();
   }
 
-  @Override
-  public void update(@NonNull View oldView, @NonNull View newView) {
+  private List<ClusterNodeUUID> toClusterNodes(Address[] addresses) {
+    return Arrays.stream(addresses).map(ClusterNodeUUID.class::cast).toList();
+  }
+
+  /**
+   * 初始化元素据
+   *
+   * @param view 初始视图
+   */
+  void initialize(@NonNull View view) {
+    writeLock.lock();
+    try {
+      IntStream.range(0, totalPartition)
+          .parallel()
+          .mapToObj(
+              partitionNo ->
+                  partitionsMap.computeIfAbsent(
+                      partitionNo, key -> new Partition<>(partitionNo, VIEW_CHANGED_RECORDS)))
+          .forEach(
+              partition -> {
+                // 计算分区映射的集群节点列表
+                // 记录当前分区对应的存储节点列表
+                partition.record(
+                    StoreNodes.<ClusterNodeUUID>builder()
+                        .version(view.getViewId().getId())
+                        .primaryAndBackups(
+                            partition2NodesMapping.allocatePartition(
+                                partition.getPartitionNo(),
+                                backupNum,
+                                toClusterNodes(view.getMembersRaw()),
+                                null))
+                        .build());
+              });
+    } finally {
+      writeLock.unlock();
+    }
+  }
+
+  /**
+   * 更新元数据
+   *
+   * @param oldView 旧视图
+   * @param newView 新视图
+   */
+  void update(@Nullable View oldView, @NonNull View newView) {
     writeLock.lock();
     try {
       IntStream.range(0, totalPartition)
@@ -110,9 +156,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
                             partition2NodesMapping.allocatePartition(
                                 partitionNo,
                                 backupNum,
-                                Arrays.stream(newView.getMembersRaw())
-                                    .map(ClusterNodeUUID.class::cast)
-                                    .toList(),
+                                toClusterNodes(newView.getMembersRaw()),
                                 null))
                         .build();
 

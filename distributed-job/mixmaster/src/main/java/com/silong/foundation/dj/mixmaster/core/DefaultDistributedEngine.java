@@ -57,8 +57,6 @@ import org.jgroups.protocols.UDP;
 import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.MembershipChangePolicy;
-import org.jgroups.util.ByteArrayDataInputStream;
-import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.MessageBatch;
 import org.jgroups.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,7 +89,7 @@ class DefaultDistributedEngine
   private ApplicationEventPublisher eventPublisher;
 
   /** 集群通信信道 */
-  private volatile JChannel jChannel;
+  private JChannel jChannel;
 
   /** 配置 */
   private MixmasterProperties properties;
@@ -100,7 +98,7 @@ class DefaultDistributedEngine
   private PersistStorage persistStorage;
 
   /** 集群元数据 */
-  private ClusterMetadata<ClusterNodeUUID> clusterMetadata;
+  private DefaultClusterMetadata clusterMetadata;
 
   /** 消息队列，多生产者单消费者，异步保序处理事件 */
   private MpscAtomicArrayQueue<ApplicationEvent> eventQueue;
@@ -144,7 +142,8 @@ class DefaultDistributedEngine
     thread.start();
   }
 
-  private void waitUntilConnected() {
+  /** 等待连接状态 */
+  void waitUntilConnected() {
     while (!jChannel.isConnected()) {
       Thread.onSpinWait();
     }
@@ -183,7 +182,7 @@ class DefaultDistributedEngine
    *
    * @return 传输协议
    */
-  private TP getTransport() {
+  private TP getTransport(JChannel jChannel) {
     return jChannel.getProtocolStack().getTransport();
   }
 
@@ -261,7 +260,9 @@ class DefaultDistributedEngine
     String clusterName = properties.getClusterName();
     if (log.isDebugEnabled()) {
       log.debug(
-          "The node{} has successfully joined the cluster[{}].", localIdentity(), clusterName);
+          "The node{} has successfully joined the cluster[{}].",
+          localIdentity(channel),
+          clusterName);
     }
     JoinClusterEvent event =
         new JoinClusterEvent(clusterView.currentRecord(), clusterName, channel.address());
@@ -274,7 +275,7 @@ class DefaultDistributedEngine
   public void channelDisconnected(JChannel channel) {
     String clusterName = properties.getClusterName();
     if (log.isDebugEnabled()) {
-      log.debug("The node{} has left the cluster[{}].", localIdentity(), clusterName);
+      log.debug("The node{} has left the cluster[{}].", localIdentity(channel), clusterName);
     }
     LeftClusterEvent event =
         new LeftClusterEvent(clusterView.currentRecord(), clusterName, channel.address());
@@ -285,7 +286,7 @@ class DefaultDistributedEngine
 
   @Override
   public void channelClosed(JChannel channel) {
-    log.info("The node{} has been closed.", localIdentity());
+    log.info("The node{} has been closed.", localIdentity(channel));
     ChannelClosedEvent event = new ChannelClosedEvent(channel);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
@@ -307,7 +308,7 @@ class DefaultDistributedEngine
       throw new IllegalArgumentException(String.format("Failed to load %s.", configFile), e);
     }
     try (InputStream inputStream = configUrl.openStream()) {
-      return configureDistributedEngine(new JChannel(inputStream));
+      return configureDistributedEngine(jChannel = new JChannel(inputStream));
     }
   }
 
@@ -324,34 +325,27 @@ class DefaultDistributedEngine
     }
   }
 
-  /**
-   * 获取集群绑定的通讯地址
-   *
-   * @return 绑定地址
-   */
-  private InetAddress bindAddress() {
-    TP transport = getTransport();
+  private InetAddress bindAddress(JChannel jChannel) {
+    TP transport = getTransport(jChannel);
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastAddress()
         : transport.getBindAddress();
   }
 
-  /**
-   * 获取绑定端口
-   *
-   * @return 绑定端口
-   */
-  private int bindPort() {
-    TP transport = getTransport();
+  private int bindPort(JChannel jChannel) {
+    TP transport = getTransport(jChannel);
     return transport.getClass() == UDP.class
         ? ((UDP) transport).getMulticastPort()
         : transport.getBindPort();
   }
 
-  private String localIdentity() {
+  private String localIdentity(JChannel jChannel) {
     return String.format(
         "(%s:%s|%s:%d)",
-        HOST_NAME, properties.getInstanceName(), bindAddress().getHostAddress(), bindPort());
+        HOST_NAME,
+        properties.getInstanceName(),
+        bindAddress(jChannel).getHostAddress(),
+        bindPort(jChannel));
   }
 
   String name() {
@@ -494,11 +488,8 @@ class DefaultDistributedEngine
    */
   @Override
   public void getState(OutputStream output) throws Exception {
-    ByteArrayDataOutputStream stream = new ByteArrayDataOutputStream(clusterView.serializedSize());
-    clusterView.writeTo(stream);
-    output.write(stream.buffer());
-    log.info(
-        "The node{} sends the lastView[{}] to member of cluster.", localIdentity(), clusterView);
+    clusterView.writeTo(output);
+    log.info("The node{} sends the {} to member of cluster.", localIdentity(jChannel), clusterView);
   }
 
   /**
@@ -509,18 +500,12 @@ class DefaultDistributedEngine
    */
   @Override
   public void setState(InputStream input) throws Exception {
-    int available = input.available();
-    byte[] bytes = new byte[available];
-    if (input.read(bytes) != available) {
-      throw new IllegalStateException("Failed to synchronize clusterView from coordinator.");
-    }
-    ClusterView cView = new ClusterView();
-    try (ByteArrayDataInputStream inputStream = new ByteArrayDataInputStream(bytes)) {
-      cView.readFrom(inputStream);
-    }
+    ClusterView cView = new ClusterView(0);
+    cView.readFrom(input);
     clusterView.merge(cView); // 合并集群视图
+    clusterMetadata.initialize(clusterView.currentRecord());
     clusterViewLatch.countDown();
-    log.info("The node{} receives the view[{}] from coordinator.", localIdentity(), clusterView);
+    log.info("The node{} receives the {} from coordinator.", localIdentity(jChannel), clusterView);
   }
 
   @Override
@@ -578,11 +563,9 @@ class DefaultDistributedEngine
   }
 
   @Autowired
-  public void setClusterMetadata(ClusterMetadata<ClusterNodeUUID> clusterMetadata) {
+  public void setClusterMetadata(DefaultClusterMetadata clusterMetadata) {
     this.clusterMetadata = clusterMetadata;
-    if (clusterMetadata instanceof DefaultClusterMetadata metadata) {
-      metadata.setEngine(this);
-    }
+    clusterMetadata.setEngine(this);
   }
 
   @Autowired
