@@ -137,7 +137,11 @@ class DefaultDistributedEngine
   }
 
   private void startEventDispatcherThread() {
-    Thread thread = new Thread(Thread.currentThread().getThreadGroup(), this, "Event-Dispatcher");
+    Thread thread =
+        new Thread(
+            Thread.currentThread().getThreadGroup(),
+            this,
+            properties.getInstanceName() + "-Event-Dispatcher");
     thread.setDaemon(true);
     thread.start();
   }
