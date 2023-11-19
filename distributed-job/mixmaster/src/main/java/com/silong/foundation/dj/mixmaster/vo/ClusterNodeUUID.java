@@ -37,6 +37,7 @@ import org.jgroups.util.ByteArrayDataInputStream;
 import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.UUID;
 import org.jgroups.util.Util;
+import org.xerial.snappy.Snappy;
 
 /**
  * 扩展UUID，作为节点信息
@@ -143,7 +144,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   @Override
   public void writeTo(DataOutput out) throws IOException {
     super.writeTo(out);
-    byte[] buf = clusterNodeInfo != null ? clusterNodeInfo.toByteArray() : null;
+    byte[] buf = clusterNodeInfo != null ? Snappy.compress(clusterNodeInfo.toByteArray()) : null;
     Util.writeByteBuffer(buf, 0, buf != null ? buf.length : -1, out);
   }
 
@@ -151,7 +152,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   public void readFrom(DataInput in) throws IOException {
     super.readFrom(in);
     byte[] bytes = Util.readByteBuffer(in);
-    clusterNodeInfo = bytes == null ? null : ClusterNodeInfo.parseFrom(bytes);
+    clusterNodeInfo = bytes == null ? null : ClusterNodeInfo.parseFrom(Snappy.uncompress(bytes));
   }
 
   /**
