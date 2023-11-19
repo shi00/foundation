@@ -24,7 +24,7 @@ package com.silong.foundation.dj.mixmaster;
 import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.MAX_PARTITIONS_COUNT;
 
 import com.github.javafaker.Faker;
-import com.silong.foundation.dj.mixmaster.message.Messages.ClusterNodeInfo;
+import com.silong.foundation.dj.mixmaster.generated.Messages.ClusterNodeInfo;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
