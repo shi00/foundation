@@ -171,7 +171,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
    *
    * @param obj 对象
    */
-  void append(@NonNull T obj) {
+  public void append(@NonNull T obj) {
     Node<T> prevNode = tail.prev;
     Node<T> newNode = new Node<>(prevNode, obj, tail);
     tail.prev = newNode;
