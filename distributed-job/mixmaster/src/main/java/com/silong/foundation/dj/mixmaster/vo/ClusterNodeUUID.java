@@ -23,7 +23,7 @@ package com.silong.foundation.dj.mixmaster.vo;
 import com.google.protobuf.TextFormat;
 import com.silong.foundation.common.utils.BiConverter;
 import com.silong.foundation.dj.mixmaster.Identity;
-import com.silong.foundation.dj.mixmaster.message.Messages.ClusterNodeInfo;
+import com.silong.foundation.dj.mixmaster.generated.Messages.ClusterNodeInfo;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.*;
 import java.util.function.Supplier;
