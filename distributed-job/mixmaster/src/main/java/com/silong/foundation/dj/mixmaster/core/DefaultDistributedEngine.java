@@ -120,14 +120,16 @@ class DefaultDistributedEngine
   /** 初始化方法 */
   @PostConstruct
   public void initialize() {
-    try {
-      // 构建配置
-      jChannel =
-          buildDistributedEngine(properties.getConfigFile())
-              // 连接集群
-              .connect(properties.getClusterName())
-              // 从coordinator同步集群视图
-              .getState(null, properties.getClusterStateSyncTimeout().toMillis());
+    try (InputStream inputStream = properties.getConfigFile().openStream()) {
+      // 创建jchannel并配置
+      configureDistributedEngine(jChannel = new JChannel(inputStream));
+
+      // 加入集群，同步集群视图
+      jChannel
+          // 连接集群
+          .connect(properties.getClusterName())
+          // 从coordinator同步集群视图
+          .getState(null, properties.getClusterStateSyncTimeout().toMillis());
 
       // 启动事件派发线程
       startEventDispatcherThread();
@@ -160,7 +162,7 @@ class DefaultDistributedEngine
     // 等待jchannel状态为连接时启动事件派发
     waitUntilConnected();
 
-    // 如果本地节点不是coordinator，则向coordinator请求
+    // 如果本地节点不是coordinator，则等待从coordinator获取当前集群的视图
     if (!Util.isCoordinator(jChannel)
         && !clusterViewLatch.await(
             properties.getClusterStateSyncTimeout().toMillis(), MILLISECONDS)) {
@@ -219,7 +221,7 @@ class DefaultDistributedEngine
     return jChannel.getProtocolStack().getTransport().getMessageFactory();
   }
 
-  private JChannel configureDistributedEngine(JChannel jChannel) {
+  private void configureDistributedEngine(JChannel jChannel) {
     jChannel.setReceiver(this);
     jChannel.addAddressGenerator(addressGenerator);
     jChannel.setDiscardOwnMessages(false);
@@ -237,7 +239,6 @@ class DefaultDistributedEngine
     if (at != null) {
       ((DefaultAuthToken) at).initialize(jwtAuthenticator, properties);
     }
-    return jChannel;
   }
 
   /** 注册自定义消息类型 */
@@ -294,38 +295,6 @@ class DefaultDistributedEngine
     ChannelClosedEvent event = new ChannelClosedEvent(channel);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
-    }
-  }
-
-  /**
-   * 加载jgroups配置文件给jchannel使用
-   *
-   * @param configFile 配置文件路径
-   * @return jchannel
-   * @throws Exception 异常
-   */
-  private JChannel buildDistributedEngine(String configFile) throws Exception {
-    URL configUrl;
-    try {
-      configUrl = locateConfig(configFile);
-    } catch (MalformedURLException e) {
-      throw new IllegalArgumentException(String.format("Failed to load %s.", configFile), e);
-    }
-    try (InputStream inputStream = configUrl.openStream()) {
-      return configureDistributedEngine(jChannel = new JChannel(inputStream));
-    }
-  }
-
-  private URL locateConfig(String confFile) throws MalformedURLException {
-    try {
-      return new URI(confFile).toURL();
-    } catch (Exception e) {
-      File file = new File(confFile);
-      if (file.exists() && file.isFile()) {
-        return file.toURI().toURL();
-      } else {
-        return getClass().getClassLoader().getResource(confFile);
-      }
     }
   }
 
