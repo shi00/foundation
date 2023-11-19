@@ -42,7 +42,7 @@
 
     <logger name="org.jgroups" level="debug"/>
 
-    <logger name="com.silong" level="debug"/>
+    <logger name="com.silong" level="info"/>
 
     <!--
     - 根logger
