@@ -41,7 +41,7 @@ import lombok.NonNull;
 @NoArgsConstructor
 abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
 
-  /** 移动记录头 */
+  /** 链表头 */
   final Node<T> head =
       new Node<>() {
 
@@ -71,7 +71,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
         }
       };
 
-  /** 移动记录尾 */
+  /** 链表尾 */
   final Node<T> tail =
       new Node<>() {
 
@@ -112,6 +112,8 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
       throw new IllegalArgumentException("recordLimit must be greater than or equals to 0.");
     }
     this.recordLimit = recordLimit;
+    head.next = tail;
+    tail.prev = head;
   }
 
   /**
