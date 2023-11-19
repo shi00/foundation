@@ -141,7 +141,7 @@ class DefaultDistributedEngine
         new Thread(
             Thread.currentThread().getThreadGroup(),
             this,
-            properties.getInstanceName() + "-Event-Dispatcher");
+            "Event-Dispatcher-" + properties.getInstanceName());
     thread.setDaemon(true);
     thread.start();
   }
