@@ -63,7 +63,6 @@ public class Partition<T> extends MultipleVersionObj<T> {
               partitionNo, MAX_PARTITIONS_COUNT));
     }
     this.partitionNo = partitionNo;
-    clear();
   }
 
   @Override
