@@ -132,6 +132,21 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   }
 
   /**
+   * 是否包含给定对象
+   *
+   * @param obj 对象
+   * @return true or false
+   */
+  public boolean contains(@NonNull T obj) {
+    for (T o : this) {
+      if (obj.equals(o)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * 当前记录数
    *
    * @return 记录数
