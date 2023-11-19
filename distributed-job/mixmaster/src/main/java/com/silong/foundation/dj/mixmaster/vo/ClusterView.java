@@ -28,11 +28,15 @@ import static java.util.stream.Collectors.joining;
 import com.google.protobuf.ByteString;
 import com.silong.foundation.dj.mixmaster.generated.Messages;
 import com.silong.foundation.dj.mixmaster.generated.Messages.ViewList;
+import jakarta.annotation.Nullable;
 import java.io.*;
 import java.util.List;
+import java.util.concurrent.locks.StampedLock;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jgroups.View;
 import org.jgroups.util.ByteArrayDataInputStream;
@@ -52,7 +56,9 @@ import org.xerial.snappy.SnappyOutputStream;
 @EqualsAndHashCode(callSuper = true)
 public class ClusterView extends MultipleVersionObj<View> {
 
-  @Serial private static final long serialVersionUID = -240_752_712_356_040_731L;
+  @Serial private static final long serialVersionUID = 2_816_357_969_167_034_367L;
+
+  private final StampedLock lock = new StampedLock();
 
   /**
    * 构造方法
@@ -61,7 +67,17 @@ public class ClusterView extends MultipleVersionObj<View> {
    */
   public ClusterView(int recordLimit) {
     super(recordLimit);
-    clear();
+  }
+
+  /** 清空视图，加锁同步 */
+  @Override
+  public void clear() {
+    long stamp = lock.writeLock();
+    try {
+      super.clear();
+    } finally {
+      lock.unlockWrite(stamp);
+    }
   }
 
   /**
@@ -72,21 +88,26 @@ public class ClusterView extends MultipleVersionObj<View> {
    */
   public void writeTo(@NonNull OutputStream out) throws IOException {
     try (SnappyOutputStream outputStream = new SnappyOutputStream(out)) {
-      Messages.ClusterView.Builder clusterViewBuilder = newBuilder().setRecordLimit(recordLimit);
-      if (index > 0) {
-        ViewList.Builder viewListBuilder = ViewList.newBuilder();
-        for (View view : this) {
-          ByteArrayDataOutputStream bout = new ByteArrayDataOutputStream(Util.size(view));
-          Util.writeView(view, bout);
-          viewListBuilder.addViewBytes(unsafeWrap(bout.buffer()));
-          if (log.isDebugEnabled()) {
-            log.debug("writeTo: {}", view);
-          }
-        }
-        clusterViewBuilder.setViewList(viewListBuilder);
-      }
-      clusterViewBuilder.build().writeTo(outputStream);
+      tryOptimisticRead(this::buildClusterView).writeTo(outputStream);
     }
+  }
+
+  @SneakyThrows
+  private Messages.ClusterView buildClusterView() {
+    Messages.ClusterView.Builder clusterViewBuilder = newBuilder().setRecordLimit(recordLimit);
+    if (index > 0) {
+      ViewList.Builder viewListBuilder = ViewList.newBuilder();
+      for (View view : this) {
+        ByteArrayDataOutputStream bout = new ByteArrayDataOutputStream(Util.size(view));
+        Util.writeView(view, bout);
+        viewListBuilder.addViewBytes(unsafeWrap(bout.buffer()));
+        if (log.isDebugEnabled()) {
+          log.debug("writeTo: {}", view);
+        }
+      }
+      clusterViewBuilder.setViewList(viewListBuilder);
+    }
+    return clusterViewBuilder.build();
   }
 
   /**
@@ -97,10 +118,11 @@ public class ClusterView extends MultipleVersionObj<View> {
    * @throws ClassNotFoundException 异常
    */
   public void readFrom(@NonNull InputStream in) throws IOException, ClassNotFoundException {
+    long stamp = lock.writeLock();
     try (SnappyInputStream snappyInputStream = new SnappyInputStream(in)) {
       Messages.ClusterView clusterView = Messages.ClusterView.parseFrom(snappyInputStream);
       recordLimit = clusterView.getRecordLimit();
-      clear();
+      super.clear();
 
       if (clusterView.hasViewList()) {
         ViewList viewList = clusterView.getViewList();
@@ -112,33 +134,99 @@ public class ClusterView extends MultipleVersionObj<View> {
           if (log.isDebugEnabled()) {
             log.debug("readFrom: {}", view);
           }
-          append(view);
+          super.append(view);
         }
       }
+    } finally {
+      lock.unlockWrite(stamp);
+    }
+  }
+
+  @Override
+  public boolean contains(@NonNull View obj) {
+    return tryOptimisticRead(() -> super.contains(obj));
+  }
+
+  @Override
+  public void append(@NonNull View obj) {
+    long stamp = lock.writeLock();
+    try {
+      super.append(obj);
+    } finally {
+      lock.unlockWrite(stamp);
+    }
+  }
+
+  @Override
+  public void record(@NonNull View obj) {
+    long stamp = lock.writeLock();
+    try {
+      super.record(obj);
+    } finally {
+      lock.unlockWrite(stamp);
+    }
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return tryOptimisticRead(super::isEmpty);
+  }
+
+  /**
+   * 合并集群视图，根据viewId进行排序，从大到小
+   *
+   * @param cView 集群视图
+   */
+  public void merge(@NonNull ClusterView cView) {
+    long stamp = lock.writeLock();
+    try {
+      List<View> list =
+          Stream.concat(toStream(iterator()), toStream(cView.iterator()))
+              .distinct()
+              .sorted(View::compareTo)
+              .toList();
+      super.clear();
+      list.forEach(super::record);
+    } finally {
+      lock.unlockWrite(stamp);
     }
   }
 
   @Override
   public String toString() {
-    return String.format(
-        "ClusterView{recordLimit:%d, size:%d, %s}",
-        recordLimit,
-        index,
-        toStream(iterator()).map(view -> "{" + view.toString() + "}").collect(joining(", ")));
+    return tryOptimisticRead(
+        () ->
+            String.format(
+                "ClusterView{recordLimit:%d, size:%d, %s}",
+                recordLimit,
+                index,
+                toStream(iterator())
+                    .map(view -> "{" + view.toString() + "}")
+                    .collect(joining(", "))));
   }
 
-  /**
-   * 合并集群视图
-   *
-   * @param cView 集群视图
-   */
-  public void merge(ClusterView cView) {
-    List<View> list =
-        Stream.concat(toStream(iterator()), toStream(cView.iterator()))
-            .distinct()
-            .sorted(View::compareTo)
-            .toList();
-    clear();
-    list.forEach(this::record);
+  @Override
+  public int size() {
+    return tryOptimisticRead(super::size);
+  }
+
+  @Nullable
+  @Override
+  public View currentRecord() {
+    return tryOptimisticRead(super::currentRecord);
+  }
+
+  private <T> T tryOptimisticRead(Supplier<T> supplier) {
+    long stamp = lock.tryOptimisticRead();
+    T result = supplier.get();
+    if (!lock.validate(stamp)) {
+      stamp = lock.readLock();
+      try {
+        result = supplier.get();
+      } finally {
+        lock.unlockRead(stamp);
+      }
+    }
+    return result;
   }
 }

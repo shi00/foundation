@@ -44,6 +44,7 @@ import java.net.*;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
@@ -163,10 +164,10 @@ class DefaultDistributedEngine
     waitUntilConnected();
 
     // 如果本地节点不是coordinator，则等待从coordinator获取当前集群的视图
-    if (!Util.isCoordinator(jChannel)
+    if (!isCoordinator()
         && !clusterViewLatch.await(
             properties.getClusterStateSyncTimeout().toMillis(), MILLISECONDS)) {
-      throw new IllegalStateException("Failed to synchronize clusterView from coordinator.");
+      throw new TimeoutException("Synchronization of cluster view from coordinator timed out.");
     }
 
     log.info("Start event dispatch processing......");
