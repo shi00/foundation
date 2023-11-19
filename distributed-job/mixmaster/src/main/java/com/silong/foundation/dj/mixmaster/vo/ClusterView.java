@@ -38,6 +38,8 @@ import org.jgroups.View;
 import org.jgroups.util.ByteArrayDataInputStream;
 import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.Util;
+import org.xerial.snappy.SnappyInputStream;
+import org.xerial.snappy.SnappyOutputStream;
 
 /**
  * 集群视图
@@ -65,49 +67,53 @@ public class ClusterView extends MultipleVersionObj<View> {
   /**
    * 序列化
    *
-   * @param out 输出流
+   * @param out ByteArrayOutputStream输出流
    * @throws IOException 异常
    */
   public void writeTo(@NonNull OutputStream out) throws IOException {
-    Messages.ClusterView.Builder clusterViewBuilder = newBuilder().setRecordLimit(recordLimit);
-    if (size() > 0) {
-      ViewList.Builder viewListBuilder = ViewList.newBuilder();
-      for (View view : this) {
-        ByteArrayDataOutputStream bout = new ByteArrayDataOutputStream(Util.size(view));
-        Util.writeView(view, bout);
-        viewListBuilder.addViewBytes(unsafeWrap(bout.buffer()));
-        if (log.isDebugEnabled()) {
-          log.debug("writeTo: {}", view);
+    try (SnappyOutputStream outputStream = new SnappyOutputStream(out)) {
+      Messages.ClusterView.Builder clusterViewBuilder = newBuilder().setRecordLimit(recordLimit);
+      if (index > 0) {
+        ViewList.Builder viewListBuilder = ViewList.newBuilder();
+        for (View view : this) {
+          ByteArrayDataOutputStream bout = new ByteArrayDataOutputStream(Util.size(view));
+          Util.writeView(view, bout);
+          viewListBuilder.addViewBytes(unsafeWrap(bout.buffer()));
+          if (log.isDebugEnabled()) {
+            log.debug("writeTo: {}", view);
+          }
         }
+        clusterViewBuilder.setViewList(viewListBuilder);
       }
-      clusterViewBuilder.setViewList(viewListBuilder);
+      clusterViewBuilder.build().writeTo(outputStream);
     }
-    clusterViewBuilder.build().writeTo(out);
   }
 
   /**
    * 反序列化
    *
-   * @param in 输入流
+   * @param in ByteArrayInputStream输入流
    * @throws IOException 异常
    * @throws ClassNotFoundException 异常
    */
   public void readFrom(@NonNull InputStream in) throws IOException, ClassNotFoundException {
-    Messages.ClusterView clusterView = Messages.ClusterView.parseFrom(in);
-    recordLimit = clusterView.getRecordLimit();
-    clear();
+    try (SnappyInputStream snappyInputStream = new SnappyInputStream(in)) {
+      Messages.ClusterView clusterView = Messages.ClusterView.parseFrom(snappyInputStream);
+      recordLimit = clusterView.getRecordLimit();
+      clear();
 
-    if (clusterView.hasViewList()) {
-      ViewList viewList = clusterView.getViewList();
-      int views = viewList.getViewBytesCount();
-      for (int i = 0; i < views; i++) {
-        ByteString viewBytes = viewList.getViewBytes(i);
-        ByteArrayDataInputStream ins = new ByteArrayDataInputStream(viewBytes.toByteArray());
-        View view = Util.readView(ins);
-        if (log.isDebugEnabled()) {
-          log.debug("readFrom: {}", view);
+      if (clusterView.hasViewList()) {
+        ViewList viewList = clusterView.getViewList();
+        int views = viewList.getViewBytesCount();
+        for (int i = 0; i < views; i++) {
+          ByteString viewBytes = viewList.getViewBytes(i);
+          ByteArrayDataInputStream ins = new ByteArrayDataInputStream(viewBytes.toByteArray());
+          View view = Util.readView(ins);
+          if (log.isDebugEnabled()) {
+            log.debug("readFrom: {}", view);
+          }
+          append(view);
         }
-        append(view);
       }
     }
   }
