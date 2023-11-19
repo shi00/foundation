@@ -22,12 +22,12 @@
 package com.silong.foundation.dj.mixmaster.vo;
 
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
-import static com.silong.foundation.dj.mixmaster.message.Messages.ClusterView.newBuilder;
+import static com.silong.foundation.dj.mixmaster.generated.Messages.ClusterView.newBuilder;
 import static java.util.stream.Collectors.joining;
 
 import com.google.protobuf.ByteString;
-import com.silong.foundation.dj.mixmaster.message.Messages;
-import com.silong.foundation.dj.mixmaster.message.Messages.ViewList;
+import com.silong.foundation.dj.mixmaster.generated.Messages;
+import com.silong.foundation.dj.mixmaster.generated.Messages.ViewList;
 import java.io.*;
 import java.util.List;
 import java.util.stream.Stream;
