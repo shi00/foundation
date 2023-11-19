@@ -29,6 +29,7 @@ import com.silong.foundation.dj.hook.validation.Power2;
 import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import java.net.URL;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -80,8 +81,8 @@ public class MixmasterProperties {
   @Power2
   private int partitions = 1024;
 
-  /** jgroups配置文件 */
-  @NotEmpty private String configFile;
+  /** jgroups配置文件url */
+  @NotNull private URL configFile;
 
   /** 实例名，不指定则随机生成一个uuid */
   @NotEmpty private String instanceName = UUID.randomUUID().toString();
