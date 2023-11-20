@@ -187,6 +187,18 @@ public class ClusterView extends MultipleVersionObj<View> {
     return tryOptimisticRead(super::isEmpty);
   }
 
+  @Nullable
+  @Override
+  public View after(View View) {
+    return tryOptimisticRead(() -> super.after(View));
+  }
+
+  @Nullable
+  @Override
+  public View before(View View) {
+    return tryOptimisticRead(() -> super.before(View));
+  }
+
   /**
    * 合并集群视图，根据viewId进行排序，从大到小
    *
