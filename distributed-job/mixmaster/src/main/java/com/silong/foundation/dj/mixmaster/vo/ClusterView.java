@@ -145,35 +145,39 @@ public class ClusterView extends MultipleVersionObj<View> {
   }
 
   /**
-   * 添加对象，重复对象直接忽略
+   * 追加视图，追加的view不能与当前保存的view重复，并且当前队尾的view的id必须大于给定view
    *
-   * @param obj 对象
+   * @param view 追加视图
    */
   @Override
-  public void append(@NonNull View obj) {
+  public void append(@NonNull View view) {
     doWithWriteLock(
         () -> {
-          if (!super.contains(obj)) {
-            super.append(obj);
+          if (super.isEmpty()
+              || (!super.contains(view)
+                  && tail.prev.value.getViewId().compareTo(view.getViewId()) > 0)) {
+            super.append(view);
           } else {
-            log.info("duplicated view: {}", obj);
+            log.warn("skip view: {}", view);
           }
         });
   }
 
   /**
-   * 记录对象，重复对象直接忽略
+   * 记录视图，记录的view不能与当前保存的view重复，并且当前队头的view的id必须小于给定view
    *
-   * @param obj 对象
+   * @param view 被记录视图
    */
   @Override
-  public void record(@NonNull View obj) {
+  public void record(@NonNull View view) {
     doWithWriteLock(
         () -> {
-          if (!super.contains(obj)) {
-            super.record(obj);
+          if (super.isEmpty()
+              || (!super.contains(view)
+                  && head.next.value.getViewId().compareTo(view.getViewId()) < 0)) {
+            super.record(view);
           } else {
-            log.info("duplicated view: {}", obj);
+            log.warn("skip view: {}", view);
           }
         });
   }
