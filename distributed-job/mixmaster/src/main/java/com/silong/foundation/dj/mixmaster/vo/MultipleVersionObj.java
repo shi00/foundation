@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.concurrent.NotThreadSafe;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
@@ -39,6 +40,7 @@ import lombok.NonNull;
  * @since 2023-11-16 19:10
  */
 @NoArgsConstructor
+@NotThreadSafe
 abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
 
   /** 链表头 */
