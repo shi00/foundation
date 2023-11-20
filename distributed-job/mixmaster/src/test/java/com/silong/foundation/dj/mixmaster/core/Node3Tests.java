@@ -44,7 +44,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
     locations = "classpath:application.properties",
     properties = {
       "mixmaster.scrapper.persist-data-path=./target/c",
-      "mixmaster.instance-name=gloria"
+      "mixmaster.instance-name=gorilla"
     })
 @ExtendWith(SpringExtension.class)
 public class Node3Tests {
