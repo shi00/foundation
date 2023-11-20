@@ -33,7 +33,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 /**
- * 多版本对象基类
+ * 多版本对象，其内保存的多版本值不能重复
  *
  * @author louis sin
  * @version 1.0.0
@@ -59,11 +59,6 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
 
         @Override
         public Node<T> getPrev() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getValue() {
           throw new UnsupportedOperationException();
         }
 
@@ -133,6 +128,46 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
     head.next = tail;
     tail.prev = head;
     index = 0;
+  }
+
+  /**
+   * 找到当前指定值后一个版本的值
+   *
+   * @param obj 版本值
+   * @return 后一个版本值
+   */
+  @Nullable
+  public T after(T obj) {
+    Node<T> node = find(obj, head);
+    if (node != null) {
+      return node.prev.value;
+    }
+    return null;
+  }
+
+  /**
+   * 找到当前指定值前一个版本的值
+   *
+   * @param obj 版本值
+   * @return 前一个版本值
+   */
+  @Nullable
+  public T before(T obj) {
+    Node<T> node = find(obj, head);
+    if (node != null) {
+      return node.next.value;
+    }
+    return null;
+  }
+
+  private Node<T> find(T value, Node<T> node) {
+    if (node == tail) {
+      return null;
+    }
+    if (Objects.equals(value, node.value)) {
+      return node;
+    }
+    return find(value, node.next);
   }
 
   /**
