@@ -72,12 +72,7 @@ public class ClusterView extends MultipleVersionObj<View> {
   /** 清空视图，加锁同步 */
   @Override
   public void clear() {
-    long stamp = lock.writeLock();
-    try {
-      super.clear();
-    } finally {
-      lock.unlockWrite(stamp);
-    }
+    doWithWriteLock(super::clear);
   }
 
   /**
@@ -114,11 +109,13 @@ public class ClusterView extends MultipleVersionObj<View> {
    * 反序列化
    *
    * @param in ByteArrayInputStream输入流
-   * @throws IOException 异常
-   * @throws ClassNotFoundException 异常
    */
-  public void readFrom(@NonNull InputStream in) throws IOException, ClassNotFoundException {
-    long stamp = lock.writeLock();
+  public void readFrom(@NonNull InputStream in) {
+    doWithWriteLock(() -> doRead(in));
+  }
+
+  @SneakyThrows
+  private void doRead(InputStream in) {
     try (SnappyInputStream snappyInputStream = new SnappyInputStream(in)) {
       Messages.ClusterView clusterView = Messages.ClusterView.parseFrom(snappyInputStream);
       recordLimit = clusterView.getRecordLimit();
@@ -137,8 +134,6 @@ public class ClusterView extends MultipleVersionObj<View> {
           super.append(view);
         }
       }
-    } finally {
-      lock.unlockWrite(stamp);
     }
   }
 
@@ -149,22 +144,12 @@ public class ClusterView extends MultipleVersionObj<View> {
 
   @Override
   public void append(@NonNull View obj) {
-    long stamp = lock.writeLock();
-    try {
-      super.append(obj);
-    } finally {
-      lock.unlockWrite(stamp);
-    }
+    doWithWriteLock(() -> super.append(obj));
   }
 
   @Override
   public void record(@NonNull View obj) {
-    long stamp = lock.writeLock();
-    try {
-      super.record(obj);
-    } finally {
-      lock.unlockWrite(stamp);
-    }
+    doWithWriteLock(() -> super.record(obj));
   }
 
   @Override
@@ -178,31 +163,26 @@ public class ClusterView extends MultipleVersionObj<View> {
    * @param cView 集群视图
    */
   public void merge(@NonNull ClusterView cView) {
-    long stamp = lock.writeLock();
-    try {
-      List<View> list =
-          Stream.concat(toStream(iterator()), toStream(cView.iterator()))
-              .distinct()
-              .sorted(View::compareTo)
-              .toList();
-      super.clear();
-      list.forEach(super::record);
-    } finally {
-      lock.unlockWrite(stamp);
-    }
+    doWithWriteLock(() -> doMerge(cView));
+  }
+
+  private void doMerge(ClusterView cView) {
+    List<View> list =
+        Stream.concat(toStream(iterator()), toStream(cView.iterator()))
+            .distinct()
+            .sorted(View::compareTo)
+            .toList();
+    super.clear();
+    list.forEach(super::record);
   }
 
   @Override
   public String toString() {
-    return tryOptimisticRead(
-        () ->
-            String.format(
-                "ClusterView{recordLimit:%d, size:%d, %s}",
-                recordLimit,
-                index,
-                toStream(iterator())
-                    .map(view -> "{" + view.toString() + "}")
-                    .collect(joining(", "))));
+    return String.format(
+        "ClusterView{recordLimit:%d, size:%d, %s}",
+        recordLimit,
+        index,
+        toStream(iterator()).map(view -> "{" + view.toString() + "}").collect(joining(", ")));
   }
 
   @Override
@@ -214,6 +194,15 @@ public class ClusterView extends MultipleVersionObj<View> {
   @Override
   public View currentRecord() {
     return tryOptimisticRead(super::currentRecord);
+  }
+
+  private void doWithWriteLock(Runnable runnable) {
+    long stamp = lock.writeLock();
+    try {
+      runnable.run();
+    } finally {
+      lock.unlockWrite(stamp);
+    }
   }
 
   private <T> T tryOptimisticRead(Supplier<T> supplier) {
