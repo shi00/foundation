@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import javax.annotation.concurrent.ThreadSafe;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -53,6 +54,7 @@ import org.xerial.snappy.SnappyOutputStream;
  * @since 2023-11-16 17:35
  */
 @Slf4j
+@ThreadSafe
 @EqualsAndHashCode(callSuper = true)
 public class ClusterView extends MultipleVersionObj<View> {
 
@@ -142,14 +144,38 @@ public class ClusterView extends MultipleVersionObj<View> {
     return tryOptimisticRead(() -> super.contains(obj));
   }
 
+  /**
+   * 添加对象，重复对象直接忽略
+   *
+   * @param obj 对象
+   */
   @Override
   public void append(@NonNull View obj) {
-    doWithWriteLock(() -> super.append(obj));
+    doWithWriteLock(
+        () -> {
+          if (!super.contains(obj)) {
+            super.append(obj);
+          } else {
+            log.info("duplicated view: {}", obj);
+          }
+        });
   }
 
+  /**
+   * 记录对象，重复对象直接忽略
+   *
+   * @param obj 对象
+   */
   @Override
   public void record(@NonNull View obj) {
-    doWithWriteLock(() -> super.record(obj));
+    doWithWriteLock(
+        () -> {
+          if (!super.contains(obj)) {
+            super.record(obj);
+          } else {
+            log.info("duplicated view: {}", obj);
+          }
+        });
   }
 
   @Override
