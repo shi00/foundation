@@ -63,9 +63,18 @@ class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializa
       Collection<Address> joiners,
       Collection<Address> leavers,
       Collection<Address> suspects) {
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "currentMembers: {}, joiners: {}, leavers: {}, suspects: {}",
+          currentMembers,
+          joiners,
+          leavers,
+          suspects);
+    }
+
     LinkedList<Address> members =
         currentMembers.isEmpty() ? new LinkedList<>() : new LinkedList<>(currentMembers);
-    Address oldCoordinator = members.getFirst();
+    Address oldCoordinator = members.peekFirst();
 
     // 删除离开集群的节点
     if (!leavers.isEmpty()) {
@@ -91,6 +100,10 @@ class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializa
       // 如果当前coordinator离群，则按权重，角色排序决定新coordinator
       members.sort(this::compare);
     }
+
+    if (log.isDebugEnabled()) {
+      log.debug("newMembership: {}", members);
+    }
     return members;
   }
 
@@ -110,6 +123,10 @@ class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializa
 
   @Override
   public List<Address> getNewMembership(Collection<Collection<Address>> subviews) {
+    if (log.isDebugEnabled()) {
+      log.debug("subviews: {}", subviews);
+    }
+
     // 从各子视图中挑选当前作为coordinator的节点进行排序，选择新coordinator
     Address coordinator =
         subviews.stream()
@@ -126,6 +143,10 @@ class DefaultMembershipChangePolicy implements MembershipChangePolicy, Serializa
             .sorted(this::compare)
             .collect(Collectors.toCollection(LinkedList::new));
     addresses.addFirst(coordinator);
+
+    if (log.isDebugEnabled()) {
+      log.debug("mergedView: {}", addresses);
+    }
     return addresses;
   }
 }
