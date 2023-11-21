@@ -25,6 +25,7 @@ import com.silong.foundation.common.utils.BiConverter;
 import com.silong.foundation.dj.mixmaster.Identity;
 import com.silong.foundation.dj.mixmaster.generated.Messages.ClusterNodeInfo;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import jakarta.annotation.Nullable;
 import java.io.*;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -61,6 +62,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
       new BiConverter<>() {
 
         @Override
+        @Nullable
         public byte[] to(UUID uuid) {
           if (uuid == null) {
             return null;
@@ -72,6 +74,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
         }
 
         @Override
+        @Nullable
         public ClusterNodeUUID from(byte[] bytes) {
           if (bytes == null || bytes.length == 0) {
             return null;
