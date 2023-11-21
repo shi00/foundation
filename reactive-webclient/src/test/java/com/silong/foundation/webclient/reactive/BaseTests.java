@@ -20,8 +20,11 @@ package com.silong.foundation.webclient.reactive;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.javafaker.Faker;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.Security;
 import lombok.*;
+import net.datafaker.Faker;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.apache.commons.lang3.RandomUtils;
@@ -33,10 +36,6 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-
-import java.io.IOException;
-import java.security.KeyStore;
-import java.security.Security;
 
 /**
  * 测试基类
