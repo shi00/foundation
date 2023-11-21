@@ -29,11 +29,9 @@ import java.io.*;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import org.jgroups.Address;
 import org.jgroups.conf.ClassConfigurator;
-import org.jgroups.util.ByteArrayDataInputStream;
 import org.jgroups.util.ByteArrayDataOutputStream;
 import org.jgroups.util.UUID;
 import org.jgroups.util.Util;
@@ -59,30 +57,26 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   }
 
   /** 类型转换器 */
-  private static final BiConverter<ClusterNodeUUID, byte[]> INSTANCE =
+  private static final BiConverter<UUID, byte[]> INSTANCE =
       new BiConverter<>() {
 
         @Override
-        @SneakyThrows
-        public byte[] to(ClusterNodeUUID clusterNodeUUID) {
-          if (clusterNodeUUID == null) {
+        public byte[] to(UUID uuid) {
+          if (uuid == null) {
             return null;
           }
-          ByteArrayDataOutputStream out =
-              new ByteArrayDataOutputStream(clusterNodeUUID.serializedSize());
-          clusterNodeUUID.writeTo(out);
+          ByteArrayDataOutputStream out = new ByteArrayDataOutputStream(UUID.SIZE);
+          out.writeLong(uuid.getLeastSignificantBits());
+          out.writeLong(uuid.getMostSignificantBits());
           return out.buffer();
         }
 
         @Override
-        @SneakyThrows
         public ClusterNodeUUID from(byte[] bytes) {
           if (bytes == null || bytes.length == 0) {
             return null;
           }
-          ClusterNodeUUID clusterNodeUUID = new ClusterNodeUUID();
-          clusterNodeUUID.readFrom(new ByteArrayDataInputStream(bytes));
-          return clusterNodeUUID;
+          return new ClusterNodeUUID(bytes);
         }
       };
 
@@ -156,7 +150,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   }
 
   /**
-   * 对象序列化
+   * 对象序列化，不包含ClusterNodeInfo
    *
    * @return 二进制
    */
@@ -165,13 +159,13 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   }
 
   /**
-   * 反序列化
+   * 反序列化，不包含clusterNodeInfo
    *
    * @param bytes 二进制
    * @return 对象
    */
   public static ClusterNodeUUID deserialize(byte[] bytes) {
-    return INSTANCE.from(bytes);
+    return (ClusterNodeUUID) INSTANCE.from(bytes);
   }
 
   /**
