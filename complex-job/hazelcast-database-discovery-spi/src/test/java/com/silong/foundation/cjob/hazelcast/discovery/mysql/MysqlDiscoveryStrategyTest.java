@@ -18,7 +18,10 @@
  */
 package com.silong.foundation.cjob.hazelcast.discovery.mysql;
 
-import com.github.javafaker.Faker;
+import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.hazelcast.cluster.Address;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.NoLogFactory;
@@ -26,7 +29,11 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.silong.foundation.cjob.hazelcast.discovery.mysql.utils.MysqlHelper;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.StreamSupport;
 import lombok.SneakyThrows;
+import net.datafaker.Faker;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
 import org.junit.jupiter.api.AfterAll;
@@ -35,14 +42,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.StreamSupport;
-
-import static com.silong.foundation.cjob.hazelcast.discovery.mysql.config.MysqlProperties.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 单元测试
