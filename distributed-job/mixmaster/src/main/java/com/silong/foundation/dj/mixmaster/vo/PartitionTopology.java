@@ -31,7 +31,7 @@ import lombok.Data;
 import lombok.NonNull;
 
 /**
- * 数据分区对应的存储节点列表，第一位为primary
+ * 数据分区在集群节点上的拓扑图，拓扑图中第一位为primary
  *
  * @author louis sin
  * @version 1.0.0
@@ -40,7 +40,8 @@ import lombok.NonNull;
  */
 @Data
 @Builder
-public class StoreNodes<T> implements Iterable<T>, Comparable<StoreNodes<T>>, Serializable {
+public class PartitionTopology<T>
+    implements Iterable<T>, Comparable<PartitionTopology<T>>, Serializable {
 
   @Serial private static final long serialVersionUID = -9_040_144_143_663_603_204L;
 
@@ -98,7 +99,7 @@ public class StoreNodes<T> implements Iterable<T>, Comparable<StoreNodes<T>>, Se
   }
 
   @Override
-  public int compareTo(@NonNull StoreNodes<T> nodes) {
+  public int compareTo(@NonNull PartitionTopology<T> nodes) {
     return Long.compare(nodes.version, version);
   }
 }
