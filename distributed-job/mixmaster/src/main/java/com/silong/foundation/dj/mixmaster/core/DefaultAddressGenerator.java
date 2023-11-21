@@ -56,13 +56,19 @@ class DefaultAddressGenerator implements AddressGenerator {
   /** 主机名 */
   static final String HOST_NAME;
 
+  /** 操作系统 */
   static final String OS_NAME;
+
+  /** 硬件uuid */
+  static final String HARDWARE_UUID;
 
   static {
     SystemInfo systemInfo = new SystemInfo();
+    HARDWARE_UUID = systemInfo.getHardware().getComputerSystem().getHardwareUUID();
     OperatingSystem operatingSystem = systemInfo.getOperatingSystem();
     HOST_NAME = operatingSystem.getNetworkParams().getHostName();
     OS_NAME = systemInfo.getOperatingSystem().toString();
+    log.info("hostName:{}, OS:{}, hardware_uuid:{}", HOST_NAME, OS_NAME, HARDWARE_UUID);
   }
 
   /** 节点配置 */
@@ -88,8 +94,7 @@ class DefaultAddressGenerator implements AddressGenerator {
    * @return key
    */
   private String buildClusterNodeUuidKey() {
-    return String.format(
-        "%s:%s:%s:node:uuid", properties.getClusterName(), HOST_NAME, properties.getInstanceName());
+    return String.format("%s:node:uuid", HARDWARE_UUID);
   }
 
   /**
