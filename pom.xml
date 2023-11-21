@@ -168,7 +168,7 @@
         <testcontainers.version>1.19.2</testcontainers.version>
         <springdoc.version>2.2.0</springdoc.version>
         <libphonenumber.version>8.13.25</libphonenumber.version>
-        <javafaker.version>1.0.2</javafaker.version>
+        <datafaker.version>2.0.2</datafaker.version>
         <commons-io.version>2.15.0</commons-io.version>
         <maven.version>3.9.5</maven.version>
         <plexus-utils.version>3.5.1</plexus-utils.version>
@@ -250,9 +250,9 @@
 
             <!-- 随机数据生成器，测试用 -->
             <dependency>
-                <groupId>com.github.javafaker</groupId>
-                <artifactId>javafaker</artifactId>
-                <version>${javafaker.version}</version>
+                <groupId>net.datafaker</groupId>
+                <artifactId>datafaker</artifactId>
+                <version>${datafaker.version}</version>
             </dependency>
             <!-- 随机数据生成器，测试用 -->
 
