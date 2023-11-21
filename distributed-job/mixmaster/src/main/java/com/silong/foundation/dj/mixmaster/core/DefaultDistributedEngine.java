@@ -20,7 +20,7 @@
  */
 package com.silong.foundation.dj.mixmaster.core;
 
-import static com.silong.foundation.dj.mixmaster.core.DefaultAddressGenerator.HOST_NAME;
+import static com.silong.foundation.dj.mixmaster.utils.SystemInfo.HOST_NAME;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.protobuf.MessageLite;
