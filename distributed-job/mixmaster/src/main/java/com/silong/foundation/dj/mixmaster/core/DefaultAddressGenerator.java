@@ -21,6 +21,7 @@
 package com.silong.foundation.dj.mixmaster.core;
 
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
+import static com.silong.foundation.dj.mixmaster.utils.Constants.*;
 import static com.silong.foundation.dj.scrapper.utils.String2Bytes.INSTANCE;
 
 import com.google.protobuf.ByteString;
@@ -39,8 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jgroups.Address;
 import org.jgroups.stack.AddressGenerator;
 import org.springframework.stereotype.Component;
-import oshi.SystemInfo;
-import oshi.software.os.OperatingSystem;
 
 /**
  * 默认集群节点地址生成器
@@ -52,24 +51,6 @@ import oshi.software.os.OperatingSystem;
 @Slf4j
 @Component
 class DefaultAddressGenerator implements AddressGenerator {
-
-  /** 主机名 */
-  static final String HOST_NAME;
-
-  /** 操作系统 */
-  static final String OS_NAME;
-
-  /** 硬件uuid */
-  static final String HARDWARE_UUID;
-
-  static {
-    SystemInfo systemInfo = new SystemInfo();
-    HARDWARE_UUID = systemInfo.getHardware().getComputerSystem().getHardwareUUID();
-    OperatingSystem operatingSystem = systemInfo.getOperatingSystem();
-    HOST_NAME = operatingSystem.getNetworkParams().getHostName();
-    OS_NAME = systemInfo.getOperatingSystem().toString();
-    log.info("hostName:{}, OS:{}, hardware_uuid:{}", HOST_NAME, OS_NAME, HARDWARE_UUID);
-  }
 
   /** 节点配置 */
   private final MixmasterProperties properties;

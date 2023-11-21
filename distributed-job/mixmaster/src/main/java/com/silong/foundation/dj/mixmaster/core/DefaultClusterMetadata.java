@@ -23,14 +23,13 @@ package com.silong.foundation.dj.mixmaster.core;
 
 import static com.silong.foundation.dj.mixmaster.core.DefaultDistributedEngine.VIEW_CHANGED_RECORDS;
 
-import com.silong.foundation.dj.hook.event.SyncPartitionEvent;
 import com.silong.foundation.dj.mixmaster.ClusterMetadata;
 import com.silong.foundation.dj.mixmaster.Object2PartitionMapping;
 import com.silong.foundation.dj.mixmaster.Partition2NodesMapping;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import com.silong.foundation.dj.mixmaster.vo.Partition;
-import com.silong.foundation.dj.mixmaster.vo.StoreNodes;
+import com.silong.foundation.dj.mixmaster.vo.PartitionTopology;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -82,7 +81,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   private int totalPartition;
 
   /** 分区映射表 */
-  private NonBlockingHashMap<Integer, Partition<StoreNodes<ClusterNodeUUID>>> partitionsMap;
+  private NonBlockingHashMap<Integer, Partition<PartitionTopology<ClusterNodeUUID>>> partitionsMap;
 
   @SneakyThrows
   private <T> T doWithWriteLock(Callable<T> callable) {
@@ -100,7 +99,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
         .forEach(
             partitionNo -> {
               // 获取存储分区
-              Partition<StoreNodes<ClusterNodeUUID>> partition =
+              Partition<PartitionTopology<ClusterNodeUUID>> partition =
                   partitionsMap.computeIfAbsent(
                       partitionNo, key -> new Partition<>(partitionNo, VIEW_CHANGED_RECORDS));
 
@@ -120,10 +119,10 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
                 }
               }
 
-              StoreNodes<ClusterNodeUUID> historyNodes = partition.currentRecord();
+              PartitionTopology<ClusterNodeUUID> historyNodes = partition.currentRecord();
 
               // 计算分区映射的集群节点列表
-              StoreNodes<ClusterNodeUUID> newNodes =
+              PartitionTopology<ClusterNodeUUID> newNodes =
                   calculatePartitionDistribution(partitionNo, view);
 
               // 记录当前分区对应的存储节点列表
@@ -141,9 +140,9 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
             });
   }
 
-  private StoreNodes<ClusterNodeUUID> calculatePartitionDistribution(
+  private PartitionTopology<ClusterNodeUUID> calculatePartitionDistribution(
       int partitionNo, View newView) {
-    return StoreNodes.<ClusterNodeUUID>builder()
+    return PartitionTopology.<ClusterNodeUUID>builder()
         .version(newView.getViewId().getId())
         .primaryAndBackups(
             partition2NodesMapping.allocatePartition(
@@ -165,13 +164,13 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   }
 
   @Override
-  public StoreNodes<ClusterNodeUUID> mapPartition2Nodes(int partition) {
+  public PartitionTopology<ClusterNodeUUID> mapPartition2Nodes(int partition) {
     if (partition < 0 || partition >= totalPartition) {
       throw new IllegalArgumentException(
           String.format("partition(%d) exceeds boundary[%d, %d).", partition, 0, totalPartition));
     }
     long stamp = lock.tryOptimisticRead();
-    StoreNodes<ClusterNodeUUID> nodes = partitionsMap.get(partition).currentRecord();
+    PartitionTopology<ClusterNodeUUID> nodes = partitionsMap.get(partition).currentRecord();
     if (!lock.validate(stamp)) {
       stamp = lock.readLock();
       try {
@@ -184,7 +183,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
   }
 
   @Override
-  public StoreNodes<ClusterNodeUUID> mapObj2Nodes(Object obj) {
+  public PartitionTopology<ClusterNodeUUID> mapObj2Nodes(Object obj) {
     return mapPartition2Nodes(mapObj2Partition(obj));
   }
 
