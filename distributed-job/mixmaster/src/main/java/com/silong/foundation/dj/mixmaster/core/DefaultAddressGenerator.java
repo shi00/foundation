@@ -21,7 +21,7 @@
 package com.silong.foundation.dj.mixmaster.core;
 
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
-import static com.silong.foundation.dj.mixmaster.utils.Constants.*;
+import static com.silong.foundation.dj.mixmaster.utils.SystemInfo.*;
 import static com.silong.foundation.dj.scrapper.utils.String2Bytes.INSTANCE;
 
 import com.google.protobuf.ByteString;

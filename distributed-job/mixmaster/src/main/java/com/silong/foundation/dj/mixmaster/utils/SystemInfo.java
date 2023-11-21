@@ -22,18 +22,17 @@
 package com.silong.foundation.dj.mixmaster.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import oshi.SystemInfo;
 import oshi.software.os.OperatingSystem;
 
 /**
- * 常量
+ * 系统常量
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2023-11-21 22:17
  */
 @Slf4j
-public abstract class Constants {
+public abstract class SystemInfo {
 
   /** 主机名 */
   public static final String HOST_NAME;
@@ -45,7 +44,7 @@ public abstract class Constants {
   public static final String HARDWARE_UUID;
 
   static {
-    SystemInfo systemInfo = new SystemInfo();
+    oshi.SystemInfo systemInfo = new oshi.SystemInfo();
     HARDWARE_UUID = systemInfo.getHardware().getComputerSystem().getHardwareUUID();
     OperatingSystem operatingSystem = systemInfo.getOperatingSystem();
     HOST_NAME = operatingSystem.getNetworkParams().getHostName();
@@ -54,5 +53,5 @@ public abstract class Constants {
   }
 
   /** forbidden */
-  private Constants() {}
+  private SystemInfo() {}
 }
