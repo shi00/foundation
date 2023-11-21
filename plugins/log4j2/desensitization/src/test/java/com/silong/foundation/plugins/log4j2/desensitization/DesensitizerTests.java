@@ -18,15 +18,14 @@
  */
 package com.silong.foundation.plugins.log4j2.desensitization;
 
-import com.github.javafaker.Faker;
 import com.silong.foundation.plugins.log4j2.desensitization.process.DefaultSensitiveRecognizer;
 import com.silong.foundation.plugins.log4j2.desensitization.process.SensitiveRecognizer;
+import java.util.Base64;
+import net.datafaker.Faker;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Base64;
 
 /**
  * 脱敏器单元测试
