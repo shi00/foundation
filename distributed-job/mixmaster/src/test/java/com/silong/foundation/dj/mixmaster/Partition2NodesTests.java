@@ -23,12 +23,12 @@ package com.silong.foundation.dj.mixmaster;
 
 import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.MAX_PARTITIONS_COUNT;
 
-import com.github.javafaker.Faker;
 import com.silong.foundation.dj.mixmaster.generated.Messages.ClusterNodeInfo;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
+import net.datafaker.Faker;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Assertions;
