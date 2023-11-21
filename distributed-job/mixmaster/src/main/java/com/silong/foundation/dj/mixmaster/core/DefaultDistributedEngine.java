@@ -114,7 +114,7 @@ class DefaultDistributedEngine
   private JwtAuthenticator jwtAuthenticator;
 
   /** 集群视图 */
-  private final ClusterView clusterView = new ClusterView(VIEW_CHANGED_RECORDS);
+  final ClusterView clusterView = new ClusterView(VIEW_CHANGED_RECORDS);
 
   private final CountDownLatch clusterViewLatch = new CountDownLatch(1);
 
@@ -149,7 +149,7 @@ class DefaultDistributedEngine
     thread.start();
   }
 
-  /** 等待连接状态 */
+  /** 等待成为连接状态 */
   void waitUntilConnected() {
     while (!jChannel.isConnected()) {
       Thread.onSpinWait();
@@ -175,7 +175,7 @@ class DefaultDistributedEngine
       ApplicationEvent event;
       while ((event = eventQueue.poll()) != null) {
         if (event instanceof ViewChangedEvent viewChangedEvent) {
-          clusterMetadata.update(viewChangedEvent.oldView(), viewChangedEvent.newView()); // 更新集群元数据
+          clusterMetadata.update(viewChangedEvent.newView()); // 更新集群元数据
         }
         eventPublisher.publishEvent(event);
       }
@@ -470,17 +470,19 @@ class DefaultDistributedEngine
    * 从集群coordinator获取最新集群视图
    *
    * @param input The InputStream
-   * @throws Exception 异常
    */
   @Override
-  public void setState(InputStream input) throws Exception {
+  public void setState(InputStream input) {
     ClusterView cView = new ClusterView(0);
     cView.readFrom(input);
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "{} [coordinatorView:{}, localView:{}]", localIdentity(jChannel), cView, clusterView);
+    }
     clusterView.merge(cView); // 合并集群视图
     if (log.isDebugEnabled()) {
-      log.debug("{} mergedView: {}", properties.getInstanceName(), clusterView);
+      log.debug("{} [mergedView: {}]", localIdentity(jChannel), clusterView);
     }
-    clusterMetadata.initialize(clusterView.currentRecord());
     clusterViewLatch.countDown();
     log.info("The node{} receives the {} from coordinator.", localIdentity(jChannel), clusterView);
   }
