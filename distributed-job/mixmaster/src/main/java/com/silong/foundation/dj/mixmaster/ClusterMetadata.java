@@ -21,7 +21,7 @@
 
 package com.silong.foundation.dj.mixmaster;
 
-import com.silong.foundation.dj.mixmaster.vo.StoreNodes;
+import com.silong.foundation.dj.mixmaster.vo.PartitionTopology;
 
 /**
  * 集群元数据
@@ -47,7 +47,7 @@ public interface ClusterMetadata<T> {
    * @param obj 对象
    * @return 存储对象的节点列表，第一位为primary
    */
-  StoreNodes<T> mapObj2Nodes(Object obj);
+  PartitionTopology<T> mapObj2Nodes(Object obj);
 
   /**
    * 查询分区对应的节点列表
@@ -55,5 +55,5 @@ public interface ClusterMetadata<T> {
    * @param partition 分区编号
    * @return 主备节点列表，第一位为primary
    */
-  StoreNodes<T> mapPartition2Nodes(int partition);
+  PartitionTopology<T> mapPartition2Nodes(int partition);
 }
