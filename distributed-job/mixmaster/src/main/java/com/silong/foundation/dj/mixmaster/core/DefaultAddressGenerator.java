@@ -105,10 +105,12 @@ class DefaultAddressGenerator implements AddressGenerator {
       byte[] value = persistStorage.get(key);
       if (value != null) {
         uuid = ClusterNodeUUID.deserialize(value);
+        log.info("Found the uuid({}) of the local node.", uuid);
       } else {
         // 保存uuid
         uuid = ClusterNodeUUID.random();
         persistStorage.put(key, uuid.serialize());
+        log.info("Unable to find uuid of local node, generate a new one. generatedUUID: {}", uuid);
       }
 
       // 更新节点附加信息
