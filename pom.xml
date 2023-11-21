@@ -83,7 +83,6 @@
         <module>distributed-job/mixmaster</module>
         <module>distributed-job/hook</module>
         <module>distributed-job/scrapper</module>
-        <module>discovery</module>
         <module>crypto</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>
