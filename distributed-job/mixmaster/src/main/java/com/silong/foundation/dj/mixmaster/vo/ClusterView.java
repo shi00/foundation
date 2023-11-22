@@ -47,7 +47,7 @@ import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
 /**
- * 集群视图
+ * 集群视图，包含连续变化的历史视图，包含的历史视图数量可指定，默认：5
  *
  * @author louis sin
  * @version 1.0.0
@@ -113,11 +113,11 @@ public class ClusterView extends MultipleVersionObj<View> {
    * @param in ByteArrayInputStream输入流
    */
   public void readFrom(@NonNull InputStream in) {
-    doWithWriteLock(() -> doRead(in));
+    doWithWriteLock(() -> readClusterView(in));
   }
 
   @SneakyThrows
-  private void doRead(InputStream in) {
+  private void readClusterView(InputStream in) {
     try (SnappyInputStream snappyInputStream = new SnappyInputStream(in)) {
       Messages.ClusterView clusterView = Messages.ClusterView.parseFrom(snappyInputStream);
       recordLimit = clusterView.getRecordLimit();
