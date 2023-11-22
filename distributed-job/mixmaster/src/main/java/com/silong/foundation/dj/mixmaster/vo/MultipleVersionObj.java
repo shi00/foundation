@@ -119,7 +119,7 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
    * @return 分区到节点的映射表
    */
   @Nullable
-  public T currentRecord() {
+  public T current() {
     return head.next.value;
   }
 
@@ -217,11 +217,11 @@ abstract class MultipleVersionObj<T> implements Iterable<T>, Serializable {
   }
 
   /**
-   * 记录对象
+   * 插入记录对象，队头
    *
    * @param obj 对象
    */
-  public void record(@NonNull T obj) {
+  public void insert(@NonNull T obj) {
     if (index < recordLimit) {
       push(obj);
       index++;
