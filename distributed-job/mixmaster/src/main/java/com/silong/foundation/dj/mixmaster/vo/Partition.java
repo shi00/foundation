@@ -52,10 +52,10 @@ public class Partition<T> extends MultipleVersionObj<T> {
    * 构造方法
    *
    * @param partitionNo 分区编号
-   * @param shiftRecords 移动记录上限
+   * @param recordLimit 分区记录上限
    */
-  public Partition(int partitionNo, int shiftRecords) {
-    super(shiftRecords);
+  public Partition(int partitionNo, int recordLimit) {
+    super(recordLimit);
     if (partitionNo < 0 || partitionNo > MAX_PARTITIONS_COUNT) {
       throw new IllegalArgumentException(
           String.format(
