@@ -120,7 +120,7 @@ public class ClusterView extends MultipleVersionObj<View> {
   private void readClusterView(InputStream in) {
     try (SnappyInputStream snappyInputStream = new SnappyInputStream(in)) {
       Messages.ClusterView clusterView = Messages.ClusterView.parseFrom(snappyInputStream);
-      recordLimit = clusterView.getRecordLimit();
+      recordLimit = Math.max(clusterView.getRecordLimit(), recordLimit); // 考虑到配置值变化的情况，此处选用最大值
       super.clear();
 
       if (clusterView.hasViewList()) {
