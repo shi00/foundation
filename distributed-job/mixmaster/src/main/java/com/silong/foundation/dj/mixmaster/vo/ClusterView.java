@@ -169,13 +169,13 @@ public class ClusterView extends MultipleVersionObj<View> {
    * @param view 被记录视图
    */
   @Override
-  public void record(@NonNull View view) {
+  public void insert(@NonNull View view) {
     doWithWriteLock(
         () -> {
           if (super.isEmpty()
               || (!super.contains(view)
                   && head.next.value.getViewId().compareTo(view.getViewId()) < 0)) {
-            super.record(view);
+            super.insert(view);
           } else {
             log.warn("skip view: {}", view);
           }
@@ -215,7 +215,7 @@ public class ClusterView extends MultipleVersionObj<View> {
             .sorted(View::compareTo)
             .toList();
     super.clear();
-    list.forEach(super::record);
+    list.forEach(super::insert);
   }
 
   @Override
@@ -243,8 +243,8 @@ public class ClusterView extends MultipleVersionObj<View> {
 
   @Nullable
   @Override
-  public View currentRecord() {
-    return tryOptimisticRead(super::currentRecord);
+  public View current() {
+    return tryOptimisticRead(super::current);
   }
 
   private void doWithWriteLock(Runnable runnable) {
