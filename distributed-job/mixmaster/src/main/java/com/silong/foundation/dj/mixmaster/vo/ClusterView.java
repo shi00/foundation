@@ -30,6 +30,8 @@ import com.silong.foundation.dj.mixmaster.generated.Messages;
 import com.silong.foundation.dj.mixmaster.generated.Messages.ViewList;
 import jakarta.annotation.Nullable;
 import java.io.*;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Supplier;
@@ -59,6 +61,9 @@ import org.xerial.snappy.SnappyOutputStream;
 public class ClusterView extends MultipleVersionObj<View> {
 
   @Serial private static final long serialVersionUID = 2_816_357_969_167_034_367L;
+
+  /** viewid从大到小的排序器 */
+  private static final Comparator<View> CMP_VIEW = Collections.reverseOrder(View::compareTo);
 
   private final StampedLock lock = new StampedLock();
 
@@ -212,10 +217,11 @@ public class ClusterView extends MultipleVersionObj<View> {
     List<View> list =
         Stream.concat(toStream(iterator()), toStream(cView.iterator()))
             .distinct()
-            .sorted(View::compareTo)
+            .sorted(CMP_VIEW)
+            .limit(recordLimit)
             .toList();
     super.clear();
-    list.forEach(super::insert);
+    list.forEach(super::append);
   }
 
   @Override
