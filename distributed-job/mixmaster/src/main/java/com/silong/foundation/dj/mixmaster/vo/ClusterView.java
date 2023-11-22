@@ -227,6 +227,15 @@ public class ClusterView extends MultipleVersionObj<View> {
         toStream(iterator()).map(view -> "{" + view.toString() + "}").collect(joining(", ")));
   }
 
+  /**
+   * 返回集群视图列表
+   *
+   * @return 集群视图列表
+   */
+  public List<View> toList() {
+    return toStream(iterator()).toList();
+  }
+
   @Override
   public int size() {
     return tryOptimisticRead(super::size);
