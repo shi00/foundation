@@ -23,6 +23,7 @@ package com.silong.foundation.dj.mixmaster.core;
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
 import static com.silong.foundation.dj.mixmaster.utils.SystemInfo.*;
 import static com.silong.foundation.dj.scrapper.utils.String2Bytes.INSTANCE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.protobuf.ByteString;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
@@ -52,6 +53,10 @@ import org.springframework.stereotype.Component;
 @Component
 class DefaultAddressGenerator implements AddressGenerator {
 
+  /** 节点uuid key */
+  private static final byte[] NODE_UUID_KEY =
+      String.format("%s:node:uuid", HARDWARE_UUID).getBytes(UTF_8);
+
   /** 节点配置 */
   private final MixmasterProperties properties;
 
@@ -70,15 +75,6 @@ class DefaultAddressGenerator implements AddressGenerator {
   }
 
   /**
-   * 构造节点持久化key
-   *
-   * @return key
-   */
-  private String buildClusterNodeUuidKey() {
-    return String.format("%s:node:uuid", HARDWARE_UUID);
-  }
-
-  /**
    * 优先从本地存储加载节点uuid，如果没有则生成，并附加节点信息
    *
    * @return 节点uuid
@@ -87,15 +83,14 @@ class DefaultAddressGenerator implements AddressGenerator {
   public Address generateAddress() {
     try {
       ClusterNodeUUID uuid;
-      byte[] key = INSTANCE.to(buildClusterNodeUuidKey());
-      byte[] value = persistStorage.get(key);
+      byte[] value = persistStorage.get(NODE_UUID_KEY);
       if (value != null) {
         uuid = ClusterNodeUUID.deserialize(value);
         log.info("Found the uuid({}) of the local node.", uuid);
       } else {
         // 保存uuid
         uuid = ClusterNodeUUID.random();
-        persistStorage.put(key, uuid.serialize());
+        persistStorage.put(NODE_UUID_KEY, uuid.serialize());
         log.info("Unable to find uuid of local node, generate a new one. generatedUUID: {}", uuid);
       }
 
