@@ -36,7 +36,7 @@ import org.jgroups.util.Util;
 import org.xerial.snappy.Snappy;
 
 /**
- * 带时间戳的pb消息
+ * proto-buffer消息
  *
  * @author louis sin
  * @version 1.0.0
@@ -48,7 +48,7 @@ import org.xerial.snappy.Snappy;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class PbMessage<T extends MessageLite> extends BaseMessage {
+public class ProtoBufferMessage<T extends MessageLite> extends BaseMessage {
   /** 消息类型 */
   private static final short PB_MSG_TYPE = 679;
 
@@ -58,16 +58,13 @@ public class PbMessage<T extends MessageLite> extends BaseMessage {
   /** pb消息 */
   private T payload;
 
-  /** HLC时间戳 */
-  private long timestamp;
-
   /**
    * 注册消息类型
    *
    * @param messageFactory 消息工厂
    */
   public static void register(@NonNull MessageFactory messageFactory) {
-    messageFactory.register(PB_MSG_TYPE, PbMessage::new);
+    messageFactory.register(PB_MSG_TYPE, ProtoBufferMessage::new);
   }
 
   @Override
@@ -101,12 +98,12 @@ public class PbMessage<T extends MessageLite> extends BaseMessage {
   }
 
   @Override
-  public PbMessage<T> setArray(byte[] b, int offset, int length) {
+  public ProtoBufferMessage<T> setArray(byte[] b, int offset, int length) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public PbMessage<T> setArray(ByteArray buf) {
+  public ProtoBufferMessage<T> setArray(ByteArray buf) {
     throw new UnsupportedOperationException();
   }
 
@@ -123,23 +120,21 @@ public class PbMessage<T extends MessageLite> extends BaseMessage {
   @Override
   public void writePayload(DataOutput out) throws IOException {
     if (payload == null) {
-      throw new IllegalStateException("payload must not be null.");
+      throw new IOException("payload must not be null.");
     }
-    out.writeLong(timestamp); // 写入时间戳
     Util.writeByteBuffer(Snappy.compress(payload.toByteArray()), out);
   }
 
   @Override
   public void readPayload(DataInput in) throws IOException {
     if (parser == null) {
-      throw new IllegalStateException("parser must not be null.");
+      throw new IOException("parser must not be null.");
     }
-    timestamp = in.readLong();
     payload = parser.parseFrom(Snappy.uncompress(Util.readByteBuffer(in)));
   }
 
   @Override
-  public Supplier<? extends PbMessage<T>> create() {
-    return PbMessage::new;
+  public Supplier<? extends ProtoBufferMessage<T>> create() {
+    return ProtoBufferMessage::new;
   }
 }
