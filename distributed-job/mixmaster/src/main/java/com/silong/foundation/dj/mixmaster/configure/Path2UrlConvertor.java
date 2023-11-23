@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.mixmaster.utils;
+package com.silong.foundation.dj.mixmaster.configure;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
