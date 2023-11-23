@@ -39,7 +39,6 @@ import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
 import com.silong.foundation.dj.mixmaster.generated.Messages.LocalMetadata;
 import com.silong.foundation.dj.mixmaster.message.ProtoBufferMessage;
 import com.silong.foundation.dj.mixmaster.message.TimestampHeader;
-import com.silong.foundation.dj.mixmaster.utils.HybridLogicalClock;
 import com.silong.foundation.dj.mixmaster.utils.Slf4jLogFactory;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import com.silong.foundation.dj.mixmaster.vo.ClusterView;

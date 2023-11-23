@@ -110,7 +110,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
                   log.debug("view:{}, beforeView:{}", view, before);
                 }
                 if (before != null) {
-                  partition.record(calculatePartitionDistribution(partitionNo, before));
+                  partition.insert(calculatePartitionTopology(partitionNo, before));
                 } else {
                   throw new IllegalStateException(
                       String.format(
@@ -119,14 +119,14 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
                 }
               }
 
-              PartitionTopology<ClusterNodeUUID> historyNodes = partition.currentRecord();
+              PartitionTopology<ClusterNodeUUID> historyNodes = partition.current();
 
               // 计算分区映射的集群节点列表
               PartitionTopology<ClusterNodeUUID> newNodes =
-                  calculatePartitionDistribution(partitionNo, view);
+                  calculatePartitionTopology(partitionNo, view);
 
               // 记录当前分区对应的存储节点列表
-              partition.record(newNodes);
+              partition.insert(newNodes);
 
               ClusterNodeUUID local = engine.localAddress();
 
@@ -140,7 +140,7 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
             });
   }
 
-  private PartitionTopology<ClusterNodeUUID> calculatePartitionDistribution(
+  private PartitionTopology<ClusterNodeUUID> calculatePartitionTopology(
       int partitionNo, View newView) {
     return PartitionTopology.<ClusterNodeUUID>builder()
         .version(newView.getViewId().getId())
@@ -170,11 +170,11 @@ class DefaultClusterMetadata implements ClusterMetadata<ClusterNodeUUID> {
           String.format("partition(%d) exceeds boundary[%d, %d).", partition, 0, totalPartition));
     }
     long stamp = lock.tryOptimisticRead();
-    PartitionTopology<ClusterNodeUUID> nodes = partitionsMap.get(partition).currentRecord();
+    PartitionTopology<ClusterNodeUUID> nodes = partitionsMap.get(partition).current();
     if (!lock.validate(stamp)) {
       stamp = lock.readLock();
       try {
-        nodes = partitionsMap.get(partition).currentRecord();
+        nodes = partitionsMap.get(partition).current();
       } finally {
         lock.unlockRead(stamp);
       }

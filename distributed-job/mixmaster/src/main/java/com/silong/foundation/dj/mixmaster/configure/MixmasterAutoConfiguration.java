@@ -27,7 +27,6 @@ import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
 import com.silong.foundation.dj.hook.auth.SimpleJwtAuthenticator;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
-import com.silong.foundation.dj.mixmaster.utils.HybridLogicalClock;
 import com.silong.foundation.dj.scrapper.PersistStorage;
 import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import java.util.Collection;
@@ -109,16 +108,6 @@ public class MixmasterAutoConfiguration {
         .forEach(partition -> cfs.add(getPartitionCf(partition)));
     scrapper.setColumnFamilyNames(cfs);
     return PersistStorage.getInstance(scrapper);
-  }
-
-  /**
-   * 注册混合逻辑时钟
-   *
-   * @return HLC
-   */
-  @Bean
-  public HybridLogicalClock hybridLogicalClock() {
-    return new HybridLogicalClock();
   }
 
   @Autowired

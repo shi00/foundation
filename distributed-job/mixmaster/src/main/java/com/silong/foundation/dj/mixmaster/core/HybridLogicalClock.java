@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.mixmaster.utils;
+package com.silong.foundation.dj.mixmaster.core;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -30,6 +30,7 @@ import java.util.concurrent.locks.StampedLock;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.jgroups.util.SizeStreamable;
+import org.springframework.stereotype.Component;
 
 /**
  * 混合逻辑时钟实现，参考论文《Logical Physical Clocks and Consistent Snapshots in Globally Distributed Databases》
@@ -38,7 +39,8 @@ import org.jgroups.util.SizeStreamable;
  * @version 1.0.0
  * @since 2023-11-22 21:42
  */
-public class HybridLogicalClock {
+@Component
+class HybridLogicalClock {
 
   /** 混合逻辑时钟时间戳 */
   @Data
