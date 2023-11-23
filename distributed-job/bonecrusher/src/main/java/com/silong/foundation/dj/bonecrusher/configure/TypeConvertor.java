@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.utils;
+package com.silong.foundation.dj.bonecrusher.configure;
 
 import static com.silong.foundation.dj.bonecrusher.enu.EventExecutorType.UNORDERED;
 import static java.util.Locale.ENGLISH;

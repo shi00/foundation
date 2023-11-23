@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.utils;
+package com.silong.foundation.dj.bonecrusher.configure;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;

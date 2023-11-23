@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.dj.bonecrusher.utils;
+package com.silong.foundation.dj.bonecrusher.configure;
 
 import io.netty.handler.logging.LogLevel;
 import java.util.Arrays;
