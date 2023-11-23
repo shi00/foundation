@@ -23,11 +23,14 @@ package com.silong.foundation.dj.mixmaster.message;
 
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
+import jakarta.annotation.Nullable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.function.Supplier;
 import lombok.*;
+import lombok.experimental.Accessors;
+import org.jgroups.Address;
 import org.jgroups.BaseMessage;
 import org.jgroups.Message;
 import org.jgroups.MessageFactory;
@@ -44,9 +47,8 @@ import org.xerial.snappy.Snappy;
  * @param <T> 消息负载类型
  */
 @Data
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
+@Accessors(fluent = true)
 @EqualsAndHashCode(callSuper = true)
 public class ProtoBufferMessage<T extends MessageLite> extends BaseMessage {
   /** 消息类型 */
@@ -57,6 +59,15 @@ public class ProtoBufferMessage<T extends MessageLite> extends BaseMessage {
 
   /** pb消息 */
   private T payload;
+
+  /**
+   * 构造方法
+   *
+   * @param target 消息发送目标
+   */
+  public ProtoBufferMessage(@Nullable Address target) {
+    super(target);
+  }
 
   /**
    * 注册消息类型
