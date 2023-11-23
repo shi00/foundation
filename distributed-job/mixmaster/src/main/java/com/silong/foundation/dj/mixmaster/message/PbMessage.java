@@ -22,21 +22,21 @@
 package com.silong.foundation.dj.mixmaster.message;
 
 import com.google.protobuf.MessageLite;
+import com.google.protobuf.Parser;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.function.Supplier;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NonNull;
+import lombok.*;
 import org.jgroups.BaseMessage;
 import org.jgroups.Message;
 import org.jgroups.MessageFactory;
 import org.jgroups.util.ByteArray;
+import org.jgroups.util.Util;
+import org.xerial.snappy.Snappy;
 
 /**
- * protobuf 消息
+ * 带时间戳的pb消息
  *
  * @author louis sin
  * @version 1.0.0
@@ -45,13 +45,21 @@ import org.jgroups.util.ByteArray;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class PbMessage<T extends MessageLite> extends BaseMessage {
   /** 消息类型 */
   private static final short PB_MSG_TYPE = 679;
 
+  /** 消息解析器 */
+  private Parser<T> parser;
+
   /** pb消息 */
   private T payload;
+
+  /** HLC时间戳 */
+  private long timestamp;
 
   /**
    * 注册消息类型
@@ -59,7 +67,7 @@ public class PbMessage<T extends MessageLite> extends BaseMessage {
    * @param messageFactory 消息工厂
    */
   public static void register(@NonNull MessageFactory messageFactory) {
-    messageFactory.register(PB_MSG_TYPE, () -> PbMessage.builder().build());
+    messageFactory.register(PB_MSG_TYPE, PbMessage::new);
   }
 
   @Override
@@ -89,7 +97,7 @@ public class PbMessage<T extends MessageLite> extends BaseMessage {
 
   @Override
   public int getLength() {
-    return payload.getSerializedSize();
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -103,7 +111,7 @@ public class PbMessage<T extends MessageLite> extends BaseMessage {
   }
 
   @Override
-  public <T> T getObject() {
+  public Object getObject() {
     throw new UnsupportedOperationException();
   }
 
@@ -114,14 +122,24 @@ public class PbMessage<T extends MessageLite> extends BaseMessage {
 
   @Override
   public void writePayload(DataOutput out) throws IOException {
-    // TODO  待完善
+    if (payload == null) {
+      throw new IllegalStateException("payload must not be null.");
+    }
+    out.writeLong(timestamp); // 写入时间戳
+    Util.writeByteBuffer(Snappy.compress(payload.toByteArray()), out);
   }
 
   @Override
-  public void readPayload(DataInput in) throws IOException, ClassNotFoundException {}
+  public void readPayload(DataInput in) throws IOException {
+    if (parser == null) {
+      throw new IllegalStateException("parser must not be null.");
+    }
+    timestamp = in.readLong();
+    payload = parser.parseFrom(Snappy.uncompress(Util.readByteBuffer(in)));
+  }
 
   @Override
   public Supplier<? extends PbMessage<T>> create() {
-    return null;
+    return PbMessage::new;
   }
 }
