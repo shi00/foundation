@@ -20,10 +20,14 @@
  */
 package com.silong.foundation.dj.mixmaster.core;
 
+import static com.silong.foundation.dj.mixmaster.utils.SystemInfo.HARDWARE_UUID;
 import static com.silong.foundation.dj.mixmaster.utils.SystemInfo.HOST_NAME;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.protobuf.MessageLite;
+import com.google.protobuf.Parser;
+import com.silong.foundation.common.utils.BiConverter;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
 import com.silong.foundation.dj.hook.event.ChannelClosedEvent;
 import com.silong.foundation.dj.hook.event.JoinClusterEvent;
@@ -32,7 +36,11 @@ import com.silong.foundation.dj.hook.event.ViewChangedEvent;
 import com.silong.foundation.dj.mixmaster.*;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
-import com.silong.foundation.dj.mixmaster.message.PbMessage;
+import com.silong.foundation.dj.mixmaster.generated.Messages.LocalMetadata;
+import com.silong.foundation.dj.mixmaster.message.ProtoBufferMessage;
+import com.silong.foundation.dj.mixmaster.message.TimestampHeader;
+import com.silong.foundation.dj.mixmaster.utils.HybridLogicalClock;
+import com.silong.foundation.dj.mixmaster.utils.Slf4jLogFactory;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import com.silong.foundation.dj.mixmaster.vo.ClusterView;
 import com.silong.foundation.dj.scrapper.PersistStorage;
@@ -41,6 +49,7 @@ import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import java.io.*;
 import java.net.*;
+import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -52,6 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jctools.queues.atomic.MpscAtomicArrayQueue;
 import org.jgroups.*;
 import org.jgroups.auth.AuthToken;
+import org.jgroups.logging.LogFactory;
 import org.jgroups.protocols.AUTH;
 import org.jgroups.protocols.TP;
 import org.jgroups.protocols.UDP;
@@ -86,6 +96,28 @@ class DefaultDistributedEngine
   public static final int VIEW_CHANGED_RECORDS =
       Integer.parseInt(System.getProperty("cluster.view.change.records", "5"));
 
+  private static final byte[] LOCAL_METADATA_KEY =
+      String.format("%s:local:metadata", HARDWARE_UUID).getBytes(UTF_8);
+
+  /** 元数据转换器 */
+  private static final BiConverter<LocalMetadata, byte[]> METADATA_CONVERTER =
+      new BiConverter<>() {
+        @Override
+        public byte[] to(@NonNull LocalMetadata localMetadata) {
+          return localMetadata.toByteArray();
+        }
+
+        @Override
+        @Nullable
+        @SneakyThrows
+        public LocalMetadata from(byte[] bytes) {
+          if (bytes == null || bytes.length == 0) {
+            return null;
+          }
+          return LocalMetadata.parseFrom(bytes);
+        }
+      };
+
   /** 事件发布器 */
   private ApplicationEventPublisher eventPublisher;
 
@@ -100,6 +132,9 @@ class DefaultDistributedEngine
 
   /** 集群元数据 */
   private DefaultClusterMetadata clusterMetadata;
+
+  /** 逻辑时钟 */
+  private HybridLogicalClock logicalClock;
 
   /** 消息队列，多生产者单消费者，异步保序处理事件 */
   private MpscAtomicArrayQueue<ApplicationEvent> eventQueue;
@@ -118,12 +153,20 @@ class DefaultDistributedEngine
 
   private final CountDownLatch clusterViewLatch = new CountDownLatch(1);
 
+  static {
+    // 使用slf4j进行日志打印
+    LogFactory.setCustomLogFactory(new Slf4jLogFactory());
+  }
+
   /** 初始化方法 */
   @PostConstruct
   public void initialize() {
     try (InputStream inputStream = properties.getConfigFile().openStream()) {
       // 创建jchannel并配置
       configureDistributedEngine(jChannel = new JChannel(inputStream));
+
+      // 从本地持久化存储加载元数据
+      resumeMetadata();
 
       // 加入集群，同步集群视图
       jChannel
@@ -136,6 +179,30 @@ class DefaultDistributedEngine
       startEventDispatcherThread();
     } catch (Exception e) {
       throw new DistributedEngineException("Failed to start distributed engine.", e);
+    }
+  }
+
+  /** 从本地存储加载元数据 */
+  private void resumeMetadata() {
+    byte[] bytes = persistStorage.get(LOCAL_METADATA_KEY);
+    LocalMetadata localMetadata = METADATA_CONVERTER.from(bytes);
+    if (localMetadata != null) {
+
+      // 分区数量不能变
+      if (localMetadata.getTotalPartition() != properties.getPartitions()) {
+        throw new IllegalStateException(
+            String.format(
+                "The number of partitions changes and the service cannot be started. partition:[%d--->%d]",
+                localMetadata.getTotalPartition(), properties.getPartitions()));
+      }
+
+      // 加载集群视图并恢复数据分区的拓扑图
+      clusterView.readFrom(new ByteArrayInputStream(localMetadata.getClusterView().toByteArray()));
+      if (!clusterView.isEmpty()) {
+        List<View> list = clusterView.toList();
+        Collections.reverse(list);
+        list.forEach(view -> clusterMetadata.update(view));
+      }
     }
   }
 
@@ -230,7 +297,10 @@ class DefaultDistributedEngine
     jChannel.setName(properties.getInstanceName());
 
     // 注册自定义消息
-    registerMessages(jChannel);
+    ProtoBufferMessage.register(getMessageFactory(jChannel));
+
+    // 注册自定义消息头
+    TimestampHeader.register();
 
     // 自定义集群节点策略
     getGmsProtocol(jChannel).setMembershipChangePolicy(membershipChangePolicy);
@@ -242,19 +312,14 @@ class DefaultDistributedEngine
     }
   }
 
-  /** 注册自定义消息类型 */
-  private void registerMessages(JChannel jChannel) {
-    PbMessage.register(getMessageFactory(jChannel));
-  }
-
   @Override
   public void viewAccepted(View newView) {
     if (log.isDebugEnabled()) {
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
 
-    View oldView = clusterView.currentRecord();
-    clusterView.record(newView);
+    View oldView = clusterView.current();
+    clusterView.insert(newView);
     ViewChangedEvent event = new ViewChangedEvent(oldView, newView);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
@@ -271,7 +336,7 @@ class DefaultDistributedEngine
           clusterName);
     }
     JoinClusterEvent event =
-        new JoinClusterEvent(clusterView.currentRecord(), clusterName, channel.address());
+        new JoinClusterEvent(clusterView.current(), clusterName, channel.address());
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
@@ -284,7 +349,7 @@ class DefaultDistributedEngine
       log.debug("The node{} has left the cluster[{}].", localIdentity(channel), clusterName);
     }
     LeftClusterEvent event =
-        new LeftClusterEvent(clusterView.currentRecord(), clusterName, channel.address());
+        new LeftClusterEvent(clusterView.current(), clusterName, channel.address());
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
@@ -331,6 +396,17 @@ class DefaultDistributedEngine
     return jChannel.getClusterName();
   }
 
+  /**
+   * 发送消息时驱动逻辑时钟推进，并在消息头中附带此时间戳供消息接收方更新自己的逻辑时钟
+   *
+   * @param msg 待发送消息
+   * @return this msg
+   */
+  private Message putTimestampHeader(Message msg) {
+    return msg.putHeader(
+        TimestampHeader.TYPE, TimestampHeader.builder().timestamp(logicalClock.tick()).build());
+  }
+
   @Override
   public DistributedEngine send(byte[] msg, @Nullable ClusterNode<?> dest) throws Exception {
     return send(msg, 0, msg.length, dest);
@@ -338,7 +414,7 @@ class DefaultDistributedEngine
 
   @Override
   public DistributedEngine send(@NonNull Message msg) throws Exception {
-    jChannel.send(msg);
+    jChannel.send(putTimestampHeader(msg));
     return this;
   }
 
@@ -354,13 +430,14 @@ class DefaultDistributedEngine
     if (offset + length > msg.length) {
       throw new ArrayIndexOutOfBoundsException("length:" + length);
     }
+
+    Address target = null;
     if (dest == null) {
       if (log.isDebugEnabled()) {
         log.debug(
             "Send message to all cluster members. msg:{}",
             HexFormat.of().formatHex(msg, offset, offset + length));
       }
-      jChannel.send(null, msg, offset, length);
     } else {
       if (log.isDebugEnabled()) {
         log.debug(
@@ -368,19 +445,21 @@ class DefaultDistributedEngine
             dest.uuid(),
             HexFormat.of().formatHex(msg, offset, offset + length));
       }
-      jChannel.send((Address) dest.uuid(), msg, offset, length);
+      target = (Address) dest.uuid();
     }
+
+    jChannel.send(putTimestampHeader(new BytesMessage(target, msg, offset, length)));
     return this;
   }
 
   @Override
   public <T extends MessageLite> DistributedEngine send(
       @NonNull T msg, @Nullable ClusterNode<?> dest) throws Exception {
+    Address target = null;
     if (dest == null) {
       if (log.isDebugEnabled()) {
         log.debug("Send message to all cluster members. {}{}", System.lineSeparator(), msg);
       }
-      send(msg.toByteArray(), null);
     } else {
       if (log.isDebugEnabled()) {
         log.debug(
@@ -389,8 +468,13 @@ class DefaultDistributedEngine
             System.lineSeparator(),
             msg);
       }
-      send(msg.toByteArray(), dest);
+      target = (Address) dest.uuid();
     }
+    jChannel.send(
+        putTimestampHeader(
+            new ProtoBufferMessage<T>(target)
+                .parser((Parser<T>) msg.getParserForType())
+                .payload(msg)));
     return this;
   }
 
@@ -400,6 +484,9 @@ class DefaultDistributedEngine
       if (log.isDebugEnabled()) {
         log.debug("A message received {}.", message);
       }
+
+      // 接收消息，更新逻辑时钟
+      logicalClock.update(message.<TimestampHeader>getHeader(TimestampHeader.TYPE).timestamp());
     }
   }
 
@@ -545,6 +632,11 @@ class DefaultDistributedEngine
   public void setClusterMetadata(DefaultClusterMetadata clusterMetadata) {
     this.clusterMetadata = clusterMetadata;
     clusterMetadata.setEngine(this);
+  }
+
+  @Autowired
+  public void setLogicalClock(HybridLogicalClock logicalClock) {
+    this.logicalClock = logicalClock;
   }
 
   @Autowired
