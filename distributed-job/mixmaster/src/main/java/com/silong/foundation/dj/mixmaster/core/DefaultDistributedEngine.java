@@ -156,6 +156,9 @@ class DefaultDistributedEngine
   static {
     // 使用slf4j进行日志打印
     LogFactory.setCustomLogFactory(new Slf4jLogFactory());
+
+    // 注册自定义消息头
+    TimestampHeader.register();
   }
 
   /** 初始化方法 */
@@ -298,9 +301,6 @@ class DefaultDistributedEngine
 
     // 注册自定义消息
     ProtoBufferMessage.register(getMessageFactory(jChannel));
-
-    // 注册自定义消息头
-    TimestampHeader.register();
 
     // 自定义集群节点策略
     getGmsProtocol(jChannel).setMembershipChangePolicy(membershipChangePolicy);
