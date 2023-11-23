@@ -24,12 +24,11 @@ package com.silong.foundation.dj.mixmaster.utils;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.time.Clock;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.StampedLock;
-import lombok.NonNull;
-import lombok.SneakyThrows;
+import lombok.*;
+import lombok.experimental.Accessors;
 import org.jgroups.util.SizeStreamable;
 
 /**
@@ -41,13 +40,19 @@ import org.jgroups.util.SizeStreamable;
  */
 public class HybridLogicalClock {
 
-  /**
-   * 混合逻辑时钟时间戳
-   *
-   * @param lt 物理时钟，单位：毫秒
-   * @param ct 逻辑时钟
-   */
-  public record Timestamp(long lt, long ct) implements Comparable<Timestamp>, SizeStreamable {
+  /** 混合逻辑时钟时间戳 */
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Accessors(fluent = true)
+  public static class Timestamp implements Comparable<Timestamp>, SizeStreamable {
+
+    /** 物理时钟，单位：毫秒 */
+    private long lt;
+
+    /** 逻辑时钟 */
+    private long ct;
 
     @Override
     public int compareTo(@NonNull Timestamp o) {
@@ -67,7 +72,9 @@ public class HybridLogicalClock {
 
     @Override
     public void readFrom(DataInput in) throws IOException {
-      throw new UnsupportedEncodingException();
+      long t = in.readLong();
+      lt = extractLT(t);
+      ct = extractCT(t);
     }
   }
 
