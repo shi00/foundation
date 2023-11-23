@@ -21,8 +21,6 @@
 
 package com.silong.foundation.dj.mixmaster.utils;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -46,7 +44,7 @@ public class HybridLogicalClock {
   /**
    * 混合逻辑时钟时间戳
    *
-   * @param lt 物理时钟，单位：秒
+   * @param lt 物理时钟，单位：毫秒
    * @param ct 逻辑时钟
    */
   public record Timestamp(long lt, long ct) implements Comparable<Timestamp>, SizeStreamable {
@@ -79,7 +77,7 @@ public class HybridLogicalClock {
   /** 获取pt */
   private final Clock clock;
 
-  /** 物理时钟，取48比特，初始值：0，单位：秒 */
+  /** 物理时钟，取48比特，初始值：0，单位：毫秒 */
   private long lt;
 
   /** 逻辑时钟，取比特，初始值：0，最大值：65535 */
@@ -162,7 +160,7 @@ public class HybridLogicalClock {
     long stamp = lock.writeLock();
     try {
       long tlt = lt;
-      lt = Math.max(getPhysicalTimeSeconds(), tlt);
+      lt = Math.max(getPhysicalTime(), tlt);
       if (tlt == lt) {
         ct += 1;
       } else {
@@ -188,7 +186,7 @@ public class HybridLogicalClock {
       long lm = extractLT(m);
       long cm = extractCT(m);
       long tlt = lt;
-      lt = Math.max(tlt, Math.max(lm, getPhysicalTimeSeconds()));
+      lt = Math.max(tlt, Math.max(lm, getPhysicalTime()));
       if (lt == tlt && lt == lm) {
         ct = Math.max(ct, cm) + 1;
       } else if (lt == tlt) {
@@ -219,7 +217,12 @@ public class HybridLogicalClock {
     return call;
   }
 
-  private long getPhysicalTimeSeconds() {
-    return MILLISECONDS.toSeconds(clock.millis());
+  /**
+   * 获取物理时钟时间，单位：毫秒
+   *
+   * @return 真实时间
+   */
+  private long getPhysicalTime() {
+    return clock.millis();
   }
 }
