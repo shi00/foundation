@@ -56,14 +56,16 @@ class DefaultClientGmsImpl extends ClientGmsImpl {
    * @param mbr address
    */
   void becomeSingletonMember(Address mbr) {
-    View newView =
-        View.create(mbr, logicalClock.tick(), mbr); // create singleton view with mbr as only member
+    // create singleton view with mbr as only member
+    View newView = View.create(mbr, logicalClock.tick(), mbr);
 
     // set the initial digest (since I'm the first member)
     Digest initialDigest = new Digest(mbr, 0, 0);
+
     // impl will be coordinator
     ScopedValue.runWhere(
         IS_UPDATE_CLOCK, Boolean.FALSE, () -> gms.installView(newView, initialDigest));
+
     Event event = new Event(Event.BECOME_SERVER);
     gms.getUpProtocol().up(event);
     gms.getDownProtocol().down(event);
