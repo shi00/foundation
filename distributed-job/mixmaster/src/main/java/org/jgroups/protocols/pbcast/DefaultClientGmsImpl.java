@@ -57,7 +57,7 @@ class DefaultClientGmsImpl extends ClientGmsImpl {
    */
   void becomeSingletonMember(Address mbr) {
     // create singleton view with mbr as only member
-    View newView = View.create(mbr, logicalClock.tick(), mbr);
+    View newView = new View(new DefaultViewId(mbr, logicalClock.tick()), new Address[] {mbr});
 
     // set the initial digest (since I'm the first member)
     Digest initialDigest = new Digest(mbr, 0, 0);
