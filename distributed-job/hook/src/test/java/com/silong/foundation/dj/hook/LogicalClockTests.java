@@ -22,10 +22,9 @@
 package com.silong.foundation.dj.hook;
 
 import static com.silong.foundation.dj.hook.clock.LogicalClock.compare;
+import static com.silong.foundation.dj.hook.clock.LogicalClock.from;
 
 import com.silong.foundation.dj.hook.clock.HybridLogicalClock;
-import com.silong.foundation.dj.hook.clock.LogicalClock;
-import com.silong.foundation.dj.hook.clock.LogicalClock.Timestamp;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,11 +38,11 @@ import org.junit.jupiter.api.Test;
  */
 public class LogicalClockTests {
 
-  private LogicalClock clock;
+  private final HybridLogicalClock clock = new HybridLogicalClock();
 
   @BeforeEach
   public void init() {
-    clock = new HybridLogicalClock();
+    clock.reset();
   }
 
   @Test
@@ -55,9 +54,8 @@ public class LogicalClockTests {
 
   @Test
   public void test2() {
-    Timestamp now = new Timestamp(System.currentTimeMillis(), 0);
     long tick = clock.tick();
-    Assertions.assertEquals(0, compare(tick, now));
+    Assertions.assertEquals(0, compare(from(tick).ct(), 0));
   }
 
   @Test

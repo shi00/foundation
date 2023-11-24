@@ -64,6 +64,16 @@ public class HybridLogicalClock implements LogicalClock, Serializable {
     this(Clock.systemUTC());
   }
 
+  /** 复位逻辑时钟 */
+  public void reset() {
+    long stamp = lock.writeLock();
+    try {
+      lt = ct = 0;
+    } finally {
+      lock.unlockWrite(stamp);
+    }
+  }
+
   @Override
   public long now() {
     return tryOptimisticRead(() -> to(lt, ct));
