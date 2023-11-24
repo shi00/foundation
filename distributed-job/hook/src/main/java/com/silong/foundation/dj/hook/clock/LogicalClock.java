@@ -26,6 +26,7 @@ import static com.silong.foundation.dj.hook.clock.HybridLogicalClock.*;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Date;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.jgroups.util.SizeStreamable;
@@ -80,6 +81,11 @@ public interface LogicalClock {
       long t = in.readLong();
       lt = extractLT(t);
       ct = extractCT(t);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("[%s,%d]", new Date(lt), ct);
     }
   }
 
