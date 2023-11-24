@@ -85,7 +85,7 @@ public interface LogicalClock {
 
     @Override
     public String toString() {
-      return String.format("[%s,%d]", new Date(lt), ct);
+      return String.format("timestamp:[%s,%d]", new Date(lt), ct);
     }
   }
 
