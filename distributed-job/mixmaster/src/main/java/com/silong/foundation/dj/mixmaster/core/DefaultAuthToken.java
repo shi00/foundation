@@ -21,7 +21,7 @@
 package com.silong.foundation.dj.mixmaster.core;
 
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
-import com.silong.foundation.dj.hook.auth.Result;
+import com.silong.foundation.dj.hook.auth.JwtAuthenticator.Result;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import java.io.DataInput;
 import java.io.DataOutput;
