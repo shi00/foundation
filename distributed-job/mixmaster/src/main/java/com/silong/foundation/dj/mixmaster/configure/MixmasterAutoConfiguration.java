@@ -26,6 +26,8 @@ import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
 import com.silong.foundation.dj.hook.auth.SimpleJwtAuthenticator;
+import com.silong.foundation.dj.hook.clock.HybridLogicalClock;
+import com.silong.foundation.dj.hook.clock.LogicalClock;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.scrapper.PersistStorage;
 import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
@@ -75,6 +77,11 @@ public class MixmasterAutoConfiguration {
         // 设置超期时间
         .period(properties.getAuth().getExpires())
         .build();
+  }
+
+  @Bean
+  public LogicalClock logicalClock() {
+    return new HybridLogicalClock();
   }
 
   @Bean
