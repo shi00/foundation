@@ -21,20 +21,14 @@
 
 package org.jgroups.protocols.pbcast;
 
-import static java.util.Objects.requireNonNull;
-
-import com.silong.foundation.dj.hook.SpringContext;
 import com.silong.foundation.dj.hook.clock.LogicalClock;
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
-import lombok.SneakyThrows;
+import lombok.Setter;
 import org.jgroups.*;
 import org.jgroups.conf.ClassConfigurator;
-import org.jgroups.stack.MembershipChangePolicy;
 import org.jgroups.util.Digest;
 import org.jgroups.util.Util;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * 集群管理协议
@@ -49,32 +43,14 @@ public class DefaultGMS extends GMS {
   public static final short ID = (short) 1031;
 
   /** 混合逻辑时钟 */
-  private final LogicalClock logicalClock;
-
-  private final Field vi;
+  @Setter private LogicalClock logicalClock;
 
   /** 是否更新时钟 */
   static final ScopedValue<Boolean> IS_UPDATE_CLOCK = ScopedValue.newInstance();
 
-  /** 默认构造方法 */
-  public DefaultGMS() {
-    logicalClock = SpringContext.getBean(LogicalClock.class);
-    membership_change_policy = SpringContext.getBean(MembershipChangePolicy.class);
-    vi = requireNonNull(ReflectionUtils.findField(View.class, "view_id", ViewId.class));
-    vi.setAccessible(true);
-  }
-
   /** 注册自定义协议 */
   public static void register() {
     ClassConfigurator.addProtocol(ID, DefaultGMS.class);
-  }
-
-  @SneakyThrows
-  private void replaceDefaultViewId(View view) {
-    ViewId viewId = view.getViewId();
-    if (viewId.getClass() != DefaultViewId.class) {
-      vi.set(view, new DefaultViewId(viewId));
-    }
   }
 
   @Override
@@ -83,7 +59,6 @@ public class DefaultGMS extends GMS {
     if (IS_UPDATE_CLOCK.orElse(Boolean.TRUE)) {
       logicalClock.update(newView.getViewId().getId());
     }
-    replaceDefaultViewId(newView);
     super.installView(newView, digest);
   }
 
@@ -100,7 +75,7 @@ public class DefaultGMS extends GMS {
       List<Address> mbrs =
           computeNewMembership(tmp_members.getMembers(), joiners, leavers, suspectedMbrs);
       Address newCoord = !mbrs.isEmpty() ? mbrs.get(0) : local_addr;
-      View view = new View(new DefaultViewId(newCoord, logicalClock.tick()), mbrs);
+      View view = new View(new ViewId(newCoord, logicalClock.tick()), mbrs);
 
       // Update membership (see DESIGN for explanation):
       tmp_members.set(mbrs);
