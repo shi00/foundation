@@ -26,6 +26,7 @@ import static com.silong.foundation.dj.hook.clock.HybridLogicalClock.*;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import lombok.*;
 import lombok.experimental.Accessors;
@@ -53,6 +54,9 @@ public interface LogicalClock {
   @AllArgsConstructor
   @Accessors(fluent = true)
   class Timestamp implements Comparable<Timestamp>, SizeStreamable {
+
+    private static ThreadLocal<SimpleDateFormat> FORMATTER =
+        ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSS"));
 
     /** 物理时钟，单位：毫秒 */
     private long lt;
@@ -85,7 +89,7 @@ public interface LogicalClock {
 
     @Override
     public String toString() {
-      return String.format("timestamp:[%s,%d]", new Date(lt), ct);
+      return String.format("timestamp:[%s|%d]", FORMATTER.get().format(new Date(lt)), ct);
     }
   }
 
