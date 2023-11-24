@@ -21,12 +21,12 @@
 
 package com.silong.foundation.dj.hook;
 
-import static com.silong.foundation.dj.hook.auth.Result.VALID;
+import static com.silong.foundation.dj.hook.auth.JwtAuthenticator.Result.VALID;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
-import com.silong.foundation.dj.hook.auth.Result;
+import com.silong.foundation.dj.hook.auth.JwtAuthenticator.Result;
 import com.silong.foundation.dj.hook.auth.SimpleJwtAuthenticator;
 import java.time.Duration;
 import java.time.Instant;
@@ -128,7 +128,7 @@ public class SimpleJwtAuthenticatorTests {
               Map.entry("9", DOUBLE_VALUE),
               Map.entry("10", LONG_VALUE)));
 
-  private static com.silong.foundation.dj.hook.auth.Result check(Map<String, Claim> m) {
+  private static Result check(Map<String, Claim> m) {
     boolean result =
         m.get("1").asString().equals(STR_VALUE)
             && m.get("4").as(List.class).equals(LIST_VALUE)
@@ -160,8 +160,7 @@ public class SimpleJwtAuthenticatorTests {
             .signatureAlgorithm(algorithm)
             .build();
     String token = authenticator.generate(PAYLOAD);
-    com.silong.foundation.dj.hook.auth.Result result =
-        authenticator.verify(token, SimpleJwtAuthenticatorTests::check);
+    Result result = authenticator.verify(token, SimpleJwtAuthenticatorTests::check);
     Assertions.assertTrue(result.isValid(), result::cause);
   }
 

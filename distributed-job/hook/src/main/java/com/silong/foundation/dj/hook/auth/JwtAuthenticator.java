@@ -24,6 +24,9 @@ package com.silong.foundation.dj.hook.auth;
 import com.auth0.jwt.interfaces.Claim;
 import java.util.Map;
 import java.util.function.Function;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * JWT鉴权接口
@@ -33,6 +36,29 @@ import java.util.function.Function;
  * @since 2023-10-22 9:32
  */
 public interface JwtAuthenticator {
+
+  /**
+   * 鉴权结果
+   *
+   * @author louis sin
+   * @version 1.0.0
+   * @since 2023-10-22 9:36
+   */
+  @Data
+  @AllArgsConstructor
+  @Accessors(fluent = true)
+  class Result {
+
+    /** constants valid */
+    public static final Result VALID = new Result(true, null);
+
+    /** 是否有效 */
+    private boolean isValid;
+
+    /** 错误原因 */
+    private String cause;
+  }
+
   /**
    * 对指定载荷进行签名，产生签名Token
    *
