@@ -57,7 +57,11 @@ public class DefaultGMS extends GMS {
   public void installView(View newView, Digest digest) {
     // 默认情况需要更新时钟
     if (IS_UPDATE_CLOCK.orElse(Boolean.TRUE)) {
-      logicalClock.update(newView.getViewId().getId());
+      long id = newView.getViewId().getId();
+      if (log.isDebugEnabled()) {
+        log.debug("Update logic clock by %s", LogicalClock.from(id));
+      }
+      logicalClock.update(id);
     }
     super.installView(newView, digest);
   }
