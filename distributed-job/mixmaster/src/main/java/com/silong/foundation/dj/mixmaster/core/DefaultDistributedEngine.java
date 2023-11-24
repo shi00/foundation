@@ -23,6 +23,7 @@ package com.silong.foundation.dj.mixmaster.core;
 import static com.silong.foundation.dj.mixmaster.utils.SystemInfo.HARDWARE_UUID;
 import static com.silong.foundation.dj.mixmaster.utils.SystemInfo.HOST_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.protobuf.MessageLite;
@@ -62,12 +63,11 @@ import org.jctools.queues.atomic.MpscAtomicArrayQueue;
 import org.jgroups.*;
 import org.jgroups.auth.AuthToken;
 import org.jgroups.logging.LogFactory;
-import org.jgroups.protocols.AUTH;
-import org.jgroups.protocols.TP;
-import org.jgroups.protocols.UDP;
-import org.jgroups.protocols.pbcast.GMS;
+import org.jgroups.protocols.*;
+import org.jgroups.protocols.pbcast.DefaultGMS;
 import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.MembershipChangePolicy;
+import org.jgroups.stack.ProtocolStack;
 import org.jgroups.util.MessageBatch;
 import org.jgroups.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -156,6 +156,9 @@ class DefaultDistributedEngine
   static {
     // 使用slf4j进行日志打印
     LogFactory.setCustomLogFactory(new Slf4jLogFactory());
+
+    // 注册协议
+    DefaultGMS.register();
 
     // 注册自定义消息头
     TimestampHeader.register();
@@ -279,8 +282,8 @@ class DefaultDistributedEngine
    * @param jChannel jchannel
    * @return GMS
    */
-  private GMS getGmsProtocol(JChannel jChannel) {
-    return jChannel.getProtocolStack().findProtocol(GMS.class);
+  private DefaultGMS getGmsProtocol(JChannel jChannel) {
+    return jChannel.getProtocolStack().findProtocol(DefaultGMS.class);
   }
 
   /**
@@ -303,7 +306,9 @@ class DefaultDistributedEngine
     ProtoBufferMessage.register(getMessageFactory(jChannel));
 
     // 自定义集群节点策略
-    getGmsProtocol(jChannel).setMembershipChangePolicy(membershipChangePolicy);
+    DefaultGMS gmsProtocol = getGmsProtocol(jChannel);
+    gmsProtocol.setMembershipChangePolicy(membershipChangePolicy);
+    gmsProtocol.setLogicalClock(logicalClock);
 
     // 自定义鉴权token已经鉴权方式
     AuthToken at = getAuthProtocol(jChannel).getAuthToken();
@@ -584,19 +589,51 @@ class DefaultDistributedEngine
     return null;
   }
 
+  /**
+   * Drops messages to/from other members and then closes the channel. Note that this member won't
+   * get excluded from the view until failure detection has kicked in and the new coord installed
+   * the new view
+   */
+  private void shutdown(JChannel ch) throws Exception {
+    DISCARD discard = new DISCARD();
+    discard.setAddress(ch.getAddress());
+    discard.discardAll(true);
+    ProtocolStack stack = ch.getProtocolStack();
+    TP transport = stack.getTransport();
+    stack.insertProtocol(discard, ProtocolStack.Position.ABOVE, transport.getClass());
+
+    // abruptly shutdown FD_SOCK just as in real life when member gets killed non gracefully
+    FD_SOCK fd = ch.getProtocolStack().findProtocol(FD_SOCK.class);
+    if (fd != null) {
+      fd.stopServerSocket(false);
+    }
+
+    View view = ch.getView();
+    if (view != null) {
+      View newView =
+          new View(
+              new ViewId(ch.getAddress(), logicalClock.tick()), singletonList(ch.getAddress()));
+
+      // inject view in which the shut down member is the only element
+      DefaultGMS gms = stack.findProtocol(DefaultGMS.class);
+      gms.installView(newView);
+    }
+    Util.close(ch);
+  }
+
   @Override
   public void close() throws Exception {
     if (this.jChannel != null) {
-      this.jChannel.close();
+      shutdown(this.jChannel);
     }
 
     if (this.persistStorage != null) {
-      this.persistStorage.close();
+      persistStorage.close();
     }
   }
 
   @Autowired
-  public void setMixmasterProperties(MixmasterProperties properties) {
+  public void setProperties(MixmasterProperties properties) {
     this.properties = properties;
   }
 
