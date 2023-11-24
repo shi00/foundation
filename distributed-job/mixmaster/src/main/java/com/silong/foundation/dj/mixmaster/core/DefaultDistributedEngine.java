@@ -29,6 +29,7 @@ import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 import com.silong.foundation.common.utils.BiConverter;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
+import com.silong.foundation.dj.hook.clock.LogicalClock;
 import com.silong.foundation.dj.hook.event.ChannelClosedEvent;
 import com.silong.foundation.dj.hook.event.JoinClusterEvent;
 import com.silong.foundation.dj.hook.event.LeftClusterEvent;
@@ -133,7 +134,7 @@ class DefaultDistributedEngine
   private DefaultClusterMetadata clusterMetadata;
 
   /** 逻辑时钟 */
-  private HybridLogicalClock logicalClock;
+  private LogicalClock logicalClock;
 
   /** 消息队列，多生产者单消费者，异步保序处理事件 */
   private MpscAtomicArrayQueue<ApplicationEvent> eventQueue;
@@ -634,7 +635,7 @@ class DefaultDistributedEngine
   }
 
   @Autowired
-  public void setLogicalClock(HybridLogicalClock logicalClock) {
+  public void setLogicalClock(LogicalClock logicalClock) {
     this.logicalClock = logicalClock;
   }
 
