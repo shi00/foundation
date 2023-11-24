@@ -24,6 +24,7 @@ package com.silong.foundation.dj.mixmaster.configure;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
+import com.silong.foundation.dj.hook.SpringContext;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
 import com.silong.foundation.dj.hook.auth.SimpleJwtAuthenticator;
 import com.silong.foundation.dj.hook.clock.HybridLogicalClock;
@@ -82,6 +83,11 @@ public class MixmasterAutoConfiguration {
   @Bean
   public LogicalClock logicalClock() {
     return new HybridLogicalClock();
+  }
+
+  @Bean
+  public SpringContext springContext() {
+    return new SpringContext();
   }
 
   @Bean
