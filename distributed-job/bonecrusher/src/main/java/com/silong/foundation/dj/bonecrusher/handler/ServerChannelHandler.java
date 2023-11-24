@@ -31,7 +31,7 @@ import com.silong.foundation.dj.bonecrusher.message.Messages.Request;
 import com.silong.foundation.dj.bonecrusher.message.Messages.ResponseHeader;
 import com.silong.foundation.dj.bonecrusher.vo.ClusterInfo;
 import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
-import com.silong.foundation.dj.hook.auth.Result;
+import com.silong.foundation.dj.hook.auth.JwtAuthenticator.Result;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
