@@ -81,11 +81,13 @@ public class MixmasterAutoConfiguration {
   }
 
   @Bean
+  @ConditionalOnMissingBean
   public LogicalClock logicalClock() {
     return new HybridLogicalClock();
   }
 
   @Bean
+  @ConditionalOnMissingBean
   public SpringContext springContext() {
     return new SpringContext();
   }
