@@ -63,9 +63,6 @@ public class ViewId implements Comparable<ViewId>, SizeStreamable, Constructable
    * @param id - the Lamport timestamp of the view
    */
   public ViewId(@NonNull Address creator, long id) {
-    if (id < 0) {
-      throw new IllegalArgumentException("id must be greater than or equals to 0.");
-    }
     this.creator = creator;
     this.id = id;
   }
