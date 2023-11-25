@@ -58,7 +58,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
   }
 
   /** 类型转换器 */
-  private static final BiConverter<UUID, byte[]> INSTANCE =
+  private static final BiConverter<UUID, byte[]> CONVERTER_WITHOUT_ATTRIBUTES =
       new BiConverter<>() {
 
         @Override
@@ -68,8 +68,8 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
             return null;
           }
           ByteArrayDataOutputStream out = new ByteArrayDataOutputStream(UUID.SIZE);
-          out.writeLong(uuid.getLeastSignificantBits());
           out.writeLong(uuid.getMostSignificantBits());
+          out.writeLong(uuid.getLeastSignificantBits());
           return out.buffer();
         }
 
@@ -158,7 +158,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
    * @return 二进制
    */
   public byte[] serialize() {
-    return INSTANCE.to(this);
+    return CONVERTER_WITHOUT_ATTRIBUTES.to(this);
   }
 
   /**
@@ -168,7 +168,7 @@ public class ClusterNodeUUID extends UUID implements Identity<Address>, Serializ
    * @return 对象
    */
   public static ClusterNodeUUID deserialize(byte[] bytes) {
-    return (ClusterNodeUUID) INSTANCE.from(bytes);
+    return (ClusterNodeUUID) CONVERTER_WITHOUT_ATTRIBUTES.from(bytes);
   }
 
   /**
