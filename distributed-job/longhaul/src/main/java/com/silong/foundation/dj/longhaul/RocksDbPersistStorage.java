@@ -208,7 +208,7 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
     } catch (InterruptedException e) {
       Thread thread = Thread.currentThread();
       thread.interrupt();
-      log.error("Thread {} is interrupted and RocksDB is closed.", thread.getName(), e);
+      log.error("Thread({}) is interrupted and RocksDB is closed.", thread.getName(), e);
     }
   }
 
