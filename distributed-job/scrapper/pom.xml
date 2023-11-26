@@ -46,10 +46,6 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.rocksdb</groupId>
-            <artifactId>rocksdbjni</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
