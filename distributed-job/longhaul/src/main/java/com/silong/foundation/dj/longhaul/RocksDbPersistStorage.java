@@ -198,8 +198,7 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
   }
 
   private boolean isRocksDBGuardThread() {
-    return ROCKS_DB_GUARD.equals(Thread.currentThread().getName())
-        && Thread.currentThread().isVirtual();
+    return ROCKS_DB_GUARD.equals(Thread.currentThread().getName());
   }
 
   /** 等待shutdown信号 */
@@ -213,7 +212,7 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
         initException = e;
         startedSignal.countDown();
       } else {
-        throw new InitializationDBException(
+        throw new IllegalStateException(
             String.format("Thread(%s) is interrupted and RocksDB is closed.", thread.getName()));
       }
     }
