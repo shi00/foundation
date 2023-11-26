@@ -28,4 +28,38 @@ package com.silong.foundation.dj.longhaul;
  * @version 1.0.0
  * @since 2023-11-26 0:57
  */
-public interface ObjectAccessor {}
+public interface ObjectAccessor {
+
+  /**
+   * 在default ColumnFamily删除key对应的value
+   *
+   * @param key key
+   * @exception Exception 异常
+   */
+  <K extends TypeConverter<K>> void remove(K key) throws Exception;
+
+  /**
+   * 根据key查询value，默认列族：default
+   *
+   * @param key key
+   * @param vClass 值类型
+   * @return value
+   * @param <K> key类型
+   * @param <V> value类型
+   * @exception Exception 异常
+   */
+  <K extends TypeConverter<K>, V extends TypeConverter<V>> V get(K key, Class<V> vClass)
+      throws Exception;
+
+  /**
+   * 保存KV，使用默认列族：default
+   *
+   * @param key k
+   * @param value v
+   * @param <K> key type
+   * @param <V> value type
+   * @throws Exception 异常
+   */
+  <K extends TypeConverter<K>, V extends TypeConverter<V>> void put(K key, V value)
+      throws Exception;
+}
