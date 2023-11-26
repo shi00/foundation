@@ -26,7 +26,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.silong.foundation.dj.hook.validation.Power2;
-import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
+import com.silong.foundation.dj.longhaul.config.PersistStorageProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.net.URL;
@@ -62,7 +62,7 @@ public class MixmasterProperties {
 
   /** 持久化存储配置 */
   @NotNull @Valid @NestedConfigurationProperty
-  private PersistStorageProperties scrapper = new PersistStorageProperties();
+  private PersistStorageProperties longHaul = new PersistStorageProperties();
 
   /** 服务管理平面地址 */
   @NotNull @Valid @NestedConfigurationProperty
