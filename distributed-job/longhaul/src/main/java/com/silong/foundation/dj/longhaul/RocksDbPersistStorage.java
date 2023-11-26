@@ -35,8 +35,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -59,10 +57,10 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
   @Serial private static final long serialVersionUID = 7_801_457_952_536_771_210L;
 
   /** 线程名 */
-  private static final String ROCKS_DB_GUARD = "RocksDB-Guard";
+  private static final String ROCKS_DB_GUARD = "RocksDB-Guard-Shutdown";
 
   /** 默认列族名称 */
-  private static final String DEFAULT_COLUMN_FAMILY_NAME = "default";
+  static final String DEFAULT_COLUMN_FAMILY_NAME = "default";
 
   static {
     loadLibrary();
@@ -71,13 +69,12 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
   /** 数据库实例 */
   private volatile RocksDB rocksDB;
 
-  private volatile ColumnFamilyOptions cfOpts;
+  private volatile Exception initException;
 
-  private Exception initException;
+  /** 列族配置 */
+  private ColumnFamilyOptions cfOpts;
 
-  private final ReentrantLock lock = new ReentrantLock();
-
-  private final Condition shutdownSignal = lock.newCondition();
+  private final CountDownLatch shutdownSignal = new CountDownLatch(1);
 
   private final CountDownLatch startedSignal = new CountDownLatch(1);
 
@@ -207,15 +204,12 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
 
   /** 等待shutdown信号 */
   private void waitUtilShutdown() {
-    lock.lock();
     try {
       shutdownSignal.await();
     } catch (InterruptedException e) {
       Thread thread = Thread.currentThread();
       thread.interrupt();
       log.error("Thread {} is interrupted and RocksDB is closed.", thread.getName(), e);
-    } finally {
-      lock.unlock();
     }
   }
 
@@ -291,12 +285,7 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
   @Override
   public void close() {
     if (isOpen()) {
-      lock.lock();
-      try {
-        shutdownSignal.signal();
-      } finally {
-        lock.unlock();
-      }
+      shutdownSignal.countDown();
     }
   }
 
