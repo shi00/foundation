@@ -28,9 +28,9 @@ import com.silong.foundation.dj.hook.auth.JwtAuthenticator;
 import com.silong.foundation.dj.hook.auth.SimpleJwtAuthenticator;
 import com.silong.foundation.dj.hook.clock.HybridLogicalClock;
 import com.silong.foundation.dj.hook.clock.LogicalClock;
+import com.silong.foundation.dj.longhaul.RocksDbPersistStorage;
+import com.silong.foundation.dj.longhaul.config.PersistStorageProperties;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
-import com.silong.foundation.dj.scrapper.PersistStorage;
-import com.silong.foundation.dj.scrapper.config.PersistStorageProperties;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.stream.IntStream;
@@ -107,15 +107,15 @@ public class MixmasterAutoConfiguration {
    */
   @Bean
   @ConditionalOnMissingBean
-  public PersistStorage mixmasterPersistStorage() {
+  public RocksDbPersistStorage mixmasterPersistStorage() {
     // 把分区都创建好column family
-    PersistStorageProperties scrapper = properties.getScrapper();
-    Collection<String> columnFamilyNames = scrapper.getColumnFamilyNames();
+    PersistStorageProperties longHaul = properties.getLongHaul();
+    Collection<String> columnFamilyNames = longHaul.getColumnFamilyNames();
     LinkedHashSet<String> cfs = new LinkedHashSet<>(columnFamilyNames);
     IntStream.range(0, properties.getPartitions())
         .forEach(partition -> cfs.add(getPartitionCf(partition)));
-    scrapper.setColumnFamilyNames(cfs);
-    return PersistStorage.getInstance(scrapper);
+    longHaul.setColumnFamilyNames(cfs);
+    return new RocksDbPersistStorage(longHaul);
   }
 
   @Autowired
