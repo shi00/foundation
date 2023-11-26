@@ -105,6 +105,34 @@ public class BasicPersistStorageTests {
   }
 
   @Test
+  @DisplayName("startBlocking2")
+  @SneakyThrows
+  void test123() {
+    PersistStorageProperties config = new PersistStorageProperties();
+    config.setPersistDataPath(String.format("./target/%s-data/", FAKER.ancient().hero()));
+    config.setDataScale(DataScale.MEDIUM);
+    config.setColumnFamilyNames(List.of(FAKER.artist().name(), FAKER.artist().name()));
+    RocksDbPersistStorage storage = new RocksDbPersistStorage(config, false);
+    Assertions.assertTrue(storage.isOpen());
+    storage.close();
+  }
+
+  @Test
+  @DisplayName("startBlocking3")
+  @SneakyThrows
+  void test124() {
+    PersistStorageProperties config = new PersistStorageProperties();
+    config.setPersistDataPath(String.format("./target/%s-data/", FAKER.ancient().hero()));
+    config.setDataScale(DataScale.HUGE);
+    config.setColumnFamilyNames(List.of(FAKER.artist().name(), FAKER.artist().name()));
+    RocksDbPersistStorage storage = new RocksDbPersistStorage(config, false);
+    storage.close();
+    Thread.sleep(1000);
+    Assertions.assertThrowsExactly(
+        IllegalArgumentException.class, () -> storage.get(RandomUtils.nextBytes(12)));
+  }
+
+  @Test
   @DisplayName("startBlocking1")
   @SneakyThrows
   void test1211() {
