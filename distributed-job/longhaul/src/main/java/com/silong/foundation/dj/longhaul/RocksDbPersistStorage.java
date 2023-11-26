@@ -216,7 +216,9 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
       ColumnFamilyOptions cfOpts, @Nullable Collection<String> columnFamilyNames) {
     ColumnFamilyDescriptor defaultCfd = new ColumnFamilyDescriptor(DEFAULT_COLUMN_FAMILY, cfOpts);
     if (columnFamilyNames == null || columnFamilyNames.isEmpty()) {
-      return List.of(defaultCfd);
+      ArrayList<ColumnFamilyDescriptor> list = new ArrayList<>(1);
+      list.add(defaultCfd);
+      return list;
     } else {
       LinkedList<ColumnFamilyDescriptor> list =
           columnFamilyNames.stream()
