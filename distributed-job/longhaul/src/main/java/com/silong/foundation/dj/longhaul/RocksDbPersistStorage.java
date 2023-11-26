@@ -589,4 +589,23 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
       }
     }
   }
+
+  @Override
+  public <K extends TypeConverter<K>> void remove(@NonNull K key) throws Exception {
+    remove(key.serialize());
+  }
+
+  @Override
+  public <K extends TypeConverter<K>, V extends TypeConverter<V>> V get(
+      @NonNull K key, @NonNull Class<V> vClass) throws Exception {
+    V v = vClass.getConstructor().newInstance();
+    byte[] bytes = get(key.serialize());
+    return v.deserialize(bytes);
+  }
+
+  @Override
+  public <K extends TypeConverter<K>, V extends TypeConverter<V>> void put(
+      @NonNull K key, @NonNull V value) throws Exception {
+    put(key.serialize(), value.serialize());
+  }
 }
