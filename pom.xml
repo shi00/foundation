@@ -641,7 +641,7 @@
                                 <reactorModuleConvergence/>
                                 <banDuplicatePomDependencyVersions/>
                             </rules>
-                            <fastFail>true</fastFail>
+                            <failFast>true</failFast>
                         </configuration>
                     </execution>
                     <execution>
@@ -655,7 +655,7 @@
                                     <version>${java.version}</version>
                                 </requireJavaVersion>
                             </rules>
-                            <fastFail>true</fastFail>
+                            <failFast>true</failFast>
                         </configuration>
                     </execution>
                     <execution>
@@ -671,7 +671,7 @@
                                     <acceptAsciiSubset>true</acceptAsciiSubset>
                                 </requireEncoding>
                             </rules>
-                            <fastFail>true</fastFail>
+                            <failFast>true</failFast>
                         </configuration>
                     </execution>
                 </executions>
