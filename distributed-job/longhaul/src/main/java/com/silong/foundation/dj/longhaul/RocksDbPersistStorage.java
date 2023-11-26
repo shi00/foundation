@@ -220,6 +220,7 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
       list.add(defaultCfd);
       return list;
     } else {
+      boolean contains = columnFamilyNames.contains(DEFAULT_COLUMN_FAMILY_NAME);
       LinkedList<ColumnFamilyDescriptor> list =
           columnFamilyNames.stream()
               .distinct()
@@ -227,7 +228,9 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
                   columnFamilyName ->
                       new ColumnFamilyDescriptor(columnFamilyName.getBytes(UTF_8), cfOpts))
               .collect(Collectors.toCollection(LinkedList::new));
-      list.addFirst(defaultCfd);
+      if (!contains) {
+        list.addFirst(defaultCfd);
+      }
       return list;
     }
   }
