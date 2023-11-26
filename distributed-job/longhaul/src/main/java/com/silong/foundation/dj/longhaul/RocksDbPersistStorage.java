@@ -115,7 +115,6 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
     if (initException != null) {
       throw new InitializationDBException(initException);
     }
-
     assert rocksDB != null : "rocksDB must not be null.";
   }
 
