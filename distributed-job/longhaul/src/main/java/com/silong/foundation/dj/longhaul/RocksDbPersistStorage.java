@@ -140,6 +140,8 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
                       cfDescriptors,
                       columnFamilyHandleList)) {
         try {
+          log.info("RocksDB has been opened successfully.");
+
           // 缓存打开的列族
           while (!columnFamilyHandleList.isEmpty()) {
             if (!cacheColumnFamilyHandle(columnFamilyHandleList.poll())) {
@@ -152,15 +154,15 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
             startedSignal.countDown();
           }
 
-          log.info("RocksDB has been opened successfully.");
           waitUtilShutdown();
         } finally {
+          this.rocksDB = null;
+          this.cfOpts = null;
+
           // NOTE frees the column family handles before freeing the db
           columnFamilyHandlesMap.forEach(
               (columnFamilyName, columnFamilyHandle) -> columnFamilyHandle.close());
           columnFamilyHandlesMap.clear();
-          this.rocksDB = null;
-          this.cfOpts = null;
         }
       } catch (RocksDBException e) {
         if (isRocksDBGuardThread()) {
