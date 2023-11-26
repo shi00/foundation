@@ -21,6 +21,8 @@
 
 package com.silong.foundation.dj.longhaul;
 
+import com.silong.foundation.dj.longhaul.config.PersistStorageProperties;
+
 /**
  * 对象访问接口
  *
@@ -29,6 +31,16 @@ package com.silong.foundation.dj.longhaul;
  * @since 2023-11-26 0:57
  */
 public interface ObjectAccessor {
+
+  /**
+   * 获取持久化存储引擎实例，非阻塞
+   *
+   * @param properties 配置
+   * @return 持久化引擎
+   */
+  static ObjectAccessor getInstance(PersistStorageProperties properties) {
+    return new RocksDbPersistStorage(properties);
+  }
 
   /**
    * 在default ColumnFamily删除key对应的value
