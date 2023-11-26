@@ -52,7 +52,7 @@ import org.rocksdb.*;
  * @since 2023-11-25 17:59
  */
 @Slf4j
-class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Serializable {
+public class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Serializable {
 
   @Serial private static final long serialVersionUID = 7_801_457_952_536_771_210L;
 
