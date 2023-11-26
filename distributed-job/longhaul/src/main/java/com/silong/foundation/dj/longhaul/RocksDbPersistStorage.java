@@ -154,7 +154,6 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
 
           log.info("RocksDB has been opened successfully.");
           waitUtilShutdown();
-          log.info("RocksDB has been shutdown gracefully.");
         } finally {
           // NOTE frees the column family handles before freeing the db
           columnFamilyHandlesMap.forEach(
@@ -177,6 +176,8 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
         }
         cfDescriptors.clear();
       }
+    } finally {
+      log.info("RocksDB has been shutdown gracefully.");
     }
   }
 
@@ -207,8 +208,14 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
       shutdownSignal.await();
     } catch (InterruptedException e) {
       Thread thread = Thread.currentThread();
-      thread.interrupt();
-      log.error("Thread({}) is interrupted and RocksDB is closed.", thread.getName(), e);
+      thread.interrupt(); // 设置线程中断状态
+      if (isRocksDBGuardThread()) {
+        initException = e;
+        startedSignal.countDown();
+      } else {
+        throw new InitializationDBException(
+            String.format("Thread(%s) is interrupted and RocksDB is closed.", thread.getName()));
+      }
     }
   }
 
