@@ -57,7 +57,7 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
   @Serial private static final long serialVersionUID = 7_801_457_952_536_771_210L;
 
   /** 线程名 */
-  private static final String ROCKS_DB_GUARD = "RocksDB-Guard-Shutdown";
+  private final String daemonThread;
 
   /** 默认列族名称 */
   static final String DEFAULT_COLUMN_FAMILY_NAME = "default";
@@ -96,10 +96,11 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
    * @param isBlocking 是否阻塞当前线程
    */
   public RocksDbPersistStorage(@NonNull PersistStorageProperties properties, boolean isBlocking) {
+    daemonThread = properties.getDaemonThreadName();
     if (isBlocking) {
       openDB(properties);
     } else {
-      Thread.ofVirtual().name(ROCKS_DB_GUARD).start(() -> openDB(properties));
+      Thread.ofVirtual().name(daemonThread).start(() -> openDB(properties));
       waitUtilStarted();
     }
   }
@@ -200,7 +201,7 @@ class RocksDbPersistStorage implements BasicPersistStorage, ObjectAccessor, Seri
   }
 
   private boolean isRocksDBGuardThread() {
-    return ROCKS_DB_GUARD.equals(Thread.currentThread().getName());
+    return daemonThread.equals(Thread.currentThread().getName());
   }
 
   /** 等待shutdown信号 */
