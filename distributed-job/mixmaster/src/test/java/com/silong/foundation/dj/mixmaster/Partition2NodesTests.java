@@ -52,7 +52,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @TestPropertySource(
     locations = "classpath:application.properties",
     properties = {
-      "mixmaster.scrapper.persist-data-path=./target/partitionTests",
+      "mixmaster.long-haul.persist-data-path=./target/partitionTests",
       "mixmaster.instance-name=monkey"
     })
 @ExtendWith(SpringExtension.class)
