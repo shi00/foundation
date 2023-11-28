@@ -36,6 +36,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
 import org.apache.commons.lang3.RandomUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -86,6 +87,11 @@ public class SimpleAuthTests {
 
   private final String id = "guest";
 
+  @BeforeEach
+  void init() {
+    WEB_CLIENT_CONFIG.baseUrl(getBaseurl());
+  }
+
   @Test
   void test1() {
     String timestamp = Long.toString(System.currentTimeMillis());
@@ -95,7 +101,7 @@ public class SimpleAuthTests {
     Mono<Long> resultMono =
         WebClients.create(WEB_CLIENT_CONFIG, OBJECT_MAPPER)
             .delete()
-            .uri(getBaseurl() + "/b/{id}", userId)
+            .uri("/b/{id}", userId)
             .accept(APPLICATION_JSON)
             .header(IDENTITY, id)
             .header(TIMESTAMP, timestamp)
@@ -210,7 +216,7 @@ public class SimpleAuthTests {
     Mono<Long> resultMono =
         WebClients.create(WEB_CLIENT_CONFIG, OBJECT_MAPPER)
             .put()
-            .uri(getBaseurl() + "/d")
+            .uri("/d")
             .body(BodyInserters.fromValue(new User(userId, name)))
             .accept(APPLICATION_JSON)
             .header(IDENTITY, id)
