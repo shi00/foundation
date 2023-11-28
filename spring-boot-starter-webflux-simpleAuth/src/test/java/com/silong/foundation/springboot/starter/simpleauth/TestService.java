@@ -21,10 +21,14 @@
 
 package com.silong.foundation.springboot.starter.simpleauth;
 
+import static com.silong.foundation.springboot.starter.simpleauth.SimpleAuthTests.FAKER;
+import static org.springframework.http.HttpStatus.ACCEPTED;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.ALL_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import net.datafaker.Faker;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -37,17 +41,19 @@ import reactor.core.publisher.Mono;
  */
 @Slf4j
 @RestController
-@RequestMapping("/test")
+@RequestMapping("/guest")
 public class TestService {
-
-  private static final Faker FAKER = new Faker();
 
   public record User(long id, String name) {
 
     @Override
     public boolean equals(Object object) {
-      if (this == object) return true;
-      if (object == null || getClass() != object.getClass()) return false;
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
       User user = (User) object;
       return id == user.id;
     }
@@ -58,13 +64,27 @@ public class TestService {
     }
   }
 
-  @GetMapping(value = "/a/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<User> queryUser(@PathVariable long id) {
+  @GetMapping(value = "/a/{id}", consumes = ALL_VALUE, produces = APPLICATION_JSON_VALUE)
+  @ResponseStatus(value = OK)
+  public Mono<User> queryUser(@PathVariable("id") long id) {
     return Mono.just(new User(id, FAKER.animal().name()));
   }
 
-  @DeleteMapping(value = "/b/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-  public Mono<Long> deleteUser(@PathVariable long id) {
+  @PostMapping(value = "/c", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+  @ResponseStatus(value = ACCEPTED)
+  public Mono<Long> createUser(@RequestBody User user) {
+    return Mono.just(user.id);
+  }
+
+  @PutMapping(value = "/d", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+  @ResponseStatus(value = ACCEPTED)
+  public Mono<Long> updateUser(@RequestBody User user) {
+    return Mono.just(user.id);
+  }
+
+  @DeleteMapping(value = "/b/{id}")
+  @ResponseStatus(value = OK)
+  public Mono<Long> deleteUser(@PathVariable("id") long id) {
     return Mono.just(id);
   }
 }
