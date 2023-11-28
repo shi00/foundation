@@ -40,7 +40,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.silong" level="info"/>
+    <logger name="com.silong" level="debug"/>
 
     <logger level="info" name="org.springframework"/>
 
