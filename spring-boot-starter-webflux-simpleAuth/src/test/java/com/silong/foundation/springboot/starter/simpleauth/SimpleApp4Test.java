@@ -19,40 +19,32 @@
  *
  */
 
-package com.silong.foundation.dj.scrapper.utils;
+package com.silong.foundation.springboot.starter.simpleauth;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import com.silong.foundation.common.utils.BiConverter;
+import com.silong.foundation.crypto.RootKey;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * 字符串，字节数组转换器
+ * 测试服务启动入口
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-11-10 18:47
+ * @since 2023-10-26 18:58
  */
-public class String2Bytes implements BiConverter<String, byte[]> {
+@SpringBootApplication
+public class SimpleApp4Test {
 
-  /** 单例 */
-  public static final String2Bytes INSTANCE = new String2Bytes();
-
-  /** 构造方法 */
-  private String2Bytes() {}
-
-  @Override
-  public byte[] to(String str) {
-    if (str == null) {
-      return null;
-    }
-    return str.getBytes(UTF_8);
+  static {
+    RootKey.initialize();
   }
 
-  @Override
-  public String from(byte[] bytes) {
-    if (bytes == null) {
-      return null;
-    }
-    return new String(bytes, UTF_8);
+  /**
+   * 服务启动入口
+   *
+   * @param args 参数服务
+   */
+  public static void main(String[] args) {
+    SpringApplication.run(SimpleApp4Test.class, args);
   }
 }
