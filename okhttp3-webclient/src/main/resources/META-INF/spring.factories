@@ -1,2 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.silong.foundation.springboot.starter.okhttp3.configure.OkHttpAutoConfiguration

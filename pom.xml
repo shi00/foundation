@@ -77,7 +77,6 @@
 
     <modules>
         <module>reactive-webclient</module>
-        <!--        <module>okhttp3-webclient</module>-->
         <module>distributed-job/devastator</module>
         <module>distributed-job/bonecrusher</module>
         <module>distributed-job/mixmaster</module>
@@ -152,6 +151,7 @@
         <download-maven-plugin.version>1.7.1</download-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <extra-enforcer-rules.version>1.7.0</extra-enforcer-rules.version>
+        <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
@@ -180,11 +180,10 @@
         <jgroups-raft.version>1.0.11.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.1.Final</jgroups-kubernetes.version>
         <protobuf-java.version>3.25.1</protobuf-java.version>
-        <rocksdbjni.version>8.7.3</rocksdbjni.version>
+        <rocksdbjni.version>8.8.1</rocksdbjni.version>
         <snappy-java.version>1.1.10.5</snappy-java.version>
         <zstd-jni.version>1.5.5-10</zstd-jni.version>
         <kryo.version>5.5.0</kryo.version>
-        <lz4-java.version>1.8.0</lz4-java.version>
         <java-jwt.version>4.4.0</java-jwt.version>
         <p3c-pmd.version>2.1.1.5x</p3c-pmd.version>
         <oshi-core.version>6.4.7</oshi-core.version>
@@ -286,14 +285,6 @@
                 <version>${java-jwt.version}</version>
             </dependency>
             <!-- JWT -->
-
-            <!-- xxhash -->
-            <dependency>
-                <groupId>org.lz4</groupId>
-                <artifactId>lz4-java</artifactId>
-                <version>${lz4-java.version}</version>
-            </dependency>
-            <!-- xxhash -->
 
             <!-- etcd -->
             <dependency>
@@ -510,6 +501,11 @@
                     <version>${maven-failsafe-plugin.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${maven-antrun-plugin.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
@@ -637,6 +633,10 @@
                                         <scope>test</scope>
                                         <scope>provided</scope>
                                     </excludedScopes>
+                                    <excludes>
+                                        <exclude>io.grpc:*</exclude>
+                                        <exclude>org.apache.commons:commons-compress</exclude>
+                                    </excludes>
                                 </dependencyConvergence>
                                 <reactorModuleConvergence/>
                                 <banDuplicatePomDependencyVersions/>
