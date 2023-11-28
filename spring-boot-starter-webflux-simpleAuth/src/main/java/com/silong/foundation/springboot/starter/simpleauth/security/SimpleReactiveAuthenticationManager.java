@@ -20,12 +20,11 @@ package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import static com.silong.foundation.crypto.digest.HmacToolkit.hmacSha256;
 import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
-import static org.apache.commons.lang3.StringUtils.isAnyEmpty;
 
 import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -94,12 +93,20 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
               acceptableTimeDiffMills));
     }
 
-    if (StringUtils.equals(
+    if (Objects.equals(
         signature, hmacSha256(identifier + timestamp + random, properties.getWorkKey()))) {
       authentication.setAuthenticated(true);
       return Mono.just(authentication);
     }
 
     throw new BadCredentialsException("The client request signature was tampered.");
+  }
+
+  private boolean isAnyEmpty(String identifier, String signature, String random, String timestamp) {
+    return isEmpty(identifier) || isEmpty(signature) || isEmpty(random) || isEmpty(timestamp);
+  }
+
+  private boolean isEmpty(String s) {
+    return s == null || s.isEmpty();
   }
 }
