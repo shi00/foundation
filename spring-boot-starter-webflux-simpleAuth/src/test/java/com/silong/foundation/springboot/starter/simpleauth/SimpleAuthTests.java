@@ -26,9 +26,13 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.silong.foundation.common.constants.HttpStatusCode;
 import com.silong.foundation.crypto.digest.HmacToolkit;
+import com.silong.foundation.springboot.starter.simpleauth.TestService.User;
 import com.silong.foundation.webclient.reactive.WebClients;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
+import java.time.Duration;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
 import org.apache.commons.lang3.RandomUtils;
@@ -61,6 +65,17 @@ public class SimpleAuthTests {
   public final WebClientConfig WEB_CLIENT_CONFIG = new WebClientConfig();
 
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+  @Getter
+  private static class AuthenticatedException extends Exception {
+
+    private final int httpStatusCode;
+
+    public AuthenticatedException(String message, int httpStatusCode) {
+      super(message);
+      this.httpStatusCode = httpStatusCode;
+    }
+  }
 
   static final Faker FAKER = new Faker();
 
@@ -97,7 +112,7 @@ public class SimpleAuthTests {
   @Test
   void test2() {
     String userId = "119988";
-    Mono<TestService.User> resultMono =
+    Mono<User> resultMono =
         WebClients.create(WEB_CLIENT_CONFIG, OBJECT_MAPPER)
             .get()
             .uri(getBaseurl() + "/a/{id}", userId)
@@ -106,9 +121,9 @@ public class SimpleAuthTests {
             .onStatus(
                 httpStatus -> !httpStatus.is2xxSuccessful(),
                 resp -> Mono.just(new Exception("error")))
-            .bodyToMono(TestService.User.class);
+            .bodyToMono(User.class);
     StepVerifier.create(resultMono)
-        .expectNext(new TestService.User(Long.parseLong(userId), "random"))
+        .expectNext(new User(Long.parseLong(userId), "random"))
         .verifyComplete();
   }
 
@@ -123,7 +138,7 @@ public class SimpleAuthTests {
         WebClients.create(WEB_CLIENT_CONFIG, OBJECT_MAPPER)
             .post()
             .uri(getBaseurl() + "/c")
-            .body(BodyInserters.fromValue(new TestService.User(userId, name)))
+            .body(BodyInserters.fromValue(new User(userId, name)))
             .accept(APPLICATION_JSON)
             .header(IDENTITY, id)
             .header(TIMESTAMP, timestamp)
@@ -148,7 +163,7 @@ public class SimpleAuthTests {
         WebClients.create(WEB_CLIENT_CONFIG, OBJECT_MAPPER)
             .put()
             .uri(getBaseurl() + "/d")
-            .body(BodyInserters.fromValue(new TestService.User(userId, name)))
+            .body(BodyInserters.fromValue(new User(userId, name)))
             .accept(APPLICATION_JSON)
             .header(IDENTITY, id)
             .header(TIMESTAMP, timestamp)
@@ -160,6 +175,61 @@ public class SimpleAuthTests {
                 resp -> Mono.just(new Exception("error")))
             .bodyToMono(Long.class);
     StepVerifier.create(resultMono).expectNext(userId).verifyComplete();
+  }
+
+  @Test
+  void test5() {
+    String userId = "119988";
+    Mono<User> resultMono =
+        WebClients.create(WEB_CLIENT_CONFIG, OBJECT_MAPPER)
+            .get()
+            .uri(getBaseurl() + "/e/{id}", userId)
+            .accept(APPLICATION_JSON)
+            .retrieve()
+            .onStatus(
+                httpStatusCode -> !httpStatusCode.is2xxSuccessful(),
+                clientResponse ->
+                    Mono.just(
+                        new AuthenticatedException("error", clientResponse.statusCode().value())))
+            .bodyToMono(User.class);
+    StepVerifier.create(resultMono)
+        .expectErrorMatches(
+            e ->
+                e instanceof AuthenticatedException ee
+                    && ee.httpStatusCode == Integer.parseInt(HttpStatusCode.FORBIDDEN))
+        .verify(Duration.ofSeconds(10));
+  }
+
+  @Test
+  void test6() {
+    String timestamp = Long.toString(System.currentTimeMillis());
+    String random = Integer.toString(RandomUtils.nextInt());
+    String signature = "abc";
+    long userId = 119988;
+    String name = FAKER.funnyName().name();
+    Mono<Long> resultMono =
+        WebClients.create(WEB_CLIENT_CONFIG, OBJECT_MAPPER)
+            .put()
+            .uri(getBaseurl() + "/d")
+            .body(BodyInserters.fromValue(new User(userId, name)))
+            .accept(APPLICATION_JSON)
+            .header(IDENTITY, id)
+            .header(TIMESTAMP, timestamp)
+            .header(RANDOM, random)
+            .header(SIGNATURE, signature)
+            .retrieve()
+            .onStatus(
+                httpStatusCode -> !httpStatusCode.is2xxSuccessful(),
+                clientResponse ->
+                    Mono.just(
+                        new AuthenticatedException("error", clientResponse.statusCode().value())))
+            .bodyToMono(Long.class);
+    StepVerifier.create(resultMono)
+        .expectErrorMatches(
+            e ->
+                e instanceof AuthenticatedException ee
+                    && ee.httpStatusCode == Integer.parseInt(HttpStatusCode.UNAUTHORIZED))
+        .verify(Duration.ofSeconds(10));
   }
 
   private String getBaseurl() {
