@@ -33,7 +33,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @since 2023-10-26 18:58
  */
 @SpringBootApplication
-public class SimpleApp4Test {
+public class SimpleAuthTestApp {
 
   static {
     RootKey.initialize();
@@ -45,6 +45,6 @@ public class SimpleApp4Test {
    * @param args 参数服务
    */
   public static void main(String[] args) {
-    SpringApplication.run(SimpleApp4Test.class, args);
+    SpringApplication.run(SimpleAuthTestApp.class, args);
   }
 }
