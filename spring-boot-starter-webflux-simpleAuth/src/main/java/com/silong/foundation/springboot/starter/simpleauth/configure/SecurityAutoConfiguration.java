@@ -31,6 +31,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity.*;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler;
@@ -81,28 +82,31 @@ public class SecurityAutoConfiguration {
       CorsConfigurationSource corsConfigurationSource,
       SimpleServerAuthenticationEntryPoint authenticationEntryPoint,
       SimpleServerAccessDeniedHandler accessDeniedHandler) {
-    // 关闭csrf
-    http = http.csrf().disable();
+    // 关闭csrf，rest接口不提供浏览器使用
+    http = http.csrf(CsrfSpec::disable);
 
     // 是否开启CORS
     if (corsConfigurationSource != null) {
-      http = http.cors().configurationSource(corsConfigurationSource).and();
+      http = http.cors(cors -> cors.configurationSource(corsConfigurationSource));
     }
 
     // 关闭http基础鉴权
-    http = http.httpBasic().disable();
+    http = http.httpBasic(HttpBasicSpec::disable);
 
     // 关闭表单登录
-    http = http.formLogin().disable();
+    http = http.formLogin(FormLoginSpec::disable);
 
     // 关闭登出
-    http = http.logout().disable();
+    http = http.logout(LogoutSpec::disable);
 
     // 关闭匿名用户
-    http = http.anonymous().disable();
+    http = http.anonymous(AnonymousSpec::disable);
 
     // 关闭请求缓存
-    http = http.requestCache().requestCache(NoOpServerRequestCache.getInstance()).and();
+    http =
+        http.requestCache(
+            requestCacheSpec ->
+                requestCacheSpec.requestCache(NoOpServerRequestCache.getInstance()));
 
     // 无安全上下文缓存
     http = http.securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
@@ -117,19 +121,21 @@ public class SecurityAutoConfiguration {
 
     return http
         // 定制权限不足异常处理
-        .exceptionHandling()
-        .accessDeniedHandler(accessDeniedHandler)
         // 定制鉴权失败异常处理
-        .authenticationEntryPoint(authenticationEntryPoint)
-        .and()
-        .authorizeExchange()
-        .pathMatchers(whiteList)
-        .permitAll()
-        .pathMatchers(authList)
-        .authenticated()
-        .anyExchange()
-        .denyAll()
-        .and()
+        .exceptionHandling(
+            exceptionHandlingSpec ->
+                exceptionHandlingSpec
+                    .accessDeniedHandler(accessDeniedHandler)
+                    .authenticationEntryPoint(authenticationEntryPoint))
+        .authorizeExchange(
+            authorizeExchangeSpec ->
+                authorizeExchangeSpec
+                    .pathMatchers(whiteList)
+                    .permitAll()
+                    .pathMatchers(authList)
+                    .authenticated()
+                    .anyExchange()
+                    .denyAll())
         // 定制鉴权过滤器
         .addFilterAt(
             authenticationWebFilter(simpleAuthProperties, authenticationEntryPoint),
