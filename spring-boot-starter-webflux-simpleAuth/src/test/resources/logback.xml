@@ -42,7 +42,7 @@
 
     <logger name="com.silong" level="info"/>
 
-    <logger level="debug" name="org.springframework"/>
+    <logger level="info" name="org.springframework"/>
 
     <!--
     - 根logger
