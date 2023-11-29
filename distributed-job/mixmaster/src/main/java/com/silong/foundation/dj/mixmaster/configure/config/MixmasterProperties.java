@@ -57,6 +57,9 @@ public class MixmasterProperties {
 
   public static final int MIN_PARTITIONS_COUNT = 1;
 
+  /** 列族名称 */
+  public static final String CLUSTER_TOPOLOGY_COLUMN_FAMILY = "cluster-topology";
+
   /** 鉴权配置 */
   @NotNull @Valid @NestedConfigurationProperty private AuthProperties auth = new AuthProperties();
 
