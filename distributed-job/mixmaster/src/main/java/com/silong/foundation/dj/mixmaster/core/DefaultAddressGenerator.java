@@ -21,18 +21,18 @@
 package com.silong.foundation.dj.mixmaster.core;
 
 import static com.google.protobuf.UnsafeByteOperations.unsafeWrap;
+import static com.silong.foundation.dj.longhaul.serialize.String2BytesSerializer.INSTANCE;
 import static com.silong.foundation.dj.mixmaster.utils.SystemInfo.*;
-import static com.silong.foundation.dj.scrapper.utils.String2Bytes.INSTANCE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.protobuf.ByteString;
+import com.silong.foundation.dj.longhaul.RocksDbPersistStorage;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
 import com.silong.foundation.dj.mixmaster.generated.Messages.ClusterNodeInfo;
 import com.silong.foundation.dj.mixmaster.generated.Messages.Host;
 import com.silong.foundation.dj.mixmaster.generated.Messages.IpAddress;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
-import com.silong.foundation.dj.scrapper.PersistStorage;
 import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,7 +61,7 @@ class DefaultAddressGenerator implements AddressGenerator {
   private final MixmasterProperties properties;
 
   /** 持久化存储 */
-  private final PersistStorage persistStorage;
+  private final RocksDbPersistStorage persistStorage;
 
   /**
    * 构造方法
@@ -69,7 +69,7 @@ class DefaultAddressGenerator implements AddressGenerator {
    * @param properties 配置
    */
   public DefaultAddressGenerator(
-      @NonNull MixmasterProperties properties, @NonNull PersistStorage persistStorage) {
+      @NonNull MixmasterProperties properties, @NonNull RocksDbPersistStorage persistStorage) {
     this.properties = properties;
     this.persistStorage = persistStorage;
   }
