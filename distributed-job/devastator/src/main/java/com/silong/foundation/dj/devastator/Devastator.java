@@ -18,30 +18,28 @@
  *  * under the License.
  *
  */
-package com.silong.foundation.dj.scrapper.vo;
 
-import java.io.Serial;
-import java.io.Serializable;
+package com.silong.foundation.dj.devastator;
+
+import com.silong.foundation.crypto.RootKey;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * key<--->value对
+ * 服务启动器
  *
- * @param <K> key type
- * @param <V> value type
  * @author louis sin
  * @version 1.0.0
- * @since 2022-04-18 22:48
+ * @since 2023-10-24 9:57
  */
-public record KvPair<K, V>(K key, V value) implements Serializable {
+@SpringBootApplication
+public class Devastator {
 
-  @Serial private static final long serialVersionUID = 6_586_732_357_946_171_180L;
+  static {
+    RootKey.initialize(); // 加载根密钥
+  }
 
-  /**
-   * key or value is null
-   *
-   * @return true or false
-   */
-  public boolean isKeyOrValueNull() {
-    return key == null || value == null;
+  public static void main(String... args) {
+    SpringApplication.run(Devastator.class, args);
   }
 }
