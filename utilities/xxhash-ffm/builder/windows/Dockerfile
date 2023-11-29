@@ -34,4 +34,5 @@ RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_acc
 WORKDIR "c:\vcpkg"
 
 # 添加构建脚本
-ADD build.bat .
+ADD build.ps1 .
+
