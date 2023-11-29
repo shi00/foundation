@@ -21,6 +21,8 @@
 
 package com.silong.foundation.dj.mixmaster.configure;
 
+import static com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties.CLUSTER_TOPOLOGY_COLUMN_FAMILY;
+
 import com.auth0.jwt.algorithms.Algorithm;
 import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
@@ -110,6 +112,7 @@ public class MixmasterAutoConfiguration {
     // 把分区都创建好column family
     PersistStorageProperties longHaul = properties.getLongHaul();
     LinkedHashSet<String> cfs = new LinkedHashSet<>();
+    cfs.add(CLUSTER_TOPOLOGY_COLUMN_FAMILY);
     IntStream.range(0, properties.getPartitions())
         .forEach(partition -> cfs.add(getPartitionCf(partition)));
     longHaul.setColumnFamilyNames(cfs);
