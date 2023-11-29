@@ -21,9 +21,11 @@
 
 package com.silong.foundation.dj.hook.clock;
 
+import static com.silong.foundation.dj.hook.utils.StampedLocks.tryOptimisticRead;
+import static com.silong.foundation.dj.hook.utils.StampedLocks.writeLock;
+
 import java.io.*;
 import java.time.Clock;
-import java.util.concurrent.Callable;
 import java.util.concurrent.locks.StampedLock;
 import lombok.*;
 
@@ -66,17 +68,12 @@ public class HybridLogicalClock implements LogicalClock, Serializable {
 
   /** 复位逻辑时钟 */
   public void reset() {
-    long stamp = lock.writeLock();
-    try {
-      lt = ct = 0;
-    } finally {
-      lock.unlockWrite(stamp);
-    }
+    writeLock(lock, (Runnable) () -> lt = ct = 0);
   }
 
   @Override
   public long now() {
-    return tryOptimisticRead(() -> to(lt, ct));
+    return tryOptimisticRead(lock, () -> to(lt, ct));
   }
 
   static long extractLT(long ts) {
@@ -92,58 +89,43 @@ public class HybridLogicalClock implements LogicalClock, Serializable {
   }
 
   @Override
+  @SneakyThrows
   public long tick() {
-    long stamp = lock.writeLock();
-    try {
-      long tlt = lt;
-      lt = Math.max(getPhysicalTime(), tlt);
-      if (tlt == lt) {
-        ct += 1;
-      } else {
-        ct = 0;
-      }
-      return to(lt, ct);
-    } finally {
-      lock.unlockWrite(stamp);
-    }
+    return writeLock(
+        lock,
+        () -> {
+          long tlt = lt;
+          lt = Math.max(getPhysicalTime(), tlt);
+          if (tlt == lt) {
+            ct += 1;
+          } else {
+            ct = 0;
+          }
+          return to(lt, ct);
+        });
   }
 
   @Override
-  public long update(long m) {
-    long stamp = lock.writeLock();
-    try {
-      long lm = extractLT(m);
-      long cm = extractCT(m);
-      long tlt = lt;
-      lt = Math.max(tlt, Math.max(lm, getPhysicalTime()));
-      if (lt == tlt && lt == lm) {
-        ct = Math.max(ct, cm) + 1;
-      } else if (lt == tlt) {
-        ct += 1;
-      } else if (lt == lm) {
-        ct = cm + 1;
-      } else {
-        ct = 0;
-      }
-      return to(lt, ct);
-    } finally {
-      lock.unlockWrite(stamp);
-    }
-  }
-
   @SneakyThrows
-  private <T> T tryOptimisticRead(Callable<T> callable) {
-    long stamp = lock.tryOptimisticRead();
-    T call = callable.call();
-    if (!lock.validate(stamp)) {
-      stamp = lock.readLock();
-      try {
-        call = callable.call();
-      } finally {
-        lock.unlockRead(stamp);
-      }
-    }
-    return call;
+  public long update(long m) {
+    return writeLock(
+        lock,
+        () -> {
+          long lm = extractLT(m);
+          long cm = extractCT(m);
+          long tlt = lt;
+          lt = Math.max(tlt, Math.max(lm, getPhysicalTime()));
+          if (lt == tlt && lt == lm) {
+            ct = Math.max(ct, cm) + 1;
+          } else if (lt == tlt) {
+            ct += 1;
+          } else if (lt == lm) {
+            ct = cm + 1;
+          } else {
+            ct = 0;
+          }
+          return to(lt, ct);
+        });
   }
 
   /**
