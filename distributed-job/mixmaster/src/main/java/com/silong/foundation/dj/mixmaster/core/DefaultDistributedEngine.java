@@ -35,6 +35,7 @@ import com.silong.foundation.dj.hook.event.ChannelClosedEvent;
 import com.silong.foundation.dj.hook.event.JoinClusterEvent;
 import com.silong.foundation.dj.hook.event.LeftClusterEvent;
 import com.silong.foundation.dj.hook.event.ViewChangedEvent;
+import com.silong.foundation.dj.longhaul.RocksDbPersistStorage;
 import com.silong.foundation.dj.mixmaster.*;
 import com.silong.foundation.dj.mixmaster.configure.config.MixmasterProperties;
 import com.silong.foundation.dj.mixmaster.exception.DistributedEngineException;
@@ -44,7 +45,6 @@ import com.silong.foundation.dj.mixmaster.message.TimestampHeader;
 import com.silong.foundation.dj.mixmaster.utils.Slf4jLogFactory;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
 import com.silong.foundation.dj.mixmaster.vo.ClusterView;
-import com.silong.foundation.dj.scrapper.PersistStorage;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -128,7 +128,7 @@ class DefaultDistributedEngine
   private MixmasterProperties properties;
 
   /** 持久化存储 */
-  private PersistStorage persistStorage;
+  private RocksDbPersistStorage persistStorage;
 
   /** 集群元数据 */
   private DefaultClusterMetadata clusterMetadata;
@@ -639,7 +639,7 @@ class DefaultDistributedEngine
 
   @Autowired
   public void setPersistStorage(
-      @Qualifier("mixmasterPersistStorage") PersistStorage persistStorage) {
+      @Qualifier("mixmasterPersistStorage") RocksDbPersistStorage persistStorage) {
     this.persistStorage = persistStorage;
   }
 
