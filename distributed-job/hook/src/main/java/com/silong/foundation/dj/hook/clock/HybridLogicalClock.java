@@ -26,6 +26,7 @@ import static com.silong.foundation.dj.hook.utils.StampedLocks.writeLock;
 
 import java.io.*;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.concurrent.locks.StampedLock;
 import lombok.*;
 
@@ -42,6 +43,9 @@ public class HybridLogicalClock implements LogicalClock, Serializable {
 
   /** 同步锁 */
   private final StampedLock lock = new StampedLock();
+
+  /** 更新时钟时如果偏差大于此预设值，则拒绝更新时钟，避免时间跳变问题扩散，默认：一天 */
+  @Setter @Getter private long maxTimeDiff = Duration.ofDays(1).toMillis();
 
   /** 获取pt */
   private final Clock clock;
@@ -111,10 +115,16 @@ public class HybridLogicalClock implements LogicalClock, Serializable {
     return writeLock(
         lock,
         () -> {
+          long now = getPhysicalTime();
           long lm = extractLT(m);
+          if (Math.abs(now - lm) > maxTimeDiff) {
+            throw new IllegalStateException(
+                "The clock difference exceeds the maxTimeDiff and the clock cannot be updated. maxTimeDiff: "
+                    + maxTimeDiff);
+          }
           long cm = extractCT(m);
           long tlt = lt;
-          lt = Math.max(tlt, Math.max(lm, getPhysicalTime()));
+          lt = Math.max(tlt, Math.max(lm, now));
           if (lt == tlt && lt == lm) {
             ct = Math.max(ct, cm) + 1;
           } else if (lt == tlt) {
