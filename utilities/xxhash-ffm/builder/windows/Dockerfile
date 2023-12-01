@@ -31,8 +31,14 @@ RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_acc
 && setx path "%PATH%;C:\Program Files\jextract-21\bin" \
 && refreshenv
 
+FROM base
+
 WORKDIR "c:\vcpkg"
 
 # 添加构建脚本
 ADD build.ps1 .
+
+#预制构建工具包到downloads目录下，规避下载速度慢问题
+COPY cmake* downloads
+COPY PowerShell* downloads
 
