@@ -30,10 +30,11 @@
     <version>1.0.0</version>
 
     <properties>
+        <rocksdb.version>8.8.1</rocksdb.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <rocksdb.version>8.5.3</rocksdb.version>
         <output.src.dir>rocksdb-java-src</output.src.dir>
         <output.shared-lib.dir>classes</output.shared-lib.dir>
+        <lib.name>librocksdb</lib.name>
     </properties>
 
     <profiles>
@@ -42,28 +43,204 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <os>
-                    <family>unix</family>
-                    <arch>x86_64</arch>
                     <name>linux</name>
                 </os>
             </activation>
-            <properties>
-                <rocksdb.lib>rocksdb-8.5.3-linux64.so</rocksdb.lib>
-            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>build-image</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>builder-rocksdb-linux:${project.version}</name>
+                                            <build>
+                                                <contextDir>${project.basedir}/builder/linux</contextDir>
+                                                <dockerFile>Dockerfile</dockerFile>
+                                                <optimise>true</optimise>
+                                            </build>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>start-build</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>builder-rocksdb-linux:${project.version}</name>
+                                            <run>
+                                                <network>
+                                                    <mode>host</mode>
+                                                </network>
+                                                <user>root</user>
+                                                <log>
+                                                    <prefix>%C</prefix>
+                                                    <date>ISO8601</date>
+                                                    <color>BLUE</color>
+                                                </log>
+                                                <volumes>
+                                                    <bind>
+                                                        <volume>
+                                                            ${project.basedir}/target/generated-sources:/opt/${output.src.dir}
+                                                        </volume>
+                                                        <volume>
+                                                            ${project.build.outputDirectory}:/opt/${output.shared-lib.dir}
+                                                        </volume>
+                                                    </bind>
+                                                </volumes>
+                                                <autoRemove>true</autoRemove>
+                                                <stopMode>graceful</stopMode>
+                                                <containerNamePattern>%e</containerNamePattern>
+                                                <entrypoint>
+                                                    <shell>
+                                                        ./build.sh ${output.src.dir} ${output.shared-lib.dir}
+                                                        ${lib.name}
+                                                    </shell>
+                                                </entrypoint>
+                                                <wait>
+                                                    <time>3600000</time>
+                                                    <log>================== Build completed ==================</log>
+                                                </wait>
+                                            </run>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <verbose>true</verbose>
+                            <useColor>true</useColor>
+                            <imagePullPolicy>IfNotPresent</imagePullPolicy>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>windows</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
                 <os>
-                    <family>windows</family>
-                    <arch>x86_64</arch>
                     <name>windows</name>
                 </os>
             </activation>
-            <properties>
-                <rocksdb.lib>rocksdb-8.5.3-windows64.dll</rocksdb.lib>
-            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>create-dirs</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${project.build.outputDirectory}/native/${os.detected.name}/${os.detected.arch}"/>
+                                        <mkdir dir="${project.build.directory}/generated-sources"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>0.44-SNAPSHOT</version>
+                        <executions>
+                            <execution>
+                                <id>build-image</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>builder-rocksdb-windows:${project.version}</name>
+                                            <build>
+                                                <dockerFile>Dockerfile</dockerFile>
+                                                <contextDir>${project.basedir}\builder\windows</contextDir>
+                                                <optimise>true</optimise>
+                                            </build>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>start-build</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <images>
+                                        <image>
+                                            <name>builder-rocksdb-windows:${project.version}</name>
+                                            <run>
+                                                <network>
+                                                    <name>nat</name>
+                                                </network>
+                                                <dns>223.5.5.5,8.8.8.8</dns>
+                                                <user>ContainerAdministrator</user>
+                                                <log>
+                                                    <prefix>%C</prefix>
+                                                    <date>ISO8601</date>
+                                                    <color>BLUE</color>
+                                                </log>
+                                                <volumes>
+                                                    <bind>
+                                                        <volume>
+                                                            ${project.build.directory}\generated-sources:c:\${output.src.dir}
+                                                        </volume>
+                                                        <volume>
+                                                            ${project.build.outputDirectory}\native\${os.detected.name}\${os.detected.arch}:c:\${output.shared-lib.dir}
+                                                        </volume>
+                                                    </bind>
+                                                </volumes>
+                                                <autoRemove>true</autoRemove>
+                                                <stopMode>graceful</stopMode>
+                                                <containerNamePattern>%e</containerNamePattern>
+                                                <entrypoint>
+                                                    <shell>
+                                                        powershell .\build.ps1 ${output.src.dir}
+                                                        ${output.shared-lib.dir}
+                                                        ${lib.name}
+                                                    </shell>
+                                                </entrypoint>
+                                                <wait>
+                                                    <time>3600000</time>
+                                                    <log>================== Build completed ==================</log>
+                                                </wait>
+                                            </run>
+                                        </image>
+                                    </images>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <verbose>true</verbose>
+                            <useColor>true</useColor>
+                            <imagePullPolicy>IfNotPresent</imagePullPolicy>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 
@@ -136,82 +313,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>--enable-preview</compilerArgs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>build-image</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
-                        <configuration>
-                            <images>
-                                <image>
-                                    <name>builder-base:${project.version}</name>
-                                    <build>
-                                        <dockerFileDir>${project.basedir}</dockerFileDir>
-                                        <optimise>true</optimise>
-                                    </build>
-                                </image>
-                            </images>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>start-build</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>start</goal>
-                        </goals>
-                        <configuration>
-                            <images>
-                                <image>
-                                    <name>builder-base:${project.version}</name>
-                                    <run>
-                                        <network>
-                                            <mode>host</mode>
-                                        </network>
-                                        <user>root</user>
-                                        <log>
-                                            <prefix>%C</prefix>
-                                            <date>ISO8601</date>
-                                            <color>BLUE</color>
-                                        </log>
-                                        <volumes>
-                                            <bind>
-                                                <volume>
-                                                    ${project.basedir}/target/generated-sources:/opt/${output.src.dir}
-                                                </volume>
-                                                <volume>
-                                                    ${project.build.outputDirectory}:/opt/${output.shared-lib.dir}
-                                                </volume>
-                                            </bind>
-                                        </volumes>
-                                        <autoRemove>true</autoRemove>
-                                        <stopMode>graceful</stopMode>
-                                        <containerNamePattern>%e</containerNamePattern>
-                                        <entrypoint>
-                                            <shell>
-                                                ./build.sh ${rocksdb.version} ${output.src.dir} ${output.shared-lib.dir}
-                                            </shell>
-                                        </entrypoint>
-                                        <wait>
-                                            <time>3600000</time>
-                                            <log>================== Build completed ==================</log>
-                                        </wait>
-                                    </run>
-                                </image>
-                            </images>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <verbose>true</verbose>
-                    <useColor>true</useColor>
-                    <imagePullPolicy>IfNotPresent</imagePullPolicy>
                 </configuration>
             </plugin>
         </plugins>
