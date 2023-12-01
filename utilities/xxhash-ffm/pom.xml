@@ -30,7 +30,6 @@
     <description>xxhash support by FFM API</description>
 
     <properties>
-        <java.version>21</java.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <output.src.dir>xxhash-java-src</output.src.dir>
         <output.shared-lib.dir>classes</output.shared-lib.dir>
@@ -237,7 +236,6 @@
                         <configuration>
                             <verbose>true</verbose>
                             <useColor>true</useColor>
-                            <!--                            <autoCreateCustomNetworks>true</autoCreateCustomNetworks>-->
                             <imagePullPolicy>IfNotPresent</imagePullPolicy>
                         </configuration>
                     </plugin>
