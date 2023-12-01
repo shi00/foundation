@@ -151,8 +151,8 @@
                                 </goals>
                                 <configuration>
                                     <target>
-                                        <mkdir dir="target/classes"/>
-                                        <mkdir dir="target/generated-sources"/>
+                                        <mkdir dir="${project.build.outputDirectory}/native/${os.detected.name}/${os.detected.arch}"/>
+                                        <mkdir dir="${project.build.directory}/generated-sources"/>
                                     </target>
                                 </configuration>
                             </execution>
@@ -209,7 +209,7 @@
                                                             ${project.build.directory}\generated-sources:c:\${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.build.outputDirectory}:c:\${output.shared-lib.dir}
+                                                            ${project.build.outputDirectory}\native\${os.detected.name}\${os.detected.arch}:c:\${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
