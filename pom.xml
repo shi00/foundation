@@ -713,6 +713,7 @@
                         <exclude>**/*.properties</exclude>
                         <exclude>**/*.sql</exclude>
                         <exclude>**/*.proto</exclude>
+                        <exclude>**/*.ps1</exclude>
                         <exclude>**/*.bat</exclude>
                         <exclude>**/*.sh</exclude>
                         <exclude>**/*.cer</exclude>
