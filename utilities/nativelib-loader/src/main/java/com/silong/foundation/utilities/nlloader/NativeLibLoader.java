@@ -80,6 +80,29 @@ public final class NativeLibLoader {
     String suffix = originLib.substring(index);
     Path tmpLib = TEMP_DIR.resolve(String.format("%s_%d%s", prefix, System.nanoTime(), suffix));
     String libPath = String.format("/native/%s/%s/%s", OS_NAME, OS_ARCH, originLib);
+    try {
+      return doInternalGenerate(originLib, libPath, tmpLib);
+    } catch (IOException e) {
+      // fallback
+      libPath = String.format("/native/%s/%s", OS_NAME, originLib);
+      try {
+        return doInternalGenerate(originLib, libPath, tmpLib);
+      } catch (IOException ex) {
+        // fallback
+        libPath = String.format("/native/%s", originLib);
+        try {
+          return doInternalGenerate(originLib, libPath, tmpLib);
+        } catch (IOException exc) {
+          // fallback
+          libPath = String.format("/%s", originLib);
+          return doInternalGenerate(originLib, libPath, tmpLib);
+        }
+      }
+    }
+  }
+
+  private static String doInternalGenerate(String originLib, String libPath, Path tmpLib)
+      throws IOException {
     try (InputStream inputStream = NativeLibLoader.class.getResourceAsStream(libPath)) {
       Files.copy(
           requireNonNull(
@@ -103,7 +126,7 @@ public final class NativeLibLoader {
    *
    * @param libName 库名，不带格式
    */
-  @SneakyThrows
+  @SneakyThrows(IOException.class)
   public static void loadLibrary(String libName) {
     if (libName == null || libName.isEmpty()) {
       throw new IllegalArgumentException("libName must not be null or empty.");
