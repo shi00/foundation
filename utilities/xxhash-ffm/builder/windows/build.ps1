@@ -2,6 +2,8 @@
 Write-Output "srcDir: $srcDir"
 Write-Output "dllDir: $dllDir"
 Write-Output "libName: $libName"
+echo $env:path
+echo $env:UserName
 
 $dllFile_x64 = "C:\vcpkg\installed\x64-windows\bin\xxhash.dll"
 $dllFile_x86 = "C:\vcpkg\installed\x86-windows\bin\xxhash.dll"
@@ -15,15 +17,15 @@ $is_dll_x64_exist = [System.IO.File]::Exists($dllFile_x64)
 
 if ($is_dll_x64_exist)
 {
-    Move-Item -Path $dllFile_x64 -Destination c:\$dllDir\
-    Rename-Item -Path c:\$dllDir\xxhash.dll -NewName $libName.dll
+    Move-Item -Path "$dllFile_x64" -Destination "c:\$dllDir\"
+    Rename-Item -Path "c:\$dllDir\xxhash.dll" -NewName "$libName.dll"
     $includeDir = "C:\vcpkg\installed\x64-windows\include"
     echo "xxhash:x64-windows has been successfully built."
 }
-elseif($is_dll_x86_exist)
+elseif ($is_dll_x86_exist)
 {
-    Move-Item -Path $dllFile_x86 -Destination c:\$dllDir\
-    Rename-Item -Path c:\$dllDir\xxhash.dll -NewName "$libName.dll"
+    Move-Item -Path "$dllFile_x86" -Destination "c:\$dllDir\"
+    Rename-Item -Path "c:\$dllDir\xxhash.dll" -NewName "$libName.dll"
     $includeDir = "C:\vcpkg\installed\x86-windows\include"
     echo "xxhash:x86-windows has been successfully built."
 }
@@ -35,7 +37,7 @@ else
 
 echo "================== Start generate source code for xxHash =================="
 jextract --source --header-class-name xxHash --output c:\$srcDir -t com.silong.foundation.utilities.xxhash.generated -I $includeDir $includeDir\xxhash.h
-$is_src_dir = [System.IO.Directory]::Exists($srcDir)
+$is_src_dir = [System.IO.Directory]::Exists("c:\$srcDir")
 if (!$is_src_dir)
 {
     echo "Failed to generate code by jextract"
