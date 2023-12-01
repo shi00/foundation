@@ -60,7 +60,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-base-linux:${project.version}</name>
+                                            <name>builder-xxhash-linux:${project.version}</name>
                                             <build>
                                                 <contextDir>${project.basedir}/builder/linux</contextDir>
                                                 <dockerFile>Dockerfile</dockerFile>
@@ -79,7 +79,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-base-linux:${project.version}</name>
+                                            <name>builder-xxhash-linux:${project.version}</name>
                                             <run>
                                                 <network>
                                                     <mode>host</mode>
@@ -93,10 +93,10 @@
                                                 <volumes>
                                                     <bind>
                                                         <volume>
-                                                            ${project.basedir}/target/generated-sources:/opt/${output.src.dir}
+                                                            ${project.build.directory}/generated-sources:/opt/${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.build.outputDirectory}:/opt/${output.shared-lib.dir}
+                                                            ${project.build.outputDirectory}/native/${os.detected.name}/${os.detected.arch}:/opt/${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
