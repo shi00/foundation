@@ -172,7 +172,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-base-windows:${project.version}</name>
+                                            <name>builder-xxhash-windows:${project.version}</name>
                                             <build>
                                                 <dockerFile>Dockerfile</dockerFile>
                                                 <contextDir>${project.basedir}\builder\windows</contextDir>
@@ -191,7 +191,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-base-windows:${project.version}</name>
+                                            <name>builder-xxhash-windows:${project.version}</name>
                                             <run>
                                                 <network>
                                                     <name>nat</name>
