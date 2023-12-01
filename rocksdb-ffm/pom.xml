@@ -30,7 +30,6 @@
     <version>1.0.0</version>
 
     <properties>
-        <rocksdb.version>8.8.1</rocksdb.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <output.src.dir>rocksdb-java-src</output.src.dir>
         <output.shared-lib.dir>classes</output.shared-lib.dir>
@@ -94,10 +93,10 @@
                                                 <volumes>
                                                     <bind>
                                                         <volume>
-                                                            ${project.basedir}/target/generated-sources:/opt/${output.src.dir}
+                                                            ${project.build.directory}/generated-sources:/opt/${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.build.outputDirectory}:/opt/${output.shared-lib.dir}
+                                                            ${project.build.outputDirectory}/native/${os.detected.name}/${os.detected.arch}:/opt/${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -249,6 +248,11 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.silong</groupId>
+            <artifactId>nativelib-loader</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
