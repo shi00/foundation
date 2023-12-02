@@ -225,7 +225,7 @@
                                                     </shell>
                                                 </entrypoint>
                                                 <wait>
-                                                    <time>5600000</time>
+                                                    <time>7200000</time>
                                                     <log>================== Build completed ==================</log>
                                                 </wait>
                                             </run>
