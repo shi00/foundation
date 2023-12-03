@@ -1,7 +1,9 @@
-﻿param([string]$srcDir, [string]$dllDir, [string]$libName)
+﻿param([string]$srcDir, [string]$dllDir, [string]$libName, [string]$headerClassName, [string]$sourcecodePackage)
 Write-Output "srcDir: $srcDir"
 Write-Output "dllDir: $dllDir"
 Write-Output "libName: $libName"
+Write-Output "headerClassName: $headerClassName"
+Write-Output "sourcecodePackage: $sourcecodePackage"
 echo $env:path
 echo $env:UserName
 
@@ -36,7 +38,7 @@ else
 }
 
 echo "================== Start generate source code for xxHash =================="
-jextract --source --header-class-name xxHash --output c:\$srcDir -t com.silong.foundation.utilities.xxhash.generated -I $includeDir $includeDir\xxhash.h
+jextract --source --header-class-name $headerClassName --output c:\$srcDir -t $sourcecodePackage -I $includeDir $includeDir\xxhash.h
 $is_src_dir = [System.IO.Directory]::Exists("c:\$srcDir")
 if (!$is_src_dir)
 {
