@@ -2,8 +2,10 @@
 OUTPUT_SRC_DIR=$1
 SHARDED_LIB_DIR=$2
 SHARDED_LIB_NAME=$3".so"
+HEADER_CLASS_NAME=$4
+SOURCECODE_PACKAGE=$5
 
-echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR"
+echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR" "$HEADER_CLASS_NAME" "$SOURCECODE_PACKAGE"
 echo "================== Start building xxHash =================="
 
 mkdir custom-triplets
@@ -20,7 +22,7 @@ fi
 cp installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"/"$SHARDED_LIB_NAME"
 
 echo "================== Start generate source code for xxHash =================="
-jextract --source --header-class-name xxHash --output /opt/"$OUTPUT_SRC_DIR" -t com.silong.foundation.utilities.xxhash.generated -I /vcpkg/installed/x64-linux-dynamic/include /vcpkg/installed/x64-linux-dynamic/include/xxhash.h
+jextract --source --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" -t "$SOURCECODE_PACKAGE" -I /vcpkg/installed/x64-linux-dynamic/include /vcpkg/installed/x64-linux-dynamic/include/xxhash.h
 if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
   echo "Failed to generate code by jextract"
   exit 1
