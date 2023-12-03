@@ -142,25 +142,6 @@
                 <!-- windows容器启动需要挂载classes和generated-sources目录，此处与Linux平台不同(linux docker会自己创建不存在的挂载目录)，需要提前创建好提供给windows容器 -->
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>create-dirs</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <target>
-                                        <mkdir dir="${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}"/>
-                                        <mkdir dir="${project.build.directory}/generated-sources"/>
-                                    </target>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                         <version>0.44-SNAPSHOT</version>
@@ -279,17 +260,48 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-dirs</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}"/>
+                                <mkdir dir="${project.build.directory}/generated-sources"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
                     <excludeDefaultDirectories>false</excludeDefaultDirectories>
                     <filesets>
                         <fileset>
                             <directory>
-                                ${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}
+                                ${project.basedir}/src/main/resources/native
                             </directory>
                             <followSymlinks>false</followSymlinks>
                             <includes>
                                 <include>*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>${os.detected.name}</exclude>
+                            </excludes>
+                        </fileset>
+                        <fileset>
+                            <directory>
+                                ${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}
+                            </directory>
+                            <followSymlinks>false</followSymlinks>
+                            <includes>
+                                <include>**/*</include>
                             </includes>
                         </fileset>
                     </filesets>
