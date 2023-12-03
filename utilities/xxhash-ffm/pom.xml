@@ -289,7 +289,7 @@
                             </directory>
                             <followSymlinks>false</followSymlinks>
                             <includes>
-                                <include>*</include>
+                                <include>**/*</include>
                             </includes>
                             <excludes>
                                 <exclude>${os.detected.name}</exclude>
