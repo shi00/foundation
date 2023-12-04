@@ -66,4 +66,10 @@ public class RocksDbConfig {
 
   /** 持久化存储数据规模，默认：small */
   @NotNull private DataScale dataScale = SMALL;
+
+  /** 如果数据库不存在是否创建数据库，默认：true */
+  private boolean createIfMissing = true;
+
+  /** 是否自动创建列族，默认：true */
+  private boolean createMissingColumnFamilies = true;
 }
