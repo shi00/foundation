@@ -28,6 +28,7 @@ import java.util.stream.IntStream;
 import net.datafaker.Faker;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +45,7 @@ public class RocksdbTests {
 
   private final RocksDbConfig config = new RocksDbConfig();
 
-  private com.silong.foundation.rocksdbffm.RocksDb rocksDb;
+  private RocksDbImpl rocksDb;
 
   @BeforeEach
   void init() {
@@ -55,17 +56,34 @@ public class RocksdbTests {
             .toFile()
             .getAbsolutePath());
     List<String> columns = new LinkedList<>();
-    IntStream.range(0, RandomUtils.nextInt(10, 8192))
+    IntStream.range(0, RandomUtils.nextInt(1, 10))
         .forEach(i -> columns.add(FAKER.phoneNumber().phoneNumberInternational()));
     config.setColumnFamilyNames(columns);
-    rocksDb = RocksDb.getInstance(config);
+    rocksDb = (RocksDbImpl) RocksDb.getInstance(config);
   }
 
   @AfterEach
-  void cleanUp() throws Exception {
+  void cleanUp() {
     rocksDb.close();
   }
 
   @Test
-  public void test1() {}
+  public void test1() {
+    config.setPersistDataPath(
+        Paths.get(FAKER.ancient().god())
+            .resolve("target")
+            .resolve(FAKER.animal().name())
+            .toFile()
+            .getAbsolutePath());
+    RocksDbImpl rocksDb = (RocksDbImpl) RocksDb.getInstance(config);
+    Assertions.assertFalse(rocksDb.isOpen());
+  }
+
+  @Test
+  public void test2() {
+    String cf = "aa";
+    Assertions.assertTrue(rocksDb.createColumnFamily(cf));
+    rocksDb.dropColumnFamily(cf);
+    Assertions.assertFalse(rocksDb.isColumnFamilyExist(cf));
+  }
 }

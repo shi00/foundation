@@ -21,8 +21,6 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * RocksDB提供的API接口封装
  *
@@ -34,9 +32,6 @@ public interface RocksDb extends AutoCloseable {
 
   /** 默认列族名称 */
   String DEFAULT_COLUMN_FAMILY_NAME = "default";
-
-  /** 默认列族键 */
-  byte[] DEFAULT_COLUMN_FAMILY_KEY = DEFAULT_COLUMN_FAMILY_NAME.getBytes(UTF_8);
 
   /**
    * 获取实例

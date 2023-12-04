@@ -31,6 +31,30 @@ package com.silong.foundation.rocksdbffm;
 public interface BasicRocksDbOperation extends RocksDb {
 
   /**
+   * 创建列族
+   *
+   * @param cf 列族名称列表
+   * @return 创建成功返回true，否则false
+   */
+  boolean createColumnFamily(String cf);
+
+  /**
+   * 删除列族
+   *
+   * @param cf 列族名
+   */
+  void dropColumnFamily(String cf);
+
+  /**
+   * key是否存在，采用布隆过滤器，返回false则表示真的不存在，返回true表示一定概率不存在
+   *
+   * @param columnFamilyName 列族名称
+   * @param key key
+   * @return true or false
+   */
+  boolean keyMayExist(String columnFamilyName, byte[] key);
+
+  /**
    * 向指定列族保存数据
    *
    * @param columnFamilyName 列族名
