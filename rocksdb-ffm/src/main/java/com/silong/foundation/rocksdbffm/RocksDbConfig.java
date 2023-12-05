@@ -27,7 +27,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.nio.file.Paths;
-import java.util.Collection;
+import java.util.List;
 import lombok.Data;
 
 /**
@@ -62,7 +62,7 @@ public class RocksDbConfig {
           .getAbsolutePath();
 
   /** 列族名列表，不指定则创建default列族 */
-  @Valid private Collection<@NotEmpty String> columnFamilyNames;
+  @Valid private List<@NotEmpty String> columnFamilyNames;
 
   /** 持久化存储数据规模，默认：small */
   @NotNull private DataScale dataScale = SMALL;
