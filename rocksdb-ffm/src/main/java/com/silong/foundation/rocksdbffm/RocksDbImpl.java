@@ -281,7 +281,12 @@ class RocksDbImpl implements BasicRocksDbOperation {
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment cfNamePtr =
           rocksdb_column_family_handle_get_name(columnFamilyHandle, arena.allocate(C_POINTER));
-      return expectedName.equals(cfNamePtr.getUtf8String(0));
+      String cfn = cfNamePtr.getUtf8String(0);
+      boolean equals = expectedName.equals(cfn);
+      if (log.isDebugEnabled()) {
+        log.debug("(expectedName: {} == columnFamilyName:{}) = {}", expectedName, cfn, equals);
+      }
+      return equals;
     }
   }
 
@@ -296,7 +301,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
             key -> {
               try (Arena arena = Arena.ofConfined()) {
                 if (log.isDebugEnabled()) {
-                  log.debug("Prepare to create column family: {}.", cf);
+                  log.debug("Prepare to create column family: {}.", key);
                 }
                 MemorySegment cfOptions = rocksdb_options_create(); // global scope
                 MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, 1);
@@ -312,13 +317,10 @@ class RocksDbImpl implements BasicRocksDbOperation {
 
                 String errMsg = getErrMsg(errPtr);
                 if (errMsg.isEmpty()) {
-
                   MemorySegment columnFamilyHandle = cfHandlesPtr.get(C_POINTER, 0);
-
                   assert checkColumnFamilyHandleName(key, columnFamilyHandle);
-
                   if (log.isDebugEnabled()) {
-                    log.debug("Successfully created column family: {}", cf);
+                    log.debug("Successfully created column family: {}", key);
                   }
 
                   return ColumnFamilyDescriptor.builder()
@@ -327,7 +329,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
                       .columnFamilyHandle(columnFamilyHandle)
                       .build();
                 } else {
-                  log.error("Failed to create column family: {}, reason:{}.", cf, errMsg);
+                  log.error("Failed to create column family: {}, reason:{}.", key, errMsg);
                   return null;
                 }
               }
@@ -343,13 +345,10 @@ class RocksDbImpl implements BasicRocksDbOperation {
     if (columnFamilies.containsKey(cf)) {
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment errPtr = arena.allocate(C_POINTER);
-        ColumnFamilyDescriptor cfd = columnFamilies.get(cf);
-        rocksdb_drop_column_family(dbPtr, cfd.columnFamilyHandle(), errPtr);
+        rocksdb_drop_column_family(dbPtr, columnFamilies.get(cf).columnFamilyHandle(), errPtr);
         String errMsg = getErrMsg(errPtr);
         if (errMsg.isEmpty()) {
-          cfd = columnFamilies.remove(cf);
-          rocksdb_column_family_handle_destroy(cfd.columnFamilyHandle());
-          rocksdb_options_destroy(cfd.columnFamilyOptions());
+          columnFamilies.remove(cf).close();
           if (log.isDebugEnabled()) {
             log.debug("Successfully dropped column family: {}", cf);
           }
