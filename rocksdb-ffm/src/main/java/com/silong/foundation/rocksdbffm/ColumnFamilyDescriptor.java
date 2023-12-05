@@ -21,7 +21,12 @@
 
 package com.silong.foundation.rocksdbffm;
 
+import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_column_family_handle_destroy;
+import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_options_destroy;
+import static java.lang.foreign.MemorySegment.NULL;
+
 import java.lang.foreign.MemorySegment;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -36,7 +41,7 @@ import lombok.experimental.Accessors;
 @Data
 @Builder
 @Accessors(fluent = true)
-class ColumnFamilyDescriptor {
+class ColumnFamilyDescriptor implements AutoCloseable {
   /** 列族名称 */
   private String columnFamilyName;
 
@@ -45,4 +50,22 @@ class ColumnFamilyDescriptor {
 
   /** 列族handle */
   private MemorySegment columnFamilyHandle;
+
+  /** 关闭标识 */
+  private final AtomicBoolean closed = new AtomicBoolean(false);
+
+  @Override
+  public void close() {
+    if (closed.compareAndSet(false, true)) {
+      if (columnFamilyHandle != null && !columnFamilyHandle.equals(NULL)) {
+        rocksdb_column_family_handle_destroy(columnFamilyHandle);
+        columnFamilyHandle = null;
+      }
+      if (columnFamilyOptions != null && !columnFamilyOptions.equals(NULL)) {
+        rocksdb_options_destroy(columnFamilyOptions);
+        columnFamilyOptions = null;
+      }
+      columnFamilyName = null;
+    }
+  }
 }
