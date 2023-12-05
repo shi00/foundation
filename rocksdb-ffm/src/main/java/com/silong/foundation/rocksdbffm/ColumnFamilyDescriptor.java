@@ -23,7 +23,6 @@ package com.silong.foundation.rocksdbffm;
 
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_column_family_handle_destroy;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_options_destroy;
-import static java.lang.foreign.MemorySegment.NULL;
 
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,23 +54,34 @@ class ColumnFamilyDescriptor implements AutoCloseable {
   @ToString.Exclude private MemorySegment columnFamilyHandle;
 
   /** 关闭标识 */
-  private final AtomicBoolean closed = new AtomicBoolean(false);
+  private final AtomicBoolean closedColumnFamilyHandle = new AtomicBoolean(false);
+
+  /** 关闭标识 */
+  private final AtomicBoolean closedColumnFamilyOptions = new AtomicBoolean(false);
+
+  public void closeColumnFamilyOptions() {
+    if (closedColumnFamilyOptions.compareAndSet(false, true)) {
+      rocksdb_options_destroy(columnFamilyOptions);
+      if (log.isDebugEnabled()) {
+        log.debug("Free columnFamilyOptions: {}", columnFamilyOptions);
+      }
+      columnFamilyOptions = null;
+    }
+  }
+
+  public void closeColumnFamilyHandle() {
+    if (closedColumnFamilyHandle.compareAndSet(false, true)) {
+      rocksdb_column_family_handle_destroy(columnFamilyHandle);
+      if (log.isDebugEnabled()) {
+        log.debug("Free columnFamilyHandle: {}", columnFamilyHandle);
+      }
+      columnFamilyHandle = null;
+    }
+  }
 
   @Override
   public void close() {
-    if (log.isDebugEnabled()) {
-      log.debug("Free Resources: {}", this);
-    }
-    if (closed.compareAndSet(false, true)) {
-      if (columnFamilyHandle != null && !columnFamilyHandle.equals(NULL)) {
-        rocksdb_column_family_handle_destroy(columnFamilyHandle);
-        columnFamilyHandle = null;
-      }
-      if (columnFamilyOptions != null && !columnFamilyOptions.equals(NULL)) {
-        rocksdb_options_destroy(columnFamilyOptions);
-        columnFamilyOptions = null;
-      }
-      columnFamilyName = null;
-    }
+    closeColumnFamilyHandle();
+    closeColumnFamilyOptions();
   }
 }
