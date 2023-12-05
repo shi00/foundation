@@ -25,9 +25,9 @@ import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.lang.foreign.*;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,7 +54,6 @@ class RocksDbImpl implements BasicRocksDbOperation {
 
   static {
     loadLibrary(LIB_ROCKSDB);
-    log.info("platform defaultCharset: {}", Charset.defaultCharset());
   }
 
   /** rocksdb配置 */
@@ -152,9 +151,12 @@ class RocksDbImpl implements BasicRocksDbOperation {
       MemorySegment cfHandle = cfHandlesPtr.getAtIndex(C_POINTER, i);
 
       if (log.isDebugEnabled()) {
-        MemorySegment cfNamePtr =
-            rocksdb_column_family_handle_get_name(cfHandle, arena.allocate(C_POINTER));
-        log.debug("cache column family: {}", cfNamePtr.getUtf8String(0));
+        MemorySegment cfnLengthPtr = arena.allocate(C_POINTER);
+        MemorySegment cfNamePtr = rocksdb_column_family_handle_get_name(cfHandle, cfnLengthPtr);
+        long length = cfnLengthPtr.get(JAVA_LONG, 0);
+        log.debug(
+            "cache column family: {}",
+            new String(cfNamePtr.asSlice(0, length).toArray(JAVA_BYTE), UTF_8));
       }
 
       columnFamilies.put(
@@ -281,9 +283,11 @@ class RocksDbImpl implements BasicRocksDbOperation {
 
   private static boolean checkColumnFamilyHandleName(
       Arena arena, String expectedName, MemorySegment columnFamilyHandle) {
+    MemorySegment cfnLengthPtr = arena.allocate(C_POINTER);
     MemorySegment cfNamePtr =
-        rocksdb_column_family_handle_get_name(columnFamilyHandle, arena.allocate(C_POINTER));
-    String cfn = cfNamePtr.getUtf8String(0);
+        rocksdb_column_family_handle_get_name(columnFamilyHandle, cfnLengthPtr);
+    long length = cfnLengthPtr.get(JAVA_LONG, 0);
+    String cfn = new String(cfNamePtr.asSlice(0, length).toArray(JAVA_BYTE), UTF_8);
     boolean equals = expectedName.equals(cfn);
     if (log.isDebugEnabled()) {
       log.debug("(expectedName: {} == columnFamilyName:{}) = {}", expectedName, cfn, equals);
