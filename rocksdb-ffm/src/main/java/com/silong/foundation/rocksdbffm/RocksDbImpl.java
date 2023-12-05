@@ -28,10 +28,12 @@ import static java.lang.foreign.ValueLayout.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.lang.foreign.*;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -67,6 +69,8 @@ class RocksDbImpl implements BasicRocksDbOperation {
 
   /** 默认数据读取option配置 */
   @ToString.Exclude private final MemorySegment readOptionsPtr;
+
+  @ToString.Exclude private final MemorySegment writeOptionsPtr;
 
   /** 是否需要关闭 */
   private final AtomicBoolean closed = new AtomicBoolean();
@@ -117,8 +121,11 @@ class RocksDbImpl implements BasicRocksDbOperation {
         this.dbPtr = dbPtr;
         this.dbOptionsPtr = dbOptionsPtr;
 
-        // 创建默认读取option
+        // 创建默认读取options
         this.readOptionsPtr = rocksdb_readoptions_create();
+
+        // 创建默认写入options
+        this.writeOptionsPtr = rocksdb_writeoptions_create();
 
         // 保存打开的列族
         saveColumnFamilyDescriptor(arena, columnFamilyNames, cfOptionsPtr, cfHandlesPtr);
@@ -129,7 +136,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
             columnFamilyNames,
             errMsg);
         closed.set(true);
-        this.dbPtr = this.dbOptionsPtr = this.readOptionsPtr = null;
+        this.dbPtr = this.dbOptionsPtr = this.readOptionsPtr = this.writeOptionsPtr = null;
 
         // 释放已经创建出来的global scope资源
         freeRocksDb(dbPtr);
@@ -240,6 +247,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
       freeRocksDb(dbPtr);
       freeDbOptions(dbOptionsPtr);
       freeReadOptions(readOptionsPtr);
+      freeWriteOptions(writeOptionsPtr);
       columnFamilies.clear();
     }
   }
@@ -259,6 +267,12 @@ class RocksDbImpl implements BasicRocksDbOperation {
   private static void freeReadOptions(MemorySegment optionsPtr) {
     if (!NULL.equals(optionsPtr)) {
       rocksdb_readoptions_destroy(optionsPtr);
+    }
+  }
+
+  private static void freeWriteOptions(MemorySegment optionsPtr) {
+    if (!NULL.equals(optionsPtr)) {
+      rocksdb_writeoptions_destroy(optionsPtr);
     }
   }
 
@@ -372,7 +386,43 @@ class RocksDbImpl implements BasicRocksDbOperation {
   }
 
   @Override
-  public void put(String columnFamilyName, byte[] key, byte[] value) {}
+  public void put(String columnFamilyName, byte[] key, byte[] value) {
+    validateColumnFamilyName(columnFamilyName);
+    validateKey(key);
+    validateValue(value);
+    validateOpenStatus();
+    try (Arena arena = Arena.ofConfined()) {
+      MemorySegment keyPtr = arena.allocateArray(JAVA_BYTE, key);
+      MemorySegment valPtr = arena.allocateArray(JAVA_BYTE, value);
+      MemorySegment errPtr = arena.allocate(C_POINTER);
+      rocksdb_put_cf(
+          dbPtr,
+          writeOptionsPtr,
+          columnFamilies.get(columnFamilyName).columnFamilyHandle(),
+          keyPtr,
+          keyPtr.byteSize(),
+          valPtr,
+          valPtr.byteSize(),
+          errPtr);
+
+      String errMsg = getErrMsg(errPtr);
+      if (isEmpty(errMsg)) {
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Successfully put kv:[{}---{}] to cf:{}",
+              HexFormat.of().formatHex(key),
+              HexFormat.of().formatHex(value),
+              columnFamilyName);
+        }
+      } else {
+        log.error(
+            "Failed to put kv:[{}---{}] to cf:{}",
+            HexFormat.of().formatHex(key),
+            HexFormat.of().formatHex(value),
+            columnFamilyName);
+      }
+    }
+  }
 
   @Override
   public void put(byte[] key, byte[] value) {
@@ -380,6 +430,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
   }
 
   @Override
+  @Nullable
   public byte[] get(String columnFamilyName, byte[] key) {
     validateColumnFamilyName(columnFamilyName);
     validateKey(key);
@@ -387,12 +438,29 @@ class RocksDbImpl implements BasicRocksDbOperation {
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment keyPtr = arena.allocateArray(JAVA_BYTE, key);
       MemorySegment errPtr = arena.allocate(C_POINTER);
-      AddressLayout valLengthLayout = ADDRESS.withTargetLayout(JAVA_LONG);
-      MemorySegment valLength = arena.allocate(valLengthLayout);
-      MemorySegment value =
-          rocksdb_get(dbPtr, dbOptionsPtr, keyPtr, keyPtr.byteSize(), valLength, errPtr);
-
-      return null;
+      MemorySegment valLenPtr = arena.allocate(C_POINTER); // 出参，value长度
+      MemorySegment valPtr =
+          rocksdb_get(dbPtr, readOptionsPtr, keyPtr, keyPtr.byteSize(), valLenPtr, errPtr);
+      String errMsg = getErrMsg(errPtr);
+      if (isEmpty(errMsg)) {
+        long valLen = valLenPtr.get(JAVA_LONG, 0);
+        byte[] val = valPtr.asSlice(0, valLen).toArray(JAVA_BYTE);
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Successfully get value:[{}---{}] from cf:{} by key:{}",
+              valLen,
+              val,
+              columnFamilyName,
+              HexFormat.of().formatHex(key));
+        }
+        return val;
+      } else {
+        log.error(
+            "Failed to get value from cf:{} by key:{}",
+            columnFamilyName,
+            HexFormat.of().formatHex(key));
+        return null;
+      }
     }
   }
 
