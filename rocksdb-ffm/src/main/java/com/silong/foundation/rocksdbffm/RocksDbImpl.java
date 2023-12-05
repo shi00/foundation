@@ -443,6 +443,6 @@ class RocksDbImpl implements BasicRocksDbOperation {
    */
   private static String getErrMsg(MemorySegment msgPtr) {
     MemorySegment ptr = msgPtr.get(C_POINTER, 0);
-    return ptr.equals(NULL) ? OK : ptr.getUtf8String(0);
+    return NULL.equals(ptr) ? OK : ptr.getUtf8String(0);
   }
 }
