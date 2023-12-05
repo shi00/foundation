@@ -131,6 +131,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
         this.dbPtr = this.dbOptionsPtr = this.readOptionsPtr = null;
 
         // 释放已经创建出来的global scope资源
+        freeRocksDb(dbPtr);
         freeDbOptions(dbOptionsPtr);
         IntStream.range(0, columnFamilyNames.size())
             .forEach(i -> freeColumnFamilyOptions(cfOptionsPtr.getAtIndex(C_POINTER, i)));
@@ -247,12 +248,6 @@ class RocksDbImpl implements BasicRocksDbOperation {
   private static void freeColumnFamilyOptions(MemorySegment optionsPtr) {
     if (!NULL.equals(optionsPtr)) {
       rocksdb_options_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeColumnFamilyHandle(MemorySegment columnFamilyHandle) {
-    if (!NULL.equals(columnFamilyHandle)) {
-      rocksdb_column_family_handle_destroy(columnFamilyHandle);
     }
   }
 
