@@ -23,11 +23,14 @@ package com.silong.foundation.rocksdbffm;
 
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
 
 import java.lang.foreign.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -59,7 +62,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
   @ToString.Exclude private final MemorySegment dbPtr;
 
   /** 数据库配置选项 */
-  @ToString.Exclude private final MemorySegment optionsPtr;
+  @ToString.Exclude private final MemorySegment dbOptionsPtr;
 
   /** 默认数据读取option配置 */
   @ToString.Exclude private final MemorySegment readOptionsPtr;
@@ -68,7 +71,8 @@ class RocksDbImpl implements BasicRocksDbOperation {
   private final AtomicBoolean closed = new AtomicBoolean();
 
   /** 列族名称与其对应的native值 */
-  private final ConcurrentHashMap<String, MemorySegment> columnFamilies = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, ColumnFamilyDescriptor> columnFamilies =
+      new ConcurrentHashMap<>();
 
   /**
    * 构造方法
@@ -76,32 +80,141 @@ class RocksDbImpl implements BasicRocksDbOperation {
    * @param config 配置
    */
   public RocksDbImpl(@NonNull RocksDbConfig config) {
-    this.config = config;
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment optionsPtr = rocksdb_options_create();
-      optionsPtr.set(JAVA_BOOLEAN, 0, config.isCreateIfMissing()); // create_if_missing
-      optionsPtr.set(
-          JAVA_BOOLEAN,
-          1,
-          config.isCreateMissingColumnFamilies()); // create_missing_column_families
+      this.config = config;
+      MemorySegment dbOptionsPtr = createRocksdbOption(config); // global scope
       MemorySegment path = arena.allocateUtf8String(config.getPersistDataPath());
       MemorySegment errPtr = arena.allocate(C_POINTER);
-      MemorySegment dbPtr = rocksdb_open(optionsPtr, path, errPtr);
+      List<String> columnFamilyNames = getColumnFamilyNames(config.getColumnFamilyNames());
+
+      // 列族名称列表构建指针
+      MemorySegment cfNamesPtr = createColumnFamilyNames(arena, columnFamilyNames);
+
+      // 列族选项列表指针
+      MemorySegment cfOptionsPtr = createColumnFamilyOptions(arena, columnFamilyNames);
+
+      // 出参，获取打开的列族handles
+      MemorySegment cfHandlesPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
+
+      // 打开指定的列族
+      MemorySegment dbPtr = // global scope
+          rocksdb_open_column_families(
+              dbOptionsPtr, // rocksdb options
+              path, // persist path
+              columnFamilyNames.size(), // column family size
+              cfNamesPtr, // column family names
+              cfOptionsPtr, // column family options
+              cfHandlesPtr, // 出参，打开的列族handle
+              errPtr); // 错误信息
       String errMsg = getErrMsg(errPtr);
       if (isEmpty(errMsg)) {
-        log.info("The rocksdb[{}] is opened successfully.", config.getPersistDataPath());
+        log.info(
+            "The rocksdb(path:{}, cfs:{}) is opened successfully.",
+            config.getPersistDataPath(),
+            columnFamilyNames);
         closed.set(false);
         this.dbPtr = dbPtr;
-        this.optionsPtr = optionsPtr;
+        this.dbOptionsPtr = dbOptionsPtr;
 
         // 创建默认读取option
         this.readOptionsPtr = rocksdb_readoptions_create();
+
+        // 保存打开的列族
+        saveColumnFamilyDescriptor(columnFamilyNames, cfOptionsPtr, cfHandlesPtr);
       } else {
-        log.info("Failed to open rocksdb[{}], reason:{}.", config.getPersistDataPath(), errMsg);
+        log.error(
+            "Failed to open rocksdb(path:{}, cfs:{}), reason:{}.",
+            config.getPersistDataPath(),
+            columnFamilyNames,
+            errMsg);
         closed.set(true);
-        this.dbPtr = this.optionsPtr = this.readOptionsPtr = null;
+        this.dbPtr = this.dbOptionsPtr = this.readOptionsPtr = null;
+
+        // 释放已经创建出来的global scope资源
+        freeDbOptions(dbOptionsPtr);
+        IntStream.range(0, columnFamilyNames.size())
+            .forEach(i -> freeColumnFamilyOptions(cfOptionsPtr.getAtIndex(C_POINTER, i)));
       }
     }
+  }
+
+  private void saveColumnFamilyDescriptor(
+      List<String> columnFamilyNames, MemorySegment cfOptionsPtr, MemorySegment cfHandlesPtr) {
+    for (int i = 0; i < columnFamilyNames.size(); i++) {
+      String columnFamilyName = columnFamilyNames.get(i);
+      MemorySegment cfOptions = cfOptionsPtr.getAtIndex(C_POINTER, i);
+      MemorySegment cfHandle = cfHandlesPtr.getAtIndex(C_POINTER, i);
+
+      if (log.isDebugEnabled()) {
+        try (Arena arena = Arena.ofConfined()) {
+          MemorySegment cfNamePtr =
+              rocksdb_column_family_handle_get_name(cfHandle, arena.allocate(C_POINTER));
+          log.debug("cache column family: {}", cfNamePtr.getUtf8String(0));
+        }
+      }
+
+      columnFamilies.put(
+          columnFamilyName,
+          ColumnFamilyDescriptor.builder()
+              .columnFamilyName(columnFamilyName)
+              .columnFamilyOptions(cfOptions)
+              .columnFamilyHandle(cfHandle)
+              .build());
+    }
+  }
+
+  /**
+   * 为每个列族创建一个独立的option
+   *
+   * @param arena 内存分配器
+   * @param columnFamilyNames 列族名称列表
+   * @return 列族option列表指针
+   */
+  private MemorySegment createColumnFamilyOptions(Arena arena, List<String> columnFamilyNames) {
+    MemorySegment cfOptionsPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
+    for (int i = 0; i < columnFamilyNames.size(); i++) {
+      cfOptionsPtr.setAtIndex(C_POINTER, i, rocksdb_options_create()); // global scope
+    }
+    return cfOptionsPtr;
+  }
+
+  /**
+   * 创建rocksdb option，并根据配置值对option进行赋值
+   *
+   * @param config 配置
+   * @return option指针
+   */
+  private MemorySegment createRocksdbOption(RocksDbConfig config) {
+    MemorySegment optionsPtr = rocksdb_options_create();
+    optionsPtr.set(JAVA_BOOLEAN, 0, config.isCreateIfMissing()); // create_if_missing
+    optionsPtr.set(
+        JAVA_BOOLEAN, 1, config.isCreateMissingColumnFamilies()); // create_missing_column_families
+    return optionsPtr;
+  }
+
+  /**
+   * 根据配置的列族名称列表构建指针，如果未配置default列族则会添加此默认列族
+   *
+   * @param arena 内存分配器
+   * @param columnFamilyNames 列族名称列表
+   * @return 列族名称列表指针
+   */
+  private MemorySegment createColumnFamilyNames(Arena arena, List<String> columnFamilyNames) {
+    MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
+    for (int i = 0; i < columnFamilyNames.size(); i++) {
+      cfNamesPtr.setAtIndex(C_POINTER, i, arena.allocateUtf8String(columnFamilyNames.get(i)));
+    }
+    return cfNamesPtr;
+  }
+
+  private List<String> getColumnFamilyNames(List<String> columnFamilyNames) {
+    if (columnFamilyNames == null) {
+      columnFamilyNames = List.of(DEFAULT_COLUMN_FAMILY_NAME);
+    } else {
+      columnFamilyNames.add(DEFAULT_COLUMN_FAMILY_NAME);
+      columnFamilyNames = columnFamilyNames.parallelStream().distinct().toList(); // 列族名称去重
+    }
+    return columnFamilyNames;
   }
 
   /**
@@ -115,12 +228,43 @@ class RocksDbImpl implements BasicRocksDbOperation {
 
   @Override
   public void close() {
+    // clean only once
     if (closed.compareAndSet(false, true)) {
-      rocksdb_close(dbPtr);
-      rocksdb_options_destroy(optionsPtr);
-      rocksdb_readoptions_destroy(readOptionsPtr);
-      columnFamilies.forEach((k, v) -> rocksdb_column_family_handle_destroy(v));
+      columnFamilies.forEach((k, v) -> v.close());
+      freeRocksDb(dbPtr);
+      freeDbOptions(dbOptionsPtr);
+      freeReadOptions(readOptionsPtr);
       columnFamilies.clear();
+    }
+  }
+
+  private static void freeDbOptions(MemorySegment optionsPtr) {
+    if (!NULL.equals(optionsPtr)) {
+      rocksdb_options_destroy(optionsPtr);
+    }
+  }
+
+  private static void freeColumnFamilyOptions(MemorySegment optionsPtr) {
+    if (!NULL.equals(optionsPtr)) {
+      rocksdb_options_destroy(optionsPtr);
+    }
+  }
+
+  private static void freeColumnFamilyHandle(MemorySegment columnFamilyHandle) {
+    if (!NULL.equals(columnFamilyHandle)) {
+      rocksdb_column_family_handle_destroy(columnFamilyHandle);
+    }
+  }
+
+  private static void freeReadOptions(MemorySegment optionsPtr) {
+    if (!NULL.equals(optionsPtr)) {
+      rocksdb_readoptions_destroy(optionsPtr);
+    }
+  }
+
+  private static void freeRocksDb(MemorySegment dbPtr) {
+    if (!NULL.equals(dbPtr)) {
+      rocksdb_close(dbPtr);
     }
   }
 
@@ -137,12 +281,21 @@ class RocksDbImpl implements BasicRocksDbOperation {
     return columnFamilies.containsKey(cf);
   }
 
+  private static boolean checkColumnFamilyHandleName(
+      String expectedName, MemorySegment columnFamilyHandle) {
+    try (Arena arena = Arena.ofConfined()) {
+      MemorySegment cfNamePtr =
+          rocksdb_column_family_handle_get_name(columnFamilyHandle, arena.allocate(C_POINTER));
+      return expectedName.equals(cfNamePtr.getUtf8String(0));
+    }
+  }
+
   @Override
   public boolean createColumnFamily(String cf) {
     if (isEmpty(cf)) {
       throw new IllegalArgumentException("cf must not be null or empty.");
     }
-    MemorySegment cfHandle =
+    ColumnFamilyDescriptor descriptor =
         columnFamilies.computeIfAbsent(
             cf,
             key -> {
@@ -150,26 +303,41 @@ class RocksDbImpl implements BasicRocksDbOperation {
                 if (log.isDebugEnabled()) {
                   log.debug("Prepare to create column family: {}.", cf);
                 }
-                MemorySegment columnFamilyNames = arena.allocateUtf8String(key);
-                MemorySegment cfsNamePtr = arena.allocate(C_POINTER, columnFamilyNames);
+                MemorySegment cfOptions = rocksdb_options_create(); // global scope
+                MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, 1);
+                cfNamesPtr.set(C_POINTER, 0, arena.allocateUtf8String(key));
                 MemorySegment errPtr = arena.allocate(C_POINTER); // 出参，错误消息
                 MemorySegment createdCfsSize = arena.allocate(C_POINTER); // 出参，成功创建列族长度
                 MemorySegment cfHandlesPtr =
                     rocksdb_create_column_families(
-                        dbPtr, optionsPtr, 1, cfsNamePtr, createdCfsSize, errPtr);
+                        dbPtr, cfOptions, 1, cfNamesPtr, createdCfsSize, errPtr);
+
+                // 创建一个列族
+                assert createdCfsSize.get(JAVA_LONG, 0) == 1L;
+
                 String errMsg = getErrMsg(errPtr);
                 if (errMsg.isEmpty()) {
+
+                  MemorySegment columnFamilyHandle = cfHandlesPtr.get(C_POINTER, 0);
+
+                  assert checkColumnFamilyHandleName(key, columnFamilyHandle);
+
                   if (log.isDebugEnabled()) {
                     log.debug("Successfully created column family: {}", cf);
                   }
-                  return cfHandlesPtr.get(C_POINTER, 0);
+
+                  return ColumnFamilyDescriptor.builder()
+                      .columnFamilyName(key)
+                      .columnFamilyOptions(cfOptions)
+                      .columnFamilyHandle(columnFamilyHandle)
+                      .build();
                 } else {
                   log.error("Failed to create column family: {}, reason:{}.", cf, errMsg);
-                  return MemorySegment.NULL;
+                  return null;
                 }
               }
             });
-    return !cfHandle.equals(MemorySegment.NULL);
+    return descriptor != null;
   }
 
   @Override
@@ -180,11 +348,13 @@ class RocksDbImpl implements BasicRocksDbOperation {
     if (columnFamilies.containsKey(cf)) {
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment errPtr = arena.allocate(C_POINTER);
-        MemorySegment cfHandle = columnFamilies.get(cf);
-        rocksdb_drop_column_family(dbPtr, cfHandle, errPtr);
+        ColumnFamilyDescriptor cfd = columnFamilies.get(cf);
+        rocksdb_drop_column_family(dbPtr, cfd.columnFamilyHandle(), errPtr);
         String errMsg = getErrMsg(errPtr);
         if (errMsg.isEmpty()) {
-          rocksdb_column_family_handle_destroy(columnFamilies.remove(cf));
+          cfd = columnFamilies.remove(cf);
+          rocksdb_column_family_handle_destroy(cfd.columnFamilyHandle());
+          rocksdb_options_destroy(cfd.columnFamilyOptions());
           if (log.isDebugEnabled()) {
             log.debug("Successfully dropped column family: {}", cf);
           }
@@ -221,7 +391,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
       AddressLayout valLengthLayout = ADDRESS.withTargetLayout(JAVA_LONG);
       MemorySegment valLength = arena.allocate(valLengthLayout);
       MemorySegment value =
-          rocksdb_get(dbPtr, optionsPtr, keyPtr, keyPtr.byteSize(), valLength, errPtr);
+          rocksdb_get(dbPtr, dbOptionsPtr, keyPtr, keyPtr.byteSize(), valLength, errPtr);
 
       return null;
     }
@@ -274,6 +444,6 @@ class RocksDbImpl implements BasicRocksDbOperation {
    */
   private static String getErrMsg(MemorySegment msgPtr) {
     MemorySegment ptr = msgPtr.get(C_POINTER, 0);
-    return ptr.equals(MemorySegment.NULL) ? OK : ptr.getUtf8String(0);
+    return ptr.equals(NULL) ? OK : ptr.getUtf8String(0);
   }
 }
