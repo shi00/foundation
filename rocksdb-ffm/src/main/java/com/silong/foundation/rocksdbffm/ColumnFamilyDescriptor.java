@@ -21,28 +21,28 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import com.silong.foundation.rocksdbffm.generated.RocksDB;
 import java.lang.foreign.MemorySegment;
-import lombok.NonNull;
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
- * 数据库对象
+ * 列族描述对象
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-12-02 13:05
+ * @since 2023-12-05 9:48
  */
-record DB(@NonNull MemorySegment dbPointer, @NonNull RocksDbConfig config)
-    implements AutoCloseable {
+@Data
+@Builder
+@Accessors(fluent = true)
+class ColumnFamilyDescriptor {
+  /** 列族名称 */
+  private String columnFamilyName;
 
-  @Override
-  public String toString() {
-    return config.toString();
-  }
+  /** 列族option */
+  private MemorySegment columnFamilyOption;
 
-  /** 关闭数据库 */
-  @Override
-  public void close() {
-    RocksDB.rocksdb_close(dbPointer);
-  }
+  /** 列族handle */
+  private MemorySegment columnFamilyHandle;
 }
