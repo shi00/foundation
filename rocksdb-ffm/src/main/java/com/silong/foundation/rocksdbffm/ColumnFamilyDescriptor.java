@@ -40,8 +40,8 @@ class ColumnFamilyDescriptor {
   /** 列族名称 */
   private String columnFamilyName;
 
-  /** 列族option */
-  private MemorySegment columnFamilyOption;
+  /** 列族options */
+  private MemorySegment columnFamilyOptions;
 
   /** 列族handle */
   private MemorySegment columnFamilyHandle;
