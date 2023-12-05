@@ -21,6 +21,9 @@
 
 package com.silong.foundation.rocksdbffm;
 
+import static com.silong.foundation.rocksdbffm.RocksDb.DEFAULT_COLUMN_FAMILY_NAME;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,7 +60,7 @@ public class RocksdbTests {
             .getAbsolutePath());
     List<String> columns = new LinkedList<>();
     IntStream.range(0, RandomUtils.nextInt(1, 10))
-        .forEach(i -> columns.add(FAKER.phoneNumber().phoneNumberInternational()));
+        .forEach(i -> columns.add(FAKER.ancient().titan()));
     config.setColumnFamilyNames(columns);
     rocksDb = (RocksDbImpl) RocksDb.getInstance(config);
   }
@@ -75,8 +78,13 @@ public class RocksdbTests {
             .resolve(FAKER.animal().name())
             .toFile()
             .getAbsolutePath());
-    RocksDbImpl rocksDb = (RocksDbImpl) RocksDb.getInstance(config);
-    Assertions.assertFalse(rocksDb.isOpen());
+    List<String> columns = new LinkedList<>();
+    IntStream.range(0, RandomUtils.nextInt(10, 20))
+        .forEach(i -> columns.add(FAKER.ancient().titan()));
+    config.setColumnFamilyNames(columns);
+    try (RocksDbImpl rocksDb = (RocksDbImpl) RocksDb.getInstance(config)) {
+      Assertions.assertFalse(rocksDb.isOpen());
+    }
   }
 
   @Test
@@ -85,5 +93,14 @@ public class RocksdbTests {
     Assertions.assertTrue(rocksDb.createColumnFamily(cf));
     rocksDb.dropColumnFamily(cf);
     Assertions.assertFalse(rocksDb.isColumnFamilyExist(cf));
+  }
+
+  @Test
+  public void test3() {
+    String k = "a";
+    String v = "b";
+    rocksDb.put(DEFAULT_COLUMN_FAMILY_NAME, k.getBytes(UTF_8), v.getBytes(UTF_8));
+    byte[] vbs = rocksDb.get(DEFAULT_COLUMN_FAMILY_NAME, k.getBytes(UTF_8));
+    Assertions.assertArrayEquals(vbs, v.getBytes(UTF_8));
   }
 }
