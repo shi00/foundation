@@ -98,7 +98,7 @@
                                                             ${project.build.directory}/generated-sources:/opt/${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.build.outputDirectory}/native/${os.detected.name}/${os.detected.arch}:/opt/${output.shared-lib.dir}
+                                                            ${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}:/opt/${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -140,25 +140,6 @@
             </activation>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>create-dirs</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <target>
-                                        <mkdir dir="${project.build.outputDirectory}/native/${os.detected.name}/${os.detected.arch}"/>
-                                        <mkdir dir="${project.build.directory}/generated-sources"/>
-                                    </target>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
@@ -210,7 +191,7 @@
                                                             ${project.build.directory}\generated-sources:c:\${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.build.outputDirectory}\native\${os.detected.name}\${os.detected.arch}:c:\${output.shared-lib.dir}
+                                                            ${project.basedir}\src\main\resources\native\${os.detected.name}\${os.detected.arch}:c:\${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -279,6 +260,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
@@ -293,6 +279,55 @@
             </extension>
         </extensions>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <excludeDefaultDirectories>false</excludeDefaultDirectories>
+                    <filesets>
+                        <fileset>
+                            <directory>
+                                ${project.basedir}/src/main/resources/native
+                            </directory>
+                            <followSymlinks>false</followSymlinks>
+                            <includes>
+                                <include>**/*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>${os.detected.name}</exclude>
+                            </excludes>
+                        </fileset>
+                        <fileset>
+                            <directory>
+                                ${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}
+                            </directory>
+                            <followSymlinks>false</followSymlinks>
+                            <includes>
+                                <include>**/*</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-dirs</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}"/>
+                                <mkdir dir="${project.build.directory}/generated-sources"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
