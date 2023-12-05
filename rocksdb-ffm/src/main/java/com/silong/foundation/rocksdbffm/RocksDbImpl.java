@@ -122,7 +122,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
         this.readOptionsPtr = rocksdb_readoptions_create();
 
         // 保存打开的列族
-        saveColumnFamilyDescriptor(columnFamilyNames, cfOptionsPtr, cfHandlesPtr);
+        saveColumnFamilyDescriptor(arena, columnFamilyNames, cfOptionsPtr, cfHandlesPtr);
       } else {
         log.error(
             "Failed to open rocksdb(path:{}, cfs:{}), reason:{}.",
@@ -142,18 +142,19 @@ class RocksDbImpl implements BasicRocksDbOperation {
   }
 
   private void saveColumnFamilyDescriptor(
-      List<String> columnFamilyNames, MemorySegment cfOptionsPtr, MemorySegment cfHandlesPtr) {
+      Arena arena,
+      List<String> columnFamilyNames,
+      MemorySegment cfOptionsPtr,
+      MemorySegment cfHandlesPtr) {
     for (int i = 0; i < columnFamilyNames.size(); i++) {
       String columnFamilyName = columnFamilyNames.get(i);
       MemorySegment cfOptions = cfOptionsPtr.getAtIndex(C_POINTER, i);
       MemorySegment cfHandle = cfHandlesPtr.getAtIndex(C_POINTER, i);
 
       if (log.isDebugEnabled()) {
-        try (Arena arena = Arena.ofConfined()) {
-          MemorySegment cfNamePtr =
-              rocksdb_column_family_handle_get_name(cfHandle, arena.allocate(C_POINTER));
-          log.debug("cache column family: {}", cfNamePtr.getUtf8String(0));
-        }
+        MemorySegment cfNamePtr =
+            rocksdb_column_family_handle_get_name(cfHandle, arena.allocate(C_POINTER));
+        log.debug("cache column family: {}", cfNamePtr.getUtf8String(0));
       }
 
       columnFamilies.put(
@@ -279,17 +280,15 @@ class RocksDbImpl implements BasicRocksDbOperation {
   }
 
   private static boolean checkColumnFamilyHandleName(
-      String expectedName, MemorySegment columnFamilyHandle) {
-    try (Arena arena = Arena.ofConfined()) {
-      MemorySegment cfNamePtr =
-          rocksdb_column_family_handle_get_name(columnFamilyHandle, arena.allocate(C_POINTER));
-      String cfn = cfNamePtr.getUtf8String(0);
-      boolean equals = expectedName.equals(cfn);
-      if (log.isDebugEnabled()) {
-        log.debug("(expectedName: {} == columnFamilyName:{}) = {}", expectedName, cfn, equals);
-      }
-      return equals;
+      Arena arena, String expectedName, MemorySegment columnFamilyHandle) {
+    MemorySegment cfNamePtr =
+        rocksdb_column_family_handle_get_name(columnFamilyHandle, arena.allocate(C_POINTER));
+    String cfn = cfNamePtr.getUtf8String(0);
+    boolean equals = expectedName.equals(cfn);
+    if (log.isDebugEnabled()) {
+      log.debug("(expectedName: {} == columnFamilyName:{}) = {}", expectedName, cfn, equals);
     }
+    return equals;
   }
 
   @Override
@@ -320,7 +319,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
                 String errMsg = getErrMsg(errPtr);
                 if (errMsg.isEmpty()) {
                   MemorySegment columnFamilyHandle = cfHandlesPtr.get(C_POINTER, 0);
-                  assert checkColumnFamilyHandleName(key, columnFamilyHandle);
+                  assert checkColumnFamilyHandleName(arena, key, columnFamilyHandle);
                   if (log.isDebugEnabled()) {
                     log.debug("Successfully created column family: {}", key);
                   }
