@@ -27,6 +27,7 @@ import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
 
 import java.lang.foreign.*;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,6 +54,7 @@ class RocksDbImpl implements BasicRocksDbOperation {
 
   static {
     loadLibrary(LIB_ROCKSDB);
+    log.info("platform defaultCharset: {}", Charset.defaultCharset());
   }
 
   /** rocksdb配置 */
