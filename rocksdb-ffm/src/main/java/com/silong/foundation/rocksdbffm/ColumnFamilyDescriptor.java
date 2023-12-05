@@ -29,7 +29,9 @@ import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Builder;
 import lombok.Data;
+import lombok.ToString;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 列族描述对象
@@ -40,22 +42,26 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Builder
+@Slf4j
 @Accessors(fluent = true)
 class ColumnFamilyDescriptor implements AutoCloseable {
   /** 列族名称 */
   private String columnFamilyName;
 
   /** 列族options */
-  private MemorySegment columnFamilyOptions;
+  @ToString.Exclude private MemorySegment columnFamilyOptions;
 
   /** 列族handle */
-  private MemorySegment columnFamilyHandle;
+  @ToString.Exclude private MemorySegment columnFamilyHandle;
 
   /** 关闭标识 */
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
   @Override
   public void close() {
+    if (log.isDebugEnabled()) {
+      log.debug("Free Resources: {}", this);
+    }
     if (closed.compareAndSet(false, true)) {
       if (columnFamilyHandle != null && !columnFamilyHandle.equals(NULL)) {
         rocksdb_column_family_handle_destroy(columnFamilyHandle);
