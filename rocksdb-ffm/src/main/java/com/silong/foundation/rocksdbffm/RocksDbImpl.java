@@ -452,7 +452,9 @@ class RocksDbImpl implements RocksDb {
         long valLen = valLenPtr.get(JAVA_LONG, 0);
         valPtr =
             valPtr.reinterpret(
-                valLen, arena, null); // 外部方法返回的指针都是global的，需要通过此方法关联大arena的scope，进行资源释放，避免出现OOM
+                valLen,
+                arena,
+                Utils::free); // 外部方法返回的指针都是global的，需要通过此方法关联大arena的scope，进行资源释放，避免出现OOM
         byte[] val = valPtr.toArray(JAVA_BYTE);
         if (log.isDebugEnabled()) {
           log.debug(
