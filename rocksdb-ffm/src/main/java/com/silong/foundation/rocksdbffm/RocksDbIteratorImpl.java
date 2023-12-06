@@ -21,8 +21,7 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import static com.silong.foundation.rocksdbffm.Utils.OK;
-import static com.silong.foundation.rocksdbffm.Utils.getErrMsg;
+import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
@@ -91,6 +90,7 @@ class RocksDbIteratorImpl implements RocksDbIterator {
 
   @Override
   public void seek(byte[] target) {
+    validateKey(target);
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment targetPtr = arena.allocateArray(C_CHAR, target);
       rocksdb_iter_seek(iterator, targetPtr, targetPtr.byteSize());
@@ -98,7 +98,13 @@ class RocksDbIteratorImpl implements RocksDbIterator {
   }
 
   @Override
-  public void seekForPrev(byte[] target) {}
+  public void seekForPrev(byte[] target) {
+    validateKey(target);
+    try (Arena arena = Arena.ofConfined()) {
+      MemorySegment targetPtr = arena.allocateArray(C_CHAR, target);
+      rocksdb_iter_seek_for_prev(iterator, targetPtr, targetPtr.byteSize());
+    }
+  }
 
   @Override
   public void next() {
