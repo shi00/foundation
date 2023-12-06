@@ -103,4 +103,7 @@ public interface RocksDbIterator extends AutoCloseable {
    * @return kv
    */
   Tuple2<byte[], byte[]> get();
+
+  /** free resources */
+  void close();
 }
