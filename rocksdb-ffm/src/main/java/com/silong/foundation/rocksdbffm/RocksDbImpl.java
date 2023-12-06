@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -142,7 +141,7 @@ class RocksDbImpl implements RocksDb {
         this.writeOptionsPtr = rocksdb_writeoptions_create();
 
         // 保存打开的列族
-        saveColumnFamilyDescriptor(arena, columnFamilyNames, cfOptionsPtr, cfHandlesPtr);
+        cacheColumnFamilyDescriptor(arena, columnFamilyNames, cfOptionsPtr, cfHandlesPtr);
       } else {
         log.error(
             "Failed to open rocksdb(path:{}, cfs:{}), reason:{}.",
@@ -161,7 +160,7 @@ class RocksDbImpl implements RocksDb {
     }
   }
 
-  private void saveColumnFamilyDescriptor(
+  private void cacheColumnFamilyDescriptor(
       Arena arena,
       List<String> columnFamilyNames,
       MemorySegment cfOptionsPtr,
@@ -281,6 +280,11 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
+  public Collection<String> openedColumnFamilies() {
+    return columnFamilies.keySet();
+  }
+
+  @Override
   public boolean createColumnFamily(String cf) {
     if (isEmpty(cf)) {
       throw new IllegalArgumentException("cf must not be null or empty.");
@@ -395,6 +399,49 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
+  public void deleteRange(byte[] startKey, byte[] endKey) {
+    deleteRange(DEFAULT_COLUMN_FAMILY_NAME, startKey, endKey);
+  }
+
+  @Override
+  public void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey) {
+    validateColumnFamilyName(columnFamilyName);
+    validateKey(startKey);
+    validateKey(endKey);
+    validateOpenStatus();
+    try (Arena arena = Arena.ofConfined()) {
+      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
+      MemorySegment startKeyPtr = arena.allocateArray(C_CHAR, startKey);
+      MemorySegment endKeyPtr = arena.allocateArray(C_CHAR, endKey);
+      rocksdb_delete_range_cf(
+          dbPtr,
+          writeOptionsPtr,
+          columnFamilies.get(columnFamilyName).columnFamilyHandle(),
+          startKeyPtr,
+          startKeyPtr.byteSize(),
+          endKeyPtr,
+          endKeyPtr.byteSize(),
+          errPtr);
+      String errMsg = getErrMsg(errPtr);
+      if (OK.equals(errMsg)) {
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Successfully delete keys from startKey:{} to endKey:{} in cf:{}",
+              HexFormat.of().formatHex(startKey),
+              HexFormat.of().formatHex(endKey),
+              columnFamilyName);
+        }
+      } else {
+        log.error(
+            "Failed to delete keys from startKey:{} to endKey:{} in cf:{}",
+            HexFormat.of().formatHex(startKey),
+            HexFormat.of().formatHex(endKey),
+            columnFamilyName);
+      }
+    }
+  }
+
+  @Override
   public void put(String columnFamilyName, byte[] key, byte[] value) {
     validateColumnFamilyName(columnFamilyName);
     validateKey(key);
@@ -439,7 +486,6 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  @Nullable
   public byte[] get(String columnFamilyName, byte[] key) {
     validateColumnFamilyName(columnFamilyName);
     validateKey(key);
