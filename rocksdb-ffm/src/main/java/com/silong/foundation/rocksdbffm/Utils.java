@@ -52,14 +52,13 @@ class Utils {
           LINKER.defaultLookup().find("strlen").orElseThrow(),
           FunctionDescriptor.of(JAVA_LONG, ADDRESS));
 
-  static final String OK = "";
+  public static final String OK = "";
 
   /**
    * 获取char * 长度
    *
    * @param charPtr 字符串指针
    * @return 长度
-   * @throws Throwable 异常
    */
   @SneakyThrows(Throwable.class)
   public static long strlen(@NonNull MemorySegment charPtr) {
@@ -88,17 +87,20 @@ class Utils {
     validateByteArrays(value, "value must not be null or empty.");
   }
 
-  public static void validateByteArrays(byte[] array, String message) {
+  public static void validateByteArrays(byte[] array, @NonNull String message) {
     if (isEmpty(array)) {
       throw new IllegalArgumentException(message);
     }
   }
 
-  public static String getUtf8String(MemorySegment charPtr, long length) {
+  public static String getUtf8String(@NonNull MemorySegment charPtr, long length) {
+    if (length <= 0) {
+      throw new IllegalArgumentException("length must be greater than 0.");
+    }
     return new String(charPtr.asSlice(0, length).toArray(JAVA_BYTE), UTF_8);
   }
 
-  public static boolean checkColumnFamilyHandleName(
+  static boolean checkColumnFamilyHandleName(
       Arena arena,
       String expectedName,
       MemorySegment columnFamilyHandle,
@@ -112,31 +114,31 @@ class Utils {
     return equals;
   }
 
-  public static void freeDbOptions(MemorySegment optionsPtr) {
+  public static void freeDbOptions(@NonNull MemorySegment optionsPtr) {
     if (!NULL.equals(optionsPtr)) {
       rocksdb_options_destroy(optionsPtr);
     }
   }
 
-  public static void freeColumnFamilyOptions(MemorySegment optionsPtr) {
+  public static void freeColumnFamilyOptions(@NonNull MemorySegment optionsPtr) {
     if (!NULL.equals(optionsPtr)) {
       rocksdb_options_destroy(optionsPtr);
     }
   }
 
-  public static void freeReadOptions(MemorySegment optionsPtr) {
+  public static void freeReadOptions(@NonNull MemorySegment optionsPtr) {
     if (!NULL.equals(optionsPtr)) {
       rocksdb_readoptions_destroy(optionsPtr);
     }
   }
 
-  public static void freeWriteOptions(MemorySegment optionsPtr) {
+  public static void freeWriteOptions(@NonNull MemorySegment optionsPtr) {
     if (!NULL.equals(optionsPtr)) {
       rocksdb_writeoptions_destroy(optionsPtr);
     }
   }
 
-  public static void freeRocksDb(MemorySegment dbPtr) {
+  public static void freeRocksDb(@NonNull MemorySegment dbPtr) {
     if (!NULL.equals(dbPtr)) {
       rocksdb_close(dbPtr);
     }
@@ -148,9 +150,9 @@ class Utils {
    * @param msgPtr C_POINTER指针
    * @return 错误信息或空字符串
    */
-  public static String getErrMsg(MemorySegment msgPtr) {
+  public static String getErrMsg(@NonNull MemorySegment msgPtr) {
     MemorySegment ptr = msgPtr.get(C_POINTER, 0);
-    return NULL.equals(ptr) ? OK : ptr.getUtf8String(0);
+    return NULL.equals(ptr) ? OK : getUtf8String(ptr, strlen(ptr));
   }
 
   /** Forbidden */
