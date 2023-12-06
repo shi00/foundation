@@ -449,6 +449,9 @@ class RocksDbImpl implements RocksDb {
           rocksdb_get(dbPtr, readOptionsPtr, keyPtr, keyPtr.byteSize(), valLenPtr, errPtr);
       String errMsg = getErrMsg(errPtr);
       if (isEmpty(errMsg)) {
+        valPtr =
+            valPtr.reinterpret(
+                arena, Utils::free); // 外部方法返回的指针都是global的，需要通过此方法关联大arena的scope，进行资源释放，避免出现OOM
         long valLen = valLenPtr.get(JAVA_LONG, 0);
         byte[] val = valPtr.asSlice(0, valLen).toArray(JAVA_BYTE);
         if (log.isDebugEnabled()) {
