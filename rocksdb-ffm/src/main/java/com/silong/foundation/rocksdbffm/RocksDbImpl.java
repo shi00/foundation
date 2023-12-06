@@ -28,10 +28,7 @@ import static java.lang.foreign.ValueLayout.*;
 
 import java.io.Serial;
 import java.lang.foreign.*;
-import java.util.Collection;
-import java.util.HexFormat;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -95,10 +92,15 @@ class RocksDbImpl implements RocksDb {
       MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
       Map<String, Integer> columnFamilyNameTTL =
           getColumnFamilyNames(config.getColumnFamilyNameWithTTL());
-      var columnFamilyNames = columnFamilyNameTTL.keySet().stream().toList();
+      List<String> columnFamilyNames = new ArrayList<>(columnFamilyNameTTL.size());
 
       // 构建列族列表对应的ttl列表
-      MemorySegment ttlsPtr = createColumnFamilyTTLs(arena, columnFamilyNameTTL.values());
+      int index = 0;
+      MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyNameTTL.size());
+      for (Map.Entry<String, Integer> entry : columnFamilyNameTTL.entrySet()) {
+        columnFamilyNames.add(entry.getKey());
+        ttlsPtr.setAtIndex(C_INT, index++, entry.getValue());
+      }
 
       // 列族名称列表构建指针
       MemorySegment cfNamesPtr = createColumnFamilyNames(arena, columnFamilyNames);
@@ -182,15 +184,6 @@ class RocksDbImpl implements RocksDb {
               .columnFamilyHandle(cfHandle)
               .build());
     }
-  }
-
-  private MemorySegment createColumnFamilyTTLs(Arena arena, Collection<Integer> columnFamilyTTLs) {
-    var ttls = columnFamilyTTLs.stream().mapToInt(Integer::intValue).toArray();
-    MemorySegment ttlsPtr = arena.allocateArray(C_INT, ttls.length);
-    for (int i = 0; i < ttls.length; i++) {
-      ttlsPtr.setAtIndex(C_INT, i, ttls[i]);
-    }
-    return ttlsPtr;
   }
 
   /**
