@@ -21,6 +21,8 @@
 
 package com.silong.foundation.rocksdbffm;
 
+import java.io.Serializable;
+
 /**
  * RocksDB提供的API接口封装
  *
@@ -28,7 +30,7 @@ package com.silong.foundation.rocksdbffm;
  * @version 1.0.0
  * @since 2023-09-10 14:44
  */
-public interface RocksDb extends BasicRocksDbOperation, AutoCloseable {
+public interface RocksDb extends BasicRocksDbOperation, AutoCloseable, Serializable {
 
   /** 默认列族名称 */
   String DEFAULT_COLUMN_FAMILY_NAME = "default";

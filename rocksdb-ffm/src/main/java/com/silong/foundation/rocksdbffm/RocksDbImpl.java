@@ -26,6 +26,7 @@ import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
 import static java.lang.foreign.ValueLayout.*;
 
+import java.io.Serial;
 import java.lang.foreign.*;
 import java.util.HexFormat;
 import java.util.List;
@@ -48,6 +49,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ToString
 class RocksDbImpl implements RocksDb {
+
+  @Serial private static final long serialVersionUID = -2_521_667_833_385_354_826L;
+
   /** 共享库名称 */
   private static final String LIB_ROCKSDB = "librocksdb";
 
