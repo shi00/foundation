@@ -25,8 +25,8 @@ import static com.silong.foundation.rocksdbffm.RocksDb.DEFAULT_COLUMN_FAMILY_NAM
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.IntStream;
 import net.datafaker.Faker;
 import org.apache.commons.lang3.RandomUtils;
@@ -58,10 +58,10 @@ public class RocksdbTests {
             .resolve(FAKER.animal().name())
             .toFile()
             .getAbsolutePath());
-    List<String> columns = new LinkedList<>();
+    Map<String, Integer> columns = new HashMap<>();
     IntStream.range(0, RandomUtils.nextInt(1, 10))
-        .forEach(i -> columns.add(FAKER.ancient().titan()));
-    config.setColumnFamilyNames(columns);
+        .forEach(i -> columns.put(FAKER.ancient().titan(), RandomUtils.nextInt(0, 100000000)));
+    config.setColumnFamilyNameWithTTL(columns);
     rocksDb = (RocksDbImpl) RocksDb.getInstance(config);
   }
 
@@ -78,10 +78,10 @@ public class RocksdbTests {
             .resolve(FAKER.animal().name())
             .toFile()
             .getAbsolutePath());
-    List<String> columns = new LinkedList<>();
-    IntStream.range(0, RandomUtils.nextInt(10, 20))
-        .forEach(i -> columns.add(FAKER.ancient().titan()));
-    config.setColumnFamilyNames(columns);
+    Map<String, Integer> columns = new HashMap<>();
+    IntStream.range(0, RandomUtils.nextInt(1, 10))
+        .forEach(i -> columns.put(FAKER.ancient().titan(), RandomUtils.nextInt(0, 100000000)));
+    config.setColumnFamilyNameWithTTL(columns);
     try (RocksDbImpl rocksDb = (RocksDbImpl) RocksDb.getInstance(config)) {
       Assertions.assertFalse(rocksDb.isOpen());
     }

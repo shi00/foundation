@@ -28,8 +28,10 @@ import static java.lang.foreign.ValueLayout.*;
 
 import java.io.Serial;
 import java.lang.foreign.*;
+import java.util.Collection;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -91,7 +93,12 @@ class RocksDbImpl implements RocksDb {
       MemorySegment dbOptionsPtr = createRocksdbOption(config); // global scope
       MemorySegment path = arena.allocateUtf8String(config.getPersistDataPath());
       MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
-      List<String> columnFamilyNames = getColumnFamilyNames(config.getColumnFamilyNames());
+      Map<String, Integer> columnFamilyNameTTL =
+          getColumnFamilyNames(config.getColumnFamilyNameWithTTL());
+      var columnFamilyNames = columnFamilyNameTTL.keySet().stream().toList();
+
+      // 构建列族列表对应的ttl列表
+      MemorySegment ttlsPtr = createColumnFamilyTTLs(arena, columnFamilyNameTTL.values());
 
       // 列族名称列表构建指针
       MemorySegment cfNamesPtr = createColumnFamilyNames(arena, columnFamilyNames);
@@ -104,13 +111,14 @@ class RocksDbImpl implements RocksDb {
 
       // 打开指定的列族
       MemorySegment dbPtr = // global scope
-          rocksdb_open_column_families(
+          rocksdb_open_column_families_with_ttl(
               dbOptionsPtr, // rocksdb options
               path, // persist path
               columnFamilyNames.size(), // column family size
               cfNamesPtr, // column family names
               cfOptionsPtr, // column family options
               cfHandlesPtr, // 出参，打开的列族handle
+              ttlsPtr, // 每个列族对应的ttl时间
               errPtr); // 错误信息
 
       String errMsg = getErrMsg(errPtr);
@@ -176,6 +184,15 @@ class RocksDbImpl implements RocksDb {
     }
   }
 
+  private MemorySegment createColumnFamilyTTLs(Arena arena, Collection<Integer> columnFamilyTTLs) {
+    var ttls = columnFamilyTTLs.stream().mapToInt(Integer::intValue).toArray();
+    MemorySegment ttlsPtr = arena.allocateArray(C_INT, ttls.length);
+    for (int i = 0; i < ttls.length; i++) {
+      ttlsPtr.setAtIndex(C_INT, i, ttls[i]);
+    }
+    return ttlsPtr;
+  }
+
   /**
    * 为每个列族创建一个独立的option
    *
@@ -220,12 +237,14 @@ class RocksDbImpl implements RocksDb {
     return cfNamesPtr;
   }
 
-  private List<String> getColumnFamilyNames(List<String> columnFamilyNames) {
+  private Map<String, Integer> getColumnFamilyNames(Map<String, Integer> columnFamilyNames) {
     if (columnFamilyNames == null) {
-      columnFamilyNames = List.of(DEFAULT_COLUMN_FAMILY_NAME);
+      columnFamilyNames = Map.of(DEFAULT_COLUMN_FAMILY_NAME, 0);
     } else {
-      columnFamilyNames.add(DEFAULT_COLUMN_FAMILY_NAME);
-      columnFamilyNames = columnFamilyNames.parallelStream().distinct().toList(); // 列族名称去重
+      // 添加默认列族
+      if (!columnFamilyNames.containsKey(DEFAULT_COLUMN_FAMILY_NAME)) {
+        columnFamilyNames.put(DEFAULT_COLUMN_FAMILY_NAME, 0);
+      }
     }
     return columnFamilyNames;
   }
