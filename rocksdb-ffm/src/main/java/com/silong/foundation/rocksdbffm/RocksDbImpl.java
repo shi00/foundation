@@ -91,15 +91,15 @@ class RocksDbImpl implements RocksDb {
       this.config = config;
       MemorySegment dbOptionsPtr = createRocksdbOption(config); // global scope
       MemorySegment path = arena.allocateUtf8String(config.getPersistDataPath());
-      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
-      Map<String, Integer> columnFamilyNameTTL =
-          getColumnFamilyNames(config.getColumnFamilyNameWithTTL());
+      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1); // 出参，获取错误信息
 
       // 构建列族列表对应的ttl列表
       int index = 0;
-      List<String> columnFamilyNames = new ArrayList<>(columnFamilyNameTTL.size());
-      MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyNameTTL.size());
-      for (Map.Entry<String, Integer> entry : columnFamilyNameTTL.entrySet()) {
+      Map<String, Integer> columnFamilyNameTTLs =
+          getColumnFamilyNames(config.getColumnFamilyNameWithTTL());
+      List<String> columnFamilyNames = new ArrayList<>(columnFamilyNameTTLs.size());
+      MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyNameTTLs.size());
+      for (Map.Entry<String, Integer> entry : columnFamilyNameTTLs.entrySet()) {
         columnFamilyNames.add(entry.getKey());
         ttlsPtr.setAtIndex(C_INT, index++, entry.getValue());
       }
@@ -130,7 +130,7 @@ class RocksDbImpl implements RocksDb {
         log.info(
             "The rocksdb(path:{}, cfs:{}) is opened successfully.",
             config.getPersistDataPath(),
-            columnFamilyNames);
+            columnFamilyNameTTLs);
         closed.set(false);
         this.dbPtr = dbPtr;
         this.dbOptionsPtr = dbOptionsPtr;
@@ -147,7 +147,7 @@ class RocksDbImpl implements RocksDb {
         log.error(
             "Failed to open rocksdb(path:{}, cfs:{}), reason:{}.",
             config.getPersistDataPath(),
-            columnFamilyNames,
+            columnFamilyNameTTLs,
             errMsg);
         closed.set(true);
         this.dbPtr = this.dbOptionsPtr = this.readOptionsPtr = this.writeOptionsPtr = null;
