@@ -147,11 +147,11 @@ class Utils {
   /**
    * 读取错误信息(char** )，如果返回空字符串则表示操作成功
    *
-   * @param msgPtr C_POINTER指针
+   * @param errMsgPtr C_POINTER指针
    * @return 错误信息或空字符串
    */
-  public static String getErrMsg(@NonNull MemorySegment msgPtr) {
-    MemorySegment ptr = msgPtr.get(C_POINTER, 0);
+  public static String getErrMsg(@NonNull MemorySegment errMsgPtr) {
+    MemorySegment ptr = errMsgPtr.getAtIndex(C_POINTER, 0);
     return NULL.equals(ptr) ? OK : getUtf8String(ptr, strlen(ptr));
   }
 

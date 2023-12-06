@@ -86,7 +86,7 @@ class RocksDbImpl implements RocksDb {
       this.config = config;
       MemorySegment dbOptionsPtr = createRocksdbOption(config); // global scope
       MemorySegment path = arena.allocateUtf8String(config.getPersistDataPath());
-      MemorySegment errPtr = arena.allocate(C_POINTER);
+      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
       List<String> columnFamilyNames = getColumnFamilyNames(config.getColumnFamilyNames());
 
       // 列族名称列表构建指针
@@ -108,6 +108,7 @@ class RocksDbImpl implements RocksDb {
               cfOptionsPtr, // column family options
               cfHandlesPtr, // 出参，打开的列族handle
               errPtr); // 错误信息
+
       String errMsg = getErrMsg(errPtr);
       if (isEmpty(errMsg)) {
         log.info(
@@ -276,7 +277,7 @@ class RocksDbImpl implements RocksDb {
                 MemorySegment cfOptions = rocksdb_options_create(); // global scope
                 MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, 1);
                 cfNamesPtr.set(C_POINTER, 0, arena.allocateUtf8String(key));
-                MemorySegment errPtr = arena.allocate(C_POINTER); // 出参，错误消息
+                MemorySegment errPtr = arena.allocateArray(C_POINTER, 1); // 出参，错误消息
                 MemorySegment createdCfsSize = arena.allocate(C_POINTER); // 出参，成功创建列族长度
                 MemorySegment cfHandlesPtr =
                     rocksdb_create_column_families(
@@ -322,7 +323,7 @@ class RocksDbImpl implements RocksDb {
     }
     if (columnFamilies.containsKey(cf)) {
       try (Arena arena = Arena.ofConfined()) {
-        MemorySegment errPtr = arena.allocate(C_POINTER);
+        MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
         rocksdb_drop_column_family(dbPtr, columnFamilies.get(cf).columnFamilyHandle(), errPtr);
         String errMsg = getErrMsg(errPtr);
         if (errMsg.isEmpty()) {
@@ -353,7 +354,7 @@ class RocksDbImpl implements RocksDb {
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment keyPtr = arena.allocateArray(JAVA_BYTE, key);
       MemorySegment valPtr = arena.allocateArray(JAVA_BYTE, value);
-      MemorySegment errPtr = arena.allocate(C_POINTER);
+      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
       rocksdb_put_cf(
           dbPtr,
           writeOptionsPtr,
@@ -396,7 +397,7 @@ class RocksDbImpl implements RocksDb {
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment keyPtr = arena.allocateArray(JAVA_BYTE, key);
-      MemorySegment errPtr = arena.allocate(C_POINTER);
+      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
       MemorySegment valLenPtr = arena.allocate(C_POINTER); // 出参，value长度
       MemorySegment valPtr =
           rocksdb_get(dbPtr, readOptionsPtr, keyPtr, keyPtr.byteSize(), valLenPtr, errPtr);
