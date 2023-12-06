@@ -64,7 +64,7 @@ class Utils {
    * @param charPtr 字符串指针
    * @return 长度
    */
-  @SneakyThrows(Throwable.class)
+  @SneakyThrows
   public static long strlen(@NonNull MemorySegment charPtr) {
     return (long) STRLEN.invokeExact(charPtr);
   }
@@ -74,7 +74,7 @@ class Utils {
    *
    * @param ptr 指针
    */
-  @SneakyThrows(Throwable.class)
+  @SneakyThrows
   public static void free(@NonNull MemorySegment ptr) {
     FREE.invokeExact(ptr);
   }
