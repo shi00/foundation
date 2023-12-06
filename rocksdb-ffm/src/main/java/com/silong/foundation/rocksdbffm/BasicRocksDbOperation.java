@@ -46,21 +46,19 @@ public interface BasicRocksDbOperation {
   void dropColumnFamily(String cf);
 
   /**
-   * key是否存在，采用布隆过滤器，返回false则表示真的不存在，返回true表示一定概率不存在
+   * 在default ColumnFamily删除key
    *
-   * @param columnFamilyName 列族名称
    * @param key key
-   * @return true or false
    */
-  boolean keyMayExist(String columnFamilyName, byte[] key);
+  void delete(byte[] key);
 
   /**
-   * key是否存在，采用布隆过滤器，返回false则表示真的不存在，返回true表示一定概率不存在
+   * 在指定列族中删除key
    *
+   * @param columnFamilyName 列族名
    * @param key key
-   * @return true or false
    */
-  boolean keyMayExist(byte[] key);
+  void delete(String columnFamilyName, byte[] key);
 
   /**
    * 向指定列族保存数据
