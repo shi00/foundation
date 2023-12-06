@@ -28,7 +28,7 @@ package com.silong.foundation.rocksdbffm;
  * @version 1.0.0
  * @since 2023-12-02 11:14
  */
-public interface BasicRocksDbOperation extends RocksDb {
+public interface BasicRocksDbOperation {
 
   /**
    * 创建列族

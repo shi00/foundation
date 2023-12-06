@@ -48,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @ToString
-class RocksDbImpl implements BasicRocksDbOperation {
+class RocksDbImpl implements RocksDb {
   /** 共享库名称 */
   private static final String LIB_ROCKSDB = "librocksdb";
 
@@ -160,10 +160,8 @@ class RocksDbImpl implements BasicRocksDbOperation {
       if (log.isDebugEnabled()) {
         MemorySegment cfnLengthPtr = arena.allocate(C_POINTER);
         MemorySegment cfNamePtr = rocksdb_column_family_handle_get_name(cfHandle, cfnLengthPtr);
-        long length = cfnLengthPtr.get(JAVA_LONG, 0);
         log.debug(
-            "cache column family: {}",
-            new String(cfNamePtr.asSlice(0, length).toArray(JAVA_BYTE), UTF_8));
+            "cache column family: {}", getUtf8String(cfNamePtr, cfnLengthPtr.get(JAVA_LONG, 0)));
       }
 
       columnFamilies.put(
@@ -252,36 +250,6 @@ class RocksDbImpl implements BasicRocksDbOperation {
     }
   }
 
-  private static void freeDbOptions(MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_options_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeColumnFamilyOptions(MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_options_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeReadOptions(MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_readoptions_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeWriteOptions(MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_writeoptions_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeRocksDb(MemorySegment dbPtr) {
-    if (!NULL.equals(dbPtr)) {
-      rocksdb_close(dbPtr);
-    }
-  }
-
   /**
    * 列族是否存在
    *
@@ -293,20 +261,6 @@ class RocksDbImpl implements BasicRocksDbOperation {
       throw new IllegalArgumentException("cf must not be null or empty.");
     }
     return columnFamilies.containsKey(cf);
-  }
-
-  private static boolean checkColumnFamilyHandleName(
-      Arena arena, String expectedName, MemorySegment columnFamilyHandle) {
-    MemorySegment cfnLengthPtr = arena.allocate(C_POINTER);
-    MemorySegment cfNamePtr =
-        rocksdb_column_family_handle_get_name(columnFamilyHandle, cfnLengthPtr);
-    long length = cfnLengthPtr.get(JAVA_LONG, 0);
-    String cfn = new String(cfNamePtr.asSlice(0, length).toArray(JAVA_BYTE), UTF_8);
-    boolean equals = expectedName.equals(cfn);
-    if (log.isDebugEnabled()) {
-      log.debug("(expectedName: {} == columnFamilyName:{}) = {}", expectedName, cfn, equals);
-    }
-    return equals;
   }
 
   @Override
@@ -500,6 +454,53 @@ class RocksDbImpl implements BasicRocksDbOperation {
   private static void validateByteArrays(byte[] array, String message) {
     if (isEmpty(array)) {
       throw new IllegalArgumentException(message);
+    }
+  }
+
+  private static String getUtf8String(MemorySegment charPtr, long length) {
+    return new String(charPtr.asSlice(0, length).toArray(JAVA_BYTE), UTF_8);
+  }
+
+  private static boolean checkColumnFamilyHandleName(
+      Arena arena, String expectedName, MemorySegment columnFamilyHandle) {
+    MemorySegment cfnLengthPtr = arena.allocate(C_POINTER);
+    MemorySegment cfNamePtr =
+        rocksdb_column_family_handle_get_name(columnFamilyHandle, cfnLengthPtr);
+    String cfn = getUtf8String(cfNamePtr, cfnLengthPtr.get(JAVA_LONG, 0));
+    boolean equals = expectedName.equals(cfn);
+    if (log.isDebugEnabled()) {
+      log.debug("(expectedName: {} == columnFamilyName:{}) = {}", expectedName, cfn, equals);
+    }
+    return equals;
+  }
+
+  private static void freeDbOptions(MemorySegment optionsPtr) {
+    if (!NULL.equals(optionsPtr)) {
+      rocksdb_options_destroy(optionsPtr);
+    }
+  }
+
+  private static void freeColumnFamilyOptions(MemorySegment optionsPtr) {
+    if (!NULL.equals(optionsPtr)) {
+      rocksdb_options_destroy(optionsPtr);
+    }
+  }
+
+  private static void freeReadOptions(MemorySegment optionsPtr) {
+    if (!NULL.equals(optionsPtr)) {
+      rocksdb_readoptions_destroy(optionsPtr);
+    }
+  }
+
+  private static void freeWriteOptions(MemorySegment optionsPtr) {
+    if (!NULL.equals(optionsPtr)) {
+      rocksdb_writeoptions_destroy(optionsPtr);
+    }
+  }
+
+  private static void freeRocksDb(MemorySegment dbPtr) {
+    if (!NULL.equals(dbPtr)) {
+      rocksdb_close(dbPtr);
     }
   }
 

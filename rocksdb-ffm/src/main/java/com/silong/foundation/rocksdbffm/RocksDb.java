@@ -28,7 +28,7 @@ package com.silong.foundation.rocksdbffm;
  * @version 1.0.0
  * @since 2023-09-10 14:44
  */
-public interface RocksDb extends AutoCloseable {
+public interface RocksDb extends BasicRocksDbOperation, AutoCloseable {
 
   /** 默认列族名称 */
   String DEFAULT_COLUMN_FAMILY_NAME = "default";
