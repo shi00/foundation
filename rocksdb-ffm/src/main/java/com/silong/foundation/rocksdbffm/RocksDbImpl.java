@@ -92,10 +92,10 @@ class RocksDbImpl implements RocksDb {
       MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
       Map<String, Integer> columnFamilyNameTTL =
           getColumnFamilyNames(config.getColumnFamilyNameWithTTL());
-      List<String> columnFamilyNames = new ArrayList<>(columnFamilyNameTTL.size());
 
       // 构建列族列表对应的ttl列表
       int index = 0;
+      List<String> columnFamilyNames = new ArrayList<>(columnFamilyNameTTL.size());
       MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyNameTTL.size());
       for (Map.Entry<String, Integer> entry : columnFamilyNameTTL.entrySet()) {
         columnFamilyNames.add(entry.getKey());
@@ -355,10 +355,40 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  public boolean keyMayExist(String columnFamilyName, byte[] key) {
-    //    RocksDB.rocksdb_key_may_exist_cf()
+  public void delete(byte[] key) {
+    delete(DEFAULT_COLUMN_FAMILY_NAME, key);
+  }
 
-    return false;
+  @Override
+  public void delete(String columnFamilyName, byte[] key) {
+    validateColumnFamilyName(columnFamilyName);
+    validateOpenStatus();
+    try (Arena arena = Arena.ofConfined()) {
+      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
+      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
+      rocksdb_delete_cf(
+          dbPtr,
+          writeOptionsPtr,
+          columnFamilies.get(columnFamilyName).columnFamilyHandle(),
+          keyPtr,
+          keyPtr.byteSize(),
+          errPtr);
+      String errMsg = getErrMsg(errPtr);
+      if (OK.equals(errMsg)) {
+        if (log.isDebugEnabled()) {
+          log.debug(
+              "Successfully delete key:{} from cf:{}",
+              HexFormat.of().formatHex(key),
+              columnFamilyName);
+        }
+      } else {
+        log.error(
+            "Failed to delete key:{} from cf:{}, reason:{}",
+            HexFormat.of().formatHex(key),
+            columnFamilyName,
+            errMsg);
+      }
+    }
   }
 
   @Override
@@ -368,8 +398,8 @@ class RocksDbImpl implements RocksDb {
     validateValue(value);
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment keyPtr = arena.allocateArray(JAVA_BYTE, key);
-      MemorySegment valPtr = arena.allocateArray(JAVA_BYTE, value);
+      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
+      MemorySegment valPtr = arena.allocateArray(C_CHAR, value);
       MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
       rocksdb_put_cf(
           dbPtr,
@@ -412,7 +442,7 @@ class RocksDbImpl implements RocksDb {
     validateKey(key);
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment keyPtr = arena.allocateArray(JAVA_BYTE, key);
+      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
       MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
       MemorySegment valLenPtr = arena.allocate(C_POINTER); // 出参，value长度
       MemorySegment valPtr =
@@ -425,7 +455,7 @@ class RocksDbImpl implements RocksDb {
           log.debug(
               "Successfully get value:[{}---{}] from cf:{} by key:{}",
               valLen,
-              val,
+              HexFormat.of().formatHex(val),
               columnFamilyName,
               HexFormat.of().formatHex(key));
         }
