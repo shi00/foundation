@@ -166,7 +166,14 @@ class Utils {
    */
   public static String getErrMsg(@NonNull MemorySegment errMsgPtr) {
     MemorySegment ptr = errMsgPtr.getAtIndex(C_POINTER, 0);
-    return NULL.equals(ptr) ? OK : getUtf8String(ptr, strlen(ptr));
+    if (NULL.equals(ptr)) {
+      return OK;
+    }
+
+    try (Arena arena = Arena.ofConfined()) {
+      long strlen = strlen(ptr);
+      return getUtf8String(ptr.reinterpret(strlen, arena, Utils::free), strlen);
+    }
   }
 
   /** Forbidden */
