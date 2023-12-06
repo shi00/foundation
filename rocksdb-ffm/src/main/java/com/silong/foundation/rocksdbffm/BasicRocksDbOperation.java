@@ -119,4 +119,11 @@ public interface BasicRocksDbOperation {
    * @return value
    */
   byte[] get(byte[] key);
+
+  /**
+   * 获取迭代器
+   *
+   * @return 迭代器
+   */
+  RocksDbIterator iterator();
 }
