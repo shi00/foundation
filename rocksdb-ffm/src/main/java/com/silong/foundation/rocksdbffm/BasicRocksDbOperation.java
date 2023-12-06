@@ -55,6 +55,14 @@ public interface BasicRocksDbOperation {
   boolean keyMayExist(String columnFamilyName, byte[] key);
 
   /**
+   * key是否存在，采用布隆过滤器，返回false则表示真的不存在，返回true表示一定概率不存在
+   *
+   * @param key key
+   * @return true or false
+   */
+  boolean keyMayExist(byte[] key);
+
+  /**
    * 向指定列族保存数据
    *
    * @param columnFamilyName 列族名
