@@ -28,9 +28,11 @@ import static java.lang.foreign.ValueLayout.*;
 
 import java.io.Serial;
 import java.lang.foreign.*;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
 import lombok.Getter;
@@ -230,16 +232,17 @@ class RocksDbImpl implements RocksDb {
     return cfNamesPtr;
   }
 
-  private Map<String, Integer> getColumnFamilyNames(Map<String, Integer> columnFamilyNames) {
+  private Map<String, Integer> getColumnFamilyNames(Map<String, Duration> columnFamilyNames) {
     if (columnFamilyNames == null) {
-      columnFamilyNames = Map.of(DEFAULT_COLUMN_FAMILY_NAME, 0);
+      return Map.of(DEFAULT_COLUMN_FAMILY_NAME, 0);
     } else {
       // 添加默认列族
       if (!columnFamilyNames.containsKey(DEFAULT_COLUMN_FAMILY_NAME)) {
-        columnFamilyNames.put(DEFAULT_COLUMN_FAMILY_NAME, 0);
+        columnFamilyNames.put(DEFAULT_COLUMN_FAMILY_NAME, Duration.ZERO);
       }
+      return columnFamilyNames.entrySet().stream()
+          .collect(Collectors.toMap(Map.Entry::getKey, e -> (int) e.getValue().toSeconds()));
     }
-    return columnFamilyNames;
   }
 
   /**
