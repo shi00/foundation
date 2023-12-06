@@ -529,6 +529,11 @@ class RocksDbImpl implements RocksDb {
     return get(DEFAULT_COLUMN_FAMILY_NAME, key);
   }
 
+  @Override
+  public RocksDbIterator iterator() {
+    return new RocksDbIteratorImpl(rocksdb_create_iterator(dbPtr, readOptionsPtr));
+  }
+
   private void validateOpenStatus() {
     if (!isOpen()) {
       throw new IllegalStateException("rocksdb status abnormality.");
