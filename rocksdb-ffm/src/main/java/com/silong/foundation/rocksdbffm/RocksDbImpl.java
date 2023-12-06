@@ -21,11 +21,10 @@
 
 package com.silong.foundation.rocksdbffm;
 
+import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
-import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.lang.foreign.*;
 import java.util.HexFormat;
@@ -51,8 +50,6 @@ import lombok.extern.slf4j.Slf4j;
 class RocksDbImpl implements RocksDb {
   /** 共享库名称 */
   private static final String LIB_ROCKSDB = "librocksdb";
-
-  private static final String OK = "";
 
   static {
     loadLibrary(LIB_ROCKSDB);
@@ -291,7 +288,15 @@ class RocksDbImpl implements RocksDb {
                 String errMsg = getErrMsg(errPtr);
                 if (errMsg.isEmpty()) {
                   MemorySegment columnFamilyHandle = cfHandlesPtr.get(C_POINTER, 0);
-                  assert checkColumnFamilyHandleName(arena, key, columnFamilyHandle);
+                  assert checkColumnFamilyHandleName(
+                      arena,
+                      key,
+                      columnFamilyHandle,
+                      (e, c, b) -> {
+                        if (log.isDebugEnabled()) {
+                          log.debug("(expectedName: {} == columnFamilyName:{}) = {}", e, c, b);
+                        }
+                      });
                   if (log.isDebugEnabled()) {
                     log.debug("Successfully created column family: {}", key);
                   }
@@ -427,91 +432,5 @@ class RocksDbImpl implements RocksDb {
     if (!isOpen()) {
       throw new IllegalStateException("rocksdb status abnormality.");
     }
-  }
-
-  private static boolean isEmpty(byte[] array) {
-    return array == null || array.length == 0;
-  }
-
-  private static boolean isEmpty(String str) {
-    return str == null || str.isEmpty();
-  }
-
-  private static void validateColumnFamilyName(String columnFamilyName) {
-    if (isEmpty(columnFamilyName)) {
-      throw new IllegalArgumentException("columnFamilyName must not be null or empty.");
-    }
-  }
-
-  private static void validateKey(byte[] key) {
-    validateByteArrays(key, "key must not be null or empty.");
-  }
-
-  private static void validateValue(byte[] value) {
-    validateByteArrays(value, "value must not be null or empty.");
-  }
-
-  private static void validateByteArrays(byte[] array, String message) {
-    if (isEmpty(array)) {
-      throw new IllegalArgumentException(message);
-    }
-  }
-
-  private static String getUtf8String(MemorySegment charPtr, long length) {
-    return new String(charPtr.asSlice(0, length).toArray(JAVA_BYTE), UTF_8);
-  }
-
-  private static boolean checkColumnFamilyHandleName(
-      Arena arena, String expectedName, MemorySegment columnFamilyHandle) {
-    MemorySegment cfnLengthPtr = arena.allocate(C_POINTER);
-    MemorySegment cfNamePtr =
-        rocksdb_column_family_handle_get_name(columnFamilyHandle, cfnLengthPtr);
-    String cfn = getUtf8String(cfNamePtr, cfnLengthPtr.get(JAVA_LONG, 0));
-    boolean equals = expectedName.equals(cfn);
-    if (log.isDebugEnabled()) {
-      log.debug("(expectedName: {} == columnFamilyName:{}) = {}", expectedName, cfn, equals);
-    }
-    return equals;
-  }
-
-  private static void freeDbOptions(MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_options_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeColumnFamilyOptions(MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_options_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeReadOptions(MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_readoptions_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeWriteOptions(MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_writeoptions_destroy(optionsPtr);
-    }
-  }
-
-  private static void freeRocksDb(MemorySegment dbPtr) {
-    if (!NULL.equals(dbPtr)) {
-      rocksdb_close(dbPtr);
-    }
-  }
-
-  /**
-   * 读取错误信息(char** )，如果返回空字符串则表示操作成功
-   *
-   * @param msgPtr C_POINTER指针
-   * @return 错误信息或空字符串
-   */
-  private static String getErrMsg(MemorySegment msgPtr) {
-    MemorySegment ptr = msgPtr.get(C_POINTER, 0);
-    return NULL.equals(ptr) ? OK : ptr.getUtf8String(0);
   }
 }
