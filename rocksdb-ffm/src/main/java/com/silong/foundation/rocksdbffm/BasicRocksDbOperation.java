@@ -21,6 +21,8 @@
 
 package com.silong.foundation.rocksdbffm;
 
+import java.util.Collection;
+
 /**
  * Rocksdb 基础操作
  *
@@ -29,6 +31,13 @@ package com.silong.foundation.rocksdbffm;
  * @since 2023-12-02 11:14
  */
 public interface BasicRocksDbOperation {
+
+  /**
+   * 返回打开的列族列表
+   *
+   * @return 列族列表
+   */
+  Collection<String> openedColumnFamilies();
 
   /**
    * 创建列族
