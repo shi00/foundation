@@ -27,6 +27,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Map;
 import lombok.Data;
 
@@ -66,7 +67,7 @@ public class RocksDbConfig {
    * 但不能确保，因此可能读取到已过期的KV，不指定列族则创建default列族以及ttl=0,表明default列族中保存的kv永不过期，ttl单位为：秒
    * 注意：如果ttl配置很小，可能导致列族中的数据很快被淘汰
    */
-  @Valid private Map<@NotEmpty String, @NotNull Integer> columnFamilyNameWithTTL;
+  @Valid private Map<@NotEmpty String, @NotNull Duration> columnFamilyNameWithTTL;
 
   /** 持久化存储数据规模，默认：small */
   @NotNull private DataScale dataScale = SMALL;
