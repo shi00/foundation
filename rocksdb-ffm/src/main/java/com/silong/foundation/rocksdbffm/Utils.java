@@ -52,6 +52,10 @@ class Utils {
           LINKER.defaultLookup().find("strlen").orElseThrow(),
           FunctionDescriptor.of(JAVA_LONG, ADDRESS));
 
+  private static final MethodHandle FREE =
+      LINKER.downcallHandle(
+          LINKER.defaultLookup().find("free").orElseThrow(), FunctionDescriptor.ofVoid(ADDRESS));
+
   public static final String OK = "";
 
   /**
@@ -63,6 +67,16 @@ class Utils {
   @SneakyThrows(Throwable.class)
   public static long strlen(@NonNull MemorySegment charPtr) {
     return (long) STRLEN.invokeExact(charPtr);
+  }
+
+  /**
+   * 释放内存空间
+   *
+   * @param ptr 指针
+   */
+  @SneakyThrows(Throwable.class)
+  public static void free(@NonNull MemorySegment ptr) {
+    FREE.invokeExact(ptr);
   }
 
   public static boolean isEmpty(byte[] array) {
