@@ -97,6 +97,12 @@ class Utils {
     validateByteArrays(key, "key must not be null or empty.");
   }
 
+  public static void validateKeys(byte[]... keys) {
+    if (keys == null || keys.length == 0) {
+      throw new IllegalArgumentException("keys must not be null or empty.");
+    }
+  }
+
   public static void validateValue(byte[] value) {
     validateByteArrays(value, "value must not be null or empty.");
   }
