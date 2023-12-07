@@ -104,7 +104,7 @@ public interface BasicRocksDbOperation {
   void put(byte[] key, byte[] value);
 
   /**
-   * 查询指定列族的键值
+   * 查询指定列族的键值，如果出现错误或者key不存在，返回null
    *
    * @param columnFamilyName 列族名
    * @param key key
