@@ -104,6 +104,20 @@ public interface RocksDbIterator extends AutoCloseable {
    */
   Tuple2<byte[], byte[]> get();
 
+  /**
+   * 返回iterator当前所在position对应的entry的key
+   *
+   * @return key
+   */
+  byte[] getKey();
+
+  /**
+   * 返回iterator当前所在position对应的entry的value
+   *
+   * @return value
+   */
+  byte[] getValue();
+
   /** free resources */
   @Override
   void close();

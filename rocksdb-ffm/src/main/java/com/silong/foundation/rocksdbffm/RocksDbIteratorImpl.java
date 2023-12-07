@@ -51,9 +51,19 @@ class RocksDbIteratorImpl implements RocksDbIterator {
       MemorySegment lengthPtr = arena.allocate(C_POINTER);
       MemorySegment keyPtr = function.apply(iterator, lengthPtr);
       long length = lengthPtr.get(JAVA_LONG, 0);
-      keyPtr = keyPtr.reinterpret(length, arena, Utils::free);
-      return keyPtr.toArray(C_CHAR);
+      //      keyPtr = keyPtr.reinterpret(arena, Utils::free); 迭代器返回的结果为const char* 无需释放
+      return keyPtr.asSlice(0, length).toArray(C_CHAR);
     }
+  }
+
+  @Override
+  public byte[] getKey() {
+    return get(RocksDB::rocksdb_iter_key);
+  }
+
+  @Override
+  public byte[] getValue() {
+    return get(RocksDB::rocksdb_iter_value);
   }
 
   @Override
@@ -71,7 +81,7 @@ class RocksDbIteratorImpl implements RocksDbIterator {
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
       rocksdb_iter_get_error(iterator, errPtr);
-      String errMsg = getErrMsg(errPtr);
+      String errMsg = readErrMsgAndFree(errPtr);
       if (!OK.equals(errMsg)) {
         throw new RocksDbException(errMsg);
       }
