@@ -238,6 +238,32 @@ public class RocksdbTests {
   }
 
   @Test
+  public void test8() throws RocksDbException {
+    byte[] a = "a".getBytes(UTF_8);
+    byte[] b = "b".getBytes(UTF_8);
+    byte[] c = "c".getBytes(UTF_8);
+    rocksDb.put(NOW_CF, a, a);
+    rocksDb.put(NOW_CF, b, b);
+    rocksDb.put(NOW_CF, c, c);
+
+    try (RocksDbIterator iterator = rocksDb.iterator(NOW_CF)) {
+      iterator.seekForPrev("a1".getBytes(UTF_8));
+      Assertions.assertTrue(iterator.isValid());
+      Tuple2<byte[], byte[]> tuple2 = iterator.get();
+      Assertions.assertArrayEquals(a, tuple2.t2());
+      Assertions.assertArrayEquals(a, tuple2.t1());
+
+      iterator.next();
+      Assertions.assertTrue(iterator.isValid());
+      tuple2 = iterator.get();
+      Assertions.assertArrayEquals(b, tuple2.t2());
+      Assertions.assertArrayEquals(b, tuple2.t1());
+
+      iterator.checkStatus();
+    }
+  }
+
+  @Test
   public void test9() {
     RocksDbConfig config = new RocksDbConfig();
     config.setPersistDataPath(
