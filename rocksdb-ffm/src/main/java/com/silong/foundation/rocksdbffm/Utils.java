@@ -87,6 +87,12 @@ class Utils {
     return str == null || str.isEmpty();
   }
 
+  public static void validateColumnFamilyName(String columnFamilyName) {
+    if (isEmpty(columnFamilyName)) {
+      throw new IllegalArgumentException("columnFamilyName must not be null or empty.");
+    }
+  }
+
   public static void validateKey(byte[] key) {
     validateByteArrays(key, "key must not be null or empty.");
   }
