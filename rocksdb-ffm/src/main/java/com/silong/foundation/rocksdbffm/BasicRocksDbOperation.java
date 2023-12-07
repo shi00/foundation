@@ -121,9 +121,17 @@ public interface BasicRocksDbOperation {
   byte[] get(byte[] key);
 
   /**
-   * 获取迭代器
+   * 获取default列族迭代器
    *
    * @return 迭代器
    */
   RocksDbIterator iterator();
+
+  /**
+   * 获取指定列族迭代器
+   *
+   * @param columnFamilyName 列族名称
+   * @return 迭代器
+   */
+  RocksDbIterator iterator(String columnFamilyName);
 }
