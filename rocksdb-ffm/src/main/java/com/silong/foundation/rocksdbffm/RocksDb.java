@@ -44,4 +44,8 @@ public interface RocksDb extends BasicRocksDbOperation, AutoCloseable, Serializa
   static RocksDb getInstance(RocksDbConfig config) {
     return new RocksDbImpl(config);
   }
+
+  /** 关闭服务，释放native资源 */
+  @Override
+  void close();
 }
