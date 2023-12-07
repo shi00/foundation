@@ -51,7 +51,7 @@ class RocksDbIteratorImpl implements RocksDbIterator {
       MemorySegment lengthPtr = arena.allocate(C_POINTER);
       MemorySegment keyPtr = function.apply(iterator, lengthPtr);
       long length = lengthPtr.get(JAVA_LONG, 0);
-      //      keyPtr = keyPtr.reinterpret(arena, Utils::free); 迭代器返回的结果为const char* 无需释放
+      //      keyPtr = keyPtr.reinterpret(arena, Utils::free); // 迭代器返回的结果为const char* 无需释放
       return keyPtr.asSlice(0, length).toArray(C_CHAR);
     }
   }
