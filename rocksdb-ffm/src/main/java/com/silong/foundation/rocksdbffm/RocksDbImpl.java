@@ -538,6 +538,7 @@ class RocksDbImpl implements RocksDb {
   @Override
   public RocksDbIterator iterator(String columnFamilyName) {
     validateColumnFamilyName(columnFamilyName);
+    validateOpenStatus();
     return new RocksDbIteratorImpl(
         rocksdb_create_iterator_cf(
             dbPtr, readOptionsPtr, columnFamilies.get(columnFamilyName).columnFamilyHandle()));
