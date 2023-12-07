@@ -26,6 +26,7 @@ import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
 import static java.lang.foreign.ValueLayout.*;
 
+import com.silong.foundation.common.lambda.Tuple2;
 import java.io.Serial;
 import java.lang.foreign.*;
 import java.time.Duration;
@@ -127,7 +128,7 @@ class RocksDbImpl implements RocksDb {
               errPtr); // 错误信息
 
       String errMsg = readErrMsgAndFree(errPtr);
-      if (isEmpty(errMsg)) {
+      if (OK.equals(errMsg)) {
         log.info(
             "The rocksdb(path:{}, cfs:{}) is opened successfully.",
             config.getPersistDataPath(),
@@ -182,8 +183,9 @@ class RocksDbImpl implements RocksDb {
           dbPath.getUtf8String(0));
     } else {
       log.info(
-          "Unable to list columnFamilies of rocksdb:[{}]，prepare to create.",
-          dbPath.getUtf8String(0));
+          "Unable to list columnFamilies of rocksdb:[{}]，prepare to create db. reason:{}",
+          dbPath.getUtf8String(0),
+          errMsg);
     }
     return columnFamilies;
   }
@@ -361,7 +363,7 @@ class RocksDbImpl implements RocksDb {
                 assert createdCfsSize.get(JAVA_LONG, 0) == 1L;
 
                 String errMsg = readErrMsgAndFree(errPtr);
-                if (errMsg.isEmpty()) {
+                if (OK.equals(errMsg)) {
                   MemorySegment columnFamilyHandle = cfHandlesPtr.get(C_POINTER, 0);
                   assert checkColumnFamilyHandleName(
                       arena,
@@ -400,7 +402,7 @@ class RocksDbImpl implements RocksDb {
         MemorySegment errPtr = newErrPtr(arena);
         rocksdb_drop_column_family(dbPtr, columnFamilies.get(cf).columnFamilyHandle(), errPtr);
         String errMsg = readErrMsgAndFree(errPtr);
-        if (errMsg.isEmpty()) {
+        if (OK.equals(errMsg)) {
           columnFamilies.remove(cf).close();
           if (log.isDebugEnabled()) {
             log.debug("Successfully dropped column family: {}", cf);
@@ -485,10 +487,11 @@ class RocksDbImpl implements RocksDb {
         }
       } else {
         log.error(
-            "Failed to delete keys from startKey:{} to endKey:{} in cf:{}",
+            "Failed to delete keys from startKey:{} to endKey:{} in cf:{}. reason:{}",
             HexFormat.of().formatHex(startKey),
             HexFormat.of().formatHex(endKey),
-            columnFamilyName);
+            columnFamilyName,
+            errMsg);
       }
     }
   }
@@ -514,7 +517,7 @@ class RocksDbImpl implements RocksDb {
           errPtr);
 
       String errMsg = readErrMsgAndFree(errPtr);
-      if (isEmpty(errMsg)) {
+      if (OK.equals(errMsg)) {
         if (log.isDebugEnabled()) {
           log.debug(
               "Successfully put kv:[{}---{}] to cf:{}",
@@ -524,10 +527,11 @@ class RocksDbImpl implements RocksDb {
         }
       } else {
         log.error(
-            "Failed to put kv:[{}---{}] to cf:{}",
+            "Failed to put kv:[{}---{}] to cf:{}. reason:{}",
             HexFormat.of().formatHex(key),
             HexFormat.of().formatHex(value),
-            columnFamilyName);
+            columnFamilyName,
+            errMsg);
       }
     }
   }
@@ -535,6 +539,68 @@ class RocksDbImpl implements RocksDb {
   @Override
   public void put(byte[] key, byte[] value) {
     put(DEFAULT_COLUMN_FAMILY_NAME, key, value);
+  }
+
+  @Override
+  @Nullable
+  public List<Tuple2<byte[], byte[]>> multiGet(byte[]... keys) {
+    return multiGet(DEFAULT_COLUMN_FAMILY_NAME, keys);
+  }
+
+  @Override
+  @Nullable
+  public List<Tuple2<byte[], byte[]>> multiGet(String columnFamilyName, byte[]... keys) {
+    validateColumnFamilyName(columnFamilyName);
+    validateKeys(keys);
+    validateOpenStatus();
+    try (Arena arena = Arena.ofConfined()) {
+      int size = keys.length;
+      MemorySegment columnFamilyHandles = arena.allocateArray(C_POINTER, size);
+      MemorySegment keysPtr = arena.allocateArray(C_POINTER, size);
+      MemorySegment valuesPtr = arena.allocateArray(C_POINTER, size);
+      MemorySegment keySizesPtr = arena.allocateArray(JAVA_LONG, size);
+      MemorySegment valueSizesPtr = arena.allocateArray(JAVA_LONG, size);
+      MemorySegment errPtr = newErrPtr(arena);
+      for (int i = 0; i < size; i++) {
+        columnFamilyHandles.setAtIndex(
+            C_POINTER, i, columnFamilies.get(columnFamilyName).columnFamilyHandle());
+        keysPtr.setAtIndex(C_POINTER, i, arena.allocateArray(C_CHAR, keys[i]));
+        keySizesPtr.setAtIndex(JAVA_LONG, i, keys[i].length);
+      }
+
+      rocksdb_multi_get_cf(
+          dbPtr,
+          readOptionsPtr,
+          columnFamilyHandles,
+          size,
+          keysPtr,
+          keySizesPtr,
+          valuesPtr,
+          valueSizesPtr,
+          errPtr);
+
+      String errMsg = readErrMsgAndFree(errPtr);
+      if (OK.equals(errMsg)) {
+        List<Tuple2<byte[], byte[]>> result = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+          MemorySegment valuePtr =
+              valuesPtr.getAtIndex(C_POINTER, i).reinterpret(arena, Utils::free);
+          long length = valueSizesPtr.getAtIndex(JAVA_LONG, i);
+          byte[] value = valuePtr.asSlice(0, length).toArray(C_CHAR);
+          result.add(Tuple2.<byte[], byte[]>Tuple2Builder().t2(value).t1(keys[i]).build());
+        }
+        return result;
+      } else {
+        log.error(
+            "Failed to get values by keys:{} from cf:{}. reason:{}",
+            Arrays.stream(keys)
+                .map(key -> HexFormat.of().formatHex(key))
+                .collect(Collectors.joining(", ", "[", "]")),
+            columnFamilyName,
+            errMsg);
+        return null;
+      }
+    }
   }
 
   @Override
@@ -552,7 +618,7 @@ class RocksDbImpl implements RocksDb {
               .reinterpret(
                   arena, Utils::free); // 外部方法返回的指针都是global的，需要通过此方法关联大arena的scope，进行资源释放，避免出现内存泄露;
       String errMsg = readErrMsgAndFree(errPtr);
-      if (isEmpty(errMsg)) {
+      if (OK.equals(errMsg)) {
         long valLen = valLenPtr.get(JAVA_LONG, 0);
         byte[] val = valLen != 0 ? valPtr.asSlice(0, valLen).toArray(JAVA_BYTE) : null;
         if (log.isDebugEnabled()) {
@@ -566,15 +632,17 @@ class RocksDbImpl implements RocksDb {
         return val;
       } else {
         log.error(
-            "Failed to get value from cf:{} by key:{}",
+            "Failed to get value from cf:{} by key:{}. reason:{}",
             columnFamilyName,
-            HexFormat.of().formatHex(key));
+            HexFormat.of().formatHex(key),
+            errMsg);
         return null;
       }
     }
   }
 
   @Override
+  @Nullable
   public byte[] get(byte[] key) {
     return get(DEFAULT_COLUMN_FAMILY_NAME, key);
   }

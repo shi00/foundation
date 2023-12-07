@@ -281,4 +281,20 @@ public class RocksdbTests {
       Assertions.assertFalse(rocksDb.isOpen());
     }
   }
+
+  @Test
+  public void test10() {
+    byte[] a = "a".getBytes(UTF_8);
+    byte[] b = "b".getBytes(UTF_8);
+    byte[] c = "c".getBytes(UTF_8);
+    rocksDb.put(NOW_CF, a, a);
+    rocksDb.put(NOW_CF, b, b);
+    rocksDb.put(NOW_CF, c, c);
+
+    List<Tuple2<byte[], byte[]>> tuple2s = rocksDb.multiGet(NOW_CF, a, b, c);
+    Assertions.assertEquals(3, tuple2s.size());
+    Assertions.assertArrayEquals(a, tuple2s.get(0).t2());
+    Assertions.assertArrayEquals(b, tuple2s.get(1).t2());
+    Assertions.assertArrayEquals(c, tuple2s.get(2).t2());
+  }
 }
