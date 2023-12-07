@@ -30,6 +30,7 @@ import com.silong.foundation.common.lambda.Tuple2;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import net.datafaker.Faker;
@@ -49,54 +50,76 @@ import org.junit.jupiter.api.Test;
 public class RocksdbTests {
 
   private static final Faker FAKER = new Faker();
+
   public static final String NOW_CF = "20231207";
 
-  private final RocksDbConfig config = new RocksDbConfig();
+  public static final String BEFORE_CF = "20231206";
+
+  public static final List<String> CFS =
+      List.of(
+          "default",
+          "Helios",
+          "Atlas",
+          "Iapetus",
+          BEFORE_CF,
+          "Styx",
+          "Eos",
+          "Perses",
+          "Epimetheus",
+          "Coeus",
+          "Menoetius",
+          "Clymene",
+          "Theia",
+          NOW_CF,
+          "Eurynome");
 
   private RocksDbImpl rocksDb;
 
   @BeforeEach
   void init() {
+    RocksDbConfig config = new RocksDbConfig();
+    Map<String, Duration> columns = new HashMap<>();
+    CFS.forEach(cfn -> columns.put(cfn, Duration.of(nextInt(0, 100000000), SECONDS)));
+    config.setColumnFamilyNameWithTTL(columns);
     config.setPersistDataPath(
         Paths.get(System.getProperty("user.dir"))
             .resolve("target")
-            .resolve(FAKER.animal().name())
+            .resolve("rocksdb-test-data")
             .toFile()
             .getAbsolutePath());
-    Map<String, Duration> columns = new HashMap<>();
-    columns.put(NOW_CF, Duration.ZERO);
-    IntStream.range(0, nextInt(1, 10))
-        .forEach(
-            i -> columns.put(FAKER.ancient().titan(), Duration.of(nextInt(0, 100000000), SECONDS)));
-    config.setColumnFamilyNameWithTTL(columns);
     rocksDb = (RocksDbImpl) RocksDb.getInstance(config);
   }
 
   @AfterEach
   void cleanUp() {
+    rocksDb.dropColumnFamily(NOW_CF);
+    rocksDb.dropColumnFamily(BEFORE_CF);
     rocksDb.close();
   }
 
   @Test
   public void test1() {
+    rocksDb.close();
+    RocksDbConfig config = new RocksDbConfig();
+    Map<String, Duration> columns = new HashMap<>();
+    CFS.forEach(cfn -> columns.put(cfn, Duration.of(nextInt(0, 100000000), SECONDS)));
+    IntStream.range(0, 5)
+        .forEach(i -> columns.put(FAKER.app().name(), Duration.of(nextInt(0, 100000000), SECONDS)));
+    config.setColumnFamilyNameWithTTL(columns);
     config.setPersistDataPath(
-        Paths.get(FAKER.ancient().god())
+        Paths.get(System.getProperty("user.dir"))
             .resolve("target")
-            .resolve(FAKER.animal().name())
+            .resolve("rocksdb-test-data")
             .toFile()
             .getAbsolutePath());
-    Map<String, Duration> columns = new HashMap<>();
-    IntStream.range(0, nextInt(1, 10))
-        .forEach(
-            i -> columns.put(FAKER.ancient().titan(), Duration.of(nextInt(0, 100000000), SECONDS)));
-    config.setColumnFamilyNameWithTTL(columns);
     try (RocksDbImpl rocksDb = (RocksDbImpl) RocksDb.getInstance(config)) {
-      Assertions.assertFalse(rocksDb.isOpen());
+      Assertions.assertTrue(rocksDb.isOpen());
     }
   }
 
   @Test
   public void test2() {
+    Assertions.assertTrue(rocksDb.isOpen());
     String cf = "aa";
     Assertions.assertTrue(rocksDb.createColumnFamily(cf));
     rocksDb.dropColumnFamily(cf);
@@ -105,6 +128,7 @@ public class RocksdbTests {
 
   @Test
   public void test3() {
+    Assertions.assertTrue(rocksDb.isOpen());
     String k = "a";
     String v = "b";
     rocksDb.put(DEFAULT_COLUMN_FAMILY_NAME, k.getBytes(UTF_8), v.getBytes(UTF_8));
@@ -114,6 +138,7 @@ public class RocksdbTests {
 
   @Test
   public void test4() {
+    Assertions.assertTrue(rocksDb.isOpen());
     byte[] key = RandomStringUtils.random(1024).getBytes(UTF_8);
     byte[] val = RandomStringUtils.random(1024).getBytes(UTF_8);
     rocksDb.put(DEFAULT_COLUMN_FAMILY_NAME, key, val);
@@ -126,6 +151,7 @@ public class RocksdbTests {
 
   @Test
   public void test5() {
+    Assertions.assertTrue(rocksDb.isOpen());
     IntStream.range(0, 1000)
         .forEach(
             i -> {
@@ -145,18 +171,19 @@ public class RocksdbTests {
 
   @Test
   public void test6() throws RocksDbException {
+    Assertions.assertTrue(rocksDb.isOpen());
     HashMap<String, String> map = new HashMap<>();
-    IntStream.range(0, 50)
+    IntStream.range(0, 10)
         .forEach(
             i -> {
               String k = RandomStringUtils.random(512);
               byte[] key = k.getBytes(UTF_8);
               String v = RandomStringUtils.random(1024);
               byte[] val = v.getBytes(UTF_8);
-              rocksDb.put(key, val);
+              rocksDb.put(NOW_CF, key, val);
               map.put(k, v);
             });
-    try (RocksDbIterator iterator = rocksDb.iterator()) {
+    try (RocksDbIterator iterator = rocksDb.iterator(NOW_CF)) {
       int count = 0;
       for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
         Tuple2<byte[], byte[]> tuple2 = iterator.get();
@@ -165,12 +192,13 @@ public class RocksdbTests {
         count++;
       }
       iterator.checkStatus();
-      Assertions.assertEquals(50, count);
+      Assertions.assertEquals(10, count);
     }
   }
 
   @Test
   public void test7() throws RocksDbException {
+    Assertions.assertTrue(rocksDb.isOpen());
     HashMap<String, String> map = new HashMap<>();
     IntStream.range(0, 50)
         .forEach(
@@ -180,14 +208,14 @@ public class RocksdbTests {
               String v = RandomStringUtils.random(1024);
               byte[] val = v.getBytes(UTF_8);
               if (i >= 20) {
-                rocksDb.put(key, val);
+                rocksDb.put(BEFORE_CF, key, val);
               } else {
                 rocksDb.put(NOW_CF, key, val);
               }
               map.put(k, v);
             });
 
-    try (RocksDbIterator iterator1 = rocksDb.iterator();
+    try (RocksDbIterator iterator1 = rocksDb.iterator(BEFORE_CF);
         RocksDbIterator iterator2 = rocksDb.iterator(NOW_CF)) {
       int count = 0;
       for (iterator1.seekToLast(); iterator1.isValid(); iterator1.prev()) {
@@ -206,6 +234,25 @@ public class RocksdbTests {
       }
       iterator2.checkStatus();
       Assertions.assertEquals(50, count);
+    }
+  }
+
+  @Test
+  public void test9() {
+    RocksDbConfig config = new RocksDbConfig();
+    config.setPersistDataPath(
+        Paths.get(FAKER.ancient().god())
+            .resolve("target")
+            .resolve(FAKER.animal().name())
+            .toFile()
+            .getAbsolutePath());
+    Map<String, Duration> columns = new HashMap<>();
+    IntStream.range(0, nextInt(1, 10))
+        .forEach(
+            i -> columns.put(FAKER.ancient().titan(), Duration.of(nextInt(0, 100000000), SECONDS)));
+    config.setColumnFamilyNameWithTTL(columns);
+    try (RocksDbImpl rocksDb = (RocksDbImpl) RocksDb.getInstance(config)) {
+      Assertions.assertFalse(rocksDb.isOpen());
     }
   }
 }

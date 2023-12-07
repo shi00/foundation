@@ -54,7 +54,8 @@ class RocksDbImpl implements RocksDb {
   @Serial private static final long serialVersionUID = -2_521_667_833_385_354_826L;
 
   /** 共享库名称 */
-  private static final String LIB_ROCKSDB = "librocksdb";
+  private static final String LIB_ROCKSDB =
+      System.getProperty("rocksdb.library.name", "librocksdb");
 
   static {
     loadLibrary(LIB_ROCKSDB);
@@ -94,11 +95,11 @@ class RocksDbImpl implements RocksDb {
       MemorySegment errPtr = newErrPtr(arena); // 出参，获取错误信息
 
       // 构建列族列表对应的ttl列表
-      int index = 0;
       Map<String, Integer> columnFamilyNameTTLs =
-          getColumnFamilyNames(config.getColumnFamilyNameWithTTL());
-      List<String> columnFamilyNames = new ArrayList<>(columnFamilyNameTTLs.size());
+          getColumnFamilyNames(arena, dbOptionsPtr, path, config.getColumnFamilyNameWithTTL());
+      List<String> columnFamilyNames = new LinkedList<>();
       MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyNameTTLs.size());
+      int index = 0;
       for (Map.Entry<String, Integer> entry : columnFamilyNameTTLs.entrySet()) {
         columnFamilyNames.add(entry.getKey());
         ttlsPtr.setAtIndex(C_INT, index++, entry.getValue());
@@ -159,6 +160,32 @@ class RocksDbImpl implements RocksDb {
             .forEach(i -> freeColumnFamilyOptions(cfOptionsPtr.getAtIndex(C_POINTER, i)));
       }
     }
+  }
+
+  private List<String> listColumnFamilies(
+      Arena arena, MemorySegment dbOptions, MemorySegment dbPath) {
+    MemorySegment lenPtr = arena.allocate(C_POINTER);
+    MemorySegment errPtr = newErrPtr(arena);
+    MemorySegment cfsPtr =
+        rocksdb_list_column_families(dbOptions, dbPath, lenPtr, errPtr)
+            .reinterpret(arena, Utils::free);
+    String errMsg = readErrMsgAndFree(errPtr);
+    List<String> columnFamilies = new LinkedList<>();
+    if (OK.equals(errMsg)) {
+      long length = lenPtr.get(JAVA_LONG, 0);
+      for (int i = 0; i < length; i++) {
+        columnFamilies.add(cfsPtr.getAtIndex(C_POINTER, i).getUtf8String(0));
+      }
+      log.info(
+          "ColumnFamilies:{} that currently exist in rocksdb:[{}]",
+          columnFamilies,
+          dbPath.getUtf8String(0));
+    } else {
+      log.info(
+          "Unable to list columnFamilies of rocksdb:[{}]，prepare to create.",
+          dbPath.getUtf8String(0));
+    }
+    return columnFamilies;
   }
 
   private void cacheColumnFamilyDescriptor(
@@ -232,14 +259,37 @@ class RocksDbImpl implements RocksDb {
     return cfNamesPtr;
   }
 
-  private Map<String, Integer> getColumnFamilyNames(Map<String, Duration> columnFamilyNames) {
+  private Map<String, Integer> getColumnFamilyNames(
+      Arena arena,
+      MemorySegment dbOptionsPtr,
+      MemorySegment path,
+      Map<String, Duration> columnFamilyNames) {
+    // 获取当前数据库存在的列族列表
+    List<String> cfs = listColumnFamilies(arena, dbOptionsPtr, path);
     if (columnFamilyNames == null) {
-      return Map.of(DEFAULT_COLUMN_FAMILY_NAME, 0);
+      if (cfs.isEmpty()) {
+        return Map.of(DEFAULT_COLUMN_FAMILY_NAME, 0);
+      }
+      log.warn(
+          "The column families that need to be opened are not specified, so all column families that exist in rocksdb are opened with ttl 0. cfs: {}",
+          cfs);
+      return cfs.stream().collect(Collectors.toMap(cf -> cf, cf -> 0));
     } else {
       // 添加默认列族
       if (!columnFamilyNames.containsKey(DEFAULT_COLUMN_FAMILY_NAME)) {
         columnFamilyNames.put(DEFAULT_COLUMN_FAMILY_NAME, Duration.ZERO);
       }
+
+      // 添加已存在的列族到打开列表中，超时为0
+      cfs.forEach(
+          cfn -> {
+            if (!columnFamilyNames.containsKey(cfn)) {
+              columnFamilyNames.put(cfn, Duration.ZERO);
+              log.info(
+                  "Add column family {} to the list of column families to be opened with ttl 0.",
+                  cfn);
+            }
+          });
       return columnFamilyNames.entrySet().stream()
           .collect(Collectors.toMap(Map.Entry::getKey, e -> (int) e.getValue().toSeconds()));
     }
@@ -498,13 +548,12 @@ class RocksDbImpl implements RocksDb {
       MemorySegment errPtr = newErrPtr(arena);
       MemorySegment valLenPtr = arena.allocate(C_POINTER); // 出参，value长度
       MemorySegment valPtr =
-          rocksdb_get(dbPtr, readOptionsPtr, keyPtr, keyPtr.byteSize(), valLenPtr, errPtr);
+          rocksdb_get(dbPtr, readOptionsPtr, keyPtr, keyPtr.byteSize(), valLenPtr, errPtr)
+              .reinterpret(
+                  arena, Utils::free); // 外部方法返回的指针都是global的，需要通过此方法关联大arena的scope，进行资源释放，避免出现内存泄露;
       String errMsg = readErrMsgAndFree(errPtr);
       if (isEmpty(errMsg)) {
         long valLen = valLenPtr.get(JAVA_LONG, 0);
-        valPtr =
-            valPtr.reinterpret(
-                arena, Utils::free); // 外部方法返回的指针都是global的，需要通过此方法关联大arena的scope，进行资源释放，避免出现内存泄露
         byte[] val = valLen != 0 ? valPtr.asSlice(0, valLen).toArray(JAVA_BYTE) : null;
         if (log.isDebugEnabled()) {
           log.debug(
