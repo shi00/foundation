@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -88,9 +89,9 @@ class RocksDbImpl implements RocksDb {
   public RocksDbImpl(@NonNull RocksDbConfig config) {
     try (Arena arena = Arena.ofConfined()) {
       this.config = config;
-      MemorySegment dbOptionsPtr = createRocksdbOption(config); // global scope
+      MemorySegment dbOptionsPtr = createRocksdbOption(config); // global scope，close释放
       MemorySegment path = arena.allocateUtf8String(config.getPersistDataPath());
-      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1); // 出参，获取错误信息
+      MemorySegment errPtr = newErrPtr(arena); // 出参，获取错误信息
 
       // 构建列族列表对应的ttl列表
       int index = 0;
@@ -106,14 +107,14 @@ class RocksDbImpl implements RocksDb {
       // 列族名称列表构建指针
       MemorySegment cfNamesPtr = createColumnFamilyNames(arena, columnFamilyNames);
 
-      // 列族选项列表指针
+      // 列族选项列表指针，cfOptions close时释放
       MemorySegment cfOptionsPtr = createColumnFamilyOptions(arena, columnFamilyNames);
 
-      // 出参，获取打开的列族handles
+      // 出参，获取打开的列族handles，close时释放
       MemorySegment cfHandlesPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
 
       // 打开指定的列族
-      MemorySegment dbPtr = // global scope
+      MemorySegment dbPtr = // global scope，close释放
           rocksdb_open_column_families_with_ttl(
               dbOptionsPtr, // rocksdb options
               path, // persist path
@@ -124,7 +125,7 @@ class RocksDbImpl implements RocksDb {
               ttlsPtr, // 每个列族对应的ttl时间
               errPtr); // 错误信息
 
-      String errMsg = getErrMsg(errPtr);
+      String errMsg = readErrMsgAndFree(errPtr);
       if (isEmpty(errMsg)) {
         log.info(
             "The rocksdb(path:{}, cfs:{}) is opened successfully.",
@@ -134,10 +135,10 @@ class RocksDbImpl implements RocksDb {
         this.dbPtr = dbPtr;
         this.dbOptionsPtr = dbOptionsPtr;
 
-        // 创建默认读取options
+        // 创建默认读取options，global scope close时释放
         this.readOptionsPtr = rocksdb_readoptions_create();
 
-        // 创建默认写入options
+        // 创建默认写入options，global scope close时释放
         this.writeOptionsPtr = rocksdb_writeoptions_create();
 
         // 保存打开的列族
@@ -297,10 +298,10 @@ class RocksDbImpl implements RocksDb {
                 if (log.isDebugEnabled()) {
                   log.debug("Prepare to create column family: {}.", key);
                 }
-                MemorySegment cfOptions = rocksdb_options_create(); // global scope
+                MemorySegment cfOptions = rocksdb_options_create(); // global scope，cached 待close时释放
                 MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, 1);
                 cfNamesPtr.set(C_POINTER, 0, arena.allocateUtf8String(key));
-                MemorySegment errPtr = arena.allocateArray(C_POINTER, 1); // 出参，错误消息
+                MemorySegment errPtr = newErrPtr(arena); // 出参，错误消息
                 MemorySegment createdCfsSize = arena.allocate(C_POINTER); // 出参，成功创建列族长度
                 MemorySegment cfHandlesPtr =
                     rocksdb_create_column_families(
@@ -309,7 +310,7 @@ class RocksDbImpl implements RocksDb {
                 // 创建一个列族
                 assert createdCfsSize.get(JAVA_LONG, 0) == 1L;
 
-                String errMsg = getErrMsg(errPtr);
+                String errMsg = readErrMsgAndFree(errPtr);
                 if (errMsg.isEmpty()) {
                   MemorySegment columnFamilyHandle = cfHandlesPtr.get(C_POINTER, 0);
                   assert checkColumnFamilyHandleName(
@@ -346,9 +347,9 @@ class RocksDbImpl implements RocksDb {
     }
     if (columnFamilies.containsKey(cf)) {
       try (Arena arena = Arena.ofConfined()) {
-        MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
+        MemorySegment errPtr = newErrPtr(arena);
         rocksdb_drop_column_family(dbPtr, columnFamilies.get(cf).columnFamilyHandle(), errPtr);
-        String errMsg = getErrMsg(errPtr);
+        String errMsg = readErrMsgAndFree(errPtr);
         if (errMsg.isEmpty()) {
           columnFamilies.remove(cf).close();
           if (log.isDebugEnabled()) {
@@ -369,9 +370,10 @@ class RocksDbImpl implements RocksDb {
   @Override
   public void delete(String columnFamilyName, byte[] key) {
     validateColumnFamilyName(columnFamilyName);
+    validateKey(key);
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
+      MemorySegment errPtr = newErrPtr(arena);
       MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
       rocksdb_delete_cf(
           dbPtr,
@@ -380,7 +382,7 @@ class RocksDbImpl implements RocksDb {
           keyPtr,
           keyPtr.byteSize(),
           errPtr);
-      String errMsg = getErrMsg(errPtr);
+      String errMsg = readErrMsgAndFree(errPtr);
       if (OK.equals(errMsg)) {
         if (log.isDebugEnabled()) {
           log.debug(
@@ -410,7 +412,7 @@ class RocksDbImpl implements RocksDb {
     validateKey(endKey);
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
+      MemorySegment errPtr = newErrPtr(arena);
       MemorySegment startKeyPtr = arena.allocateArray(C_CHAR, startKey);
       MemorySegment endKeyPtr = arena.allocateArray(C_CHAR, endKey);
       rocksdb_delete_range_cf(
@@ -422,7 +424,7 @@ class RocksDbImpl implements RocksDb {
           endKeyPtr,
           endKeyPtr.byteSize(),
           errPtr);
-      String errMsg = getErrMsg(errPtr);
+      String errMsg = readErrMsgAndFree(errPtr);
       if (OK.equals(errMsg)) {
         if (log.isDebugEnabled()) {
           log.debug(
@@ -450,7 +452,7 @@ class RocksDbImpl implements RocksDb {
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
       MemorySegment valPtr = arena.allocateArray(C_CHAR, value);
-      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
+      MemorySegment errPtr = newErrPtr(arena);
       rocksdb_put_cf(
           dbPtr,
           writeOptionsPtr,
@@ -461,7 +463,7 @@ class RocksDbImpl implements RocksDb {
           valPtr.byteSize(),
           errPtr);
 
-      String errMsg = getErrMsg(errPtr);
+      String errMsg = readErrMsgAndFree(errPtr);
       if (isEmpty(errMsg)) {
         if (log.isDebugEnabled()) {
           log.debug(
@@ -486,30 +488,29 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
+  @Nullable
   public byte[] get(String columnFamilyName, byte[] key) {
     validateColumnFamilyName(columnFamilyName);
     validateKey(key);
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
-      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
+      MemorySegment errPtr = newErrPtr(arena);
       MemorySegment valLenPtr = arena.allocate(C_POINTER); // 出参，value长度
       MemorySegment valPtr =
           rocksdb_get(dbPtr, readOptionsPtr, keyPtr, keyPtr.byteSize(), valLenPtr, errPtr);
-      String errMsg = getErrMsg(errPtr);
+      String errMsg = readErrMsgAndFree(errPtr);
       if (isEmpty(errMsg)) {
         long valLen = valLenPtr.get(JAVA_LONG, 0);
         valPtr =
             valPtr.reinterpret(
-                valLen,
-                arena,
-                Utils::free); // 外部方法返回的指针都是global的，需要通过此方法关联大arena的scope，进行资源释放，避免出现OOM
-        byte[] val = valPtr.toArray(JAVA_BYTE);
+                arena, Utils::free); // 外部方法返回的指针都是global的，需要通过此方法关联大arena的scope，进行资源释放，避免出现内存泄露
+        byte[] val = valLen != 0 ? valPtr.asSlice(0, valLen).toArray(JAVA_BYTE) : null;
         if (log.isDebugEnabled()) {
           log.debug(
               "Successfully get value:[{}---{}] from cf:{} by key:{}",
               valLen,
-              HexFormat.of().formatHex(val),
+              val != null ? HexFormat.of().formatHex(val) : "",
               columnFamilyName,
               HexFormat.of().formatHex(key));
         }

@@ -174,7 +174,7 @@ class Utils {
    * @param errPtr C_POINTER指针
    * @return 错误信息或空字符串
    */
-  public static String readErrMsgAndFreeResources(@NonNull MemorySegment errPtr) {
+  public static String readErrMsgAndFree(@NonNull MemorySegment errPtr) {
     MemorySegment ptr = errPtr.getAtIndex(C_POINTER, 0);
     if (NULL.equals(ptr)) {
       return OK;
