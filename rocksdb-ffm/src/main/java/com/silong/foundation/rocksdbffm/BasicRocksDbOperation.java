@@ -21,7 +21,9 @@
 
 package com.silong.foundation.rocksdbffm;
 
+import com.silong.foundation.common.lambda.Tuple2;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Rocksdb 基础操作
@@ -119,6 +121,23 @@ public interface BasicRocksDbOperation {
    * @return value
    */
   byte[] get(byte[] key);
+
+  /**
+   * 在default ColumnFamily查询多Key
+   *
+   * @param keys key列表
+   * @return kvPairs
+   */
+  List<Tuple2<byte[], byte[]>> multiGet(byte[]... keys);
+
+  /**
+   * 在指定列族查询多Key
+   *
+   * @param columnFamilyName 列族名
+   * @param keys key列表
+   * @return kvPairs
+   */
+  List<Tuple2<byte[], byte[]>> multiGet(String columnFamilyName, byte[]... keys);
 
   /**
    * 获取default列族迭代器
