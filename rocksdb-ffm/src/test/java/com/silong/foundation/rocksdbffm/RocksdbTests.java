@@ -26,6 +26,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 
+import com.silong.foundation.common.lambda.Tuple2;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
@@ -48,6 +49,7 @@ import org.junit.jupiter.api.Test;
 public class RocksdbTests {
 
   private static final Faker FAKER = new Faker();
+  public static final String NOW_CF = "20231207";
 
   private final RocksDbConfig config = new RocksDbConfig();
 
@@ -62,6 +64,7 @@ public class RocksdbTests {
             .toFile()
             .getAbsolutePath());
     Map<String, Duration> columns = new HashMap<>();
+    columns.put(NOW_CF, Duration.ZERO);
     IntStream.range(0, nextInt(1, 10))
         .forEach(
             i -> columns.put(FAKER.ancient().titan(), Duration.of(nextInt(0, 100000000), SECONDS)));
@@ -118,7 +121,7 @@ public class RocksdbTests {
     Assertions.assertArrayEquals(bytes, val);
     rocksDb.delete(key);
     bytes = rocksDb.get(key);
-    Assertions.assertEquals(0, bytes.length);
+    Assertions.assertNull(bytes);
   }
 
   @Test
@@ -137,25 +140,72 @@ public class RocksdbTests {
 
     byte[] key = String.valueOf(nextInt(0, 1000)).getBytes(UTF_8);
     byte[] bytes = rocksDb.get(key);
-    Assertions.assertEquals(0, bytes.length);
+    Assertions.assertNull(bytes);
   }
 
   @Test
   public void test6() throws RocksDbException {
-    IntStream.range(0, 10000)
+    HashMap<String, String> map = new HashMap<>();
+    IntStream.range(0, 50)
         .forEach(
             i -> {
-              byte[] key = RandomStringUtils.random(256).getBytes(UTF_8);
-              byte[] val = RandomStringUtils.random(1024).getBytes(UTF_8);
+              String k = RandomStringUtils.random(512);
+              byte[] key = k.getBytes(UTF_8);
+              String v = RandomStringUtils.random(1024);
+              byte[] val = v.getBytes(UTF_8);
               rocksDb.put(key, val);
+              map.put(k, v);
             });
     try (RocksDbIterator iterator = rocksDb.iterator()) {
       int count = 0;
       for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+        Tuple2<byte[], byte[]> tuple2 = iterator.get();
+        String val = map.get(new String(tuple2.t1(), UTF_8));
+        Assertions.assertArrayEquals(val.getBytes(UTF_8), tuple2.t2());
         count++;
       }
       iterator.checkStatus();
-      Assertions.assertEquals(10000, count);
+      Assertions.assertEquals(50, count);
+    }
+  }
+
+  @Test
+  public void test7() throws RocksDbException {
+    HashMap<String, String> map = new HashMap<>();
+    IntStream.range(0, 50)
+        .forEach(
+            i -> {
+              String k = RandomStringUtils.random(512);
+              byte[] key = k.getBytes(UTF_8);
+              String v = RandomStringUtils.random(1024);
+              byte[] val = v.getBytes(UTF_8);
+              if (i >= 20) {
+                rocksDb.put(key, val);
+              } else {
+                rocksDb.put(NOW_CF, key, val);
+              }
+              map.put(k, v);
+            });
+
+    try (RocksDbIterator iterator1 = rocksDb.iterator();
+        RocksDbIterator iterator2 = rocksDb.iterator(NOW_CF)) {
+      int count = 0;
+      for (iterator1.seekToLast(); iterator1.isValid(); iterator1.prev()) {
+        Tuple2<byte[], byte[]> tuple2 = iterator1.get();
+        String val = map.get(new String(tuple2.t1(), UTF_8));
+        Assertions.assertArrayEquals(val.getBytes(UTF_8), tuple2.t2());
+        count++;
+      }
+      iterator1.checkStatus();
+
+      for (iterator2.seekToFirst(); iterator2.isValid(); iterator2.next()) {
+        Tuple2<byte[], byte[]> tuple2 = iterator2.get();
+        String val = map.get(new String(tuple2.t1(), UTF_8));
+        Assertions.assertArrayEquals(val.getBytes(UTF_8), tuple2.t2());
+        count++;
+      }
+      iterator2.checkStatus();
+      Assertions.assertEquals(50, count);
     }
   }
 }
