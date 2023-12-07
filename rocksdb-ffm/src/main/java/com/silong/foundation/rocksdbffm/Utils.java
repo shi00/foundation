@@ -159,20 +159,28 @@ class Utils {
   }
 
   /**
-   * 读取错误信息(char** )，如果返回空字符串则表示操作成功
+   * 分配char** 错误信息出参
    *
-   * @param errMsgPtr C_POINTER指针
+   * @param arena 内存分配区
+   * @return 错误信息指针
+   */
+  public static MemorySegment newErrPtr(@NonNull Arena arena) {
+    return arena.allocateArray(C_POINTER, 1);
+  }
+
+  /**
+   * 读取错误信息(char** )，如果返回空字符串则表示操作成功，如果返回有错误信息则在读取结果后释放native资源
+   *
+   * @param errPtr C_POINTER指针
    * @return 错误信息或空字符串
    */
-  public static String getErrMsg(@NonNull MemorySegment errMsgPtr) {
-    MemorySegment ptr = errMsgPtr.getAtIndex(C_POINTER, 0);
+  public static String readErrMsgAndFreeResource(@NonNull MemorySegment errPtr) {
+    MemorySegment ptr = errPtr.getAtIndex(C_POINTER, 0);
     if (NULL.equals(ptr)) {
       return OK;
     }
-
     try (Arena arena = Arena.ofConfined()) {
-      long strlen = strlen(ptr);
-      return getUtf8String(ptr.reinterpret(strlen, arena, Utils::free), strlen);
+      return getUtf8String(ptr.reinterpret(arena, Utils::free), strlen(ptr));
     }
   }
 
