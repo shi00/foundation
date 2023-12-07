@@ -33,6 +33,7 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 
@@ -98,7 +99,9 @@ class Utils {
   }
 
   public static void validateKeys(byte[]... keys) {
-    if (keys == null || keys.length == 0) {
+    if (keys == null
+        || keys.length == 0
+        || Arrays.stream(keys).anyMatch(key -> key == null || key.length == 0)) {
       throw new IllegalArgumentException("keys must not be null or empty.");
     }
   }
