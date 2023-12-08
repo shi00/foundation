@@ -98,6 +98,14 @@ public interface BasicRocksDbOperation {
   void put(String columnFamilyName, byte[] key, byte[] value);
 
   /**
+   * 批量写入
+   *
+   * @param columnFamilyName 列族
+   * @param kvPairs kv键值对列表
+   */
+  void putAll(String columnFamilyName, Tuple2<byte[], byte[]>... kvPairs);
+
+  /**
    * 向默认列族保存数据
    *
    * @param key key

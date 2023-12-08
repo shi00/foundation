@@ -26,6 +26,8 @@ import static com.silong.foundation.rocksdbffm.RocksDbConfig.DataScale.SMALL;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.io.Serial;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
@@ -39,7 +41,9 @@ import lombok.Data;
  * @since 2023-12-02 8:25
  */
 @Data
-public class RocksDbConfig {
+public class RocksDbConfig implements Serializable {
+
+  @Serial private static final long serialVersionUID = -7_905_257_664_231_390_906L;
 
   /** 数据规模，持久化存储会依据数据规模优化rocksdb参数 */
   public enum DataScale {
