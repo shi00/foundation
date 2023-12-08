@@ -27,6 +27,8 @@ import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 import com.silong.foundation.common.lambda.Tuple2;
 import com.silong.foundation.rocksdbffm.generated.RocksDB;
+import java.io.Serial;
+import java.io.Serializable;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.function.BiFunction;
@@ -41,7 +43,9 @@ import lombok.NonNull;
  * @since 2023-12-06 22:40
  */
 @AllArgsConstructor
-class RocksDbIteratorImpl implements RocksDbIterator {
+class RocksDbIteratorImpl implements RocksDbIterator, Serializable {
+
+  @Serial private static final long serialVersionUID = 2_661_958_540_827_751_786L;
 
   /** 迭代器 */
   @NonNull private MemorySegment iterator;
