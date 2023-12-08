@@ -34,6 +34,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
@@ -326,32 +327,19 @@ class RocksDbImpl implements RocksDb {
     }
   }
 
-  /**
-   * 列族是否存在
-   *
-   * @param cf 列族名
-   * @return true or false
-   */
-  public boolean isColumnFamilyExist(String cf) {
-    if (isEmpty(cf)) {
-      throw new IllegalArgumentException("cf must not be null or empty.");
-    }
-    return columnFamilies.containsKey(cf);
-  }
-
   @Override
   public Collection<String> openedColumnFamilies() {
     return columnFamilies.keySet();
   }
 
   @Override
-  public boolean createColumnFamily(String cf) {
-    if (isEmpty(cf)) {
-      throw new IllegalArgumentException("cf must not be null or empty.");
+  public boolean createColumnFamily(String columnFamilyName) {
+    if (isEmpty(columnFamilyName)) {
+      throw new IllegalArgumentException("columnFamilyName must not be null or empty.");
     }
     ColumnFamilyDescriptor descriptor =
         columnFamilies.computeIfAbsent(
-            cf,
+            columnFamilyName,
             key -> {
               try (Arena arena = Arena.ofConfined()) {
                 if (log.isDebugEnabled()) {
@@ -428,12 +416,19 @@ class RocksDbImpl implements RocksDb {
 
   @Override
   public void delete(String columnFamilyName, byte[] key) {
-    validateColumnFamilyName(columnFamilyName);
     validateKey(key);
+    delete(columnFamilyName, key, 0, key.length);
+  }
+
+  @Override
+  public void delete(String columnFamilyName, byte[] key, int offset, int length) {
+    validateColumnFamily(columnFamilyName);
+    validateByteArrays(key, offset, length, "Invalid key.");
     validateOpenStatus();
+
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment errPtr = newErrPtr(arena);
-      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
+      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key).asSlice(offset, length);
       rocksdb_delete_cf(
           dbPtr,
           writeOptionsPtr,
@@ -445,13 +440,13 @@ class RocksDbImpl implements RocksDb {
       if (OK.equals(errMsg)) {
         if (log.isDebugEnabled()) {
           log.debug(
-              "Successfully delete key:{} from cf:{}",
+              "Successfully delete key:{} from columnFamily:{}",
               HexFormat.of().formatHex(key),
               columnFamilyName);
         }
       } else {
         log.error(
-            "Failed to delete key:{} from cf:{}, reason:{}",
+            "Failed to delete key:{} from columnFamily:{}, reason:{}",
             HexFormat.of().formatHex(key),
             columnFamilyName,
             errMsg);
@@ -466,7 +461,7 @@ class RocksDbImpl implements RocksDb {
 
   @Override
   public void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey) {
-    validateColumnFamilyName(columnFamilyName);
+    validateColumnFamily(columnFamilyName);
     validateKey(startKey);
     validateKey(endKey);
     validateOpenStatus();
@@ -505,7 +500,7 @@ class RocksDbImpl implements RocksDb {
 
   @Override
   public void put(String columnFamilyName, byte[] key, byte[] value) {
-    validateColumnFamilyName(columnFamilyName);
+    validateColumnFamily(columnFamilyName);
     validateKey(key);
     validateValue(value);
     validateOpenStatus();
@@ -544,6 +539,24 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
+  @SafeVarargs
+  public final void putAll(String columnFamilyName, Tuple2<byte[], byte[]>... kvPairs)
+      throws RocksDbException {
+    validateKvPairs(kvPairs);
+    validateOpenStatus();
+    this.<Void>atomicBatchUpdate(
+        writeBatch -> {
+          MemorySegment columnFamilyHandle =
+              columnFamilies.get(columnFamilyName).columnFamilyHandle();
+          for (Tuple2<byte[], byte[]> pair : kvPairs) {
+            writeBatch.put(
+                columnFamilyHandle, pair.t1(), 0, pair.t1().length, pair.t2(), 0, pair.t2().length);
+          }
+          return null;
+        });
+  }
+
+  @Override
   public void put(byte[] key, byte[] value) {
     put(DEFAULT_COLUMN_FAMILY_NAME, key, value);
   }
@@ -557,7 +570,7 @@ class RocksDbImpl implements RocksDb {
   @Override
   @Nullable
   public List<Tuple2<byte[], byte[]>> multiGet(String columnFamilyName, byte[]... keys) {
-    validateColumnFamilyName(columnFamilyName);
+    validateColumnFamily(columnFamilyName);
     validateKeys(keys);
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
@@ -613,7 +626,7 @@ class RocksDbImpl implements RocksDb {
   @Override
   @Nullable
   public byte[] get(String columnFamilyName, byte[] key) {
-    validateColumnFamilyName(columnFamilyName);
+    validateColumnFamily(columnFamilyName);
     validateKey(key);
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
@@ -661,7 +674,7 @@ class RocksDbImpl implements RocksDb {
 
   @Override
   public RocksDbIterator iterator(String columnFamilyName) {
-    validateColumnFamilyName(columnFamilyName);
+    validateColumnFamily(columnFamilyName);
     validateOpenStatus();
     return new RocksDbIteratorImpl(
         rocksdb_create_iterator_cf(
@@ -671,6 +684,64 @@ class RocksDbImpl implements RocksDb {
   private void validateOpenStatus() {
     if (!isOpen()) {
       throw new IllegalStateException("rocksdb status abnormality.");
+    }
+  }
+
+  @Nullable
+  MemorySegment getColumnFamilyHandle(String columnFamilyName) {
+    return columnFamilies.get(columnFamilyName).columnFamilyHandle();
+  }
+
+  /**
+   * 列族是否存在
+   *
+   * @param columnFamilyName 列族名
+   * @return true or false
+   */
+  boolean isColumnFamilyExist(String columnFamilyName) {
+    if (isEmpty(columnFamilyName)) {
+      throw new IllegalArgumentException("columnFamilyName must not be null or empty.");
+    }
+    return columnFamilies.containsKey(columnFamilyName);
+  }
+
+  void validateColumnFamily(String columnFamilyName) {
+    if (!isColumnFamilyExist(columnFamilyName)) {
+      throw new IllegalArgumentException(
+          String.format("Column family %s does not exist.", columnFamilyName));
+    }
+  }
+
+  /**
+   * 原子更新操作
+   *
+   * @param action 操作
+   * @return 结果
+   * @param <R> 结果类型
+   */
+  public <R> R atomicBatchUpdate(@NonNull Function<WriteBatch, R> action) throws RocksDbException {
+    try (Arena arena = Arena.ofConfined();
+        WriteBatchImpl writeBatch = new WriteBatchImpl(arena)) {
+      try {
+        R result = action.apply(writeBatch); // 批量操作执行完毕后执行批量提交
+        MemorySegment errPtr = newErrPtr(arena);
+        rocksdb_write(dbPtr, dbOptionsPtr, writeBatch.writeBatch, errPtr);
+        String errMsg = readErrMsgAndFree(errPtr);
+        if (OK.equals(errMsg)) {
+          if (log.isDebugEnabled()) {
+            log.debug("Successfully completed batch update operation. action:{}", action);
+          }
+        } else {
+          throw new RocksDbException(errMsg);
+        }
+        return result;
+      } catch (Throwable t) {
+        if (t instanceof RocksDbException e) {
+          throw e;
+        } else {
+          throw new RocksDbException(t);
+        }
+      }
     }
   }
 }

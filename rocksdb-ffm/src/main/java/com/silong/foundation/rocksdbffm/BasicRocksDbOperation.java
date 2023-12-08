@@ -73,6 +73,16 @@ public interface BasicRocksDbOperation {
   void delete(String columnFamilyName, byte[] key);
 
   /**
+   * 在指定列族中删除key
+   *
+   * @param columnFamilyName 列族名
+   * @param key key
+   * @param offset offset
+   * @param length length
+   */
+  void delete(String columnFamilyName, byte[] key, int offset, int length);
+
+  /**
    * 删除default列族中的起始key和结束key之间的所有值
    *
    * @param startKey 起始key，includes
@@ -104,7 +114,7 @@ public interface BasicRocksDbOperation {
    * @param columnFamilyName 列族
    * @param kvPairs kv键值对列表
    */
-  void putAll(String columnFamilyName, Tuple2<byte[], byte[]>... kvPairs);
+  void putAll(String columnFamilyName, Tuple2<byte[], byte[]>... kvPairs) throws RocksDbException;
 
   /**
    * 向默认列族保存数据
@@ -169,6 +179,7 @@ public interface BasicRocksDbOperation {
    * @param action 操作
    * @return 结果
    * @param <R> 结果类型
+   * @throws RocksDbException 更新异常
    */
-  <R> R atomicBatchUpdate(Function<WriteBatch, R> action);
+  <R> R atomicBatchUpdate(Function<WriteBatch, R> action) throws RocksDbException;
 }
