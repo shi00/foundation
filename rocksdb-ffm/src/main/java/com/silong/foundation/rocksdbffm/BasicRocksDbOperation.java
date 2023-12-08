@@ -100,6 +100,26 @@ public interface BasicRocksDbOperation {
   void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey);
 
   /**
+   * 删除指定列族中的起始key和结束key之间的所有值
+   *
+   * @param columnFamilyName 列族名
+   * @param startKey 起始key，includes
+   * @param startKeyOffset offset
+   * @param startKeyLength length
+   * @param endKey 结束Key，excludes
+   * @param endKeyOffset offset
+   * @param endKeyLength length
+   */
+  void deleteRange(
+      String columnFamilyName,
+      byte[] startKey,
+      int startKeyOffset,
+      int startKeyLength,
+      byte[] endKey,
+      int endKeyOffset,
+      int endKeyLength);
+
+  /**
    * 向指定列族保存数据
    *
    * @param columnFamilyName 列族名

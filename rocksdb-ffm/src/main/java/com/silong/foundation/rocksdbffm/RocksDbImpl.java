@@ -461,14 +461,30 @@ class RocksDbImpl implements RocksDb {
 
   @Override
   public void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey) {
-    validateColumnFamily(columnFamilyName);
     validateKey(startKey);
     validateKey(endKey);
+    deleteRange(columnFamilyName, startKey, 0, startKey.length, endKey, 0, endKey.length);
+  }
+
+  @Override
+  public void deleteRange(
+      String columnFamilyName,
+      byte[] startKey,
+      int startKeyOffset,
+      int startKeyLength,
+      byte[] endKey,
+      int endKeyOffset,
+      int endKeyLength) {
+    validateColumnFamily(columnFamilyName);
+    validateByteArrays(startKey, startKeyOffset, startKeyLength, "Invalid startKey.");
+    validateByteArrays(endKey, endKeyOffset, endKeyLength, "Invalid endKey.");
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment errPtr = newErrPtr(arena);
-      MemorySegment startKeyPtr = arena.allocateArray(C_CHAR, startKey);
-      MemorySegment endKeyPtr = arena.allocateArray(C_CHAR, endKey);
+      MemorySegment startKeyPtr =
+          arena.allocateArray(C_CHAR, startKey).asSlice(startKeyOffset, startKeyLength);
+      MemorySegment endKeyPtr =
+          arena.allocateArray(C_CHAR, endKey).asSlice(endKeyOffset, endKeyLength);
       rocksdb_delete_range_cf(
           dbPtr,
           writeOptionsPtr,
