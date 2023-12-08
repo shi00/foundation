@@ -25,6 +25,7 @@ import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
 import static java.lang.foreign.ValueLayout.*;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.silong.foundation.common.lambda.Tuple2;
 import java.io.Serial;
@@ -97,7 +98,12 @@ class RocksDbImpl implements RocksDb {
 
       // 构建列族列表对应的ttl列表
       Map<String, Integer> columnFamilyNameTTLs =
-          getColumnFamilyNames(arena, dbOptionsPtr, path, config.getColumnFamilyNameWithTTL());
+          getColumnFamilyNames(
+              arena,
+              config.getDefaultColumnFamilyTTL(),
+              dbOptionsPtr,
+              path,
+              config.getColumnFamilyNameWithTTL());
       List<String> columnFamilyNames = new LinkedList<>();
       MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyNameTTLs.size());
       int index = 0;
@@ -163,7 +169,7 @@ class RocksDbImpl implements RocksDb {
     }
   }
 
-  private List<String> listColumnFamilies(
+  private List<String> listExistColumnFamilies(
       Arena arena, MemorySegment dbOptions, MemorySegment dbPath) {
     MemorySegment lenPtr = arena.allocate(C_POINTER);
     MemorySegment errPtr = newErrPtr(arena);
@@ -263,19 +269,20 @@ class RocksDbImpl implements RocksDb {
 
   private Map<String, Integer> getColumnFamilyNames(
       Arena arena,
+      int defaultTTL,
       MemorySegment dbOptionsPtr,
       MemorySegment path,
       Map<String, Duration> columnFamilyNames) {
     // 获取当前数据库存在的列族列表
-    List<String> cfs = listColumnFamilies(arena, dbOptionsPtr, path);
+    List<String> cfs = listExistColumnFamilies(arena, dbOptionsPtr, path);
     if (columnFamilyNames == null) {
       if (cfs.isEmpty()) {
-        return Map.of(DEFAULT_COLUMN_FAMILY_NAME, 0);
+        return Map.of(DEFAULT_COLUMN_FAMILY_NAME, defaultTTL);
       }
       log.warn(
           "The column families that need to be opened are not specified, so all column families that exist in rocksdb are opened with ttl 0. cfs: {}",
           cfs);
-      return cfs.stream().collect(Collectors.toMap(cf -> cf, cf -> 0));
+      return cfs.stream().collect(Collectors.toMap(cf -> cf, cf -> defaultTTL));
     } else {
       // 添加默认列族
       if (!columnFamilyNames.containsKey(DEFAULT_COLUMN_FAMILY_NAME)) {
@@ -286,7 +293,7 @@ class RocksDbImpl implements RocksDb {
       cfs.forEach(
           cfn -> {
             if (!columnFamilyNames.containsKey(cfn)) {
-              columnFamilyNames.put(cfn, Duration.ZERO);
+              columnFamilyNames.put(cfn, Duration.of(defaultTTL, SECONDS));
               log.info(
                   "Add column family {} to the list of column families to be opened with ttl 0.",
                   cfn);
