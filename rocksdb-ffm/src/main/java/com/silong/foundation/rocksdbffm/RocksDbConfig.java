@@ -72,6 +72,9 @@ public class RocksDbConfig {
   /** 持久化存储数据规模，默认：small */
   @NotNull private DataScale dataScale = SMALL;
 
+  /** 默认列族TTL，单位：秒，在未指定列族TTL时使用，默认：0。当此值小于等于0时表示永不过期 */
+  private int defaultColumnFamilyTTL = 0;
+
   /** 如果数据库不存在是否创建数据库，默认：true */
   private boolean createIfMissing = true;
 
