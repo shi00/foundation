@@ -24,6 +24,8 @@ package com.silong.foundation.rocksdbffm;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_column_family_handle_destroy;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_options_destroy;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Builder;
@@ -43,7 +45,10 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 @Accessors(fluent = true)
-class ColumnFamilyDescriptor implements AutoCloseable {
+class ColumnFamilyDescriptor implements AutoCloseable, Serializable {
+
+  @Serial private static final long serialVersionUID = -5_876_305_954_330_556_021L;
+
   /** 列族名称 */
   private String columnFamilyName;
 
