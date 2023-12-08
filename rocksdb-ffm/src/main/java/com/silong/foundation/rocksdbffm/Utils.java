@@ -28,6 +28,7 @@ import static java.lang.foreign.ValueLayout.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.silong.foundation.common.lambda.Consumer3;
+import com.silong.foundation.common.lambda.Tuple2;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -98,10 +99,16 @@ class Utils {
     validateByteArrays(key, "key must not be null or empty.");
   }
 
+  public static void validateKvPairs(Tuple2<byte[], byte[]>... kvPairs) {
+    if (kvPairs == null
+        || kvPairs.length == 0
+        || Arrays.stream(kvPairs).anyMatch(pair -> isEmpty(pair.t1()) || isEmpty(pair.t2()))) {
+      throw new IllegalArgumentException("kvPairs must not be null or empty.");
+    }
+  }
+
   public static void validateKeys(byte[]... keys) {
-    if (keys == null
-        || keys.length == 0
-        || Arrays.stream(keys).anyMatch(key -> key == null || key.length == 0)) {
+    if (keys == null || keys.length == 0 || Arrays.stream(keys).anyMatch(Utils::isEmpty)) {
       throw new IllegalArgumentException("keys must not be null or empty.");
     }
   }
@@ -113,6 +120,19 @@ class Utils {
   public static void validateByteArrays(byte[] array, @NonNull String message) {
     if (isEmpty(array)) {
       throw new IllegalArgumentException(message);
+    }
+  }
+
+  public static void validateByteArrays(
+      byte[] array, int offset, int length, @NonNull String message) {
+    if (isEmpty(array)) {
+      throw new IllegalArgumentException(message);
+    }
+    if (offset < 0) {
+      throw new IllegalArgumentException("offset must be greater than or equals to 0.");
+    }
+    if (length > array.length){
+      throw new IllegalArgumentException(STR."length must be greater than or equals to \{array.length}");
     }
   }
 
