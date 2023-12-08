@@ -21,7 +21,8 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import java.io.Serializable;
+import java.lang.foreign.MemorySegment;
+import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * WriteBatch holds a collection of updates to apply atomically to a DB.
@@ -39,12 +40,13 @@ import java.io.Serializable;
  * @version 1.0.0
  * @since 2023-12-08 14:31
  */
-public interface WriteBatch extends AutoCloseable, Serializable {
+@NotThreadSafe
+public interface WriteBatch extends AutoCloseable {
 
   /**
    * 写入kv键值对
    *
-   * @param columnFamilyName 列族名称
+   * @param columnFamilyHandle 列族handle
    * @param key key bytes
    * @param keyOffset key offset
    * @param keyLength key length
@@ -53,13 +55,43 @@ public interface WriteBatch extends AutoCloseable, Serializable {
    * @param valueLength value length
    */
   void put(
-      String columnFamilyName,
+      MemorySegment columnFamilyHandle,
       byte[] key,
       int keyOffset,
       int keyLength,
       byte[] value,
       int valueOffset,
       int valueLength);
+
+  /**
+   * 在指定列族删除key
+   *
+   * @param columnFamilyHandle 列族handle
+   * @param key key bytes
+   * @param keyOffset key offset
+   * @param keyLength key length
+   */
+  void delete(MemorySegment columnFamilyHandle, byte[] key, int keyOffset, int keyLength);
+
+  /**
+   * 删除指定范围内的key
+   *
+   * @param columnFamilyHandle 列族handle
+   * @param startKey 起始key
+   * @param startKeyOffset offset
+   * @param startKeyLength length
+   * @param endKey 结束key
+   * @param endKeyOffset offset
+   * @param endKeyLength length
+   */
+  void deleteRange(
+      MemorySegment columnFamilyHandle,
+      byte[] startKey,
+      int startKeyOffset,
+      int startKeyLength,
+      byte[] endKey,
+      int endKeyOffset,
+      int endKeyLength);
 
   @Override
   void close();
