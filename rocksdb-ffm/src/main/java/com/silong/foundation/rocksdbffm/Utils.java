@@ -131,8 +131,9 @@ class Utils {
     if (offset < 0) {
       throw new IllegalArgumentException("offset must be greater than or equals to 0.");
     }
-    if (length > array.length){
-      throw new IllegalArgumentException(STR."length must be greater than or equals to \{array.length}");
+    if ((length + offset) > array.length) {
+      throw new IllegalArgumentException(
+          String.format("(length + offset) must be less than or equals to %d.", array.length));
     }
   }
 
