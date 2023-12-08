@@ -24,6 +24,7 @@ package com.silong.foundation.rocksdbffm;
 import com.silong.foundation.common.lambda.Tuple2;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Rocksdb 基础操作
@@ -161,4 +162,13 @@ public interface BasicRocksDbOperation {
    * @return 迭代器
    */
   RocksDbIterator iterator(String columnFamilyName);
+
+  /**
+   * 原子批量更新操作
+   *
+   * @param action 操作
+   * @return 结果
+   * @param <R> 结果类型
+   */
+  <R> R atomicBatchUpdate(Function<WriteBatch, R> action);
 }
