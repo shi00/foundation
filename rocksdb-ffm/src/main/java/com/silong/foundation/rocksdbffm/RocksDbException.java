@@ -37,6 +37,15 @@ public class RocksDbException extends Exception {
   /**
    * 构造方法
    *
+   * @param t 异常
+   */
+  public RocksDbException(Throwable t) {
+    super(t);
+  }
+
+  /**
+   * 构造方法
+   *
    * @param message 异常消息
    */
   public RocksDbException(String message) {
