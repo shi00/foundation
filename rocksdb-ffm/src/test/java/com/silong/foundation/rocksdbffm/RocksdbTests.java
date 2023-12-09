@@ -137,7 +137,7 @@ public class RocksdbTests {
   }
 
   @Test
-  public void test4() {
+  public void test4() throws RocksDbException {
     Assertions.assertTrue(rocksDb.isOpen());
     byte[] key = RandomStringUtils.random(1024).getBytes(UTF_8);
     byte[] val = RandomStringUtils.random(1024).getBytes(UTF_8);

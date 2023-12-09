@@ -62,16 +62,18 @@ public interface BasicRocksDbOperation {
    * 在default ColumnFamily删除key
    *
    * @param key key
+   * @throws RocksDbException 异常
    */
-  void delete(byte[] key);
+  void delete(byte[] key) throws RocksDbException;
 
   /**
    * 在指定列族中删除key
    *
    * @param columnFamilyName 列族名
    * @param key key
+   * @throws RocksDbException 异常
    */
-  void delete(String columnFamilyName, byte[] key);
+  void delete(String columnFamilyName, byte[] key) throws RocksDbException;
 
   /**
    * 在指定列族中删除key
@@ -80,8 +82,9 @@ public interface BasicRocksDbOperation {
    * @param key key
    * @param offset offset
    * @param length length
+   * @throws RocksDbException 异常
    */
-  void delete(String columnFamilyName, byte[] key, int offset, int length);
+  void delete(String columnFamilyName, byte[] key, int offset, int length) throws RocksDbException;
 
   /**
    * 删除default列族中的起始key和结束key之间的所有值

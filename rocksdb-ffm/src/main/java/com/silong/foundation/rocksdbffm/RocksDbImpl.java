@@ -423,18 +423,19 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  public void delete(byte[] key) {
+  public void delete(byte[] key) throws RocksDbException {
     delete(DEFAULT_COLUMN_FAMILY_NAME, key);
   }
 
   @Override
-  public void delete(String columnFamilyName, byte[] key) {
+  public void delete(String columnFamilyName, byte[] key) throws RocksDbException {
     validateKey(key);
     delete(columnFamilyName, key, 0, key.length);
   }
 
   @Override
-  public void delete(String columnFamilyName, byte[] key, int offset, int length) {
+  public void delete(String columnFamilyName, byte[] key, int offset, int length)
+      throws RocksDbException {
     validateColumnFamily(columnFamilyName);
     validateByteArrays(key, offset, length, "Invalid key.");
     validateOpenStatus();
@@ -458,11 +459,7 @@ class RocksDbImpl implements RocksDb {
               columnFamilyName);
         }
       } else {
-        log.error(
-            "Failed to delete key:{} from columnFamily:{}, reason:{}",
-            HexFormat.of().formatHex(key),
-            columnFamilyName,
-            errMsg);
+        throw new RocksDbException(errMsg);
       }
     }
   }
