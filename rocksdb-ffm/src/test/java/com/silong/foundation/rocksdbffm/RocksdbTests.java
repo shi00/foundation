@@ -91,7 +91,7 @@ public class RocksdbTests {
   }
 
   @AfterEach
-  void cleanUp() {
+  void cleanUp() throws RocksDbException {
     rocksDb.dropColumnFamily(NOW_CF);
     rocksDb.dropColumnFamily(BEFORE_CF);
     rocksDb.close();
@@ -99,7 +99,6 @@ public class RocksdbTests {
 
   @Test
   public void test1() {
-    rocksDb.close();
     RocksDbConfig config = new RocksDbConfig();
     Map<String, Duration> columns = new HashMap<>();
     CFS.forEach(cfn -> columns.put(cfn, Duration.of(nextInt(0, 100000000), SECONDS)));
@@ -109,7 +108,7 @@ public class RocksdbTests {
     config.setPersistDataPath(
         Paths.get(System.getProperty("user.dir"))
             .resolve("target")
-            .resolve("rocksdb-test-data")
+            .resolve("rocksdb-test1-data")
             .toFile()
             .getAbsolutePath());
     try (RocksDbImpl rocksDb = (RocksDbImpl) RocksDb.getInstance(config)) {
@@ -118,10 +117,11 @@ public class RocksdbTests {
   }
 
   @Test
-  public void test2() {
+  public void test2() throws RocksDbException {
     Assertions.assertTrue(rocksDb.isOpen());
     String cf = "aa";
-    Assertions.assertTrue(rocksDb.createColumnFamily(cf));
+    rocksDb.createColumnFamily(cf);
+    Assertions.assertTrue(rocksDb.isColumnFamilyExist(cf));
     rocksDb.dropColumnFamily(cf);
     Assertions.assertFalse(rocksDb.isColumnFamilyExist(cf));
   }

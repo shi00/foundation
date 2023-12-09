@@ -81,6 +81,9 @@ class RocksDbImpl implements RocksDb {
   /** 是否需要关闭 */
   private final AtomicBoolean closed = new AtomicBoolean();
 
+  /** 错误信息 */
+  private final ThreadLocal<String> errMsgThreadLocal = ThreadLocal.withInitial(() -> OK);
+
   /** 列族名称与其对应的native值 */
   private final ConcurrentHashMap<String, ColumnFamilyDescriptor> columnFamilies =
       new ConcurrentHashMap<>();
@@ -333,62 +336,72 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  public boolean createColumnFamily(String columnFamilyName) {
+  public void createColumnFamily(String columnFamilyName) throws RocksDbException {
     if (isEmpty(columnFamilyName)) {
       throw new IllegalArgumentException("columnFamilyName must not be null or empty.");
     }
-    ColumnFamilyDescriptor descriptor =
-        columnFamilies.computeIfAbsent(
-            columnFamilyName,
-            key -> {
-              try (Arena arena = Arena.ofConfined()) {
-                if (log.isDebugEnabled()) {
-                  log.debug("Prepare to create column family: {}.", key);
-                }
-                MemorySegment cfOptions = rocksdb_options_create(); // global scope，cached 待close时释放
-                MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, 1);
-                cfNamesPtr.set(C_POINTER, 0, arena.allocateUtf8String(key));
-                MemorySegment errPtr = newErrPtr(arena); // 出参，错误消息
-                MemorySegment createdCfsSize = arena.allocate(C_POINTER); // 出参，成功创建列族长度
-                MemorySegment cfHandlesPtr =
-                    rocksdb_create_column_families(
-                        dbPtr, cfOptions, 1, cfNamesPtr, createdCfsSize, errPtr);
 
-                // 创建一个列族
-                assert createdCfsSize.get(JAVA_LONG, 0) == 1L;
-
-                String errMsg = readErrMsgAndFree(errPtr);
-                if (OK.equals(errMsg)) {
-                  MemorySegment columnFamilyHandle = cfHandlesPtr.get(C_POINTER, 0);
-                  assert checkColumnFamilyHandleName(
-                      arena,
-                      key,
-                      columnFamilyHandle,
-                      (e, c, b) -> {
-                        if (log.isDebugEnabled()) {
-                          log.debug("(expectedName: {} == columnFamilyName:{}) = {}", e, c, b);
-                        }
-                      });
-                  if (log.isDebugEnabled()) {
-                    log.debug("Successfully created column family: {}", key);
-                  }
-
-                  return ColumnFamilyDescriptor.builder()
-                      .columnFamilyName(key)
-                      .columnFamilyOptions(cfOptions)
-                      .columnFamilyHandle(columnFamilyHandle)
-                      .build();
-                } else {
-                  log.error("Failed to create column family: {}, reason:{}.", key, errMsg);
-                  return null;
-                }
+    String msg;
+    try {
+      columnFamilies.computeIfAbsent(
+          columnFamilyName,
+          key -> {
+            try (Arena arena = Arena.ofConfined()) {
+              if (log.isDebugEnabled()) {
+                log.debug("Prepare to create column family: {}.", key);
               }
-            });
-    return descriptor != null;
+              MemorySegment cfOptions = rocksdb_options_create(); // global scope，cached 待close时释放
+              MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, 1);
+              cfNamesPtr.set(C_POINTER, 0, arena.allocateUtf8String(key));
+              MemorySegment errPtr = newErrPtr(arena); // 出参，错误消息
+              MemorySegment createdCfsSize = arena.allocate(C_POINTER); // 出参，成功创建列族长度
+              MemorySegment cfHandlesPtr =
+                  rocksdb_create_column_families(
+                      dbPtr, cfOptions, 1, cfNamesPtr, createdCfsSize, errPtr);
+
+              // 创建一个列族
+              assert createdCfsSize.get(JAVA_LONG, 0) == 1L;
+
+              String errMsg = readErrMsgAndFree(errPtr);
+              if (OK.equals(errMsg)) {
+                MemorySegment columnFamilyHandle = cfHandlesPtr.get(C_POINTER, 0);
+                assert checkColumnFamilyHandleName(
+                    arena,
+                    key,
+                    columnFamilyHandle,
+                    (e, c, b) -> {
+                      if (log.isDebugEnabled()) {
+                        log.debug("(expectedName: {} == columnFamilyName:{}) = {}", e, c, b);
+                      }
+                    });
+
+                if (log.isDebugEnabled()) {
+                  log.debug("Successfully created column family: {}", key);
+                }
+
+                return ColumnFamilyDescriptor.builder()
+                    .columnFamilyName(key)
+                    .columnFamilyOptions(cfOptions)
+                    .columnFamilyHandle(columnFamilyHandle)
+                    .build();
+              } else {
+                errMsgThreadLocal.set(errMsg);
+                return null;
+              }
+            }
+          });
+    } finally {
+      msg = errMsgThreadLocal.get();
+      errMsgThreadLocal.remove();
+    }
+
+    if (!OK.equals(msg)) {
+      throw new RocksDbException(msg);
+    }
   }
 
   @Override
-  public void dropColumnFamily(String cf) {
+  public void dropColumnFamily(String cf) throws RocksDbException {
     if (isEmpty(cf)) {
       throw new IllegalArgumentException("cf must not be null or empty.");
     }
@@ -403,7 +416,7 @@ class RocksDbImpl implements RocksDb {
             log.debug("Successfully dropped column family: {}", cf);
           }
         } else {
-          log.error("Failed to drop column family: {}, reason:{}.", cf, errMsg);
+          throw new RocksDbException(errMsg);
         }
       }
     }

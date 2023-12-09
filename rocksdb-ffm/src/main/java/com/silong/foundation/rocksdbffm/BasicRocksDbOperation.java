@@ -45,17 +45,18 @@ public interface BasicRocksDbOperation {
   /**
    * 创建列族
    *
-   * @param cf 列族名称列表
-   * @return 创建成功返回true，否则false
+   * @param columnFamilyName 列族名称列表
+   * @throws RocksDbException 异常
    */
-  boolean createColumnFamily(String cf);
+  void createColumnFamily(String columnFamilyName) throws RocksDbException;
 
   /**
    * 删除列族
    *
    * @param cf 列族名
+   * @throws RocksDbException 异常
    */
-  void dropColumnFamily(String cf);
+  void dropColumnFamily(String cf) throws RocksDbException;
 
   /**
    * 在default ColumnFamily删除key
