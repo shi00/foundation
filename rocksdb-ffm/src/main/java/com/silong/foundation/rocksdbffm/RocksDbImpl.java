@@ -465,12 +465,13 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  public void deleteRange(byte[] startKey, byte[] endKey) {
+  public void deleteRange(byte[] startKey, byte[] endKey) throws RocksDbException {
     deleteRange(DEFAULT_COLUMN_FAMILY_NAME, startKey, endKey);
   }
 
   @Override
-  public void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey) {
+  public void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey)
+      throws RocksDbException {
     validateKey(startKey);
     validateKey(endKey);
     deleteRange(columnFamilyName, startKey, 0, startKey.length, endKey, 0, endKey.length);
@@ -484,7 +485,8 @@ class RocksDbImpl implements RocksDb {
       int startKeyLength,
       byte[] endKey,
       int endKeyOffset,
-      int endKeyLength) {
+      int endKeyLength)
+      throws RocksDbException {
     validateColumnFamily(columnFamilyName);
     validateByteArrays(startKey, startKeyOffset, startKeyLength, "Invalid startKey.");
     validateByteArrays(endKey, endKeyOffset, endKeyLength, "Invalid endKey.");
@@ -514,12 +516,7 @@ class RocksDbImpl implements RocksDb {
               columnFamilyName);
         }
       } else {
-        log.error(
-            "Failed to delete keys from startKey:{} to endKey:{} in cf:{}. reason:{}",
-            HexFormat.of().formatHex(startKey),
-            HexFormat.of().formatHex(endKey),
-            columnFamilyName,
-            errMsg);
+        throw new RocksDbException(errMsg);
       }
     }
   }

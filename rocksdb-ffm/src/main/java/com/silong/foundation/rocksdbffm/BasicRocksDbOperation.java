@@ -91,8 +91,9 @@ public interface BasicRocksDbOperation {
    *
    * @param startKey 起始key，includes
    * @param endKey 结束Key，excludes
+   * @throws RocksDbException 异常
    */
-  void deleteRange(byte[] startKey, byte[] endKey);
+  void deleteRange(byte[] startKey, byte[] endKey) throws RocksDbException;
 
   /**
    * 删除指定列族中的起始key和结束key之间的所有值
@@ -100,8 +101,9 @@ public interface BasicRocksDbOperation {
    * @param columnFamilyName 列族名
    * @param startKey 起始key，includes
    * @param endKey 结束Key，excludes
+   * @throws RocksDbException 异常
    */
-  void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey);
+  void deleteRange(String columnFamilyName, byte[] startKey, byte[] endKey) throws RocksDbException;
 
   /**
    * 删除指定列族中的起始key和结束key之间的所有值
@@ -113,6 +115,7 @@ public interface BasicRocksDbOperation {
    * @param endKey 结束Key，excludes
    * @param endKeyOffset offset
    * @param endKeyLength length
+   * @throws RocksDbException 异常
    */
   void deleteRange(
       String columnFamilyName,
@@ -121,7 +124,8 @@ public interface BasicRocksDbOperation {
       int startKeyLength,
       byte[] endKey,
       int endKeyOffset,
-      int endKeyLength);
+      int endKeyLength)
+      throws RocksDbException;
 
   /**
    * 向指定列族保存数据

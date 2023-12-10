@@ -150,7 +150,7 @@ public class RocksdbTests {
   }
 
   @Test
-  public void test5() {
+  public void test5() throws RocksDbException {
     Assertions.assertTrue(rocksDb.isOpen());
     IntStream.range(0, 1000)
         .forEach(
