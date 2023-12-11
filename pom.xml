@@ -83,6 +83,7 @@
         <module>distributed-job/hook</module>
         <module>distributed-job/longhaul</module>
         <module>distributed-job/scrapper</module>
+        <module>rocksdb-ffm</module>
         <module>crypto</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>
@@ -103,7 +104,7 @@
         <module>utilities/concurrent-extends</module>
         <module>utilities/xxhash-ffm</module>
         <module>utilities/nativelib-loader</module>
-        <!--        <module>rocksdb-ffm</module>-->
+
         <module>common-objects</module>
     </modules>
 
