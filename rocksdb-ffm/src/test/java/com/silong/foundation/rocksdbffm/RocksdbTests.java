@@ -29,6 +29,7 @@ import static org.apache.commons.lang3.RandomUtils.nextInt;
 import com.silong.foundation.common.lambda.Tuple2;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -296,5 +297,11 @@ public class RocksdbTests {
     Assertions.assertArrayEquals(a, tuple2s.get(0).t2());
     Assertions.assertArrayEquals(b, tuple2s.get(1).t2());
     Assertions.assertArrayEquals(c, tuple2s.get(2).t2());
+  }
+
+  @Test
+  public void test11() {
+    Collection<String> list = rocksDb.openedColumnFamilies();
+    Assertions.assertTrue(CFS.containsAll(list));
   }
 }
