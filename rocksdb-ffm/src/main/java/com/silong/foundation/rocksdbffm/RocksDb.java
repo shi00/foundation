@@ -35,6 +35,9 @@ public interface RocksDb extends BasicRocksDbOperation, AutoCloseable, Serializa
   /** 默认列族名称 */
   String DEFAULT_COLUMN_FAMILY_NAME = "default";
 
+  /** 默认共享库名，可以通过启动参数-Drocksdb.library.name自定义，但是需要确保名称与实际动态库名称一致 */
+  String DEFAULT_LIB_NAME = "librocksdb";
+
   /**
    * 获取实例
    *
