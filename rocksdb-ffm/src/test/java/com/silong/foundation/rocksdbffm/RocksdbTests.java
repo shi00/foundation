@@ -128,7 +128,7 @@ public class RocksdbTests {
   }
 
   @Test
-  public void test3() {
+  public void test3() throws RocksDbException {
     Assertions.assertTrue(rocksDb.isOpen());
     String k = "a";
     String v = "b";
@@ -153,13 +153,11 @@ public class RocksdbTests {
   @Test
   public void test5() throws RocksDbException {
     Assertions.assertTrue(rocksDb.isOpen());
-    IntStream.range(0, 1000)
-        .forEach(
-            i -> {
-              byte[] key = String.valueOf(i).getBytes(UTF_8);
-              byte[] val = RandomStringUtils.random(1024).getBytes(UTF_8);
-              rocksDb.put(key, val);
-            });
+    for (int i = 0; i < 1000; i++) {
+      byte[] key = String.valueOf(i).getBytes(UTF_8);
+      byte[] val = RandomStringUtils.random(1024).getBytes(UTF_8);
+      rocksDb.put(key, val);
+    }
 
     byte[] startKey = String.valueOf(0).getBytes(UTF_8);
     byte[] endKey = String.valueOf(999).getBytes(UTF_8);
@@ -174,16 +172,14 @@ public class RocksdbTests {
   public void test6() throws RocksDbException {
     Assertions.assertTrue(rocksDb.isOpen());
     HashMap<String, String> map = new HashMap<>();
-    IntStream.range(0, 10)
-        .forEach(
-            i -> {
-              String k = RandomStringUtils.random(512);
-              byte[] key = k.getBytes(UTF_8);
-              String v = RandomStringUtils.random(1024);
-              byte[] val = v.getBytes(UTF_8);
-              rocksDb.put(NOW_CF, key, val);
-              map.put(k, v);
-            });
+    for (int i = 0; i < 10; i++) {
+      String k = RandomStringUtils.random(512);
+      byte[] key = k.getBytes(UTF_8);
+      String v = RandomStringUtils.random(1024);
+      byte[] val = v.getBytes(UTF_8);
+      rocksDb.put(NOW_CF, key, val);
+      map.put(k, v);
+    }
     try (RocksDbIterator iterator = rocksDb.iterator(NOW_CF)) {
       int count = 0;
       for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
@@ -201,20 +197,18 @@ public class RocksdbTests {
   public void test7() throws RocksDbException {
     Assertions.assertTrue(rocksDb.isOpen());
     HashMap<String, String> map = new HashMap<>();
-    IntStream.range(0, 50)
-        .forEach(
-            i -> {
-              String k = RandomStringUtils.random(512);
-              byte[] key = k.getBytes(UTF_8);
-              String v = RandomStringUtils.random(1024);
-              byte[] val = v.getBytes(UTF_8);
-              if (i >= 20) {
-                rocksDb.put(BEFORE_CF, key, val);
-              } else {
-                rocksDb.put(NOW_CF, key, val);
-              }
-              map.put(k, v);
-            });
+    for (int i = 0; i < 50; i++) {
+      String k = RandomStringUtils.random(512);
+      byte[] key = k.getBytes(UTF_8);
+      String v = RandomStringUtils.random(1024);
+      byte[] val = v.getBytes(UTF_8);
+      if (i >= 20) {
+        rocksDb.put(BEFORE_CF, key, val);
+      } else {
+        rocksDb.put(NOW_CF, key, val);
+      }
+      map.put(k, v);
+    }
 
     try (RocksDbIterator iterator1 = rocksDb.iterator(BEFORE_CF);
         RocksDbIterator iterator2 = rocksDb.iterator(NOW_CF)) {
@@ -284,7 +278,7 @@ public class RocksdbTests {
   }
 
   @Test
-  public void test10() {
+  public void test10() throws RocksDbException {
     byte[] a = "a".getBytes(UTF_8);
     byte[] b = "b".getBytes(UTF_8);
     byte[] c = "c".getBytes(UTF_8);
