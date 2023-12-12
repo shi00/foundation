@@ -58,7 +58,7 @@ class RocksDbImpl implements RocksDb {
 
   /** 共享库名称 */
   private static final String LIB_ROCKSDB =
-      System.getProperty("rocksdb.library.name", "librocksdb");
+      System.getProperty("rocksdb.library.name", DEFAULT_LIB_NAME);
 
   static {
     loadLibrary(LIB_ROCKSDB);
@@ -522,14 +522,22 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  public void put(String columnFamilyName, byte[] key, byte[] value) {
+  public void put(
+      String columnFamilyName,
+      byte[] key,
+      int keyOffset,
+      int keyLength,
+      byte[] value,
+      int valueOffset,
+      int valueLength)
+      throws RocksDbException {
     validateColumnFamily(columnFamilyName);
-    validateKey(key);
-    validateValue(value);
+    validateByteArrays(key, keyOffset, keyLength, "Invalid key.");
+    validateByteArrays(value, valueOffset, valueLength, "Invalid value.");
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
-      MemorySegment valPtr = arena.allocateArray(C_CHAR, value);
+      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key).asSlice(keyOffset, keyLength);
+      MemorySegment valPtr = arena.allocateArray(C_CHAR, value).asSlice(valueOffset, valueLength);
       MemorySegment errPtr = newErrPtr(arena);
       rocksdb_put_cf(
           dbPtr,
@@ -551,14 +559,21 @@ class RocksDbImpl implements RocksDb {
               columnFamilyName);
         }
       } else {
-        log.error(
-            "Failed to put kv:[{}---{}] to cf:{}. reason:{}",
-            HexFormat.of().formatHex(key),
-            HexFormat.of().formatHex(value),
-            columnFamilyName,
-            errMsg);
+        throw new RocksDbException(errMsg);
       }
     }
+  }
+
+  @Override
+  public void put(String columnFamilyName, byte[] key, byte[] value) throws RocksDbException {
+    validateKey(key);
+    validateValue(value);
+    put(columnFamilyName, key, 0, key.length, value, 0, value.length);
+  }
+
+  @Override
+  public void put(byte[] key, byte[] value) throws RocksDbException {
+    put(DEFAULT_COLUMN_FAMILY_NAME, key, value);
   }
 
   @Override
@@ -577,11 +592,6 @@ class RocksDbImpl implements RocksDb {
           }
           return null;
         });
-  }
-
-  @Override
-  public void put(byte[] key, byte[] value) {
-    put(DEFAULT_COLUMN_FAMILY_NAME, key, value);
   }
 
   @Override

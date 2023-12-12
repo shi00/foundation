@@ -128,29 +128,54 @@ public interface BasicRocksDbOperation {
       throws RocksDbException;
 
   /**
+   * 批量写入
+   *
+   * @param columnFamilyName 列族
+   * @param kvPairs kv键值对列表
+   * @throws RocksDbException 异常
+   */
+  void putAll(String columnFamilyName, Tuple2<byte[], byte[]>... kvPairs) throws RocksDbException;
+
+  /**
+   * 向指定列族保存数据
+   *
+   * @param columnFamilyName 列族名
+   * @param key key
+   * @param keyOffset offset
+   * @param keyLength length
+   * @param value value
+   * @param valueOffset offset
+   * @param valueLength length
+   * @throws RocksDbException 异常
+   */
+  void put(
+      String columnFamilyName,
+      byte[] key,
+      int keyOffset,
+      int keyLength,
+      byte[] value,
+      int valueOffset,
+      int valueLength)
+      throws RocksDbException;
+
+  /**
    * 向指定列族保存数据
    *
    * @param columnFamilyName 列族名
    * @param key key
    * @param value value
+   * @throws RocksDbException 异常
    */
-  void put(String columnFamilyName, byte[] key, byte[] value);
-
-  /**
-   * 批量写入
-   *
-   * @param columnFamilyName 列族
-   * @param kvPairs kv键值对列表
-   */
-  void putAll(String columnFamilyName, Tuple2<byte[], byte[]>... kvPairs) throws RocksDbException;
+  void put(String columnFamilyName, byte[] key, byte[] value) throws RocksDbException;
 
   /**
    * 向默认列族保存数据
    *
    * @param key key
    * @param value value
+   * @throws RocksDbException 异常
    */
-  void put(byte[] key, byte[] value);
+  void put(byte[] key, byte[] value) throws RocksDbException;
 
   /**
    * 查询指定列族的键值，如果出现错误或者key不存在，返回null
@@ -159,7 +184,7 @@ public interface BasicRocksDbOperation {
    * @param key key
    * @return value
    */
-  byte[] get(String columnFamilyName, byte[] key);
+  byte[] get(String columnFamilyName, byte[] key) throws RocksDbException;
 
   /**
    * 查询默认列族保存数据
@@ -167,7 +192,7 @@ public interface BasicRocksDbOperation {
    * @param key key
    * @return value
    */
-  byte[] get(byte[] key);
+  byte[] get(byte[] key) throws RocksDbException;
 
   /**
    * 在default ColumnFamily查询多Key
@@ -175,7 +200,7 @@ public interface BasicRocksDbOperation {
    * @param keys key列表
    * @return kvPairs
    */
-  List<Tuple2<byte[], byte[]>> multiGet(byte[]... keys);
+  List<Tuple2<byte[], byte[]>> multiGet(byte[]... keys) throws RocksDbException;
 
   /**
    * 在指定列族查询多Key
@@ -184,7 +209,8 @@ public interface BasicRocksDbOperation {
    * @param keys key列表
    * @return kvPairs
    */
-  List<Tuple2<byte[], byte[]>> multiGet(String columnFamilyName, byte[]... keys);
+  List<Tuple2<byte[], byte[]>> multiGet(String columnFamilyName, byte[]... keys)
+      throws RocksDbException;
 
   /**
    * 获取default列族迭代器
