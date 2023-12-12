@@ -93,6 +93,7 @@ class Utils {
     validateByteArrays(key, "key must not be null or empty.");
   }
 
+  @SafeVarargs
   public static void validateKvPairs(Tuple2<byte[], byte[]>... kvPairs) {
     if (kvPairs == null
         || kvPairs.length == 0
