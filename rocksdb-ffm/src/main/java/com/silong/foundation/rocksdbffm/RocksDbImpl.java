@@ -153,6 +153,9 @@ class RocksDbImpl implements RocksDb {
 
         // 默认WriteOptions
         this.writeOptionsPtr = new WriteOptions().to();
+        if (log.isDebugEnabled()) {
+          log.debug("default {}", WriteOptions.toString(writeOptionsPtr));
+        }
 
         // 保存打开的列族
         cacheColumnFamilyDescriptor(arena, columnFamilyNames, cfOptionsPtr, cfHandlesPtr);
