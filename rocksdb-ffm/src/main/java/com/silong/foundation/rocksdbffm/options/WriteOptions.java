@@ -29,6 +29,8 @@ import static java.lang.foreign.MemoryLayout.structLayout;
 import static java.lang.foreign.ValueLayout.*;
 
 import com.silong.foundation.rocksdbffm.enu.IOPriority;
+import java.io.Serial;
+import java.io.Serializable;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
@@ -44,7 +46,9 @@ import lombok.NonNull;
  * @since 2023-12-13 10:43
  */
 @Data
-public final class WriteOptions implements Options {
+public final class WriteOptions implements Options, Serializable {
+
+  @Serial private static final long serialVersionUID = 8_670_699_038_504_974_883L;
 
   private static final MemoryLayout LAYOUT =
       structLayout(
