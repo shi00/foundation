@@ -194,13 +194,27 @@ class Utils {
   }
 
   /**
-   * 读取错误信息(char** )，如果返回空字符串则表示操作成功，如果返回有错误信息则在读取结果后释放native资源
+   * 读取索引为0的错误信息(char** )，如果返回空字符串则表示操作成功，如果返回有错误信息则在读取结果后释放native资源
    *
    * @param errPtr C_POINTER指针
    * @return 错误信息或空字符串
    */
-  public static String readErrMsgAndFree(@NonNull MemorySegment errPtr) {
-    MemorySegment ptr = errPtr.getAtIndex(C_POINTER, 0);
+  public static String readErrMsgAndFree(MemorySegment errPtr) {
+    return readErrMsgAndFree(errPtr, 0);
+  }
+
+  /**
+   * 读取指定索引位置的错误信息(char** )，如果返回空字符串则表示操作成功，如果返回有错误信息则在读取结果后释放native资源
+   *
+   * @param errPtr C_POINTER指针
+   * @param index 错误索引
+   * @return 错误信息或空字符串
+   */
+  public static String readErrMsgAndFree(@NonNull MemorySegment errPtr, int index) {
+    if (index < 0) {
+      throw new IllegalArgumentException("index must be greater than or equals to 0.");
+    }
+    MemorySegment ptr = errPtr.getAtIndex(C_POINTER, index);
     if (NULL.equals(ptr)) {
       return OK;
     }
