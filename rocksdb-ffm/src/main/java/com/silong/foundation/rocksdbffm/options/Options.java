@@ -31,7 +31,7 @@ import java.lang.foreign.MemorySegment;
  * @version 1.0.0
  * @since 2023-12-13 11:04
  */
-public sealed interface Options permits WriteOptions {
+public sealed interface Options permits WriteOptions, ReadOptions {
 
   /**
    * 获取Options对应的native memoryLayout
