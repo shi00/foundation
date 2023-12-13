@@ -298,4 +298,35 @@ public class RocksdbTests {
     Collection<String> list = rocksDb.openedColumnFamilies();
     Assertions.assertTrue(CFS.containsAll(list));
   }
+
+  //  @Test
+  public void test12() throws RocksDbException {
+    List<Tuple2<String, String>> list =
+        IntStream.range(0, nextInt(1, 100))
+            .mapToObj(
+                i ->
+                    new Tuple2<>(
+                        RandomStringUtils.randomAlphabetic(128), RandomStringUtils.random(512)))
+            .toList();
+
+    rocksDb.putAll(
+        NOW_CF,
+        list.stream()
+            .map(t -> new Tuple2<>(t.t1().getBytes(UTF_8), t.t2().getBytes(UTF_8)))
+            .toArray(Tuple2[]::new));
+
+    List<Tuple2<byte[], byte[]>> tuple2s =
+        rocksDb.multiGet(
+            NOW_CF, list.stream().map(t -> t.t1().getBytes(UTF_8)).toArray(byte[][]::new));
+
+    for (Tuple2<String, String> t : list) {
+      boolean condition =
+          tuple2s.stream()
+              .anyMatch(
+                  p ->
+                      t.t1().equals(new String(p.t1(), UTF_8))
+                          && t.t2().equals(new String(p.t2(), UTF_8)));
+      Assertions.assertTrue(condition);
+    }
+  }
 }

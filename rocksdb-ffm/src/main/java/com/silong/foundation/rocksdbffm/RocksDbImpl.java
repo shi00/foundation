@@ -600,28 +600,28 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  @Nullable
-  public List<Tuple2<byte[], byte[]>> multiGet(byte[]... keys) {
+  public List<Tuple2<byte[], byte[]>> multiGet(byte[]... keys) throws RocksDbException {
     return multiGet(DEFAULT_COLUMN_FAMILY_NAME, keys);
   }
 
   @Override
-  @Nullable
-  public List<Tuple2<byte[], byte[]>> multiGet(String columnFamilyName, byte[]... keys) {
+  public List<Tuple2<byte[], byte[]>> multiGet(String columnFamilyName, byte[]... keys)
+      throws RocksDbException {
     validateColumnFamily(columnFamilyName);
     validateKeys(keys);
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
       int size = keys.length;
-      MemorySegment columnFamilyHandles = arena.allocateArray(C_POINTER, size);
+      MemorySegment columnFamilyHandles =
+          arena.allocateArray(C_POINTER, size); // 每个待查key对应的columnfamilyhandle列表
       MemorySegment keysPtr = arena.allocateArray(C_POINTER, size);
       MemorySegment valuesPtr = arena.allocateArray(C_POINTER, size);
       MemorySegment keySizesPtr = arena.allocateArray(JAVA_LONG, size);
       MemorySegment valueSizesPtr = arena.allocateArray(JAVA_LONG, size);
-      MemorySegment errPtr = newErrPtr(arena);
+      MemorySegment errPtr = arena.allocateArray(C_POINTER, size);
+      MemorySegment columnFamilyHandle = columnFamilies.get(columnFamilyName).columnFamilyHandle();
       for (int i = 0; i < size; i++) {
-        columnFamilyHandles.setAtIndex(
-            C_POINTER, i, columnFamilies.get(columnFamilyName).columnFamilyHandle());
+        columnFamilyHandles.setAtIndex(C_POINTER, i, columnFamilyHandle);
         keysPtr.setAtIndex(C_POINTER, i, arena.allocateArray(C_CHAR, keys[i]));
         keySizesPtr.setAtIndex(JAVA_LONG, i, keys[i].length);
       }
@@ -637,27 +637,20 @@ class RocksDbImpl implements RocksDb {
           valueSizesPtr,
           errPtr);
 
-      String errMsg = readErrMsgAndFree(errPtr);
-      if (OK.equals(errMsg)) {
-        List<Tuple2<byte[], byte[]>> result = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
+      List<Tuple2<byte[], byte[]>> result = new ArrayList<>(size);
+      for (int i = 0; i < size; i++) {
+        String errMsg = readErrMsgAndFree(errPtr, i);
+        if (OK.equals(errMsg)) {
           MemorySegment valuePtr =
               valuesPtr.getAtIndex(C_POINTER, i).reinterpret(arena, Utils::free);
           long length = valueSizesPtr.getAtIndex(JAVA_LONG, i);
           byte[] value = valuePtr.asSlice(0, length).toArray(C_CHAR);
           result.add(Tuple2.<byte[], byte[]>Tuple2Builder().t2(value).t1(keys[i]).build());
+        } else {
+          throw new RocksDbException(errMsg);
         }
-        return result;
-      } else {
-        log.error(
-            "Failed to get values by keys:{} from cf:{}. reason:{}",
-            Arrays.stream(keys)
-                .map(key -> HexFormat.of().formatHex(key))
-                .collect(Collectors.joining(", ", "[", "]")),
-            columnFamilyName,
-            errMsg);
-        return null;
       }
+      return result;
     }
   }
 
