@@ -24,6 +24,7 @@ package com.silong.foundation.rocksdbffm.options;
 import static com.silong.foundation.rocksdbffm.enu.IOPriority.IO_TOTAL;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_writeoptions_create;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_writeoptions_destroy;
+import static java.lang.foreign.MemoryLayout.paddingLayout;
 import static java.lang.foreign.MemoryLayout.structLayout;
 import static java.lang.foreign.ValueLayout.*;
 
@@ -34,7 +35,6 @@ import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import lombok.Data;
 import lombok.NonNull;
-import lombok.experimental.Accessors;
 
 /**
  * 写入配置
@@ -44,25 +44,24 @@ import lombok.experimental.Accessors;
  * @since 2023-12-13 10:43
  */
 @Data
-@Accessors(fluent = true)
 public final class WriteOptions implements Options {
 
   private static final MemoryLayout LAYOUT =
       structLayout(
           JAVA_BOOLEAN.withName("sync"),
-          MemoryLayout.paddingLayout(3),
+          //          paddingLayout(1),
           JAVA_BOOLEAN.withName("disableWAL"),
-          MemoryLayout.paddingLayout(3),
+          //          paddingLayout(1),
           JAVA_BOOLEAN.withName("ignore_missing_column_families"),
-          MemoryLayout.paddingLayout(3),
+          //          paddingLayout(1),
           JAVA_BOOLEAN.withName("no_slowdown"),
-          MemoryLayout.paddingLayout(3),
+          //          paddingLayout(1),
           JAVA_BOOLEAN.withName("low_pri"),
-          MemoryLayout.paddingLayout(3),
+          //          paddingLayout(1),
           JAVA_BOOLEAN.withName("memtable_insert_hint_per_batch"),
-          MemoryLayout.paddingLayout(3),
-          JAVA_BYTE.withName("rate_limiter_priority"),
-          MemoryLayout.paddingLayout(7),
+          paddingLayout(2),
+          JAVA_INT.withName("rate_limiter_priority"),
+          paddingLayout(4),
           JAVA_LONG.withName("protection_bytes_per_key"));
 
   private static final VarHandle SYNC = LAYOUT.varHandle(PathElement.groupElement("sync"));
@@ -307,7 +306,7 @@ public final class WriteOptions implements Options {
   }
 
   public static IOPriority rateLimiterPriority(@NonNull MemorySegment writeOptions) {
-    byte ioP = (byte) RATE_LIMITER_PRIORITY.get(writeOptions);
+    int ioP = (int) RATE_LIMITER_PRIORITY.get(writeOptions);
     return Arrays.stream(IOPriority.values())
         .filter(e -> e.ordinal() == ioP)
         .findAny()
