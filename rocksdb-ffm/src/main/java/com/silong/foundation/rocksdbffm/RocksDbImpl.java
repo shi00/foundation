@@ -28,6 +28,7 @@ import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.rocksdbffm.options.WriteOptions;
 import java.io.Serial;
 import java.lang.foreign.*;
 import java.time.Duration;
@@ -150,8 +151,8 @@ class RocksDbImpl implements RocksDb {
         // 创建默认读取options，global scope close时释放
         this.readOptionsPtr = rocksdb_readoptions_create();
 
-        // 创建默认写入options，global scope close时释放
-        this.writeOptionsPtr = rocksdb_writeoptions_create();
+        // 默认WriteOptions
+        this.writeOptionsPtr = new WriteOptions().to();
 
         // 保存打开的列族
         cacheColumnFamilyDescriptor(arena, columnFamilyNames, cfOptionsPtr, cfHandlesPtr);
@@ -583,6 +584,7 @@ class RocksDbImpl implements RocksDb {
     validateKvPairs(kvPairs);
     validateOpenStatus();
     this.<Void>atomicBatchUpdate(
+        writeOptionsPtr,
         writeBatch -> {
           MemorySegment columnFamilyHandle =
               columnFamilies.get(columnFamilyName).columnFamilyHandle();
@@ -720,11 +722,6 @@ class RocksDbImpl implements RocksDb {
     }
   }
 
-  @Nullable
-  MemorySegment getColumnFamilyHandle(String columnFamilyName) {
-    return columnFamilies.get(columnFamilyName).columnFamilyHandle();
-  }
-
   /**
    * 列族是否存在
    *
@@ -745,20 +742,16 @@ class RocksDbImpl implements RocksDb {
     }
   }
 
-  /**
-   * 原子更新操作
-   *
-   * @param action 操作
-   * @return 结果
-   * @param <R> 结果类型
-   */
-  public <R> R atomicBatchUpdate(@NonNull Function<WriteBatch, R> action) throws RocksDbException {
+  @Override
+  public <R> R atomicBatchUpdate(
+      @NonNull MemorySegment writeOptions, @NonNull Function<WriteBatch, R> action)
+      throws RocksDbException {
     try (Arena arena = Arena.ofConfined();
         WriteBatchImpl writeBatch = new WriteBatchImpl(arena)) {
       try {
         R result = action.apply(writeBatch); // 批量操作执行完毕后执行批量提交
         MemorySegment errPtr = newErrPtr(arena);
-        rocksdb_write(dbPtr, dbOptionsPtr, writeBatch.writeBatch, errPtr);
+        rocksdb_write(dbPtr, writeOptions, writeBatch.writeBatch, errPtr);
         String errMsg = readErrMsgAndFree(errPtr);
         if (OK.equals(errMsg)) {
           if (log.isDebugEnabled()) {
