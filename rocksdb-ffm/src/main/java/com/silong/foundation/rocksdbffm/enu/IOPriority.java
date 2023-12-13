@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.rocksdbffm;
+package com.silong.foundation.rocksdbffm.enu;
 
 /**
  * Rocksdb 数据写入的IO优先级
