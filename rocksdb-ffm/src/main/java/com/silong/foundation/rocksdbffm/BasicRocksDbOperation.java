@@ -22,6 +22,7 @@
 package com.silong.foundation.rocksdbffm;
 
 import com.silong.foundation.common.lambda.Tuple2;
+import java.lang.foreign.MemorySegment;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -230,10 +231,12 @@ public interface BasicRocksDbOperation {
   /**
    * 原子批量更新操作
    *
+   * @param writeOptions options
    * @param action 操作
    * @return 结果
    * @param <R> 结果类型
    * @throws RocksDbException 更新异常
    */
-  <R> R atomicBatchUpdate(Function<WriteBatch, R> action) throws RocksDbException;
+  <R> R atomicBatchUpdate(MemorySegment writeOptions, Function<WriteBatch, R> action)
+      throws RocksDbException;
 }
