@@ -49,14 +49,21 @@ public final class WriteOptions implements Options {
 
   private static final MemoryLayout LAYOUT =
       structLayout(
-          JAVA_BOOLEAN.withName("sync").withByteAlignment(8),
-          JAVA_BOOLEAN.withName("disableWAL").withByteAlignment(8),
-          JAVA_BOOLEAN.withName("ignore_missing_column_families").withByteAlignment(8),
-          JAVA_BOOLEAN.withName("no_slowdown").withByteAlignment(8),
-          JAVA_BOOLEAN.withName("low_pri").withByteAlignment(8),
-          JAVA_BOOLEAN.withName("memtable_insert_hint_per_batch").withByteAlignment(8),
-          JAVA_BYTE.withName("rate_limiter_priority").withByteAlignment(8),
-          JAVA_LONG.withName("protection_bytes_per_key").withByteAlignment(8));
+          JAVA_BOOLEAN.withName("sync"),
+          MemoryLayout.paddingLayout(3),
+          JAVA_BOOLEAN.withName("disableWAL"),
+          MemoryLayout.paddingLayout(3),
+          JAVA_BOOLEAN.withName("ignore_missing_column_families"),
+          MemoryLayout.paddingLayout(3),
+          JAVA_BOOLEAN.withName("no_slowdown"),
+          MemoryLayout.paddingLayout(3),
+          JAVA_BOOLEAN.withName("low_pri"),
+          MemoryLayout.paddingLayout(3),
+          JAVA_BOOLEAN.withName("memtable_insert_hint_per_batch"),
+          MemoryLayout.paddingLayout(3),
+          JAVA_BYTE.withName("rate_limiter_priority"),
+          MemoryLayout.paddingLayout(7),
+          JAVA_LONG.withName("protection_bytes_per_key"));
 
   private static final VarHandle SYNC = LAYOUT.varHandle(PathElement.groupElement("sync"));
 
@@ -167,66 +174,16 @@ public final class WriteOptions implements Options {
    */
   private long protectionBytesPerKey;
 
-  public MemorySegment rateLimiterPriority(
-      @NonNull IOPriority ioPriority, @NonNull MemorySegment writeOptions) {
-    RATE_LIMITER_PRIORITY.set(writeOptions, (byte) ioPriority.ordinal());
-    return writeOptions;
-  }
-
-  public MemorySegment protectionBytesPerKey(
-      long protectionBytesPerKey, @NonNull MemorySegment writeOptions) {
-    PROTECTION_BYTES_PER_KEY.set(writeOptions, protectionBytesPerKey);
-    return writeOptions;
-  }
-
-  public MemorySegment memtableInsertHintPerBatch(
-      boolean memtableInsertHintPerBatch, @NonNull MemorySegment writeOptions) {
-    MEMTABLE_INSERT_HINT_PER_BATCH.set(writeOptions, memtableInsertHintPerBatch);
-    return writeOptions;
-  }
-
-  public MemorySegment sync(boolean sync, @NonNull MemorySegment writeOptions) {
-    SYNC.set(writeOptions, sync);
-    return writeOptions;
-  }
-
-  public MemorySegment lowPri(boolean lowPri, @NonNull MemorySegment writeOptions) {
-    LOW_PRI.set(writeOptions, lowPri);
-    return writeOptions;
-  }
-
-  public MemorySegment noSlowdown(boolean noSlowdown, @NonNull MemorySegment writeOptions) {
-    NO_SLOWDOWN.set(writeOptions, noSlowdown);
-    return writeOptions;
-  }
-
-  public MemorySegment disableWAL(boolean disableWAL, @NonNull MemorySegment writeOptions) {
-    DISABLE_WAL.set(writeOptions, disableWAL);
-    return writeOptions;
-  }
-
-  public MemorySegment ignoreMissingColumnFamilies(
-      boolean ignoreMissingColumnFamilies, @NonNull MemorySegment writeOptions) {
-    MEMTABLE_INSERT_HINT_PER_BATCH.set(writeOptions, ignoreMissingColumnFamilies);
-    return writeOptions;
-  }
-
   @Override
-  public WriteOptions from(@NonNull MemorySegment memorySegment) {
-    this.sync = (boolean) SYNC.get(memorySegment);
-    this.disableWAL = (boolean) DISABLE_WAL.get(memorySegment);
-    this.noSlowdown = (boolean) NO_SLOWDOWN.get(memorySegment);
-    this.memtableInsertHintPerBatch = (boolean) MEMTABLE_INSERT_HINT_PER_BATCH.get(memorySegment);
-    this.lowPri = (boolean) LOW_PRI.get(memorySegment);
-    this.ignoreMissingColumnFamilies = (boolean) IGNORE_MISSING_COLUMN_FAMILIES.get(memorySegment);
-    int ioP = (int) RATE_LIMITER_PRIORITY.get(memorySegment);
-    this.protectionBytesPerKey = (long) PROTECTION_BYTES_PER_KEY.get(memorySegment);
-    this.rateLimiterPriority =
-        Arrays.stream(IOPriority.values())
-            .filter(e -> e.ordinal() == ioP)
-            .findAny()
-            .orElseThrow(
-                () -> new IllegalStateException(String.format("Unknown IOPriority: %d", ioP)));
+  public WriteOptions from(@NonNull MemorySegment writeOptions) {
+    this.sync = sync(writeOptions);
+    this.disableWAL = disableWAL(writeOptions);
+    this.noSlowdown = noSlowdown(writeOptions);
+    this.memtableInsertHintPerBatch = memtableInsertHintPerBatch(writeOptions);
+    this.lowPri = lowPri(writeOptions);
+    this.ignoreMissingColumnFamilies = ignoreMissingColumnFamilies(writeOptions);
+    this.protectionBytesPerKey = protectionBytesPerKey(writeOptions);
+    this.rateLimiterPriority = rateLimiterPriority(writeOptions);
     return this;
   }
 
@@ -254,6 +211,63 @@ public final class WriteOptions implements Options {
     return LAYOUT;
   }
 
+  public static String toString(@NonNull MemorySegment writeOptions) {
+    return String.format(
+        "writeOptions:[sync:%b, disableWAL:%b, ignore_missing_column_families:%b, no_slowdown:%b, low_pri:%b, memtable_insert_hint_per_batch:%b, rate_limiter_priority:%s, protection_bytes_per_key:%d]",
+        sync(writeOptions),
+        disableWAL(writeOptions),
+        ignoreMissingColumnFamilies(writeOptions),
+        noSlowdown(writeOptions),
+        lowPri(writeOptions),
+        memtableInsertHintPerBatch(writeOptions),
+        rateLimiterPriority(writeOptions),
+        protectionBytesPerKey(writeOptions));
+  }
+
+  public static MemorySegment rateLimiterPriority(
+      @NonNull IOPriority ioPriority, @NonNull MemorySegment writeOptions) {
+    RATE_LIMITER_PRIORITY.set(writeOptions, (byte) ioPriority.ordinal());
+    return writeOptions;
+  }
+
+  public static MemorySegment protectionBytesPerKey(
+      long protectionBytesPerKey, @NonNull MemorySegment writeOptions) {
+    PROTECTION_BYTES_PER_KEY.set(writeOptions, protectionBytesPerKey);
+    return writeOptions;
+  }
+
+  public static MemorySegment memtableInsertHintPerBatch(
+      boolean memtableInsertHintPerBatch, @NonNull MemorySegment writeOptions) {
+    MEMTABLE_INSERT_HINT_PER_BATCH.set(writeOptions, memtableInsertHintPerBatch);
+    return writeOptions;
+  }
+
+  public static MemorySegment sync(boolean sync, @NonNull MemorySegment writeOptions) {
+    SYNC.set(writeOptions, sync);
+    return writeOptions;
+  }
+
+  public static MemorySegment lowPri(boolean lowPri, @NonNull MemorySegment writeOptions) {
+    LOW_PRI.set(writeOptions, lowPri);
+    return writeOptions;
+  }
+
+  public static MemorySegment noSlowdown(boolean noSlowdown, @NonNull MemorySegment writeOptions) {
+    NO_SLOWDOWN.set(writeOptions, noSlowdown);
+    return writeOptions;
+  }
+
+  public static MemorySegment disableWAL(boolean disableWAL, @NonNull MemorySegment writeOptions) {
+    DISABLE_WAL.set(writeOptions, disableWAL);
+    return writeOptions;
+  }
+
+  public static MemorySegment ignoreMissingColumnFamilies(
+      boolean ignoreMissingColumnFamilies, @NonNull MemorySegment writeOptions) {
+    IGNORE_MISSING_COLUMN_FAMILIES.set(writeOptions, ignoreMissingColumnFamilies);
+    return writeOptions;
+  }
+
   /**
    * 创建native WriteOptions，需要自行释放资源
    *
@@ -270,5 +284,41 @@ public final class WriteOptions implements Options {
    */
   public static void destroy(@NonNull MemorySegment writeOptions) {
     rocksdb_writeoptions_destroy(writeOptions);
+  }
+
+  public static boolean sync(@NonNull MemorySegment writeOptions) {
+    return (boolean) SYNC.get(writeOptions);
+  }
+
+  public static boolean ignoreMissingColumnFamilies(@NonNull MemorySegment writeOptions) {
+    return (boolean) IGNORE_MISSING_COLUMN_FAMILIES.get(writeOptions);
+  }
+
+  public static boolean noSlowdown(@NonNull MemorySegment writeOptions) {
+    return (boolean) NO_SLOWDOWN.get(writeOptions);
+  }
+
+  public static boolean disableWAL(@NonNull MemorySegment writeOptions) {
+    return (boolean) DISABLE_WAL.get(writeOptions);
+  }
+
+  public static boolean memtableInsertHintPerBatch(@NonNull MemorySegment writeOptions) {
+    return (boolean) MEMTABLE_INSERT_HINT_PER_BATCH.get(writeOptions);
+  }
+
+  public static IOPriority rateLimiterPriority(@NonNull MemorySegment writeOptions) {
+    byte ioP = (byte) RATE_LIMITER_PRIORITY.get(writeOptions);
+    return Arrays.stream(IOPriority.values())
+        .filter(e -> e.ordinal() == ioP)
+        .findAny()
+        .orElseThrow(() -> new IllegalStateException(String.format("Unknown IOPriority: %d", ioP)));
+  }
+
+  public static boolean lowPri(@NonNull MemorySegment writeOptions) {
+    return (boolean) LOW_PRI.get(writeOptions);
+  }
+
+  public static long protectionBytesPerKey(@NonNull MemorySegment writeOptions) {
+    return (long) PROTECTION_BYTES_PER_KEY.get(writeOptions);
   }
 }
