@@ -45,7 +45,7 @@ import lombok.SneakyThrows;
  * @version 1.0.0
  * @since 2023-12-06 9:10
  */
-class Utils {
+public class Utils {
 
   private static final Linker LINKER = Linker.nativeLinker();
 
@@ -221,6 +221,24 @@ class Utils {
     try (Arena arena = Arena.ofConfined()) {
       return getUtf8String(ptr.reinterpret(arena, Utils::free), strlen(ptr));
     }
+  }
+
+  /**
+   * 根据枚举值查找枚举类型
+   *
+   * @param value 值
+   * @param enumClass 类型
+   * @return 枚举
+   * @param <T> 枚举类型
+   */
+  public static <T extends Enum<T>> T enumType(int value, @NonNull Class<T> enumClass) {
+    for (T t : enumClass.getEnumConstants()) {
+      if (t.ordinal() == value) {
+        return t;
+      }
+    }
+    throw new IllegalStateException(
+        String.format("%s: Unknown type: %d", enumClass.getName(), value));
   }
 
   /** Forbidden */
