@@ -21,6 +21,7 @@
 
 package com.silong.foundation.rocksdbffm.options;
 
+import static com.silong.foundation.rocksdbffm.Utils.enumType;
 import static com.silong.foundation.rocksdbffm.enu.IOPriority.IO_TOTAL;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_writeoptions_create;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_writeoptions_destroy;
@@ -34,7 +35,6 @@ import java.io.Serializable;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
-import java.util.Arrays;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -310,11 +310,7 @@ public final class WriteOptions implements Options, Serializable {
   }
 
   public static IOPriority rateLimiterPriority(@NonNull MemorySegment writeOptions) {
-    int ioP = (int) RATE_LIMITER_PRIORITY.get(writeOptions);
-    return Arrays.stream(IOPriority.values())
-        .filter(e -> e.ordinal() == ioP)
-        .findAny()
-        .orElseThrow(() -> new IllegalStateException(String.format("Unknown IOPriority: %d", ioP)));
+    return enumType((int) RATE_LIMITER_PRIORITY.get(writeOptions), IOPriority.class);
   }
 
   public static boolean lowPri(@NonNull MemorySegment writeOptions) {
