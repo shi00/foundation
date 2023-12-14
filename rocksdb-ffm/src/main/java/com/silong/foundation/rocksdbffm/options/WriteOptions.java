@@ -214,7 +214,7 @@ public final class WriteOptions implements Options, Serializable {
     return LAYOUT;
   }
 
-  public static String toString(@NonNull MemorySegment writeOptions) {
+  public static String toString(MemorySegment writeOptions) {
     return String.format(
         "writeOptions:[sync:%b, disableWAL:%b, ignore_missing_column_families:%b, no_slowdown:%b, low_pri:%b, memtable_insert_hint_per_batch:%b, rate_limiter_priority:%s, protection_bytes_per_key:%d]",
         sync(writeOptions),
