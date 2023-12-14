@@ -229,7 +229,7 @@ public final class WriteOptions implements Options, Serializable {
 
   public static MemorySegment rateLimiterPriority(
       @NonNull IOPriority ioPriority, @NonNull MemorySegment writeOptions) {
-    RATE_LIMITER_PRIORITY.set(writeOptions, (byte) ioPriority.ordinal());
+    RATE_LIMITER_PRIORITY.set(writeOptions, ioPriority.ordinal());
     return writeOptions;
   }
 
