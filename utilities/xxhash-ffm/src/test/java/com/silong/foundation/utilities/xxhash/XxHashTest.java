@@ -23,6 +23,7 @@ package com.silong.foundation.utilities.xxhash;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
@@ -54,5 +55,17 @@ public class XxHashTest {
       byte[] bytes = str.getBytes(UTF_8);
       assertEquals(XxHashGenerator.hash64(bytes), XxHashGenerator.hash64(bytes));
     } while (--count > 0);
+  }
+
+  @Test
+  public void test3() {
+    byte[] bytes = new byte[0];
+    assertThrowsExactly(IllegalArgumentException.class, () -> XxHashGenerator.hash64(bytes));
+  }
+
+  @Test
+  public void test4() {
+    byte[] bytes = new byte[0];
+    assertThrowsExactly(IllegalArgumentException.class, () -> XxHashGenerator.hash32(bytes));
   }
 }

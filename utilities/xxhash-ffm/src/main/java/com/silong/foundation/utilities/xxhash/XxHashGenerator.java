@@ -26,6 +26,9 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 import com.silong.foundation.utilities.nlloader.NativeLibLoader;
 import java.lang.foreign.Arena;
+import java.util.HexFormat;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * 提供xxhash生成工具
@@ -53,9 +56,26 @@ public final class XxHashGenerator {
    * @return hash码
    */
   public static long hash64(byte[] data) {
-    if (data == null || data.length == 0) {
-      return 0;
-    }
+    return hash64(Objects.requireNonNull(data), 0, data.length);
+  }
+
+  /**
+   * 生成xxhash
+   *
+   * @param data 数据
+   * @param offset offset
+   * @param length length
+   * @return hash码
+   */
+  public static long hash64(byte[] data, int offset, int length) {
+    check(
+        data,
+        offset,
+        length,
+        () ->
+            String.format(
+                "Invalid data:%s or offset:%d or length:%d.",
+                data == null ? null : HexFormat.of().formatHex(data), offset, length));
     try (Arena arena = Arena.ofConfined()) {
       return XXH3_64bits_withSeed(arena.allocateArray(JAVA_BYTE, data), data.length, 0xcafebabeL);
     }
@@ -68,11 +88,39 @@ public final class XxHashGenerator {
    * @return hash码
    */
   public static int hash32(byte[] data) {
-    if (data == null || data.length == 0) {
-      return 0;
-    }
+    return hash32(data, 0, data.length);
+  }
+
+  /**
+   * 生成xxhash
+   *
+   * @param data 数据
+   * @param offset offset
+   * @param length length
+   * @return hash码
+   */
+  public static int hash32(byte[] data, int offset, int length) {
+    check(
+        data,
+        offset,
+        length,
+        () ->
+            String.format(
+                "Invalid data:%s or offset:%d or length:%d.",
+                data == null ? null : HexFormat.of().formatHex(data), offset, length));
     try (Arena arena = Arena.ofConfined()) {
       return XXH32(arena.allocateArray(JAVA_BYTE, data), data.length, 0xcafebabe);
+    }
+  }
+
+  private static void check(byte[] bytes, int offset, int length, Supplier<String> msgSupplier) {
+    if (bytes == null
+        || offset < 0
+        || offset >= bytes.length
+        || length < 0
+        || length > bytes.length
+        || (offset + length) > bytes.length) {
+      throw new IllegalArgumentException(msgSupplier.get());
     }
   }
 }
