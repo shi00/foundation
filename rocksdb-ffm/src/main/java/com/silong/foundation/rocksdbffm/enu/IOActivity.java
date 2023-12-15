@@ -22,7 +22,7 @@
 package com.silong.foundation.rocksdbffm.enu;
 
 /**
- * IO 活动
+ * IO 活动，rocksdb内部使用
  *
  * @author louis sin
  * @version 1.0.0
