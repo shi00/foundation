@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * 描述信息
+ * 内存布局测试
  *
  * @author louis sin
  * @version 1.0.0
