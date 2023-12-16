@@ -22,7 +22,7 @@ fi
 cp installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"
 
 echo "================== Start generate source code for rocksdb =================="
-jextract --source --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" -t "$SOURCECODE_PACKAGE" -I /vcpkg/installed/x64-linux-dynamic/include/rocksdb /vcpkg/installed/x64-linux-dynamic/include/rocksdb/c.h
+jextract --source --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" -t "$SOURCECODE_PACKAGE" -I ./installed/x64-linux-dynamic/include/rocksdb ./installed/x64-linux-dynamic/include/rocksdb/c.h
 if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
   echo "Failed to generate code by jextract"
   exit 1
