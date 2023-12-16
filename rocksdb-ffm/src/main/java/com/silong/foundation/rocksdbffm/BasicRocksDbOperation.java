@@ -229,6 +229,20 @@ public interface BasicRocksDbOperation {
   RocksDbIterator iterator(String columnFamilyName);
 
   /**
+   * 创建快照，对应资源需自行释放
+   *
+   * @return 快照
+   */
+  MemorySegment createSnapshot();
+
+  /**
+   * 释放快照
+   *
+   * @param snapshot 快照
+   */
+  void releaseSnapshot(MemorySegment snapshot);
+
+  /**
    * 原子批量更新操作
    *
    * @param writeOptions options
