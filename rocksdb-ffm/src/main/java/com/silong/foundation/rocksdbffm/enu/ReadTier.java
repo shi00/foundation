@@ -30,14 +30,14 @@ package com.silong.foundation.rocksdbffm.enu;
  */
 public enum ReadTier {
   // data in memtable, block cache, OS cache or storage
-  kReadAllTier,
+  K_READ_ALL_TIER,
   // data in memtable or block cache
-  kBlockCacheTier,
+  K_BLOCK_CACHE_TIER,
   // persisted data.  When WAL is disabled, this option
   // will skip data in memtable.
   // Note that this ReadTier currently only supports
   // Get and MultiGet and does not support iterators.
-  kPersistedTier,
+  K_PERSISTED_TIER,
   // data in memtable. used for memtable-only iterators.
-  kMemtableTier
+  K_MEMTABLE_TIER
 }

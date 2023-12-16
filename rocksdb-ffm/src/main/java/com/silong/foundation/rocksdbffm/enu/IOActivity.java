@@ -29,8 +29,8 @@ package com.silong.foundation.rocksdbffm.enu;
  * @since 2023-12-13 22:37
  */
 public enum IOActivity {
-  kFlush,
-  kCompaction,
-  kDBOpen,
-  kUnknown
+  K_FLUSH,
+  K_COMPACTION,
+  K_DB_OPEN,
+  K_UNKNOWN
 }
