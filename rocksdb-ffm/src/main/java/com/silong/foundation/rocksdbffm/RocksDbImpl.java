@@ -766,4 +766,14 @@ class RocksDbImpl implements RocksDb {
       }
     }
   }
+
+  @Override
+  public MemorySegment createSnapshot() {
+    return rocksdb_create_snapshot(dbPtr);
+  }
+
+  @Override
+  public void releaseSnapshot(@NonNull MemorySegment snapshot) {
+    rocksdb_release_snapshot(dbPtr, snapshot);
+  }
 }
