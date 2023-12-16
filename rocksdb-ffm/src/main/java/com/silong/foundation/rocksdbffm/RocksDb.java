@@ -22,8 +22,6 @@
 package com.silong.foundation.rocksdbffm;
 
 import java.io.Serializable;
-import java.lang.foreign.MemorySegment;
-import lombok.NonNull;
 
 /**
  * RocksDB提供的API接口封装
@@ -39,20 +37,6 @@ public interface RocksDb extends BasicRocksDbOperation, AutoCloseable, Serializa
 
   /** 默认共享库名，可以通过启动参数-Drocksdb.library.name自定义，但是需要确保名称与实际动态库名称一致 */
   String DEFAULT_LIB_NAME = "librocksdb";
-
-  /**
-   * 创建快照，对应资源需自行释放
-   *
-   * @return 快照
-   */
-  MemorySegment createSnapshot();
-
-  /**
-   * 释放快照
-   *
-   * @param snapshot 快照
-   */
-  void releaseSnapshot(@NonNull MemorySegment snapshot);
 
   /**
    * 获取实例
