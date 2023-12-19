@@ -90,6 +90,7 @@ public final class ReadOptions implements Options, Serializable {
           JAVA_BOOLEAN.withName("adaptive_readahead"),
           JAVA_BOOLEAN.withName("background_purge_on_iterator_cleanup"), // 104
           C_POINTER.withName("table_filter"), // 112
+          paddingLayout(24),
           uint8_t.withName("io_activity"),
           paddingLayout(7));
 
@@ -236,7 +237,9 @@ public final class ReadOptions implements Options, Serializable {
   /**
    * It limits the maximum cumulative value size of the keys in batch while reading through
    * MultiGet. Once the cumulative value size exceeds this soft limit then all the remaining keys
-   * are returned with status Aborted. Default:std::numeric_limits<uint64_t>::max()
+   * are returned with status Aborted. Default:std::numeric_limits<uint64_t>::max().
+   *
+   * <p>rocksdb源码中使用uint64_t，java中使用long表示，因为初始值为max，所以java侧初始值为-1
    */
   private long valueSizeSoftLimit = -1L;
 
@@ -288,6 +291,8 @@ public final class ReadOptions implements Options, Serializable {
    * A threshold for the number of keys that can be skipped before failing an iterator seek as
    * incomplete. The default value of 0 should be used to never fail a request as incomplete, even
    * on skipping too many keys.
+   *
+   * <p>rocksdb源码中使用uint64_t，java中使用long表示
    */
   private long maxSkippableInternalKeys = 0;
 
@@ -388,7 +393,10 @@ public final class ReadOptions implements Options, Serializable {
    * A callback to determine whether relevant keys for this scan exist in a given table based on the
    * table's properties. The callback is passed the properties of each table during iteration. If
    * the callback returns false, the table will not be scanned. This option only affects Iterators
-   * and has no impact on point lookups. Default: empty (every table will be scanned)
+   * and has no impact on point lookups. Default: empty (every table will be scanned).
+   *
+   * <p>tableFilter在rocksdb源码中使用的std::function而不是函数指针，std::function占用32个字节，
+   * 在java侧暂无对应的表示，因此此处使用一个函数指针作为占位符号，辅以24个字节的补齐32个字节。 java侧暂时无法设置此过滤器。
    */
   private MemorySegment tableFilter = NULL;
 
