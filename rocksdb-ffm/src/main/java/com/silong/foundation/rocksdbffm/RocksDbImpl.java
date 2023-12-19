@@ -28,6 +28,7 @@ import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.rocksdbffm.options.ReadOptions;
 import com.silong.foundation.rocksdbffm.options.WriteOptions;
 import java.io.Serial;
 import java.lang.foreign.*;
@@ -149,7 +150,10 @@ class RocksDbImpl implements RocksDb {
         this.dbOptionsPtr = dbOptionsPtr;
 
         // 创建默认读取options，global scope close时释放
-        this.readOptionsPtr = rocksdb_readoptions_create();
+        this.readOptionsPtr = new ReadOptions().to();
+        if (log.isDebugEnabled()) {
+          log.debug("default {}", ReadOptions.toString(readOptionsPtr));
+        }
 
         // 默认WriteOptions
         this.writeOptionsPtr = new WriteOptions().to();
