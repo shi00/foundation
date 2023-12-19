@@ -241,6 +241,16 @@ public class Utils {
         String.format("%s: Unknown type: %d", enumClass.getName(), value));
   }
 
+  /**
+   * boolean转byte，true->1，false->0.
+   *
+   * @param b true or false
+   * @return 1 or 0
+   */
+  public static byte boolean2Byte(boolean b) {
+    return (byte) (b ? 1 : 0);
+  }
+
   /** Forbidden */
   private Utils() {}
 }
