@@ -188,6 +188,17 @@ public interface BasicRocksDbOperation {
   byte[] get(String columnFamilyName, byte[] key) throws RocksDbException;
 
   /**
+   * 查询指定列族的键值，如果出现错误或者key不存在，返回null
+   *
+   * @param columnFamilyName 列族名
+   * @param key key
+   * @param offset offset
+   * @param length length
+   * @return value
+   */
+  byte[] get(String columnFamilyName, byte[] key, int offset, int length) throws RocksDbException;
+
+  /**
    * 查询默认列族保存数据
    *
    * @param key key
