@@ -412,8 +412,8 @@ public final class ReadOptions implements Options, Serializable {
     this.fillCache = fillCache(readOptions);
     this.asyncIO = asyncIO(readOptions);
     this.backgroundPurgeOnIteratorCleanup = backgroundPurgeOnIteratorCleanup(readOptions);
-    this.deadline = rocksdb_readoptions_get_deadline(readOptions);
-    this.ioTimeout = rocksdb_readoptions_get_io_timeout(readOptions);
+    this.deadline = deadline(readOptions);
+    this.ioTimeout = ioTimeout(readOptions);
     this.ignoreRangeDeletions = ignoreRangeDeletions(readOptions);
     this.ioActivity = ioActivity(readOptions);
     this.iterateLowerBound = iterateLowerBound(readOptions);
@@ -461,8 +461,8 @@ public final class ReadOptions implements Options, Serializable {
     iterateLowerBound(this.iterateLowerBound, readOptions);
     ioActivity(this.ioActivity, readOptions);
     ignoreRangeDeletions(this.ignoreRangeDeletions, readOptions);
-    rocksdb_readoptions_set_io_timeout(readOptions, this.ioTimeout);
-    rocksdb_readoptions_set_deadline(readOptions, this.deadline);
+    ioTimeout(this.ioTimeout, readOptions);
+    deadline(this.deadline, readOptions);
     backgroundPurgeOnIteratorCleanup(this.backgroundPurgeOnIteratorCleanup, readOptions);
     asyncIO(this.asyncIO, readOptions);
     fillCache(this.fillCache, readOptions);
@@ -480,15 +480,15 @@ public final class ReadOptions implements Options, Serializable {
 
   public static String toString(MemorySegment readOptions) {
     return String.format(
-        "readOptions:[snapshot:%s, timestamp:%s, iter_start_ts:%b, deadline:%d, io_timeout:%d, read_tier:%s, rate_limiter_priority:%s, value_size_soft_limit:%d, verify_checksums=%b, fill_cache=%b, ignore_range_deletions=%b, async_io=%b, optimize_multiget_for_io=%b, readahead_size:%d, max_skippable_internal_keys:%d, iterate_lower_bound=%s, iterate_upper_bound=%s, tailing=%b, managed=%b, total_order_seek=%b, auto_prefix_mode=%b, prefix_same_as_start=%b, pin_data=%b, adaptive_readahead=%b, background_purge_on_iterator_cleanup=%b, table_filter=%s, io_activity=%s]",
-        snapshot(readOptions) == NULL ? "nullptr" : snapshot(readOptions),
-        timestamp(readOptions) == NULL ? "nullptr" : timestamp(readOptions),
-        iterStartTs(readOptions) == NULL ? "nullptr" : iterStartTs(readOptions),
-        rocksdb_readoptions_get_deadline(readOptions),
-        rocksdb_readoptions_get_io_timeout(readOptions),
+        "readOptions:[snapshot:%s, timestamp:%s, iter_start_ts:%b, deadline:%d, io_timeout:%d, read_tier:%s, rate_limiter_priority:%s, value_size_soft_limit:%s, verify_checksums=%b, fill_cache=%b, ignore_range_deletions=%b, async_io=%b, optimize_multiget_for_io=%b, readahead_size:%d, max_skippable_internal_keys:%d, iterate_lower_bound=%s, iterate_upper_bound=%s, tailing=%b, managed=%b, total_order_seek=%b, auto_prefix_mode=%b, prefix_same_as_start=%b, pin_data=%b, adaptive_readahead=%b, background_purge_on_iterator_cleanup=%b, table_filter=%s, io_activity=%s]",
+        snapshot(readOptions).equals(NULL) ? "nullptr" : snapshot(readOptions),
+        timestamp(readOptions).equals(NULL) ? "nullptr" : timestamp(readOptions),
+        iterStartTs(readOptions).equals(NULL) ? "nullptr" : iterStartTs(readOptions),
+        deadline(readOptions),
+        ioTimeout(readOptions),
         readTier(readOptions),
         rateLimiterPriority(readOptions),
-        valueSizeSoftLimit(readOptions),
+        Long.toUnsignedString(valueSizeSoftLimit(readOptions)),
         verifyChecksums(readOptions),
         fillCache(readOptions),
         ignoreRangeDeletions(readOptions),
@@ -496,8 +496,8 @@ public final class ReadOptions implements Options, Serializable {
         optimizeMultiGetForIO(readOptions),
         readAheadSize(readOptions),
         maxSkippableInternalKeys(readOptions),
-        iterateLowerBound(readOptions) == NULL ? "nullptr" : iterateLowerBound(readOptions),
-        iterateUpperBound(readOptions) == NULL ? "nullptr" : iterateUpperBound(readOptions),
+        iterateLowerBound(readOptions).equals(NULL) ? "nullptr" : iterateLowerBound(readOptions),
+        iterateUpperBound(readOptions).equals(NULL) ? "nullptr" : iterateUpperBound(readOptions),
         tailing(readOptions),
         managed(readOptions),
         totalOrderSeek(readOptions),
@@ -506,7 +506,7 @@ public final class ReadOptions implements Options, Serializable {
         pinData(readOptions),
         adaptiveReadAhead(readOptions),
         backgroundPurgeOnIteratorCleanup(readOptions),
-        tableFilter(readOptions),
+        tableFilter(readOptions).equals(NULL) ? "nullptr" : tableFilter(readOptions),
         ioActivity(readOptions));
   }
 
@@ -688,21 +688,21 @@ public final class ReadOptions implements Options, Serializable {
   }
 
   public static MemorySegment ioTimeout(long ioTimeout, @NonNull MemorySegment readOptions) {
-    IO_TIMEOUT.set(readOptions, ioTimeout);
+    rocksdb_readoptions_set_io_timeout(readOptions, ioTimeout);
     return readOptions;
   }
 
   public static long ioTimeout(@NonNull MemorySegment readOptions) {
-    return (long) IO_TIMEOUT.get(readOptions);
+    return rocksdb_readoptions_get_io_timeout(readOptions);
   }
 
   public static MemorySegment deadline(long deadline, @NonNull MemorySegment readOptions) {
-    DEAD_LINE.set(readOptions, deadline);
+    rocksdb_readoptions_set_deadline(readOptions, deadline);
     return readOptions;
   }
 
   public static long deadline(@NonNull MemorySegment readOptions) {
-    return (long) DEAD_LINE.get(readOptions);
+    return rocksdb_readoptions_get_deadline(readOptions);
   }
 
   public static MemorySegment iterStartTs(
