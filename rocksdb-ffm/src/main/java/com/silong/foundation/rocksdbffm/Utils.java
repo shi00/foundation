@@ -123,8 +123,16 @@ public class Utils {
     if (isEmpty(array)) {
       throw new IllegalArgumentException(message);
     }
-    if (offset < 0) {
-      throw new IllegalArgumentException("offset must be greater than or equals to 0.");
+    if (offset < 0 || offset >= array.length) {
+      throw new IllegalArgumentException(
+          String.format(
+              "offset must be greater than or equals to 0 and less than %d.", array.length));
+    }
+    if (length < 0 || length > array.length) {
+      throw new IllegalArgumentException(
+          String.format(
+              "length must be greater than or equals to 0 and less than or equals to %d.",
+              array.length));
     }
     if ((length + offset) > array.length) {
       throw new IllegalArgumentException(
