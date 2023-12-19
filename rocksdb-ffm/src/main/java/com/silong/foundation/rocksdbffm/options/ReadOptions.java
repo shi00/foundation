@@ -22,10 +22,11 @@
 package com.silong.foundation.rocksdbffm.options;
 
 import static com.silong.foundation.rocksdbffm.Utils.enumType;
-import static com.silong.foundation.rocksdbffm.enu.IOActivity.kUnknown;
+import static com.silong.foundation.rocksdbffm.enu.IOActivity.K_UNKNOWN;
 import static com.silong.foundation.rocksdbffm.enu.IOPriority.IO_TOTAL;
-import static com.silong.foundation.rocksdbffm.enu.ReadTier.kReadAllTier;
+import static com.silong.foundation.rocksdbffm.enu.ReadTier.K_READ_ALL_TIER;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
+import static java.lang.foreign.MemoryLayout.paddingLayout;
 import static java.lang.foreign.MemoryLayout.structLayout;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
@@ -55,30 +56,31 @@ public final class ReadOptions implements Options, Serializable {
 
   private static final MemoryLayout LAYOUT =
       structLayout(
-          C_POINTER.withName("snapshot"),
+          C_POINTER.withName("snapshot"), // 8
           //          paddingLayout(1),
-          C_POINTER.withName("timestamp"),
+          C_POINTER.withName("timestamp"), // 16
           //          paddingLayout(1),
-          C_POINTER.withName("iter_start_ts"),
+          C_POINTER.withName("iter_start_ts"), // 24
           //          paddingLayout(1),
-          JAVA_LONG.withName("deadline"),
+          JAVA_LONG.withName("deadline"), // 32
           //          paddingLayout(1),
-          JAVA_LONG.withName("io_timeout"),
+          JAVA_LONG.withName("io_timeout"), // 40
           //          paddingLayout(1),
-          JAVA_INT.withName("read_tier"),
+          JAVA_INT.withName("read_tier"), // 44
           //          paddingLayout(2),
-          JAVA_INT.withName("rate_limiter_priority"),
+          JAVA_INT.withName("rate_limiter_priority"), // 48
           //          paddingLayout(4),
-          uint64_t.withName("value_size_soft_limit"),
+          uint64_t.withName("value_size_soft_limit"), // 56
           JAVA_BOOLEAN.withName("verify_checksums"),
           JAVA_BOOLEAN.withName("fill_cache"),
           JAVA_BOOLEAN.withName("ignore_range_deletions"),
           JAVA_BOOLEAN.withName("async_io"),
           JAVA_BOOLEAN.withName("optimize_multiget_for_io"),
-          JAVA_LONG.withName("readahead_size"),
-          uint64_t.withName("max_skippable_internal_keys"),
-          C_POINTER.withName("iterate_lower_bound"),
-          C_POINTER.withName("iterate_upper_bound"),
+          paddingLayout(3), // 64
+          JAVA_LONG.withName("readahead_size"), // 72
+          uint64_t.withName("max_skippable_internal_keys"), // 80
+          C_POINTER.withName("iterate_lower_bound"), // 88
+          C_POINTER.withName("iterate_upper_bound"), // 96
           JAVA_BOOLEAN.withName("tailing"),
           JAVA_BOOLEAN.withName("managed"),
           JAVA_BOOLEAN.withName("total_order_seek"),
@@ -86,9 +88,10 @@ public final class ReadOptions implements Options, Serializable {
           JAVA_BOOLEAN.withName("prefix_same_as_start"),
           JAVA_BOOLEAN.withName("pin_data"),
           JAVA_BOOLEAN.withName("adaptive_readahead"),
-          JAVA_BOOLEAN.withName("background_purge_on_iterator_cleanup"),
-          C_POINTER.withName("table_filter"),
-          JAVA_BYTE.withName("io_activity"));
+          JAVA_BOOLEAN.withName("background_purge_on_iterator_cleanup"), // 104
+          C_POINTER.withName("table_filter"), // 112
+          uint8_t.withName("io_activity"),
+          paddingLayout(7));
 
   private static final VarHandle SNAPSHOT = LAYOUT.varHandle(PathElement.groupElement("snapshot"));
 
@@ -98,7 +101,7 @@ public final class ReadOptions implements Options, Serializable {
   private static final VarHandle ITER_START_TS =
       LAYOUT.varHandle(PathElement.groupElement("iter_start_ts"));
 
-  private static final VarHandle DEADLINE = LAYOUT.varHandle(PathElement.groupElement("deadline"));
+  private static final VarHandle DEAD_LINE = LAYOUT.varHandle(PathElement.groupElement("deadline"));
 
   private static final VarHandle IO_TIMEOUT =
       LAYOUT.varHandle(PathElement.groupElement("io_timeout"));
@@ -213,7 +216,7 @@ public final class ReadOptions implements Options, Serializable {
    * Specify if this read request should process data that ALREADY resides on a particular cache. If
    * the required data is not found at the specified cache, then Status::Incomplete is returned.
    */
-  private ReadTier readTier = kReadAllTier;
+  private ReadTier readTier = K_READ_ALL_TIER;
 
   /**
    * For writes associated with this option, charge the internal rate limiter (see
@@ -390,7 +393,7 @@ public final class ReadOptions implements Options, Serializable {
   private MemorySegment tableFilter = NULL;
 
   /** For RocksDB internal use only */
-  private IOActivity ioActivity = kUnknown;
+  private IOActivity ioActivity = K_UNKNOWN;
 
   @Override
   public ReadOptions from(@NonNull MemorySegment readOptions) {
@@ -686,12 +689,12 @@ public final class ReadOptions implements Options, Serializable {
   }
 
   public static MemorySegment deadline(long deadline, @NonNull MemorySegment readOptions) {
-    DEADLINE.set(readOptions, deadline);
+    DEAD_LINE.set(readOptions, deadline);
     return readOptions;
   }
 
   public static long deadline(@NonNull MemorySegment readOptions) {
-    return (long) DEADLINE.get(readOptions);
+    return (long) DEAD_LINE.get(readOptions);
   }
 
   public static MemorySegment iterStartTs(
@@ -756,7 +759,7 @@ public final class ReadOptions implements Options, Serializable {
 
   public static MemorySegment ioActivity(
       @NonNull IOActivity ioActivity, @NonNull MemorySegment readOptions) {
-    IO_ACTIVITY.set(readOptions, ioActivity.ordinal());
+    IO_ACTIVITY.set(readOptions, (byte) ioActivity.ordinal());
     return readOptions;
   }
 
