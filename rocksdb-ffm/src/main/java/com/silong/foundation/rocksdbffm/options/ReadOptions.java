@@ -21,7 +21,7 @@
 
 package com.silong.foundation.rocksdbffm.options;
 
-import static com.silong.foundation.rocksdbffm.Utils.enumType;
+import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.enu.IOActivity.K_UNKNOWN;
 import static com.silong.foundation.rocksdbffm.enu.IOPriority.IO_TOTAL;
 import static com.silong.foundation.rocksdbffm.enu.ReadTier.K_READ_ALL_TIER;
@@ -39,6 +39,7 @@ import java.io.Serializable;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
+import java.util.Map;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -53,6 +54,9 @@ import lombok.NonNull;
 public final class ReadOptions implements Options, Serializable {
 
   @Serial private static final long serialVersionUID = -3_531_065_411_779_519_195L;
+
+  private static final Map<String, Integer> STD_FUNCTION_SIZEOF_PLATFORM =
+      Map.of("windows:x86_64", 64, "linux:x86_64", 32);
 
   private static final MemoryLayout LAYOUT =
       structLayout(
@@ -90,7 +94,8 @@ public final class ReadOptions implements Options, Serializable {
           JAVA_BOOLEAN.withName("adaptive_readahead"),
           JAVA_BOOLEAN.withName("background_purge_on_iterator_cleanup"), // 104
           C_POINTER.withName("table_filter"), // 112
-          paddingLayout(24),
+          paddingLayout(
+              STD_FUNCTION_SIZEOF_PLATFORM.get(String.format("%s:%s", OS_NAME, OS_ARCH)) - 8),
           uint8_t.withName("io_activity"),
           paddingLayout(7));
 
@@ -396,7 +401,8 @@ public final class ReadOptions implements Options, Serializable {
    * and has no impact on point lookups. Default: empty (every table will be scanned).
    *
    * <p>tableFilter在rocksdb源码中使用的std::function而不是函数指针，std::function占用32个字节，
-   * 在java侧暂无对应的表示，因此此处使用一个函数指针作为占位符号，辅以24个字节的补齐32个字节。 java侧暂时无法设置此过滤器。
+   * 在java侧暂无对应的表示，因此此处使用一个函数指针作为占位符号，根据操作系统和架构不同辅以padding，例如：linux x86_64辅以24个字节的补齐32个字节。
+   * java侧暂时无法设置此过滤器。
    */
   private MemorySegment tableFilter = NULL;
 
