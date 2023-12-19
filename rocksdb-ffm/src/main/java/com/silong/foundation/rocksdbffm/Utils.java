@@ -23,6 +23,7 @@ package com.silong.foundation.rocksdbffm;
 
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.C_POINTER;
+import static com.silong.foundation.utilities.nlloader.PlatformDetector.*;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -35,6 +36,8 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 
@@ -49,6 +52,12 @@ public class Utils {
 
   private static final Linker LINKER = Linker.nativeLinker();
 
+  /** 操作系统名 */
+  public static final String OS_NAME;
+
+  /** 操作系统名 */
+  public static final String OS_ARCH;
+
   private static final MethodHandle STRLEN =
       LINKER.downcallHandle(
           LINKER.defaultLookup().find("strlen").orElseThrow(),
@@ -59,6 +68,13 @@ public class Utils {
           LINKER.defaultLookup().find("free").orElseThrow(), FunctionDescriptor.ofVoid(ADDRESS));
 
   public static final String OK = "";
+
+  static {
+    Properties properties = new Properties();
+    PLATFORM_DETECTOR.detect(properties, List.of());
+    OS_NAME = properties.getProperty(DETECTED_NAME);
+    OS_ARCH = properties.getProperty(DETECTED_ARCH);
+  }
 
   /**
    * 获取char * 长度
