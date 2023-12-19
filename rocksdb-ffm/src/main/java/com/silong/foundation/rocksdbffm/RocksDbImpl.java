@@ -258,9 +258,13 @@ class RocksDbImpl implements RocksDb {
    */
   private MemorySegment createRocksdbOption(RocksDbConfig config) {
     MemorySegment optionsPtr = rocksdb_options_create();
-    optionsPtr.set(JAVA_BOOLEAN, 0, config.isCreateIfMissing()); // create_if_missing
-    optionsPtr.set(
-        JAVA_BOOLEAN, 1, config.isCreateMissingColumnFamilies()); // create_missing_column_families
+    rocksdb_options_set_create_missing_column_families(
+        optionsPtr, boolean2Byte(config.isCreateMissingColumnFamilies()));
+    rocksdb_options_set_create_if_missing(optionsPtr, boolean2Byte(config.isCreateIfMissing()));
+    rocksdb_options_set_info_log_level(optionsPtr, config.getInfoLogLevel().ordinal());
+    if (config.isEnableStatistics()) {
+      rocksdb_options_enable_statistics(optionsPtr);
+    }
     return optionsPtr;
   }
 

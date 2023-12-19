@@ -22,7 +22,9 @@
 package com.silong.foundation.rocksdbffm;
 
 import static com.silong.foundation.rocksdbffm.RocksDbConfig.DataScale.SMALL;
+import static com.silong.foundation.rocksdbffm.enu.InfoLogLevel.INFO_LEVEL;
 
+import com.silong.foundation.rocksdbffm.enu.InfoLogLevel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -75,6 +77,12 @@ public class RocksDbConfig implements Serializable {
 
   /** 持久化存储数据规模，默认：small */
   @NotNull private DataScale dataScale = SMALL;
+
+  /** 日志级别 */
+  @NotNull private InfoLogLevel infoLogLevel = INFO_LEVEL;
+
+  /** 是否启用数据统计，默认：false */
+  private boolean enableStatistics;
 
   /** 默认列族TTL，单位：秒，在未指定列族TTL时使用，默认：0。当此值小于等于0时表示永不过期 */
   private int defaultColumnFamilyTTL = 0;
