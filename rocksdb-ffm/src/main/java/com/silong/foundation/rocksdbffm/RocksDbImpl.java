@@ -663,13 +663,13 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  @Nullable
-  public byte[] get(String columnFamilyName, byte[] key) {
+  public byte[] get(String columnFamilyName, byte[] key, int offset, int length)
+      throws RocksDbException {
     validateColumnFamily(columnFamilyName);
-    validateKey(key);
+    validateByteArrays(key, offset, length, "Invalid key.");
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key);
+      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key).asSlice(offset, length);
       MemorySegment errPtr = newErrPtr(arena);
       MemorySegment valLenPtr = arena.allocate(C_POINTER); // 出参，value长度
       MemorySegment valPtr =
@@ -702,7 +702,14 @@ class RocksDbImpl implements RocksDb {
 
   @Override
   @Nullable
-  public byte[] get(byte[] key) {
+  public byte[] get(String columnFamilyName, byte[] key) throws RocksDbException {
+    validateKey(key);
+    return get(columnFamilyName, key, 0, key.length);
+  }
+
+  @Override
+  @Nullable
+  public byte[] get(byte[] key) throws RocksDbException {
     return get(DEFAULT_COLUMN_FAMILY_NAME, key);
   }
 
