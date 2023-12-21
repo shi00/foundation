@@ -55,6 +55,7 @@ public final class ReadOptions implements Options, Serializable {
 
   @Serial private static final long serialVersionUID = -3_531_065_411_779_519_195L;
 
+  /** 不同平台针对std::function类型的字节占用差异 */
   private static final Map<String, Integer> STD_FUNCTION_SIZEOF_PLATFORM =
       Map.of("windows:x86_64", 64, "linux:x86_64", 32);
 
