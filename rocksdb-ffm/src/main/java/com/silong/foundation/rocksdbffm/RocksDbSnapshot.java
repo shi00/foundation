@@ -40,7 +40,7 @@ public interface RocksDbSnapshot {
   MemorySegment createSnapshot();
 
   /**
-   * 释放快照
+   * 释放快照资源
    *
    * @param snapshot 快照
    */
