@@ -21,13 +21,15 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import static com.silong.foundation.rocksdbffm.RocksDbConfig.DataScale.SMALL;
 import static com.silong.foundation.rocksdbffm.enu.InfoLogLevel.INFO_LEVEL;
+import static com.silong.foundation.rocksdbffm.enu.Usage.SMALL;
 
 import com.silong.foundation.rocksdbffm.enu.InfoLogLevel;
+import com.silong.foundation.rocksdbffm.enu.Usage;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.file.Paths;
@@ -47,18 +49,6 @@ public class RocksDbConfig implements Serializable {
 
   @Serial private static final long serialVersionUID = -7_905_257_664_231_390_906L;
 
-  /** 数据规模，持久化存储会依据数据规模优化rocksdb参数 */
-  public enum DataScale {
-    // 大数据量
-    VAST,
-
-    // 中量数据
-    MEDIUM,
-
-    // 小数据量
-    SMALL
-  }
-
   /** 持久化数据保存路径 */
   @NotEmpty
   private String persistDataPath =
@@ -75,17 +65,20 @@ public class RocksDbConfig implements Serializable {
    */
   @Valid private Map<@NotEmpty String, @NotNull Duration> columnFamilyNameWithTTL;
 
-  /** 持久化存储数据规模，默认：small */
-  @NotNull private DataScale dataScale = SMALL;
+  /** 持久化存储数据规模，默认：SMALL */
+  @NotNull private Usage usage = SMALL;
 
   /** 日志级别 */
   @NotNull private InfoLogLevel infoLogLevel = INFO_LEVEL;
+
+  /** 块缓存大小，单位：MB，默认：32MB */
+  @Positive private int blockCacheSize = 32;
 
   /** 是否启用数据统计，默认：false */
   private boolean enableStatistics;
 
   /** 默认列族TTL，单位：秒，在未指定列族TTL时使用，默认：0。当此值小于等于0时表示永不过期 */
-  private int defaultColumnFamilyTTL = 0;
+  private int defaultColumnFamilyTTL;
 
   /** 如果数据库不存在是否创建数据库，默认：true */
   private boolean createIfMissing = true;
