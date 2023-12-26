@@ -31,13 +31,22 @@ import java.io.Serializable;
  * @since 2023-09-10 14:44
  */
 public interface RocksDb
-    extends BasicRocksDbOperation, RocksDbSnapshot, AutoCloseable, Serializable {
+    extends BasicRocksDbOperation, RocksDbSnapshot, RocksDbComparator, AutoCloseable, Serializable {
 
   /** 默认列族名称 */
   String DEFAULT_COLUMN_FAMILY_NAME = "default";
 
   /** 默认共享库名，可以通过启动参数-Drocksdb.library.name自定义，但是需要确保名称与实际动态库名称一致 */
   String DEFAULT_LIB_NAME = "librocksdb";
+
+  /** 共享库名称 */
+  String LIB_ROCKSDB = System.getProperty("rocksdb.library.name", DEFAULT_LIB_NAME);
+
+  int KB = 1024;
+
+  int MB = 1024 * KB;
+
+  int GB = 1024 * MB;
 
   /**
    * 获取实例
