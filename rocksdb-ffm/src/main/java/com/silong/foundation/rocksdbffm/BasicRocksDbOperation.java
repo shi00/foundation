@@ -52,6 +52,16 @@ public interface BasicRocksDbOperation {
   void createColumnFamily(String columnFamilyName) throws RocksDbException;
 
   /**
+   * 创建列族
+   *
+   * @param columnFamilyName 列族名称列表
+   * @param comparator 比较器
+   * @throws RocksDbException 异常
+   */
+  void createColumnFamily(String columnFamilyName, MemorySegment comparator)
+      throws RocksDbException;
+
+  /**
    * 删除列族
    *
    * @param cf 列族名
