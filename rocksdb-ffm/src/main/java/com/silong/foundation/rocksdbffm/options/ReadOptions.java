@@ -39,7 +39,6 @@ import java.io.Serializable;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
-import java.util.Map;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -55,9 +54,9 @@ public final class ReadOptions implements Options, Serializable {
 
   @Serial private static final long serialVersionUID = -3_531_065_411_779_519_195L;
 
-  /** 不同平台针对std::function类型的字节占用差异 */
-  private static final Map<String, Integer> STD_FUNCTION_SIZEOF_PLATFORM =
-      Map.of("windows:x86_64", 64, "linux:x86_64", 32);
+  /** std::function 占位符实例 */
+  private static final StdFunctionPlaceHolder TABLE_FILTER_PLACE_HOLDER =
+      new StdFunctionPlaceHolder();
 
   private static final MemoryLayout LAYOUT =
       structLayout(
@@ -94,9 +93,7 @@ public final class ReadOptions implements Options, Serializable {
           JAVA_BOOLEAN.withName("pin_data"),
           JAVA_BOOLEAN.withName("adaptive_readahead"),
           JAVA_BOOLEAN.withName("background_purge_on_iterator_cleanup"), // 104
-          C_POINTER.withName("table_filter"), // 112
-          paddingLayout(
-              STD_FUNCTION_SIZEOF_PLATFORM.get(String.format("%s:%s", OS_NAME, OS_ARCH)) - 8),
+          TABLE_FILTER_PLACE_HOLDER.layout().withName("table_filter"), // 112
           uint8_t.withName("io_activity"),
           paddingLayout(7));
 
@@ -169,8 +166,8 @@ public final class ReadOptions implements Options, Serializable {
   private static final VarHandle BACKGROUND_PURGE_ON_ITERATOR_CLEANUP =
       LAYOUT.varHandle(PathElement.groupElement("background_purge_on_iterator_cleanup"));
 
-  private static final VarHandle TABLE_FILTER =
-      LAYOUT.varHandle(PathElement.groupElement("table_filter"));
+  //  private static final VarHandle TABLE_FILTER =
+  //      LAYOUT.varHandle(PathElement.groupElement("table_filter"));
 
   private static final VarHandle IO_ACTIVITY =
       LAYOUT.varHandle(PathElement.groupElement("io_activity"));
@@ -400,12 +397,8 @@ public final class ReadOptions implements Options, Serializable {
    * table's properties. The callback is passed the properties of each table during iteration. If
    * the callback returns false, the table will not be scanned. This option only affects Iterators
    * and has no impact on point lookups. Default: empty (every table will be scanned).
-   *
-   * <p>tableFilter在rocksdb源码中使用的std::function而不是函数指针，std::function占用32个字节，
-   * 在java侧暂无对应的表示，因此此处使用一个函数指针作为占位符号，根据操作系统和架构不同辅以padding，例如：linux x86_64辅以24个字节的补齐32个字节。
-   * java侧暂时无法设置此过滤器。
    */
-  private MemorySegment tableFilter = NULL;
+  private PlaceHolder tableFilter = TABLE_FILTER_PLACE_HOLDER;
 
   /** For RocksDB internal use only */
   private IOActivity ioActivity = K_UNKNOWN;
@@ -414,7 +407,7 @@ public final class ReadOptions implements Options, Serializable {
   public ReadOptions from(@NonNull MemorySegment readOptions) {
     this.adaptiveReadAhead = adaptiveReadAhead(readOptions);
     this.autoPrefixMode = autoPrefixMode(readOptions);
-    this.tableFilter = tableFilter(readOptions);
+    //    this.tableFilter = tableFilter(readOptions);
     this.managed = managed(readOptions);
     this.fillCache = fillCache(readOptions);
     this.asyncIO = asyncIO(readOptions);
@@ -474,7 +467,7 @@ public final class ReadOptions implements Options, Serializable {
     asyncIO(this.asyncIO, readOptions);
     fillCache(this.fillCache, readOptions);
     managed(this.managed, readOptions);
-    tableFilter(this.tableFilter, readOptions);
+    //    tableFilter(this.tableFilter, readOptions);
     autoPrefixMode(this.autoPrefixMode, readOptions);
     adaptiveReadAhead(this.adaptiveReadAhead, readOptions);
     return readOptions;
@@ -513,7 +506,7 @@ public final class ReadOptions implements Options, Serializable {
         pinData(readOptions),
         adaptiveReadAhead(readOptions),
         backgroundPurgeOnIteratorCleanup(readOptions),
-        tableFilter(readOptions).equals(NULL) ? "nullptr" : tableFilter(readOptions),
+        TABLE_FILTER_PLACE_HOLDER,
         ioActivity(readOptions));
   }
 
@@ -762,15 +755,15 @@ public final class ReadOptions implements Options, Serializable {
     return (MemorySegment) ITERATE_LOWER_BOUND.get(readOptions);
   }
 
-  public static MemorySegment tableFilter(
-      @NonNull MemorySegment tableFilter, @NonNull MemorySegment readOptions) {
-    TABLE_FILTER.set(readOptions, tableFilter);
-    return readOptions;
-  }
+  //  public static MemorySegment tableFilter(
+  //      @NonNull MemorySegment tableFilter, @NonNull MemorySegment readOptions) {
+  //    TABLE_FILTER.set(readOptions, tableFilter);
+  //    return readOptions;
+  //  }
 
-  public static MemorySegment tableFilter(@NonNull MemorySegment readOptions) {
-    return (MemorySegment) TABLE_FILTER.get(readOptions);
-  }
+  //  public static MemorySegment tableFilter(@NonNull MemorySegment readOptions) {
+  //    return (MemorySegment) TABLE_FILTER.get(readOptions);
+  //  }
 
   public static MemorySegment ioActivity(
       @NonNull IOActivity ioActivity, @NonNull MemorySegment readOptions) {

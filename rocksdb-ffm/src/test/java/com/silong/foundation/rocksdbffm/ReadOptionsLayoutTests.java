@@ -375,7 +375,7 @@ public class ReadOptionsLayoutTests {
     assertEquals(wp1.getDeadline(), rocksdb_readoptions_get_deadline(wp2));
     assertEquals(wp1.isManaged(), ReadOptions.managed(wp2));
     assertEquals(wp1.getSnapshot(), ReadOptions.snapshot(wp2));
-    assertEquals(wp1.getTableFilter(), ReadOptions.tableFilter(wp2));
+    //    assertEquals(wp1.getTableFilter(), ReadOptions.tableFilter(wp2));
     assertEquals(wp1.getIterStartTs(), ReadOptions.iterStartTs(wp2));
     assertEquals(wp1.getTimestamp(), ReadOptions.timestamp(wp2));
     assertEquals(wp1.getRateLimiterPriority(), ReadOptions.rateLimiterPriority(wp2));
