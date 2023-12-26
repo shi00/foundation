@@ -299,7 +299,7 @@ public class RocksdbTests {
     Assertions.assertTrue(CFS.containsAll(list));
   }
 
-  //  @Test
+  @Test
   public void test12() throws RocksDbException {
     List<Tuple2<String, String>> list =
         IntStream.range(0, nextInt(1, 100))
@@ -327,6 +327,25 @@ public class RocksdbTests {
                       t.t1().equals(new String(p.t1(), UTF_8))
                           && t.t2().equals(new String(p.t2(), UTF_8)));
       Assertions.assertTrue(condition);
+    }
+  }
+
+  @Test
+  public void test13() throws RocksDbException {
+    byte[] a = "aaa".getBytes(UTF_8);
+    byte[] b = "bbb".getBytes(UTF_8);
+    byte[] c = "ccc".getBytes(UTF_8);
+    rocksDb.put(BEFORE_CF, a, a);
+    rocksDb.put(BEFORE_CF, b, b);
+    rocksDb.put(BEFORE_CF, c, c);
+
+    try (RocksDbIterator iterator = rocksDb.iterator(BEFORE_CF)) {
+      iterator.seek("ccc".getBytes(UTF_8));
+      Assertions.assertTrue(iterator.isValid());
+      Tuple2<byte[], byte[]> tuple2 = iterator.get();
+      Assertions.assertArrayEquals(c, tuple2.t2());
+      Assertions.assertArrayEquals(c, tuple2.t1());
+      Assertions.assertDoesNotThrow(iterator::checkStatus);
     }
   }
 }
