@@ -36,7 +36,7 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2023-12-26 9:59
  */
-class StdFunctionPlaceHolder implements PlaceHolder {
+final class StdFunctionPlaceHolder implements PlaceHolder {
   /** 不同平台针对std::function类型的字节占用差异 */
   private static final Map<String, Integer> STD_FUNCTION_SIZEOF_PLATFORM =
       Map.of("windows:x86_64", 64, "linux:x86_64", 32);

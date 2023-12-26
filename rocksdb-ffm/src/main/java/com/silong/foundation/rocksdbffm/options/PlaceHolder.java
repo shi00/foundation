@@ -30,7 +30,7 @@ import java.lang.foreign.MemoryLayout;
  * @version 1.0.0
  * @since 2023-12-26 10:14
  */
-public interface PlaceHolder {
+public sealed interface PlaceHolder permits StdFunctionPlaceHolder {
 
   /**
    * 内存布局
