@@ -31,7 +31,7 @@ import java.io.Serializable;
  * @since 2023-09-10 14:44
  */
 public interface RocksDb
-    extends BasicRocksDbOperation, RocksDbSnapshot, RocksDbComparator, AutoCloseable, Serializable {
+    extends BasicRocksDbOperation, RocksDbSnapshot, AutoCloseable, Serializable {
 
   /** 默认列族名称 */
   String DEFAULT_COLUMN_FAMILY_NAME = "default";
