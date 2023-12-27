@@ -26,13 +26,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 
+import com.google.common.primitives.Longs;
 import com.silong.foundation.common.lambda.Tuple2;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.IntStream;
 import net.datafaker.Faker;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -346,6 +344,83 @@ public class RocksdbTests {
       Assertions.assertArrayEquals(c, tuple2.t2());
       Assertions.assertArrayEquals(c, tuple2.t1());
       Assertions.assertDoesNotThrow(iterator::checkStatus);
+    }
+  }
+
+  @Test
+  public void test14() throws RocksDbException {
+    byte[] a = "aaa".getBytes(UTF_8);
+    byte[] b = "bbb".getBytes(UTF_8);
+    byte[] c = "ccc".getBytes(UTF_8);
+    rocksDb.put(a, a);
+    rocksDb.put(b, b);
+    rocksDb.put(c, c);
+
+    try (RocksDbIterator iterator = rocksDb.iterator()) {
+      iterator.seek("ccc".getBytes(UTF_8));
+      Assertions.assertTrue(iterator.isValid());
+      Tuple2<byte[], byte[]> tuple2 = iterator.get();
+      Assertions.assertArrayEquals(c, tuple2.t2());
+      Assertions.assertArrayEquals(c, tuple2.t1());
+      Assertions.assertDoesNotThrow(iterator::checkStatus);
+    }
+  }
+
+  @Test
+  public void test15() throws RocksDbException, InterruptedException {
+    String cf = "yoyo";
+    rocksDb.createColumnFamily(
+        cf,
+        new RocksDbComparator() {
+          @Override
+          public void close() {}
+
+          @Override
+          public int compare(
+              byte[] a, int aOffset, int aLength, byte[] b, int bOffset, int bLength) {
+            byte[] aa = new byte[aLength];
+            System.arraycopy(a, aOffset, aa, 0, aa.length);
+            long at = Longs.fromByteArray(aa);
+
+            byte[] bb = new byte[bLength];
+            System.arraycopy(b, bOffset, bb, 0, bb.length);
+            long bt = Longs.fromByteArray(bb);
+            return Long.compare(at, bt);
+          }
+
+          @Override
+          public String name() {
+            return "test-comparator";
+          }
+        });
+
+    try {
+      List<byte[]> keys = new LinkedList<>();
+      for (int i = 0; i < 1000; i++) {
+        long now = System.currentTimeMillis();
+        byte[] array = Longs.toByteArray(now);
+        rocksDb.put(cf, array, RandomStringUtils.random(24).getBytes(UTF_8));
+        keys.add(array);
+        Thread.sleep(1);
+      }
+
+      List<byte[]> result = new LinkedList<>();
+      try (RocksDbIterator iterator = rocksDb.iterator(cf)) {
+        for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+          Tuple2<byte[], byte[]> tuple2 = iterator.get();
+          result.add(tuple2.t1());
+        }
+        iterator.checkStatus();
+      }
+
+      Assertions.assertEquals(keys.size(), result.size());
+      for (int i = 0; i < keys.size(); i++) {
+        long t = Longs.fromByteArray(result.get(i));
+        Assertions.assertEquals(Longs.fromByteArray(keys.get(i)), t);
+        System.out.println(t);
+      }
+    } finally {
+      rocksDb.dropColumnFamily(cf);
     }
   }
 }

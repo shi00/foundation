@@ -21,9 +21,14 @@
 
 package com.silong.foundation.rocksdbffm;
 
+import static com.silong.foundation.rocksdbffm.RocksDbComparator.destroy;
 import static com.silong.foundation.rocksdbffm.Utils.*;
+import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_LZ4_COMPRESSION;
+import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_ZSTD;
+import static com.silong.foundation.rocksdbffm.enu.IndexType.K_TWO_LEVEL_INDEX_SEARCH;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -58,10 +63,6 @@ class RocksDbImpl implements RocksDb {
 
   @Serial private static final long serialVersionUID = -2_521_667_833_385_354_826L;
 
-  /** 共享库名称 */
-  private static final String LIB_ROCKSDB =
-      System.getProperty("rocksdb.library.name", DEFAULT_LIB_NAME);
-
   static {
     loadLibrary(LIB_ROCKSDB);
   }
@@ -79,6 +80,10 @@ class RocksDbImpl implements RocksDb {
   @ToString.Exclude private final MemorySegment readOptionsPtr;
 
   @ToString.Exclude private final MemorySegment writeOptionsPtr;
+
+  @ToString.Exclude private MemorySegment tableOptions;
+
+  @ToString.Exclude private MemorySegment lruCache;
 
   /** 是否需要关闭 */
   private final AtomicBoolean closed = new AtomicBoolean();
@@ -98,7 +103,7 @@ class RocksDbImpl implements RocksDb {
   public RocksDbImpl(@NonNull RocksDbConfig config) {
     try (Arena arena = Arena.ofConfined()) {
       this.config = config;
-      MemorySegment dbOptionsPtr = createRocksdbOption(config); // global scope，close释放
+      MemorySegment dbOptionsPtr = createRocksdbOptions(config); // global scope，close释放
       MemorySegment path = arena.allocateUtf8String(config.getPersistDataPath());
       MemorySegment errPtr = newErrPtr(arena); // 出参，获取错误信息
 
@@ -122,7 +127,8 @@ class RocksDbImpl implements RocksDb {
       MemorySegment cfNamesPtr = createColumnFamilyNames(arena, columnFamilyNames);
 
       // 列族选项列表指针，cfOptions close时释放
-      MemorySegment cfOptionsPtr = createColumnFamilyOptions(arena, columnFamilyNames);
+      MemorySegment cfOptionsPtr =
+          createColumnFamilyOptions(arena, dbOptionsPtr, columnFamilyNames);
 
       // 出参，获取打开的列族handles，close时释放
       MemorySegment cfHandlesPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
@@ -177,6 +183,8 @@ class RocksDbImpl implements RocksDb {
         freeDbOptions(dbOptionsPtr);
         IntStream.range(0, columnFamilyNames.size())
             .forEach(i -> freeColumnFamilyOptions(cfOptionsPtr.getAtIndex(C_POINTER, i)));
+        releaseTableOptions(tableOptions);
+        releaseCache(lruCache);
       }
     }
   }
@@ -235,35 +243,71 @@ class RocksDbImpl implements RocksDb {
     }
   }
 
-  /**
-   * 为每个列族创建一个独立的option
-   *
-   * @param arena 内存分配器
-   * @param columnFamilyNames 列族名称列表
-   * @return 列族option列表指针
-   */
-  private MemorySegment createColumnFamilyOptions(Arena arena, List<String> columnFamilyNames) {
+  private MemorySegment createColumnFamilyOptions(
+      Arena arena, MemorySegment dbOptionsPtr, List<String> columnFamilyNames) {
     MemorySegment cfOptionsPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
     for (int i = 0; i < columnFamilyNames.size(); i++) {
-      cfOptionsPtr.setAtIndex(C_POINTER, i, rocksdb_options_create()); // global scope
+      cfOptionsPtr.setAtIndex(
+          C_POINTER, i, rocksdb_options_create_copy(dbOptionsPtr)); // global scope
     }
     return cfOptionsPtr;
   }
 
   /**
-   * 创建rocksdb option，并根据配置值对option进行赋值
+   * 创建rocksdb options，并根据配置值对options进行赋值
    *
    * @param config 配置
-   * @return option指针
+   * @return options指针
    */
-  private MemorySegment createRocksdbOption(RocksDbConfig config) {
+  private MemorySegment createRocksdbOptions(RocksDbConfig config) {
     MemorySegment optionsPtr = rocksdb_options_create();
+    if (config.isEnableStatistics()) {
+      rocksdb_options_enable_statistics(optionsPtr);
+    }
+
     rocksdb_options_set_create_missing_column_families(
         optionsPtr, boolean2Byte(config.isCreateMissingColumnFamilies()));
     rocksdb_options_set_create_if_missing(optionsPtr, boolean2Byte(config.isCreateIfMissing()));
     rocksdb_options_set_info_log_level(optionsPtr, config.getInfoLogLevel().ordinal());
-    if (config.isEnableStatistics()) {
-      rocksdb_options_enable_statistics(optionsPtr);
+
+    switch (config.getUsage()) {
+      case POINT_LOOKUP:
+        {
+          rocksdb_options_optimize_for_point_lookup(
+              optionsPtr, (long) config.getBlockCacheSize() * MB);
+
+          //  reasonable out-of-box performance for general workloads
+          rocksdb_options_set_level_compaction_dynamic_level_bytes(optionsPtr, boolean2Byte(true));
+          rocksdb_options_set_max_background_jobs(optionsPtr, 6);
+          rocksdb_options_set_bytes_per_sync(optionsPtr, MB);
+          rocksdb_options_set_compression(optionsPtr, K_LZ4_COMPRESSION.getValue());
+          rocksdb_options_set_bottommost_compression(optionsPtr, K_ZSTD.getValue());
+          break;
+        }
+      case SMALL:
+        {
+          this.lruCache = rocksdb_cache_create_lru(16 * MB);
+          rocksdb_options_set_write_buffer_size(optionsPtr, 2 * MB);
+          rocksdb_options_set_target_file_size_base(optionsPtr, 2 * MB);
+          rocksdb_options_set_max_bytes_for_level_base(optionsPtr, 10 * MB);
+          rocksdb_options_set_soft_pending_compaction_bytes_limit(optionsPtr, 256 * MB);
+          rocksdb_options_set_hard_pending_compaction_bytes_limit(optionsPtr, GB);
+          this.tableOptions = rocksdb_block_based_options_create();
+          rocksdb_block_based_options_set_block_cache(tableOptions, lruCache);
+          rocksdb_block_based_options_set_cache_index_and_filter_blocks(
+              tableOptions, boolean2Byte(true));
+          rocksdb_block_based_options_set_index_type(
+              tableOptions, K_TWO_LEVEL_INDEX_SEARCH.ordinal());
+          rocksdb_options_set_block_based_table_factory(optionsPtr, tableOptions);
+          rocksdb_options_set_max_file_opening_threads(optionsPtr, 1);
+          rocksdb_options_set_max_open_files(optionsPtr, 5000);
+          // TODO rocksdb 8.5.3 暂不支持创建write buffer manager，待升级后处理
+          //          std::shared_ptr<ROCKSDB_NAMESPACE::WriteBufferManager> wbm =
+          //                  std::make_shared<ROCKSDB_NAMESPACE::WriteBufferManager>(
+          //                          0, (cache != nullptr) ? *cache : std::shared_ptr<Cache>());
+          //          write_buffer_manager = wbm;
+          break;
+        }
     }
     return optionsPtr;
   }
@@ -329,6 +373,18 @@ class RocksDbImpl implements RocksDb {
     return !closed.get();
   }
 
+  private void releaseCache(MemorySegment cache) {
+    if (cache != null && !NULL.equals(cache)) {
+      rocksdb_cache_destroy(cache);
+    }
+  }
+
+  private void releaseTableOptions(MemorySegment tableOptions) {
+    if (tableOptions != null && !NULL.equals(tableOptions)) {
+      rocksdb_block_based_options_destroy(tableOptions);
+    }
+  }
+
   @Override
   public void close() {
     // clean only once
@@ -339,6 +395,8 @@ class RocksDbImpl implements RocksDb {
       freeReadOptions(readOptionsPtr);
       freeWriteOptions(writeOptionsPtr);
       columnFamilies.clear();
+      releaseTableOptions(tableOptions);
+      releaseCache(lruCache);
     }
   }
 
@@ -348,7 +406,8 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  public void createColumnFamily(String columnFamilyName) throws RocksDbException {
+  public void createColumnFamily(String columnFamilyName, @Nullable RocksDbComparator comparator)
+      throws RocksDbException {
     if (isEmpty(columnFamilyName)) {
       throw new IllegalArgumentException("columnFamilyName must not be null or empty.");
     }
@@ -362,7 +421,13 @@ class RocksDbImpl implements RocksDb {
               if (log.isDebugEnabled()) {
                 log.debug("Prepare to create column family: {}.", key);
               }
-              MemorySegment cfOptions = rocksdb_options_create(); // global scope，cached 待close时释放
+              MemorySegment cmp = null;
+              MemorySegment cfOptions =
+                  rocksdb_options_create_copy(dbOptionsPtr); // global scope，cached 待close时释放
+              if (comparator != null) {
+                rocksdb_options_set_comparator(cfOptions, cmp = comparator.comparator());
+              }
+
               MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, 1);
               cfNamesPtr.set(C_POINTER, 0, arena.allocateUtf8String(key));
               MemorySegment errPtr = newErrPtr(arena); // 出参，错误消息
@@ -393,11 +458,14 @@ class RocksDbImpl implements RocksDb {
 
                 return ColumnFamilyDescriptor.builder()
                     .columnFamilyName(key)
+                    .columnFamilyComparator(cmp)
                     .columnFamilyOptions(cfOptions)
                     .columnFamilyHandle(columnFamilyHandle)
                     .build();
               } else {
                 errMsgThreadLocal.set(errMsg);
+                freeDbOptions(cfOptions);
+                destroy(cmp);
                 return null;
               }
             }
@@ -410,6 +478,11 @@ class RocksDbImpl implements RocksDb {
     if (!OK.equals(msg)) {
       throw new RocksDbException(msg);
     }
+  }
+
+  @Override
+  public void createColumnFamily(String columnFamilyName) throws RocksDbException {
+    createColumnFamily(columnFamilyName, null);
   }
 
   @Override

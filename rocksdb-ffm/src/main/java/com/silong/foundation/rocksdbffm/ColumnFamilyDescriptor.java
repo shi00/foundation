@@ -21,8 +21,8 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_column_family_handle_destroy;
-import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_options_destroy;
+import static com.silong.foundation.rocksdbffm.RocksDbComparator.destroy;
+import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -52,6 +52,9 @@ class ColumnFamilyDescriptor implements AutoCloseable, Serializable {
   /** 列族名称 */
   private String columnFamilyName;
 
+  /** 比较器 */
+  @ToString.Exclude private MemorySegment columnFamilyComparator;
+
   /** 列族options */
   @ToString.Exclude private MemorySegment columnFamilyOptions;
 
@@ -64,6 +67,9 @@ class ColumnFamilyDescriptor implements AutoCloseable, Serializable {
   /** 关闭标识 */
   private final AtomicBoolean closedColumnFamilyOptions = new AtomicBoolean(false);
 
+  /** 关闭标识 */
+  private final AtomicBoolean closedColumnFamilyComparator = new AtomicBoolean(false);
+
   public void closeColumnFamilyOptions() {
     if (closedColumnFamilyOptions.compareAndSet(false, true)) {
       rocksdb_options_destroy(columnFamilyOptions);
@@ -71,6 +77,16 @@ class ColumnFamilyDescriptor implements AutoCloseable, Serializable {
         log.debug("Free columnFamilyOptions: {}", columnFamilyOptions);
       }
       columnFamilyOptions = null;
+    }
+  }
+
+  public void closeColumnFamilyComparator() {
+    if (closedColumnFamilyComparator.compareAndSet(false, true)) {
+      destroy(columnFamilyComparator);
+      if (log.isDebugEnabled()) {
+        log.debug("Free columnFamilyComparator: {}", columnFamilyComparator);
+      }
+      columnFamilyComparator = null;
     }
   }
 
@@ -88,5 +104,6 @@ class ColumnFamilyDescriptor implements AutoCloseable, Serializable {
   public void close() {
     closeColumnFamilyHandle();
     closeColumnFamilyOptions();
+    closeColumnFamilyComparator();
   }
 }
