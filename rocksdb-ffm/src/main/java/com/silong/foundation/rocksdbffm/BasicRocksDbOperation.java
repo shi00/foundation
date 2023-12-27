@@ -58,7 +58,7 @@ public interface BasicRocksDbOperation {
    * @param comparator 比较器
    * @throws RocksDbException 异常
    */
-  void createColumnFamily(String columnFamilyName, MemorySegment comparator)
+  void createColumnFamily(String columnFamilyName, RocksDbComparator comparator)
       throws RocksDbException;
 
   /**
