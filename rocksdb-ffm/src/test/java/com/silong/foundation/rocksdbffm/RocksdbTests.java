@@ -376,16 +376,8 @@ public class RocksdbTests {
           public void close() {}
 
           @Override
-          public int compare(
-              byte[] a, int aOffset, int aLength, byte[] b, int bOffset, int bLength) {
-            byte[] aa = new byte[aLength];
-            System.arraycopy(a, aOffset, aa, 0, aa.length);
-            long at = Longs.fromByteArray(aa);
-
-            byte[] bb = new byte[bLength];
-            System.arraycopy(b, bOffset, bb, 0, bb.length);
-            long bt = Longs.fromByteArray(bb);
-            return Long.compare(at, bt);
+          public int compare(byte[] a, byte[] b) {
+            return Long.compare(Longs.fromByteArray(a), Longs.fromByteArray(b));
           }
 
           @Override

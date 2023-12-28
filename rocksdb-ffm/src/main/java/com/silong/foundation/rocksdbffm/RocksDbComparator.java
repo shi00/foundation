@@ -64,7 +64,7 @@ public interface RocksDbComparator extends Closeable {
         (state, key1, len1, key2, len2) -> {
           byte[] k1 = key1.asSlice(0, len1).toArray(JAVA_BYTE);
           byte[] k2 = key2.asSlice(0, len2).toArray(JAVA_BYTE);
-          return compare(k1, 0, k1.length, k2, 0, k2.length);
+          return compare(k1, k2);
         };
     rocksdb_comparator_create$destructor destructor = state -> close();
     rocksdb_comparator_create$name name = state -> global.allocateUtf8String(name());
@@ -83,14 +83,10 @@ public interface RocksDbComparator extends Closeable {
    * 比较key
    *
    * @param a key bytes
-   * @param aOffset offset
-   * @param aLength length
    * @param b key bytes
-   * @param bOffset offset
-   * @param bLength length
    * @return a==b返回0，a<b返回-1，否则返回1
    */
-  int compare(byte[] a, int aOffset, int aLength, byte[] b, int bOffset, int bLength);
+  int compare(byte[] a, byte[] b);
 
   /**
    * 比较器名称
