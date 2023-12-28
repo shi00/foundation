@@ -25,10 +25,8 @@ import static com.silong.foundation.rocksdbffm.RocksDbComparator.destroy;
 import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_LZ4_COMPRESSION;
 import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_ZSTD;
-import static com.silong.foundation.rocksdbffm.enu.IndexType.K_TWO_LEVEL_INDEX_SEARCH;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
-import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -80,10 +78,6 @@ class RocksDbImpl implements RocksDb {
   @ToString.Exclude private final MemorySegment readOptionsPtr;
 
   @ToString.Exclude private final MemorySegment writeOptionsPtr;
-
-  @ToString.Exclude private MemorySegment tableOptions;
-
-  @ToString.Exclude private MemorySegment lruCache;
 
   /** 是否需要关闭 */
   private final AtomicBoolean closed = new AtomicBoolean();
@@ -183,8 +177,6 @@ class RocksDbImpl implements RocksDb {
         freeDbOptions(dbOptionsPtr);
         IntStream.range(0, columnFamilyNames.size())
             .forEach(i -> freeColumnFamilyOptions(cfOptionsPtr.getAtIndex(C_POINTER, i)));
-        releaseTableOptions(tableOptions);
-        releaseCache(lruCache);
       }
     }
   }
@@ -264,51 +256,19 @@ class RocksDbImpl implements RocksDb {
     if (config.isEnableStatistics()) {
       rocksdb_options_enable_statistics(optionsPtr);
     }
-
     rocksdb_options_set_create_missing_column_families(
         optionsPtr, boolean2Byte(config.isCreateMissingColumnFamilies()));
     rocksdb_options_set_create_if_missing(optionsPtr, boolean2Byte(config.isCreateIfMissing()));
     rocksdb_options_set_info_log_level(optionsPtr, config.getInfoLogLevel().ordinal());
 
-    switch (config.getUsage()) {
-      case POINT_LOOKUP:
-        {
-          rocksdb_options_optimize_for_point_lookup(
-              optionsPtr, (long) config.getBlockCacheSize() * MB);
+    rocksdb_options_optimize_for_point_lookup(optionsPtr, (long) config.getBlockCacheSize() * MB);
 
-          //  reasonable out-of-box performance for general workloads
-          rocksdb_options_set_level_compaction_dynamic_level_bytes(optionsPtr, boolean2Byte(true));
-          rocksdb_options_set_max_background_jobs(optionsPtr, 6);
-          rocksdb_options_set_bytes_per_sync(optionsPtr, MB);
-          rocksdb_options_set_compression(optionsPtr, K_LZ4_COMPRESSION.getValue());
-          rocksdb_options_set_bottommost_compression(optionsPtr, K_ZSTD.getValue());
-          break;
-        }
-      case SMALL:
-        {
-          this.lruCache = rocksdb_cache_create_lru(16 * MB);
-          rocksdb_options_set_write_buffer_size(optionsPtr, 2 * MB);
-          rocksdb_options_set_target_file_size_base(optionsPtr, 2 * MB);
-          rocksdb_options_set_max_bytes_for_level_base(optionsPtr, 10 * MB);
-          rocksdb_options_set_soft_pending_compaction_bytes_limit(optionsPtr, 256 * MB);
-          rocksdb_options_set_hard_pending_compaction_bytes_limit(optionsPtr, GB);
-          this.tableOptions = rocksdb_block_based_options_create();
-          rocksdb_block_based_options_set_block_cache(tableOptions, lruCache);
-          rocksdb_block_based_options_set_cache_index_and_filter_blocks(
-              tableOptions, boolean2Byte(true));
-          rocksdb_block_based_options_set_index_type(
-              tableOptions, K_TWO_LEVEL_INDEX_SEARCH.ordinal());
-          rocksdb_options_set_block_based_table_factory(optionsPtr, tableOptions);
-          rocksdb_options_set_max_file_opening_threads(optionsPtr, 1);
-          rocksdb_options_set_max_open_files(optionsPtr, 5000);
-          // TODO rocksdb 8.5.3 暂不支持创建write buffer manager，待升级后处理
-          //          std::shared_ptr<ROCKSDB_NAMESPACE::WriteBufferManager> wbm =
-          //                  std::make_shared<ROCKSDB_NAMESPACE::WriteBufferManager>(
-          //                          0, (cache != nullptr) ? *cache : std::shared_ptr<Cache>());
-          //          write_buffer_manager = wbm;
-          break;
-        }
-    }
+    //  reasonable out-of-box performance for general workloads
+    rocksdb_options_set_level_compaction_dynamic_level_bytes(optionsPtr, boolean2Byte(true));
+    rocksdb_options_set_max_background_jobs(optionsPtr, 6);
+    rocksdb_options_set_bytes_per_sync(optionsPtr, MB);
+    rocksdb_options_set_compression(optionsPtr, K_LZ4_COMPRESSION.getValue());
+    rocksdb_options_set_bottommost_compression(optionsPtr, K_ZSTD.getValue());
     return optionsPtr;
   }
 
@@ -373,18 +333,6 @@ class RocksDbImpl implements RocksDb {
     return !closed.get();
   }
 
-  private void releaseCache(MemorySegment cache) {
-    if (cache != null && !NULL.equals(cache)) {
-      rocksdb_cache_destroy(cache);
-    }
-  }
-
-  private void releaseTableOptions(MemorySegment tableOptions) {
-    if (tableOptions != null && !NULL.equals(tableOptions)) {
-      rocksdb_block_based_options_destroy(tableOptions);
-    }
-  }
-
   @Override
   public void close() {
     // clean only once
@@ -395,8 +343,6 @@ class RocksDbImpl implements RocksDb {
       freeReadOptions(readOptionsPtr);
       freeWriteOptions(writeOptionsPtr);
       columnFamilies.clear();
-      releaseTableOptions(tableOptions);
-      releaseCache(lruCache);
     }
   }
 
@@ -421,6 +367,7 @@ class RocksDbImpl implements RocksDb {
               if (log.isDebugEnabled()) {
                 log.debug("Prepare to create column family: {}.", key);
               }
+
               MemorySegment cmp = null;
               MemorySegment cfOptions =
                   rocksdb_options_create_copy(dbOptionsPtr); // global scope，cached 待close时释放

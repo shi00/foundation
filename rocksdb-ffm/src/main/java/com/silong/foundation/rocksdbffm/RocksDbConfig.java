@@ -22,10 +22,8 @@
 package com.silong.foundation.rocksdbffm;
 
 import static com.silong.foundation.rocksdbffm.enu.InfoLogLevel.INFO_LEVEL;
-import static com.silong.foundation.rocksdbffm.enu.Usage.SMALL;
 
 import com.silong.foundation.rocksdbffm.enu.InfoLogLevel;
-import com.silong.foundation.rocksdbffm.enu.Usage;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -64,9 +62,6 @@ public class RocksDbConfig implements Serializable {
    * 注意：如果ttl配置很小，可能导致列族中的数据很快被淘汰
    */
   @Valid private Map<@NotEmpty String, @NotNull Duration> columnFamilyNameWithTTL;
-
-  /** 持久化存储数据规模，默认：SMALL */
-  @NotNull private Usage usage = SMALL;
 
   /** 日志级别 */
   @NotNull private InfoLogLevel infoLogLevel = INFO_LEVEL;
