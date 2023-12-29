@@ -6,6 +6,10 @@ HEADER_CLASS_NAME=$4
 SOURCECODE_PACKAGE=$5
 
 echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR" "$HEADER_CLASS_NAME" "$SOURCECODE_PACKAGE"
+
+#开启lz4和zstd压缩特性
+sed -i '/"default-features": \[/{:a;N;/\],/!ba};s/"default-features": \[.*\],/"default-features": \["zlib","zstd","lz4"\],/' ports/rocksdb/vcpkg.json
+
 echo "================== Start building rocksdb =================="
 
 mkdir custom-triplets
@@ -20,6 +24,9 @@ if [ ! -f installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" ]; then
 fi
 
 cp installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"
+cp installed/x64-linux-dynamic/lib/"libz.so" /opt/"$SHARDED_LIB_DIR"
+cp installed/x64-linux-dynamic/lib/"libzstd.so" /opt/"$SHARDED_LIB_DIR"
+cp installed/x64-linux-dynamic/lib/"liblz4.so" /opt/"$SHARDED_LIB_DIR"
 
 echo "================== Start generate source code for rocksdb =================="
 jextract --source --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" -t "$SOURCECODE_PACKAGE" -I ./installed/x64-linux-dynamic/include/rocksdb ./installed/x64-linux-dynamic/include/rocksdb/c.h
