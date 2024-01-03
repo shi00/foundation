@@ -22,6 +22,7 @@
 package com.silong.foundation.utilities.nlloader;
 
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.OS_NAME;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.zip.ZipFile.OPEN_READ;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -72,7 +73,7 @@ public final class JarUtils {
           continue;
         }
         if (entry.getName().endsWith(format.libFormat)) {
-          Files.copy(archive.getInputStream(entry), entryDest);
+          Files.copy(archive.getInputStream(entry), entryDest, REPLACE_EXISTING);
           result.add(entryDest.normalize().toString());
         }
       }
