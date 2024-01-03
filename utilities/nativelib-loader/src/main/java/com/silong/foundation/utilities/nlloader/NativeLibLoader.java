@@ -30,9 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,10 +48,10 @@ public final class NativeLibLoader {
   private static final Path TEMP_DIR = new File(System.getProperty("java.io.tmpdir")).toPath();
 
   /** 操作系统名 */
-  private static final String OS_NAME;
+  static final String OS_NAME;
 
   /** 操作系统名 */
-  private static final String OS_ARCH;
+  static final String OS_ARCH;
 
   static {
     Properties properties = new Properties();
