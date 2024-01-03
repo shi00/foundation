@@ -66,13 +66,6 @@ public class JarUtilsTests {
     Path path = JarUtils.locateJarFile(XxHashGenerator.class);
     String dir = UUID.randomUUID().toString();
     Collection<String> paths = JarUtils.extractNativeLibs(path, TEMP_DIR.resolve(dir));
-    Path libFile =
-        TEMP_DIR
-            .resolve(dir)
-            .resolve("native")
-            .resolve(OS_NAME)
-            .resolve(OS_ARCH)
-            .resolve("libxxhash." + PlatformLibFormat.match(OS_NAME).libFormat);
     Assertions.assertEquals(1, paths.size());
     Assertions.assertTrue(new File(paths.stream().findFirst().orElseThrow()).exists());
   }
