@@ -19,19 +19,21 @@
  *
  */
 
-package com.silong.foundation.rocksdbffm.enu;
+package com.silong.foundation.utilities.nlloader;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
- * 使用方式，rocksdb会依据数据规模优化配置参数
+ * 单元测试
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-12-25 17:03
+ * @since 2024-01-03 11:43
  */
-public enum Usage {
-  // 小数据量，1GB数据量以内(测试用)
-  SMALL,
-
-  // 普通点查场景
-  POINT_LOOKUP
+public class LoaderTests {
+  @Test
+  void test1() {
+    Assertions.assertDoesNotThrow(() -> NativeLibLoader.loadLibrary("libxxhash"));
+  }
 }
