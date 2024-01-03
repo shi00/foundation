@@ -100,7 +100,7 @@ public final class JarUtils {
   }
 
   static Path byGetResource(Class<?> clazz) throws URISyntaxException {
-    URL classResource = clazz.getResource(clazz.getSimpleName() + ".class");
+    URL classResource = clazz.getResource(STR."\{clazz.getSimpleName()}.class");
     if (classResource == null) {
       throw new IllegalStateException(
           String.format("%s cannot be found from classpath jars.", clazz.getName()));
@@ -111,7 +111,7 @@ public final class JarUtils {
       String path = url.replaceAll("^jar:(file:.*[.]jar)!/.*", "$1");
       return Paths.get(URI.create(path));
     }
-    throw new IllegalStateException("Invalid Jar File URL: " + url);
+    throw new IllegalStateException(STR."Invalid Jar File URL: \{url}");
   }
 
   /** forbidden */
