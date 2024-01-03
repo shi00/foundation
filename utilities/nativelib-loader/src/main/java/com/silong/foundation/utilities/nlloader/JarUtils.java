@@ -24,6 +24,7 @@ package com.silong.foundation.utilities.nlloader;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.OS_NAME;
 import static java.util.zip.ZipFile.OPEN_READ;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -58,7 +59,7 @@ public final class JarUtils {
       @NonNull Path jarFile, @NonNull Path targetDir) {
     Set<String> result = new LinkedHashSet<>();
     PlatformLibFormat format = PlatformLibFormat.match(OS_NAME);
-    Files.createDirectories(targetDir); // create dest path folder(s)
+    Files.createDirectories(targetDir);
     try (JarFile archive = new JarFile(jarFile.toFile(), true, OPEN_READ)) {
       // sort entries by name to always create folders first
       List<? extends ZipEntry> entries =
@@ -94,6 +95,7 @@ public final class JarUtils {
     }
   }
 
+  @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "获取代码位置")
   static Path byGetProtectionDomain(Class<?> clazz) throws URISyntaxException {
     return Paths.get(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
   }
