@@ -49,16 +49,13 @@ import lombok.SneakyThrows;
 public final class JarUtils {
 
   /**
-   * 把目标jar文件内的共享库按照jar文件内的目录结构抽取到指定目录
+   * 把目标jar文件内的共享库抽取至给定目录
    *
    * @param jarFile jar文件
    * @param targetDir 目标目录
-   * @return 所有被抽取到目标目录的共享库路径列表
    */
   @SneakyThrows(IOException.class)
-  public static Collection<String> extractNativeLibs(
-      @NonNull Path jarFile, @NonNull Path targetDir) {
-    Set<String> result = new LinkedHashSet<>();
+  public static void extractNativeLibs(@NonNull Path jarFile, @NonNull Path targetDir) {
     PlatformLibFormat format = PlatformLibFormat.match(OS_NAME);
     Files.createDirectories(targetDir);
     try (JarFile archive = new JarFile(jarFile.toFile(), true, OPEN_READ)) {
@@ -67,18 +64,19 @@ public final class JarUtils {
           archive.stream().sorted(Comparator.comparing(ZipEntry::getName)).toList();
       // copy each entry in the dest path
       for (ZipEntry entry : entries) {
-        Path entryDest = targetDir.resolve(entry.getName());
         if (entry.isDirectory()) {
-          Files.createDirectory(entryDest);
           continue;
         }
-        if (entry.getName().endsWith(format.libFormat)) {
+
+        String name = entry.getName();
+        if (name.endsWith(format.libFormat)) {
+          int index = name.lastIndexOf('/');
+          Path entryDest =
+              index == -1 ? targetDir.resolve(name) : targetDir.resolve(name.substring(index + 1));
           Files.copy(archive.getInputStream(entry), entryDest, REPLACE_EXISTING);
-          result.add(entryDest.normalize().toString());
         }
       }
     }
-    return result;
   }
 
   /**

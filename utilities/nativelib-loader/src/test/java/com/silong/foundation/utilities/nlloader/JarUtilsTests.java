@@ -26,7 +26,7 @@ import static com.silong.foundation.utilities.nlloader.NativeLibLoader.*;
 import com.silong.foundation.utilities.xxhash.XxHashGenerator;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -65,8 +65,10 @@ public class JarUtilsTests {
   void test4() {
     Path path = JarUtils.locateJarFile(XxHashGenerator.class);
     String dir = UUID.randomUUID().toString();
-    Collection<String> paths = JarUtils.extractNativeLibs(path, TEMP_DIR.resolve(dir));
-    Assertions.assertEquals(1, paths.size());
-    Assertions.assertTrue(new File(paths.stream().findFirst().orElseThrow()).exists());
+    Path targetDir = TEMP_DIR.resolve(dir);
+    JarUtils.extractNativeLibs(path, targetDir);
+    Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
+    File file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
+    Assertions.assertTrue(file.exists() && file.isFile());
   }
 }
