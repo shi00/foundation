@@ -45,13 +45,13 @@ import lombok.extern.slf4j.Slf4j;
 public final class NativeLibLoader {
 
   /** 临时目录 */
-  static final Path TEMP_DIR = new File(System.getProperty("java.io.tmpdir")).toPath();
+  public static final Path TEMP_DIR = new File(System.getProperty("java.io.tmpdir")).toPath();
 
   /** 操作系统名 */
-  static final String OS_NAME;
+  public static final String OS_NAME;
 
   /** 操作系统名 */
-  static final String OS_ARCH;
+  public static final String OS_ARCH;
 
   static {
     Properties properties = new Properties();
