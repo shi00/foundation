@@ -23,14 +23,15 @@ package com.silong.foundation.utilities.nlloader;
 
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.*;
 
-import com.silong.foundation.utilities.xxhash.XxHashGenerator;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.util.StringUtils;
+import org.rocksdb.CompressionType;
+import org.rocksdb.RocksDB;
+import org.rocksdb.WriteBatch;
 
 /**
  * 单元测试
@@ -42,28 +43,28 @@ import org.junit.platform.commons.util.StringUtils;
 public class JarUtilsTests {
   @Test
   void test1() throws Exception {
-    Path path2 = JarUtils.byGetResource(StringUtils.class);
-    Path path1 = JarUtils.byGetProtectionDomain(StringUtils.class);
+    Path path2 = JarUtils.byGetResource(RocksDB.class);
+    Path path1 = JarUtils.byGetProtectionDomain(RocksDB.class);
     Assertions.assertEquals(path1, path2);
   }
 
   @Test
   void test2() throws Exception {
-    Path path2 = JarUtils.locateJarFile(org.apache.commons.lang3.StringUtils.class);
-    Path path1 = JarUtils.byGetProtectionDomain(org.apache.commons.lang3.StringUtils.class);
+    Path path2 = JarUtils.locateJarFile(WriteBatch.class);
+    Path path1 = JarUtils.byGetProtectionDomain(WriteBatch.class);
     Assertions.assertEquals(path1, path2);
   }
 
   @Test
   void test3() throws Exception {
-    Path path2 = JarUtils.locateJarFile(org.apache.commons.lang3.StringUtils.class);
-    Path path1 = JarUtils.byGetResource(org.apache.commons.lang3.StringUtils.class);
+    Path path2 = JarUtils.locateJarFile(CompressionType.class);
+    Path path1 = JarUtils.byGetResource(CompressionType.class);
     Assertions.assertEquals(path1, path2);
   }
 
   @Test
   void test4() {
-    Path path = JarUtils.locateJarFile(XxHashGenerator.class);
+    Path path = JarUtils.locateJarFile(RocksDB.class);
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
     JarUtils.extractNativeLibs(path, targetDir);

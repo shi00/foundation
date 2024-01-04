@@ -58,8 +58,8 @@ public final class NativeLibLoader {
     PLATFORM_DETECTOR.detect(properties, List.of());
     OS_NAME = properties.getProperty(DETECTED_NAME);
     OS_ARCH = properties.getProperty(DETECTED_ARCH);
-    log.info(STR."OS_NAME: \{OS_NAME}");
-    log.info(STR."OS_ARCH: \{OS_ARCH}");
+    log.info("OS_NAME: {}", OS_NAME);
+    log.info("OS_ARCH: {}", OS_ARCH);
   }
 
   /** 工具类，禁止实例化 */
@@ -80,17 +80,17 @@ public final class NativeLibLoader {
     String libPath = String.format("/native/%s/%s/%s", OS_NAME, OS_ARCH, originLib);
     try {
       return doInternalGenerate(originLib, libPath, tmpLib);
-    } catch (IOException e) {
+    } catch (IOException | NullPointerException e) {
       // fallback
       libPath = String.format("/native/%s/%s", OS_NAME, originLib);
       try {
         return doInternalGenerate(originLib, libPath, tmpLib);
-      } catch (IOException ex) {
+      } catch (IOException | NullPointerException ex) {
         // fallback
         libPath = String.format("/native/%s", originLib);
         try {
           return doInternalGenerate(originLib, libPath, tmpLib);
-        } catch (IOException exc) {
+        } catch (IOException | NullPointerException exc) {
           // fallback
           libPath = String.format("/%s", originLib);
           return doInternalGenerate(originLib, libPath, tmpLib);
@@ -140,6 +140,6 @@ public final class NativeLibLoader {
     // 加载临时生成的库文件
     String originLib = String.format("%s.%s", libName, PlatformLibFormat.match(OS_NAME).libFormat);
     System.load(generateTempLib(originLib));
-    log.info(STR."Successfully loaded \{originLib}");
+    log.info("Successfully loaded {}", originLib);
   }
 }

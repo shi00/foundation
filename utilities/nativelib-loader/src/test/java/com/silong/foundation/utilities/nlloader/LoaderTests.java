@@ -21,6 +21,10 @@
 
 package com.silong.foundation.utilities.nlloader;
 
+import static com.silong.foundation.utilities.nlloader.NativeLibLoader.OS_ARCH;
+import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
+
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +36,22 @@ import org.junit.jupiter.api.Test;
  * @since 2024-01-03 11:43
  */
 public class LoaderTests {
+
+  private static final String LIB_PREFIX = "librocksdbjni";
+
   @Test
   void test1() {
-    Assertions.assertDoesNotThrow(() -> NativeLibLoader.loadLibrary("libxxhash"));
+    String lib = "";
+    if (IS_OS_WINDOWS && OS_ARCH.contains("64")) {
+      lib = LIB_PREFIX + "-win64";
+    } else if (SystemUtils.IS_OS_LINUX) {
+      if (OS_ARCH.contains("64")) {
+        lib = LIB_PREFIX + "-linux64";
+      } else {
+        lib = LIB_PREFIX + "-linux32";
+      }
+    }
+    String ll = lib;
+    Assertions.assertDoesNotThrow(() -> NativeLibLoader.loadLibrary(ll));
   }
 }

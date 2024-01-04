@@ -58,21 +58,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.silong</groupId>
-            <artifactId>xxhash-ffm</artifactId>
-            <version>1.0.0</version>
-            <classifier>${os.detected.name}-${os.detected.arch}</classifier>
+            <groupId>org.rocksdb</groupId>
+            <artifactId>rocksdbjni</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <extensions>
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-            </extension>
-        </extensions>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
