@@ -88,4 +88,13 @@ public class JarUtilsTests {
     file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
     Assertions.assertTrue(file.exists() && file.isFile());
   }
+
+  @Test
+  void test6() {
+    Path path = JarUtils.locateJarFile(NativeLibLoader.class);
+    String dir = UUID.randomUUID().toString();
+    Path targetDir = TEMP_DIR.resolve(dir);
+    JarUtils.extractNativeLibs(path, targetDir);
+    Assertions.assertEquals(0, Objects.requireNonNull(targetDir.toFile().list()).length);
+  }
 }

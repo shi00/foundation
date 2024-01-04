@@ -33,9 +33,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -84,29 +83,54 @@ public final class JarUtils {
                           }
                         }));
 
-    try (JarFile archive = new JarFile(jarFile.toFile(), true, OPEN_READ)) {
-      // sort entries by name to always create folders first
-      List<? extends ZipEntry> entries =
-          archive.stream().sorted(Comparator.comparing(ZipEntry::getName)).toList();
-      // copy each entry in the dest path
-      for (ZipEntry entry : entries) {
-        if (entry.isDirectory()) {
-          continue;
-        }
+    File file = jarFile.toFile();
+    if (file.isFile() && file.getName().endsWith(".jar")) {
+      try (JarFile archive = new JarFile(file, true, OPEN_READ)) {
+        // sort entries by name to always create folders first
+        List<? extends ZipEntry> entries =
+            archive.stream().sorted(Comparator.comparing(ZipEntry::getName)).toList();
+        // copy each entry in the dest path
+        for (ZipEntry entry : entries) {
+          if (entry.isDirectory()) {
+            continue;
+          }
 
-        String name = entry.getName();
-        if (name.endsWith(format.libFormat)) {
-          int index = name.lastIndexOf('/');
-          name = index == -1 ? name : name.substring(index + 1);
-          try (InputStream inputStream = archive.getInputStream(entry)) {
-            if (!DigestUtils.sha256Hex(inputStream).equals(existLibsCache.get(name))) {
-              try (InputStream in = archive.getInputStream(entry)) {
-                Files.copy(in, targetDir.resolve(name), REPLACE_EXISTING);
+          String name = entry.getName();
+          if (name.endsWith(format.libFormat)) {
+            int index = name.lastIndexOf('/');
+            name = index == -1 ? name : name.substring(index + 1);
+            try (InputStream inputStream = archive.getInputStream(entry)) {
+              if (!DigestUtils.sha256Hex(inputStream).equals(existLibsCache.get(name))) {
+                try (InputStream in = archive.getInputStream(entry)) {
+                  Files.copy(in, targetDir.resolve(name), REPLACE_EXISTING);
+                }
               }
             }
           }
         }
       }
+    } else if (file.isDirectory()) {
+      Files.walkFileTree(
+          jarFile,
+          new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                throws IOException {
+              String name = file.toFile().getName();
+              if (name.endsWith(format.libFormat)) {
+                try (InputStream inputStream = Files.newInputStream(file)) {
+                  if (!DigestUtils.sha256Hex(inputStream).equals(existLibsCache.get(name))) {
+                    try (InputStream in = Files.newInputStream(file)) {
+                      Files.copy(in, targetDir.resolve(name), REPLACE_EXISTING);
+                    }
+                  }
+                }
+              }
+              return FileVisitResult.CONTINUE;
+            }
+          });
+    } else {
+      throw new IllegalArgumentException(String.format("Invalid jarFile: %s", jarFile));
     }
   }
 
