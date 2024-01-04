@@ -42,6 +42,9 @@ public interface RocksDb
   /** 共享库名称 */
   String LIB_ROCKSDB = System.getProperty("rocksdb.library.name", DEFAULT_LIB_NAME);
 
+  /** rocksdb共享库目录环境变量 */
+  String ROCKSDB_LIBS_DIR = "ROCKSDB_LIBS_DIR";
+
   int KB = 1024;
 
   int MB = 1024 * KB;

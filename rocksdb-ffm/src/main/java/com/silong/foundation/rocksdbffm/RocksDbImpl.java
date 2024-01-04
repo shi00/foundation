@@ -26,15 +26,21 @@ import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_LZ4_COMPRESSION;
 import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_ZSTD;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
-import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
+import static com.silong.foundation.utilities.nlloader.JarUtils.extractNativeLibs;
+import static com.silong.foundation.utilities.nlloader.JarUtils.locateJarFile;
 import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.silong.foundation.common.lambda.Tuple2;
 import com.silong.foundation.rocksdbffm.options.ReadOptions;
 import com.silong.foundation.rocksdbffm.options.WriteOptions;
+import com.silong.foundation.utilities.nlloader.PlatformLibFormat;
+import java.io.IOException;
 import java.io.Serial;
 import java.lang.foreign.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +68,25 @@ class RocksDbImpl implements RocksDb {
   @Serial private static final long serialVersionUID = -2_521_667_833_385_354_826L;
 
   static {
-    loadLibrary(LIB_ROCKSDB);
+    String libPath = System.getenv(ROCKSDB_LIBS_DIR);
+    if (libPath == null || libPath.isEmpty()) {
+      throw new IllegalStateException(
+          "ROCKSDB_LIBS_DIR needs to be configured in environment variables.");
+    }
+
+    log.info("Please make sure ROCKSDB_LIBS_DIR is in the OS shared library search path.");
+
+    try {
+      Path path = Paths.get(libPath);
+      Files.createDirectories(path);
+      Path jarFile = locateJarFile(RocksDbImpl.class);
+      extractNativeLibs(jarFile, path);
+      PlatformLibFormat format = PlatformLibFormat.match(OS_NAME);
+      System.load(
+          path.resolve(String.format("%s.%s", LIB_ROCKSDB, format.getLibFormat())).toString());
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   /** rocksdb配置 */
