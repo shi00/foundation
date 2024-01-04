@@ -72,4 +72,20 @@ public class JarUtilsTests {
     File file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
     Assertions.assertTrue(file.exists() && file.isFile());
   }
+
+  @Test
+  void test5() {
+    Path path = JarUtils.locateJarFile(RocksDB.class);
+    String dir = UUID.randomUUID().toString();
+    Path targetDir = TEMP_DIR.resolve(dir);
+    JarUtils.extractNativeLibs(path, targetDir);
+    Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
+    File file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
+    Assertions.assertTrue(file.exists() && file.isFile());
+
+    JarUtils.extractNativeLibs(path, targetDir);
+    Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
+    file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
+    Assertions.assertTrue(file.exists() && file.isFile());
+  }
 }

@@ -26,7 +26,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.zip.ZipFile.OPEN_READ;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -35,9 +38,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 
 /**
  * jar文件工具类
@@ -46,10 +52,11 @@ import lombok.SneakyThrows;
  * @version 1.0.0
  * @since 2024-01-03 9:19
  */
+@Slf4j
 public final class JarUtils {
 
   /**
-   * 把目标jar文件内的共享库抽取至给定目录
+   * 把目标jar文件内的所有当前操作系统平台的共享库抽取至给定目录
    *
    * @param jarFile jar文件
    * @param targetDir 目标目录
@@ -57,7 +64,26 @@ public final class JarUtils {
   @SneakyThrows(IOException.class)
   public static void extractNativeLibs(@NonNull Path jarFile, @NonNull Path targetDir) {
     PlatformLibFormat format = PlatformLibFormat.match(OS_NAME);
+
+    // 创建目标目录，并列出目标目录下所有共享库
     Files.createDirectories(targetDir);
+    File[] existLibs = targetDir.toFile().listFiles((dir, name) -> name.endsWith(format.libFormat));
+    Map<String, String> existLibsCache =
+        (existLibs == null || existLibs.length == 0)
+            ? Map.of()
+            : Arrays.stream(existLibs)
+                .collect(
+                    Collectors.toMap(
+                        File::getName,
+                        f -> {
+                          try (InputStream in = new FileInputStream(f)) {
+                            return DigestUtils.sha256Hex(in);
+                          } catch (IOException e) {
+                            log.error("Failed to calculate the sha256 of {}", f, e);
+                            return "";
+                          }
+                        }));
+
     try (JarFile archive = new JarFile(jarFile.toFile(), true, OPEN_READ)) {
       // sort entries by name to always create folders first
       List<? extends ZipEntry> entries =
@@ -71,9 +97,14 @@ public final class JarUtils {
         String name = entry.getName();
         if (name.endsWith(format.libFormat)) {
           int index = name.lastIndexOf('/');
-          Path entryDest =
-              index == -1 ? targetDir.resolve(name) : targetDir.resolve(name.substring(index + 1));
-          Files.copy(archive.getInputStream(entry), entryDest, REPLACE_EXISTING);
+          name = index == -1 ? name : name.substring(index + 1);
+          try (InputStream inputStream = archive.getInputStream(entry)) {
+            if (!DigestUtils.sha256Hex(inputStream).equals(existLibsCache.get(name))) {
+              try (InputStream in = archive.getInputStream(entry)) {
+                Files.copy(in, targetDir.resolve(name), REPLACE_EXISTING);
+              }
+            }
+          }
         }
       }
     }
