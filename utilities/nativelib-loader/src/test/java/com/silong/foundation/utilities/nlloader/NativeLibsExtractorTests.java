@@ -50,21 +50,21 @@ public class NativeLibsExtractorTests {
 
   @Test
   void test2() throws Exception {
-    Path path2 = NativeLibsExtractor.locateJarFile(WriteBatch.class);
+    Path path2 = NativeLibsExtractor.locate(WriteBatch.class);
     Path path1 = NativeLibsExtractor.byGetProtectionDomain(WriteBatch.class);
     Assertions.assertEquals(path1, path2);
   }
 
   @Test
   void test3() throws Exception {
-    Path path2 = NativeLibsExtractor.locateJarFile(CompressionType.class);
+    Path path2 = NativeLibsExtractor.locate(CompressionType.class);
     Path path1 = NativeLibsExtractor.byGetResource(CompressionType.class);
     Assertions.assertEquals(path1, path2);
   }
 
   @Test
   void test4() {
-    Path path = NativeLibsExtractor.locateJarFile(RocksDB.class);
+    Path path = NativeLibsExtractor.locate(RocksDB.class);
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
@@ -75,7 +75,7 @@ public class NativeLibsExtractorTests {
 
   @Test
   void test5() {
-    Path path = NativeLibsExtractor.locateJarFile(RocksDB.class);
+    Path path = NativeLibsExtractor.locate(RocksDB.class);
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
@@ -91,7 +91,7 @@ public class NativeLibsExtractorTests {
 
   @Test
   void test6() {
-    Path path = NativeLibsExtractor.locateJarFile(NativeLibLoader.class);
+    Path path = NativeLibsExtractor.locate(NativeLibLoader.class);
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);

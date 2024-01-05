@@ -135,13 +135,13 @@ public final class NativeLibsExtractor {
   }
 
   /**
-   * 根据jar包内包含的任一class，找到jar文件路径
+   * 根据class，找到其归属的jar文件路径或者目录
    *
    * @param aClass jar包内包含的class
    * @return jar文件路径
    */
   @SneakyThrows(URISyntaxException.class)
-  public static Path locateJarFile(@NonNull Class<?> aClass) {
+  public static Path locate(@NonNull Class<?> aClass) {
     try {
       return byGetProtectionDomain(aClass);
     } catch (URISyntaxException e) {
