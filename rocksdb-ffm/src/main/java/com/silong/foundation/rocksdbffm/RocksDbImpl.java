@@ -32,6 +32,7 @@ import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
 import com.silong.foundation.rocksdbffm.options.ReadOptions;
 import com.silong.foundation.rocksdbffm.options.WriteOptions;
 import com.silong.foundation.utilities.nlloader.PlatformLibFormat;

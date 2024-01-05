@@ -25,6 +25,7 @@ import static com.silong.foundation.rocksdbffm.Utils.enumType;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
 import com.silong.foundation.rocksdbffm.enu.IOActivity;
 import com.silong.foundation.rocksdbffm.enu.IOPriority;
 import com.silong.foundation.rocksdbffm.enu.ReadTier;

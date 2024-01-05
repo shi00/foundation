@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.rocksdbffm;
+package com.silong.foundation.rocksdbffm.config;
 
 import static com.silong.foundation.rocksdbffm.enu.InfoLogLevel.INFO_LEVEL;
 

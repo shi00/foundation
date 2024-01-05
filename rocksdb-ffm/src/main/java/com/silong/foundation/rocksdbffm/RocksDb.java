@@ -21,6 +21,7 @@
 
 package com.silong.foundation.rocksdbffm;
 
+import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
 import java.io.Serializable;
 
 /**

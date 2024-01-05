@@ -24,6 +24,7 @@ package com.silong.foundation.rocksdbffm;
 import static com.silong.foundation.rocksdbffm.enu.IOPriority.IO_HIGH;
 import static com.silong.foundation.rocksdbffm.enu.IOPriority.IO_MID;
 
+import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
 import com.silong.foundation.rocksdbffm.options.WriteOptions;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Paths;
