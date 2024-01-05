@@ -40,34 +40,34 @@ import org.rocksdb.WriteBatch;
  * @version 1.0.0
  * @since 2023-10-13 23:03
  */
-public class JarUtilsTests {
+public class NativeLibsExtractorTests {
   @Test
   void test1() throws Exception {
-    Path path2 = JarUtils.byGetResource(RocksDB.class);
-    Path path1 = JarUtils.byGetProtectionDomain(RocksDB.class);
+    Path path2 = NativeLibsExtractor.byGetResource(RocksDB.class);
+    Path path1 = NativeLibsExtractor.byGetProtectionDomain(RocksDB.class);
     Assertions.assertEquals(path1, path2);
   }
 
   @Test
   void test2() throws Exception {
-    Path path2 = JarUtils.locateJarFile(WriteBatch.class);
-    Path path1 = JarUtils.byGetProtectionDomain(WriteBatch.class);
+    Path path2 = NativeLibsExtractor.locateJarFile(WriteBatch.class);
+    Path path1 = NativeLibsExtractor.byGetProtectionDomain(WriteBatch.class);
     Assertions.assertEquals(path1, path2);
   }
 
   @Test
   void test3() throws Exception {
-    Path path2 = JarUtils.locateJarFile(CompressionType.class);
-    Path path1 = JarUtils.byGetResource(CompressionType.class);
+    Path path2 = NativeLibsExtractor.locateJarFile(CompressionType.class);
+    Path path1 = NativeLibsExtractor.byGetResource(CompressionType.class);
     Assertions.assertEquals(path1, path2);
   }
 
   @Test
   void test4() {
-    Path path = JarUtils.locateJarFile(RocksDB.class);
+    Path path = NativeLibsExtractor.locateJarFile(RocksDB.class);
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
-    JarUtils.extractNativeLibs(path, targetDir);
+    NativeLibsExtractor.extractNativeLibs(path, targetDir);
     Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
     File file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
     Assertions.assertTrue(file.exists() && file.isFile());
@@ -75,15 +75,15 @@ public class JarUtilsTests {
 
   @Test
   void test5() {
-    Path path = JarUtils.locateJarFile(RocksDB.class);
+    Path path = NativeLibsExtractor.locateJarFile(RocksDB.class);
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
-    JarUtils.extractNativeLibs(path, targetDir);
+    NativeLibsExtractor.extractNativeLibs(path, targetDir);
     Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
     File file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
     Assertions.assertTrue(file.exists() && file.isFile());
 
-    JarUtils.extractNativeLibs(path, targetDir);
+    NativeLibsExtractor.extractNativeLibs(path, targetDir);
     Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
     file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
     Assertions.assertTrue(file.exists() && file.isFile());
@@ -91,10 +91,10 @@ public class JarUtilsTests {
 
   @Test
   void test6() {
-    Path path = JarUtils.locateJarFile(NativeLibLoader.class);
+    Path path = NativeLibsExtractor.locateJarFile(NativeLibLoader.class);
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
-    JarUtils.extractNativeLibs(path, targetDir);
+    NativeLibsExtractor.extractNativeLibs(path, targetDir);
     Assertions.assertEquals(0, Objects.requireNonNull(targetDir.toFile().list()).length);
   }
 }

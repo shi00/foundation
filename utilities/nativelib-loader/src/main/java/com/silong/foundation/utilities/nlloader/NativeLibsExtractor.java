@@ -45,14 +45,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 
 /**
- * jar文件工具类
+ * 从指定jar文件或目录(含子目录)中提前当前操作系统平台使用的共享库(如：windows提前dll，linux提前so等等)工具类
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2024-01-03 9:19
  */
 @Slf4j
-public final class JarUtils {
+public final class NativeLibsExtractor {
 
   /**
    * 把目标jar文件内的所有当前操作系统平台的共享库抽取至给定目录
@@ -170,5 +170,5 @@ public final class JarUtils {
   }
 
   /** forbidden */
-  private JarUtils() {}
+  private NativeLibsExtractor() {}
 }
