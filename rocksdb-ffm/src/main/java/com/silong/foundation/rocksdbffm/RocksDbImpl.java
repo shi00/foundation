@@ -26,8 +26,8 @@ import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_LZ4_COMPRESSION;
 import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_ZSTD;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
-import static com.silong.foundation.utilities.nlloader.JarUtils.extractNativeLibs;
-import static com.silong.foundation.utilities.nlloader.JarUtils.locateJarFile;
+import static com.silong.foundation.utilities.nlloader.NativeLibsExtractor.extractNativeLibs;
+import static com.silong.foundation.utilities.nlloader.NativeLibsExtractor.locate;
 import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -79,7 +79,7 @@ class RocksDbImpl implements RocksDb {
     try {
       Path path = Paths.get(libPath);
       Files.createDirectories(path);
-      Path jarFile = locateJarFile(RocksDbImpl.class);
+      Path jarFile = locate(RocksDbImpl.class);
       extractNativeLibs(jarFile, path);
       PlatformLibFormat format = PlatformLibFormat.match(OS_NAME);
       System.load(
