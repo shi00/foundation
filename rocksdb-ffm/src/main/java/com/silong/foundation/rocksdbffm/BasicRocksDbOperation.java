@@ -64,10 +64,10 @@ public interface BasicRocksDbOperation {
   /**
    * 删除列族
    *
-   * @param cf 列族名
+   * @param columnFamilyName 列族名
    * @throws RocksDbException 异常
    */
-  void dropColumnFamily(String cf) throws RocksDbException;
+  void dropColumnFamily(String columnFamilyName) throws RocksDbException;
 
   /**
    * 在default ColumnFamily删除key

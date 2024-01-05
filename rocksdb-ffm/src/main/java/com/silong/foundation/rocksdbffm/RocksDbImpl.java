@@ -457,19 +457,20 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  public void dropColumnFamily(String cf) throws RocksDbException {
-    if (isEmpty(cf)) {
-      throw new IllegalArgumentException("cf must not be null or empty.");
+  public void dropColumnFamily(String columnFamilyName) throws RocksDbException {
+    if (isEmpty(columnFamilyName)) {
+      throw new IllegalArgumentException("columnFamilyName must not be null or empty.");
     }
-    if (columnFamilies.containsKey(cf)) {
+    if (columnFamilies.containsKey(columnFamilyName)) {
       try (Arena arena = Arena.ofConfined()) {
         MemorySegment errPtr = newErrPtr(arena);
-        rocksdb_drop_column_family(dbPtr, columnFamilies.get(cf).columnFamilyHandle(), errPtr);
+        rocksdb_drop_column_family(
+            dbPtr, columnFamilies.get(columnFamilyName).columnFamilyHandle(), errPtr);
         String errMsg = readErrMsgAndFree(errPtr);
         if (OK.equals(errMsg)) {
-          columnFamilies.remove(cf).close();
+          columnFamilies.remove(columnFamilyName).close();
           if (log.isDebugEnabled()) {
-            log.debug("Successfully dropped column family: {}", cf);
+            log.debug("Successfully dropped column family: {}", columnFamilyName);
           }
         } else {
           throw new RocksDbException(errMsg);
