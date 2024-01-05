@@ -416,4 +416,20 @@ public class RocksdbTests {
       rocksDb.dropColumnFamily(cf);
     }
   }
+
+  @Test
+  public void test16() throws RocksDbException {
+    byte[] a = "a".getBytes(UTF_8);
+    byte[] b = "b".getBytes(UTF_8);
+    byte[] c = "c".getBytes(UTF_8);
+    rocksDb.put(a, a);
+    rocksDb.put(b, b);
+    rocksDb.put(c, c);
+
+    List<Tuple2<byte[], byte[]>> tuple2s = rocksDb.multiGet(a, b, c);
+    Assertions.assertEquals(3, tuple2s.size());
+    Assertions.assertArrayEquals(a, tuple2s.get(0).t2());
+    Assertions.assertArrayEquals(b, tuple2s.get(1).t2());
+    Assertions.assertArrayEquals(c, tuple2s.get(2).t2());
+  }
 }
