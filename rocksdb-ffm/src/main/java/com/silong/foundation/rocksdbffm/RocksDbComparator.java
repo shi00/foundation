@@ -34,7 +34,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 /**
- * Rocksdb Key Comparator
+ * Rocksdb Key Comparator，必须提供无参构造方法
  *
  * @author louis sin
  * @version 1.0.0
