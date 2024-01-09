@@ -22,13 +22,17 @@
 package com.silong.foundation.rocksdbffm;
 
 import static com.silong.foundation.rocksdbffm.RocksDb.DEFAULT_COLUMN_FAMILY_NAME;
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 
 import com.google.common.primitives.Longs;
 import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.rocksdbffm.config.ColumnFamilyConfig;
 import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
@@ -75,18 +79,27 @@ public class RocksdbTests {
 
   private RocksDbImpl rocksDb;
 
-  @BeforeEach
-  void init() {
+  private RocksDbConfig config = getConfig();
+
+  private RocksDbConfig getConfig() {
     RocksDbConfig config = new RocksDbConfig();
-    Map<String, Duration> columns = new HashMap<>();
-    CFS.forEach(cfn -> columns.put(cfn, Duration.of(nextInt(0, 100000000), SECONDS)));
-    config.setColumnFamilyNameWithTTL(columns);
+    List<ColumnFamilyConfig> columns = new LinkedList<>();
+    CFS.forEach(
+        cfn ->
+            columns.add(
+                new ColumnFamilyConfig(cfn, Duration.of(nextInt(0, 100000000), SECONDS), null)));
+    config.setColumnFamilyConfigs(columns);
     config.setPersistDataPath(
         Paths.get(System.getProperty("user.dir"))
             .resolve("target")
             .resolve("rocksdb-test-data")
             .toFile()
             .getAbsolutePath());
+    return config;
+  }
+
+  @BeforeEach
+  void init() {
     rocksDb = (RocksDbImpl) RocksDb.getInstance(config);
   }
 
@@ -100,11 +113,18 @@ public class RocksdbTests {
   @Test
   public void test1() {
     RocksDbConfig config = new RocksDbConfig();
-    Map<String, Duration> columns = new HashMap<>();
-    CFS.forEach(cfn -> columns.put(cfn, Duration.of(nextInt(0, 100000000), SECONDS)));
+    List<ColumnFamilyConfig> columns = new LinkedList<>();
+    CFS.forEach(
+        cfn ->
+            columns.add(
+                new ColumnFamilyConfig(cfn, Duration.of(nextInt(0, 100000000), SECONDS), null)));
     IntStream.range(0, 5)
-        .forEach(i -> columns.put(FAKER.app().name(), Duration.of(nextInt(0, 100000000), SECONDS)));
-    config.setColumnFamilyNameWithTTL(columns);
+        .forEach(
+            i ->
+                columns.add(
+                    new ColumnFamilyConfig(
+                        FAKER.app().name(), Duration.of(nextInt(0, 100000000), SECONDS), null)));
+    config.setColumnFamilyConfigs(columns);
     config.setPersistDataPath(
         Paths.get(System.getProperty("user.dir"))
             .resolve("target")
@@ -266,11 +286,16 @@ public class RocksdbTests {
             .resolve(FAKER.animal().name())
             .toFile()
             .getAbsolutePath());
-    Map<String, Duration> columns = new HashMap<>();
+    List<ColumnFamilyConfig> columns = new LinkedList<>();
     IntStream.range(0, nextInt(1, 10))
         .forEach(
-            i -> columns.put(FAKER.ancient().titan(), Duration.of(nextInt(0, 100000000), SECONDS)));
-    config.setColumnFamilyNameWithTTL(columns);
+            i ->
+                columns.add(
+                    new ColumnFamilyConfig(
+                        FAKER.ancient().titan(),
+                        Duration.of(nextInt(0, 100000000), SECONDS),
+                        null)));
+    config.setColumnFamilyConfigs(columns);
     try (RocksDbImpl rocksDb = (RocksDbImpl) RocksDb.getInstance(config)) {
       Assertions.assertFalse(rocksDb.isOpen());
     }
@@ -374,7 +399,7 @@ public class RocksdbTests {
         cf,
         new RocksDbComparator() {
           @Override
-          public void close() {}
+          public void release() {}
 
           @Override
           public int compare(byte[] a, byte[] b) {
@@ -431,5 +456,25 @@ public class RocksdbTests {
     Assertions.assertArrayEquals(a, tuple2s.get(0).t2());
     Assertions.assertArrayEquals(b, tuple2s.get(1).t2());
     Assertions.assertArrayEquals(c, tuple2s.get(2).t2());
+  }
+
+  @Test
+  public void test17() {
+    RocksDbConfig config = new RocksDbConfig();
+    MemorySegment rocksdbOptions = rocksDb.createRocksdbOptions(config);
+    Assertions.assertNotEquals(NULL, rocksdbOptions);
+    Assertions.assertDoesNotThrow(() -> rocksDb.destroyRocksdbOptions(rocksdbOptions));
+  }
+
+  @Test
+  public void test18() {
+    try (Arena arena = Arena.ofConfined()) {
+      MemorySegment rocksdbOptions = rocksDb.createRocksdbOptions(config);
+      List<String> cfns =
+          rocksDb.listExistColumnFamilies(
+              rocksdbOptions, arena.allocateUtf8String(config.getPersistDataPath()));
+      rocksDb.destroyRocksdbOptions(rocksdbOptions);
+      Assertions.assertEquals(CFS.stream().sorted().toList(), cfns.stream().sorted().toList());
+    }
   }
 }

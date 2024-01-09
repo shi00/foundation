@@ -28,10 +28,12 @@ import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_ZSTD;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.utilities.nlloader.NativeLibsExtractor.extractNativeLibs;
 import static com.silong.foundation.utilities.nlloader.NativeLibsExtractor.locate;
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.common.lambda.Tuple3;
+import com.silong.foundation.rocksdbffm.config.ColumnFamilyConfig;
 import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
 import com.silong.foundation.rocksdbffm.options.ReadOptions;
 import com.silong.foundation.rocksdbffm.options.WriteOptions;
@@ -69,6 +71,7 @@ class RocksDbImpl implements RocksDb {
   @Serial private static final long serialVersionUID = -2_521_667_833_385_354_826L;
 
   static {
+    // 读取环境变量
     String libPath = System.getenv(ROCKSDB_LIBS_DIR);
     if (libPath == null || libPath.isEmpty()) {
       throw new IllegalStateException(
@@ -80,8 +83,7 @@ class RocksDbImpl implements RocksDb {
     try {
       Path path = Paths.get(libPath);
       Files.createDirectories(path);
-      Path jarFile = locate(RocksDbImpl.class);
-      extractNativeLibs(jarFile, path);
+      extractNativeLibs(locate(RocksDbImpl.class), path);
       PlatformLibFormat format = PlatformLibFormat.match(OS_NAME);
       System.load(
           path.resolve(String.format("%s.%s", LIB_ROCKSDB, format.getLibFormat())).toString());
@@ -127,19 +129,19 @@ class RocksDbImpl implements RocksDb {
       MemorySegment errPtr = newErrPtr(arena); // 出参，获取错误信息
 
       // 构建列族列表对应的ttl列表
-      Map<String, Integer> columnFamilyNameTTLs =
-          getColumnFamilyNames(
+      List<Tuple3<String, Integer, RocksDbComparator>> columnFamilyConfigs =
+          getColumnFamilyConfigs(
               arena,
               config.getDefaultColumnFamilyTTL(),
               dbOptionsPtr,
               path,
-              config.getColumnFamilyNameWithTTL());
+              config.getColumnFamilyConfigs());
       List<String> columnFamilyNames = new LinkedList<>();
-      MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyNameTTLs.size());
+      MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyConfigs.size());
       int index = 0;
-      for (Map.Entry<String, Integer> entry : columnFamilyNameTTLs.entrySet()) {
-        columnFamilyNames.add(entry.getKey());
-        ttlsPtr.setAtIndex(C_INT, index++, entry.getValue());
+      for (Tuple3<String, Integer, RocksDbComparator> tuple3 : columnFamilyConfigs) {
+        columnFamilyNames.add(tuple3.t1());
+        ttlsPtr.setAtIndex(C_INT, index++, tuple3.t2());
       }
 
       // 列族名称列表构建指针
@@ -147,7 +149,7 @@ class RocksDbImpl implements RocksDb {
 
       // 列族选项列表指针，cfOptions close时释放
       MemorySegment cfOptionsPtr =
-          createColumnFamilyOptions(arena, dbOptionsPtr, columnFamilyNames);
+          createColumnFamilyOptions(arena, dbOptionsPtr, columnFamilyConfigs);
 
       // 出参，获取打开的列族handles，close时释放
       MemorySegment cfHandlesPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
@@ -169,7 +171,7 @@ class RocksDbImpl implements RocksDb {
         log.info(
             "The rocksdb(path:{}, cfs:{}) is opened successfully.",
             config.getPersistDataPath(),
-            columnFamilyNameTTLs);
+            columnFamilyConfigs);
         closed.set(false);
         this.dbPtr = dbPtr;
         this.dbOptionsPtr = dbOptionsPtr;
@@ -192,7 +194,7 @@ class RocksDbImpl implements RocksDb {
         log.error(
             "Failed to open rocksdb(path:{}, cfs:{}), reason:{}.",
             config.getPersistDataPath(),
-            columnFamilyNameTTLs,
+            columnFamilyConfigs,
             errMsg);
         closed.set(true);
         this.dbPtr = this.dbOptionsPtr = this.readOptionsPtr = this.writeOptionsPtr = null;
@@ -203,6 +205,17 @@ class RocksDbImpl implements RocksDb {
         IntStream.range(0, columnFamilyNames.size())
             .forEach(i -> freeColumnFamilyOptions(cfOptionsPtr.getAtIndex(C_POINTER, i)));
       }
+    }
+  }
+
+  @Override
+  public List<String> listExistColumnFamilies(
+      @NonNull MemorySegment dbOptions, @NonNull MemorySegment dbPath) {
+    if (dbOptions.equals(NULL) || dbPath.equals(NULL)) {
+      throw new IllegalArgumentException("dbOptions and dbPath must not be NULL.");
+    }
+    try (Arena arena = Arena.ofConfined()) {
+      return listExistColumnFamilies(arena, dbOptions, dbPath);
     }
   }
 
@@ -261,11 +274,17 @@ class RocksDbImpl implements RocksDb {
   }
 
   private MemorySegment createColumnFamilyOptions(
-      Arena arena, MemorySegment dbOptionsPtr, List<String> columnFamilyNames) {
-    MemorySegment cfOptionsPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
-    for (int i = 0; i < columnFamilyNames.size(); i++) {
-      cfOptionsPtr.setAtIndex(
-          C_POINTER, i, rocksdb_options_create_copy(dbOptionsPtr)); // global scope
+      Arena arena,
+      MemorySegment dbOptionsPtr,
+      List<Tuple3<String, Integer, RocksDbComparator>> columnFamilyConfigs) {
+    MemorySegment cfOptionsPtr = arena.allocateArray(C_POINTER, columnFamilyConfigs.size());
+    for (int i = 0; i < columnFamilyConfigs.size(); i++) {
+      MemorySegment options = rocksdb_options_create_copy(dbOptionsPtr);
+      RocksDbComparator rocksDbComparator = columnFamilyConfigs.get(i).t3();
+      if (rocksDbComparator != null) {
+        rocksdb_options_set_comparator(options, rocksDbComparator.comparator());
+      }
+      cfOptionsPtr.setAtIndex(C_POINTER, i, options); // global scope
     }
     return cfOptionsPtr;
   }
@@ -276,7 +295,7 @@ class RocksDbImpl implements RocksDb {
    * @param config 配置
    * @return options指针
    */
-  private MemorySegment createRocksdbOptions(RocksDbConfig config) {
+  public MemorySegment createRocksdbOptions(@NonNull RocksDbConfig config) {
     MemorySegment optionsPtr = rocksdb_options_create();
     if (config.isEnableStatistics()) {
       rocksdb_options_enable_statistics(optionsPtr);
@@ -297,6 +316,11 @@ class RocksDbImpl implements RocksDb {
     return optionsPtr;
   }
 
+  @Override
+  public void destroyRocksdbOptions(MemorySegment rocksdbOptionsPtr) {
+    freeDbOptions(rocksdbOptionsPtr);
+  }
+
   /**
    * 根据配置的列族名称列表构建指针，如果未配置default列族则会添加此默认列族
    *
@@ -312,40 +336,63 @@ class RocksDbImpl implements RocksDb {
     return cfNamesPtr;
   }
 
-  private Map<String, Integer> getColumnFamilyNames(
+  private List<Tuple3<String, Integer, RocksDbComparator>> getColumnFamilyConfigs(
       Arena arena,
-      int defaultTTL,
+      Duration defaultTTLDuration,
       MemorySegment dbOptionsPtr,
       MemorySegment path,
-      Map<String, Duration> columnFamilyNames) {
-    // 获取当前数据库存在的列族列表
+      List<ColumnFamilyConfig> columnFamilyConfigs) {
+
     List<String> cfs = listExistColumnFamilies(arena, dbOptionsPtr, path);
-    if (columnFamilyNames == null) {
+    int defaultTtl = (int) defaultTTLDuration.toSeconds();
+
+    // 获取当前数据库存在的列族列表
+    if (columnFamilyConfigs == null || columnFamilyConfigs.isEmpty()) {
       if (cfs.isEmpty()) {
-        return Map.of(DEFAULT_COLUMN_FAMILY_NAME, defaultTTL);
+        log.warn(
+            "Create a new database with no column family specified. Only the default column family is created with ttl {}.",
+            defaultTTLDuration);
+        return List.of(new Tuple3<>(DEFAULT_COLUMN_FAMILY_NAME, defaultTtl, null));
       }
+
       log.warn(
-          "The column families that need to be opened are not specified, so all column families that exist in rocksdb are opened with ttl 0. cfs: {}",
+          "The column families that need to be opened are not specified, so all column families that exist in rocksdb are opened with ttl {}. cfs: {}",
+          defaultTTLDuration,
           cfs);
-      return cfs.stream().collect(Collectors.toMap(cf -> cf, cf -> defaultTTL));
+      return cfs.stream()
+          .map(cfn -> new Tuple3<String, Integer, RocksDbComparator>(cfn, defaultTtl, null))
+          .collect(Collectors.toList());
     } else {
-      // 添加默认列族
-      if (!columnFamilyNames.containsKey(DEFAULT_COLUMN_FAMILY_NAME)) {
-        columnFamilyNames.put(DEFAULT_COLUMN_FAMILY_NAME, Duration.ZERO);
-      }
+      List<Tuple3<String, Integer, RocksDbComparator>> columnFamilyNames =
+          columnFamilyConfigs.stream()
+              .map(
+                  c -> {
+                    try {
+                      Class<? extends RocksDbComparator> clazz = c.getComparator();
+                      return new Tuple3<>(
+                          c.getColumnFamilyName(),
+                          (int) c.getTtl().toSeconds(),
+                          clazz != null
+                              ? (RocksDbComparator) clazz.getDeclaredConstructor().newInstance()
+                              : null);
+                    } catch (Exception e) {
+                      throw new RuntimeException(e);
+                    }
+                  })
+              .collect(Collectors.toList());
 
       // 添加已存在的列族到打开列表中，超时为0
       cfs.forEach(
           cfn -> {
-            if (!columnFamilyNames.containsKey(cfn)) {
-              columnFamilyNames.put(cfn, Duration.of(defaultTTL, SECONDS));
+            if (columnFamilyNames.stream().noneMatch(n -> cfn.equals(n.t1()))) {
               log.info(
-                  "Add column family {} to the list of column families to be opened with ttl 0.",
-                  cfn);
+                  "Add exist column family {} to the list of column families to be opened with ttl {}.",
+                  cfn,
+                  defaultTtl);
+              columnFamilyNames.add(new Tuple3<>(cfn, defaultTtl, null));
             }
           });
-      return columnFamilyNames.entrySet().stream()
-          .collect(Collectors.toMap(Map.Entry::getKey, e -> (int) e.getValue().toSeconds()));
+      return columnFamilyNames;
     }
   }
 

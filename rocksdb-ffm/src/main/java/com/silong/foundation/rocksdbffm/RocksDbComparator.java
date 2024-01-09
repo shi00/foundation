@@ -29,7 +29,6 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import com.silong.foundation.rocksdbffm.generated.rocksdb_comparator_create$compare;
 import com.silong.foundation.rocksdbffm.generated.rocksdb_comparator_create$destructor;
 import com.silong.foundation.rocksdbffm.generated.rocksdb_comparator_create$name;
-import java.io.Closeable;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
@@ -40,7 +39,7 @@ import java.lang.foreign.MemorySegment;
  * @version 1.0.0
  * @since 2023-12-19 21:42
  */
-public interface RocksDbComparator extends Closeable {
+public interface RocksDbComparator {
 
   /**
    * 释放比较器资源
@@ -66,7 +65,7 @@ public interface RocksDbComparator extends Closeable {
           byte[] k2 = key2.asSlice(0, len2).toArray(JAVA_BYTE);
           return compare(k1, k2);
         };
-    rocksdb_comparator_create$destructor destructor = state -> close();
+    rocksdb_comparator_create$destructor destructor = state -> release();
     rocksdb_comparator_create$name name = state -> global.allocateUtf8String(name());
     return rocksdb_comparator_create(
         NULL,
@@ -76,8 +75,7 @@ public interface RocksDbComparator extends Closeable {
   }
 
   /** 释放比较器资源 */
-  @Override
-  void close();
+  void release();
 
   /**
    * 比较key

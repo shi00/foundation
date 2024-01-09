@@ -22,6 +22,7 @@
 package com.silong.foundation.rocksdbffm;
 
 import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
 import java.lang.foreign.MemorySegment;
 import java.util.Collection;
 import java.util.List;
@@ -42,6 +43,30 @@ public interface BasicRocksDbOperation {
    * @return 列族列表
    */
   Collection<String> openedColumnFamilies();
+
+  /**
+   * 查询数据库中已经存在的列族名称
+   *
+   * @param dbOptions 数据库配置
+   * @param dbPath 数据库文件路径
+   * @return 列族列表
+   */
+  List<String> listExistColumnFamilies(MemorySegment dbOptions, MemorySegment dbPath);
+
+  /**
+   * 根据配置创建rocksdb_options*，须在使用结束后自行释放资源
+   *
+   * @param config 配置
+   * @return rocksdb_options*
+   */
+  MemorySegment createRocksdbOptions(RocksDbConfig config);
+
+  /**
+   * 释放rocksdb_options*资源
+   *
+   * @param rocksdbOptionsPtr rocksdb_options *
+   */
+  void destroyRocksdbOptions(MemorySegment rocksdbOptionsPtr);
 
   /**
    * 创建列族

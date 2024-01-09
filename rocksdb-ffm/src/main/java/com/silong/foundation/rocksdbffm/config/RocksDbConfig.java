@@ -32,7 +32,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Map;
+import java.util.List;
 import lombok.Data;
 
 /**
@@ -56,12 +56,8 @@ public class RocksDbConfig implements Serializable {
           .toFile()
           .getAbsolutePath();
 
-  /**
-   * 列族名与其对应的ttl，ttl值为正时表示rocksdb会尽力保证过期(因为过期操作只能在压缩时进行，如果没有压缩操作被执行则无法淘汰过期kv)，
-   * 但不能确保，因此可能读取到已过期的KV，不指定列族则创建default列族以及ttl=0,表明default列族中保存的kv永不过期，ttl单位为：秒
-   * 注意：如果ttl配置很小，可能导致列族中的数据很快被淘汰
-   */
-  @Valid private Map<@NotEmpty String, @NotNull Duration> columnFamilyNameWithTTL;
+  /** 列族配置 */
+  @Valid private List<ColumnFamilyConfig> columnFamilyConfigs;
 
   /** 日志级别 */
   @NotNull private InfoLogLevel infoLogLevel = INFO_LEVEL;
@@ -73,7 +69,7 @@ public class RocksDbConfig implements Serializable {
   private boolean enableStatistics;
 
   /** 默认列族TTL，单位：秒，在未指定列族TTL时使用，默认：0。当此值小于等于0时表示永不过期 */
-  private int defaultColumnFamilyTTL;
+  private Duration defaultColumnFamilyTTL = Duration.ZERO;
 
   /** 如果数据库不存在是否创建数据库，默认：true */
   private boolean createIfMissing = true;
