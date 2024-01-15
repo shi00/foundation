@@ -27,7 +27,9 @@
     <modelVersion>4.0.0</modelVersion>
     <version>1.0.0</version>
     <artifactId>nativelib-loader</artifactId>
-    <description>Load the specified shared library from classpath</description>
+    <description>Different from rocksdbjni, this project encapsulates rocksdb functions based on java Foreign Function
+        and Memory API to achieve better performance and interoperability.
+    </description>
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
