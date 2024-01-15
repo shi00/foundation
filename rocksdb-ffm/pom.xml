@@ -25,7 +25,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <description>RocksDB for java by panama project.</description>
+    <description>Different from rocksdbjni, this project encapsulates rocksdb functions based on java Foreign Function
+        and Memory API to achieve better performance and interoperability.
+    </description>
     <artifactId>rocksdb-ffm</artifactId>
     <version>1.0.0</version>
 
