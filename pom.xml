@@ -76,12 +76,6 @@
     </licenses>
 
     <modules>
-        <module>distributed-job/devastator</module>
-        <module>distributed-job/bonecrusher</module>
-        <module>distributed-job/mixmaster</module>
-        <module>distributed-job/hook</module>
-        <module>distributed-job/longhaul</module>
-        <module>distributed-job/scrapper</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>
         <module>duuid/idgen</module>
@@ -97,11 +91,17 @@
         <module>utilities/random-password</module>
         <module>utilities/simple-object-pool</module>
         <module>utilities/xxhash-ffm</module>
-		<module>utilities/crypto</module>
+        <module>utilities/crypto</module>
         <module>utilities/reactive-webclient</module>
         <module>utilities/rocksdb-ffm</module>
         <module>utilities/nativelib-loader</module>
         <module>common-objects</module>
+        <module>distributed-job/devastator</module>
+        <module>distributed-job/bonecrusher</module>
+        <module>distributed-job/mixmaster</module>
+        <module>distributed-job/hook</module>
+        <module>distributed-job/longhaul</module>
+        <module>distributed-job/scrapper</module>
     </modules>
 
     <properties>
@@ -170,7 +170,7 @@
         <datafaker.version>2.1.0</datafaker.version>
         <commons-io.version>2.15.1</commons-io.version>
         <maven.version>3.9.6</maven.version>
-        <plexus-utils.version>4.0.0</plexus-utils.version>
+        <plexus-utils.version>3.5.1</plexus-utils.version>
         <plexus-archiver.version>4.9.1</plexus-archiver.version>
         <cron-utils.version>9.2.1</cron-utils.version>
         <jgroups.version>5.3.1.Final</jgroups.version>
