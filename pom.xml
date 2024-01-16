@@ -76,15 +76,12 @@
     </licenses>
 
     <modules>
-        <module>reactive-webclient</module>
         <module>distributed-job/devastator</module>
         <module>distributed-job/bonecrusher</module>
         <module>distributed-job/mixmaster</module>
         <module>distributed-job/hook</module>
         <module>distributed-job/longhaul</module>
         <module>distributed-job/scrapper</module>
-        <module>rocksdb-ffm</module>
-        <module>crypto</module>
         <module>complex-job/framework</module>
         <module>complex-job/hazelcast-database-discovery-spi</module>
         <module>duuid/idgen</module>
@@ -100,6 +97,9 @@
         <module>utilities/random-password</module>
         <module>utilities/simple-object-pool</module>
         <module>utilities/xxhash-ffm</module>
+		<module>utilities/crypto</module>
+        <module>utilities/reactive-webclient</module>
+        <module>utilities/rocksdb-ffm</module>
         <module>utilities/nativelib-loader</module>
         <module>common-objects</module>
     </modules>
