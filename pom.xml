@@ -23,14 +23,14 @@
     <artifactId>foundation</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0</version>
-    <description>Silong's microservice foundation based on java.</description>
+    <description>SiLong software foundation library for java.</description>
 
     <developers>
         <developer>
             <id>louis2sin</id>
             <name>sin louis</name>
             <email>louis2sin@gmail.com</email>
-            <organization>Silong</organization>
+            <organization>SiLong</organization>
             <organizationUrl>https://www.silong.com</organizationUrl>
             <roles>
                 <role>owner</role>
@@ -113,8 +113,8 @@
         <main.basedir>${project.basedir}</main.basedir>
 
         <!-- 插件 -->
-        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.2.3</maven-surefire-plugin.version>
+        <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
         <serviceloader-maven-plugin.version>1.4.0</serviceloader-maven-plugin.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
@@ -122,19 +122,19 @@
         <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
         <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
-        <maven-failsafe-plugin.version>3.2.3</maven-failsafe-plugin.version>
-        <checkstyle.version>10.12.6</checkstyle.version>
+        <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
+        <checkstyle.version>10.12.7</checkstyle.version>
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
-        <maven-jxr-plugin.version>3.3.1</maven-jxr-plugin.version>
+        <maven-jxr-plugin.version>3.3.2</maven-jxr-plugin.version>
         <spotbugs-maven-plugin.version>4.8.2.0</spotbugs-maven-plugin.version>
         <findsecbugs-plugin.version>1.12.0</findsecbugs-plugin.version>
         <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
         <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
-        <apache-rat-plugin.version>0.15</apache-rat-plugin.version>
+        <apache-rat-plugin.version>0.16</apache-rat-plugin.version>
         <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
-        <maven-plugin-annotations.version>3.10.2</maven-plugin-annotations.version>
-        <maven-plugin-plugin.version>3.10.2</maven-plugin-plugin.version>
+        <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
+        <maven-plugin-plugin.version>3.11.0</maven-plugin-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
         <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
@@ -142,10 +142,10 @@
         <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
         <springdoc-openapi-maven-plugin.version>1.4</springdoc-openapi-maven-plugin.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
-        <maven-site-plugin.version>4.0.0-M12</maven-site-plugin.version>
+        <maven-site-plugin.version>4.0.0-M13</maven-site-plugin.version>
         <docker-maven-plugin.version>0.43.4</docker-maven-plugin.version>
         <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
-        <download-maven-plugin.version>1.7.1</download-maven-plugin.version>
+        <download-maven-plugin.version>1.8.0</download-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <extra-enforcer-rules.version>1.7.0</extra-enforcer-rules.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
@@ -166,24 +166,24 @@
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <springdoc.version>2.3.0</springdoc.version>
-        <libphonenumber.version>8.13.26</libphonenumber.version>
-        <datafaker.version>2.0.2</datafaker.version>
+        <libphonenumber.version>8.13.28</libphonenumber.version>
+        <datafaker.version>2.1.0</datafaker.version>
         <commons-io.version>2.15.1</commons-io.version>
-        <maven.version>3.9.5</maven.version>
-        <plexus-utils.version>3.5.1</plexus-utils.version>
-        <plexus-archiver.version>4.9.0</plexus-archiver.version>
+        <maven.version>3.9.6</maven.version>
+        <plexus-utils.version>4.0.0</plexus-utils.version>
+        <plexus-archiver.version>4.9.1</plexus-archiver.version>
         <cron-utils.version>9.2.1</cron-utils.version>
         <jgroups.version>5.3.1.Final</jgroups.version>
         <jgroups-raft.version>1.0.12.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.1.Final</jgroups-kubernetes.version>
-        <protobuf-java.version>3.25.1</protobuf-java.version>
+        <protobuf-java.version>3.25.2</protobuf-java.version>
         <rocksdbjni.version>8.9.1</rocksdbjni.version>
         <snappy-java.version>1.1.10.5</snappy-java.version>
         <zstd-jni.version>1.5.5-11</zstd-jni.version>
         <kryo.version>5.6.0</kryo.version>
         <java-jwt.version>4.4.0</java-jwt.version>
-        <p3c-pmd.version>2.1.1.5x</p3c-pmd.version>
-        <oshi-core.version>6.4.8</oshi-core.version>
+        <p3c-pmd.version>2.2.1.0x</p3c-pmd.version>
+        <oshi-core.version>6.4.11</oshi-core.version>
         <!--开源组件-->
 
         <checkstyle.skip>false</checkstyle.skip>
