@@ -93,15 +93,12 @@
         <module>duuid/mysql-workerid-provider</module>
         <module>duuid/duuid-server</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
-        <module>plugins/log4j2/desensitization</module>
         <module>plugins/maven/etcdv3</module>
         <module>plugins/maven/mysql</module>
         <module>plugins/maven/props-writer</module>
         <module>plugins/maven/video-frame-capture</module>
         <module>utilities/random-password</module>
         <module>utilities/simple-object-pool</module>
-        <module>utilities/hashed-wheel-timer</module>
-        <module>utilities/concurrent-extends</module>
         <module>utilities/xxhash-ffm</module>
         <module>utilities/nativelib-loader</module>
         <module>common-objects</module>
@@ -183,7 +180,7 @@
         <rocksdbjni.version>8.9.1</rocksdbjni.version>
         <snappy-java.version>1.1.10.5</snappy-java.version>
         <zstd-jni.version>1.5.5-11</zstd-jni.version>
-        <kryo.version>5.5.0</kryo.version>
+        <kryo.version>5.6.0</kryo.version>
         <java-jwt.version>4.4.0</java-jwt.version>
         <p3c-pmd.version>2.1.1.5x</p3c-pmd.version>
         <oshi-core.version>6.4.8</oshi-core.version>
