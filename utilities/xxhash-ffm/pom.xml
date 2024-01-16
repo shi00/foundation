@@ -144,7 +144,6 @@
                     <plugin>
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
-                        <version>0.44-SNAPSHOT</version>
                         <executions>
                             <execution>
                                 <id>build-image</id>
