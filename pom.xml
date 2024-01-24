@@ -118,7 +118,7 @@
         <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
         <serviceloader-maven-plugin.version>1.4.0</serviceloader-maven-plugin.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
-        <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
         <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
@@ -149,10 +149,11 @@
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <extra-enforcer-rules.version>1.7.0</extra-enforcer-rules.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+        <native-maven-plugin.version>0.9.28</native-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.2.1</spring-boot.version>
+        <spring-boot.version>3.2.2</spring-boot.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <guava.version>33.0.0-jre</guava.version>
         <passay.version>1.6.4</passay.version>
@@ -162,7 +163,7 @@
         <jctools.version>4.0.2</jctools.version>
         <jetcd.version>0.7.7</jetcd.version>
         <jmh.version>1.37</jmh.version>
-        <jooq.version>3.18.7</jooq.version>
+        <jooq.version>3.18.9</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <springdoc.version>2.3.0</springdoc.version>
@@ -605,6 +606,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${maven-jar-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.graalvm.buildtools</groupId>
+                    <artifactId>native-maven-plugin</artifactId>
+                    <version>${native-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -30,19 +30,17 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 
+import com.silong.foundation.common.model.ErrorDetail;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.duuid.generator.DuuidGenerator;
 import com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator;
-import com.silong.foundation.duuid.server.configure.properties.DuuidGeneratorProperties;
-import com.silong.foundation.duuid.server.configure.properties.DuuidServerProperties;
-import com.silong.foundation.duuid.server.configure.properties.WorkerIdProviderProperties;
+import com.silong.foundation.duuid.server.configure.properties.*;
 import com.silong.foundation.duuid.server.handlers.IdGeneratorHandler;
 import com.silong.foundation.duuid.server.model.Duuid;
 import com.silong.foundation.duuid.spi.Etcdv3WorkerIdAllocator;
 import com.silong.foundation.duuid.spi.MysqlWorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerIdAllocator;
 import com.silong.foundation.duuid.spi.WorkerInfo;
-import com.silong.foundation.common.model.ErrorDetail;
 import com.silong.foundation.springboot.starter.simpleauth.configure.SecurityAutoConfiguration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -100,9 +98,9 @@ public class RoutesAutoConfiguration {
   /** 配置注入 */
   private DuuidGeneratorProperties generatorProperties;
 
-  private WorkerIdProviderProperties.EtcdProperties etcdProperties;
+  private EtcdProperties etcdProperties;
 
-  private WorkerIdProviderProperties.MysqlProperties mysqlProperties;
+  private MysqlProperties mysqlProperties;
 
   private DuuidServerProperties serverProperties;
 

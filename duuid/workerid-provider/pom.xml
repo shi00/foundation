@@ -30,7 +30,7 @@
     <version>1.0.0</version>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>17</java.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
@@ -49,6 +49,14 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>${java.version}</release>
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>

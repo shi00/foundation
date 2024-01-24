@@ -30,6 +30,7 @@
     <description>Duuid Generator Server built on webflux.</description>
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <java.version>17</java.version>
     </properties>
 
     <profiles>
@@ -38,8 +39,6 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <os>
-                    <family>unix</family>
-                    <arch>x86_64</arch>
                     <name>linux</name>
                 </os>
             </activation>
@@ -68,21 +67,6 @@
             </dependencies>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jar-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <!-- This is where the exclusion occurs -->
-                                <exclude>**/application*.properties</exclude>
-                                <exclude>**/log*.xml</exclude>
-                                <exclude>**/zoo/*</exclude>
-                                <exclude>**/zoo/north/*</exclude>
-                                <exclude>**/zoo/south/*</exclude>
-                                <exclude>**/zoo/west/*</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -118,7 +102,7 @@
                                     </BPE_APPEND_JAVA_TOOL_OPTIONS>
                                     <BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
                                     <BP_JVM_TYPE>JRE</BP_JVM_TYPE>
-                                    <BP_JVM_VERSION>17.*</BP_JVM_VERSION>
+                                    <BP_JVM_VERSION>${java.version}.*</BP_JVM_VERSION>
                                     <SERVICE_BINDING_ROOT>/bindings</SERVICE_BINDING_ROOT>
                                 </env>
                                 <bindings>
@@ -228,7 +212,7 @@
                                     <BP_BINARY_COMPRESSION_METHOD>upx</BP_BINARY_COMPRESSION_METHOD>
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
                                     <BP_JVM_TYPE>JRE</BP_JVM_TYPE>
-                                    <BP_JVM_VERSION>17.*</BP_JVM_VERSION>
+                                    <BP_JVM_VERSION>${java.version}.*</BP_JVM_VERSION>
                                     <SERVICE_BINDING_ROOT>/bindings</SERVICE_BINDING_ROOT>
                                     <!--                                    <HTTPS_PROXY>http://127.0.0.1:8080</HTTPS_PROXY>-->
                                     <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
@@ -386,12 +370,31 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>${java.version}</release>
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!-- This is where the exclusion occurs -->
+                        <exclude>**/application*.properties</exclude>
+                        <exclude>**/log*.xml</exclude>
+                        <exclude>**/zoo/*</exclude>
+                        <exclude>**/zoo/north/*</exclude>
+                        <exclude>**/zoo/south/*</exclude>
+                        <exclude>**/zoo/west/*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
                         <goals>
-                            <goal>jar</goal>
+                            <goal>jar-no-fork</goal>
                         </goals>
                     </execution>
                 </executions>
