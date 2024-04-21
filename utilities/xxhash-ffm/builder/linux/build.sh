@@ -22,7 +22,7 @@ fi
 cp installed/x64-linux-dynamic/lib/"$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"/"$SHARDED_LIB_NAME"
 
 echo "================== Start generate source code for xxHash =================="
-jextract --source --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" -t "$SOURCECODE_PACKAGE" -I ./installed/x64-linux-dynamic/include ./installed/x64-linux-dynamic/include/xxhash.h
+jextract --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" --target-package "$SOURCECODE_PACKAGE" --include-dir ./installed/x64-linux-dynamic/include ./installed/x64-linux-dynamic/include/xxhash.h
 if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
   echo "Failed to generate code by jextract"
   exit 1

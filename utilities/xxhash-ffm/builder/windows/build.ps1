@@ -38,7 +38,7 @@ else
 }
 
 echo "================== Start generate source code for xxHash =================="
-jextract --source --header-class-name $headerClassName --output c:\$srcDir -t $sourcecodePackage -I $includeDir $includeDir\xxhash.h
+jextract --header-class-name $headerClassName --output c:\$srcDir --target-package $sourcecodePackage --include-dir $includeDir $includeDir\xxhash.h
 $is_src_dir = [System.IO.Directory]::Exists("c:\$srcDir")
 if (!$is_src_dir)
 {

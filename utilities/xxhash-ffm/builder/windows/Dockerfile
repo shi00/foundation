@@ -10,14 +10,6 @@ RUN git config --global --add safe.directory C:/vcpkg \
 RUN for /f "tokens=1 delims=-" %i in ('git describe --tags') do git checkout %i
 RUN @powershell ./bootstrap-vcpkg.bat
 
-# install jdk21
-RUN choco install openjdk -Y \
-&& refreshenv
-
-# install maven
-RUN choco install maven -Y \
-&& refreshenv
-
 #install wget
 RUN choco install wget -Y \
 && refreshenv
@@ -25,10 +17,10 @@ RUN choco install wget -Y \
 WORKDIR "c:\Program Files"
 
 # install jextract
-RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_access/jextract/1/openjdk-21-jextract+1-2_windows-x64_bin.tar.gz \
-&& tar zxvf openjdk-21-jextract+1-2_windows-x64_bin.tar.gz \
-&& del openjdk-21-jextract+1-2_windows-x64_bin.tar.gz \
-&& setx path "%PATH%;C:\Program Files\jextract-21\bin" \
+RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_access/jextract/22/3/openjdk-22-jextract+3-13_windows-x64_bin.tar.gz \
+&& tar zxvf openjdk-22-jextract+3-13_windows-x64_bin.tar.gz \
+&& del openjdk-22-jextract+3-13_windows-x64_bin.tar.gz \
+&& setx path "%PATH%;C:\Program Files\jextract-22\bin" \
 && refreshenv
 
 FROM base
@@ -39,6 +31,6 @@ WORKDIR "c:\vcpkg"
 ADD build.ps1 .
 
 #预制构建工具包到downloads目录下，规避下载速度慢问题
-COPY cmake* downloads
-COPY PowerShell* downloads
+#COPY cmake* downloads
+#COPY PowerShell* downloads
 
