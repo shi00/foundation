@@ -106,6 +106,7 @@
 
     <properties>
         <java.version>21</java.version>
+        <surefire.useModulePath>false</surefire.useModulePath>  <!-- 模块化无需导入测试依赖 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -113,19 +114,19 @@
         <main.basedir>${project.basedir}</main.basedir>
 
         <!-- 插件 -->
-        <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-        <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
         <serviceloader-maven-plugin.version>1.4.0</serviceloader-maven-plugin.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
-        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
         <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
         <checkstyle.version>10.12.7</checkstyle.version>
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
-        <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.3.2</maven-jxr-plugin.version>
         <spotbugs-maven-plugin.version>4.8.2.0</spotbugs-maven-plugin.version>
         <findsecbugs-plugin.version>1.12.0</findsecbugs-plugin.version>
@@ -143,7 +144,7 @@
         <springdoc-openapi-maven-plugin.version>1.4</springdoc-openapi-maven-plugin.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
         <maven-site-plugin.version>4.0.0-M13</maven-site-plugin.version>
-        <docker-maven-plugin.version>0.44-SNAPSHOT</docker-maven-plugin.version>
+        <docker-maven-plugin.version>0.44.0</docker-maven-plugin.version>
         <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
         <download-maven-plugin.version>1.8.0</download-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
@@ -153,8 +154,8 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.2.2</spring-boot.version>
-        <spring-cloud.version>2023.0.0</spring-cloud.version>
+        <spring-boot.version>3.2.5</spring-boot.version>
+        <spring-cloud.version>2023.0.1</spring-cloud.version>
         <guava.version>33.0.0-jre</guava.version>
         <passay.version>1.6.4</passay.version>
         <zxcvbn.version>1.8.2</zxcvbn.version>
