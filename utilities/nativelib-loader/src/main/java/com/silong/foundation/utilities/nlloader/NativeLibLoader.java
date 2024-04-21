@@ -149,25 +149,33 @@ public final class NativeLibLoader {
       throw new IllegalArgumentException("libDir must not be null or empty.");
     }
 
-    // 按需添加目录前缀
-    if (!libDir.startsWith("/")) {
-      libDir = "/" + libDir;
+    String originLib = libName;
+
+    try {
+      System.loadLibrary(libName);
+    } catch (UnsatisfiedLinkError t) {
+
+      // 按需添加目录前缀
+      if (!libDir.startsWith("/")) {
+        libDir = "/" + libDir;
+      }
+
+      if (libDir.endsWith("/")) {
+        libDir = libDir.substring(0, libDir.length() - 1);
+      }
+
+      // 不能包含库格式，由运行环境决定
+      if (Arrays.stream(PlatformLibFormat.values())
+          .map(platformLibFormat -> platformLibFormat.libFormat)
+          .anyMatch(libName::endsWith)) {
+        throw new IllegalArgumentException("libName cannot contain library format suffix.");
+      }
+
+      // 加载临时生成的库文件
+      originLib = String.format("%s.%s", libName, PlatformLibFormat.match(OS_NAME).libFormat);
+      System.load(generateTempLib(originLib, libDir));
     }
 
-    if (libDir.endsWith("/")) {
-      libDir = libDir.substring(0, libDir.length() - 1);
-    }
-
-    // 不能包含库格式，由运行环境决定
-    if (Arrays.stream(PlatformLibFormat.values())
-        .map(platformLibFormat -> platformLibFormat.libFormat)
-        .anyMatch(libName::endsWith)) {
-      throw new IllegalArgumentException("libName cannot contain library format suffix.");
-    }
-
-    // 加载临时生成的库文件
-    String originLib = String.format("%s.%s", libName, PlatformLibFormat.match(OS_NAME).libFormat);
-    System.load(generateTempLib(originLib, libDir));
     log.info("Successfully loaded {}", originLib);
   }
 }
