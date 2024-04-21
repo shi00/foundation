@@ -30,4 +30,6 @@ module nativelib.loader {
   requires static lombok;
   requires org.apache.commons.codec;
   requires org.slf4j;
+
+  exports com.silong.foundation.utilities.nlloader;
 }
