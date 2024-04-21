@@ -47,6 +47,8 @@ public final class NativeLibLoader {
   /** 临时目录 */
   public static final Path TEMP_DIR = new File(System.getProperty("java.io.tmpdir")).toPath();
 
+  private static final String DEFAULT_LIB_DIR = "/native";
+
   /** 操作系统名 */
   public static final String OS_NAME;
 
@@ -69,25 +71,26 @@ public final class NativeLibLoader {
    * 在用户临时目录下生成库文件
    *
    * @param originLib 类库名
+   * @param libDir 共享库存放目录
    * @return 生成的临时类库文件标准路径
    * @throws IOException 异常
    */
-  private static String generateTempLib(String originLib) throws IOException {
+  private static String generateTempLib(String originLib, String libDir) throws IOException {
     int index = originLib.lastIndexOf('.');
     String prefix = originLib.substring(0, index - 1);
     String suffix = originLib.substring(index);
     Path tmpLib = TEMP_DIR.resolve(String.format("%s_%d%s", prefix, System.nanoTime(), suffix));
-    String libPath = String.format("/native/%s/%s/%s", OS_NAME, OS_ARCH, originLib);
+    String libPath = String.format("%s/%s/%s/%s", libDir, OS_NAME, OS_ARCH, originLib);
     try {
       return doInternalGenerate(originLib, libPath, tmpLib);
     } catch (IOException | NullPointerException e) {
       // fallback
-      libPath = String.format("/native/%s/%s", OS_NAME, originLib);
+      libPath = String.format("%s/%s/%s", libDir, OS_NAME, originLib);
       try {
         return doInternalGenerate(originLib, libPath, tmpLib);
       } catch (IOException | NullPointerException ex) {
         // fallback
-        libPath = String.format("/native/%s", originLib);
+        libPath = String.format("%s/%s", libDir, originLib);
         try {
           return doInternalGenerate(originLib, libPath, tmpLib);
         } catch (IOException | NullPointerException exc) {
@@ -124,10 +127,34 @@ public final class NativeLibLoader {
    *
    * @param libName 库名，不带格式
    */
-  @SneakyThrows(IOException.class)
   public static void loadLibrary(String libName) {
+    loadLibrary(libName, DEFAULT_LIB_DIR);
+  }
+
+  /**
+   * 搜索classpath中jar包，加载指定共享库，按当前程序运行操作系统类型以及架构进行加载<br>
+   * 例如：<br>
+   * A.jar/Windows/64bit/xx.dll
+   *
+   * @param libName 库名，不带格式
+   * @param libDir 共享库存放目录
+   */
+  @SneakyThrows(IOException.class)
+  public static void loadLibrary(String libName, String libDir) {
     if (libName == null || libName.isEmpty()) {
       throw new IllegalArgumentException("libName must not be null or empty.");
+    }
+    if (libDir == null || libDir.isEmpty()) {
+      throw new IllegalArgumentException("libDir must not be null or empty.");
+    }
+
+    // 按需添加目录前缀
+    if (!libDir.startsWith("/")) {
+      libDir = "/" + libDir;
+    }
+
+    if (libDir.endsWith("/")) {
+      libDir = libDir.substring(0, libDir.length() - 1);
     }
 
     // 不能包含库格式，由运行环境决定
@@ -139,7 +166,7 @@ public final class NativeLibLoader {
 
     // 加载临时生成的库文件
     String originLib = String.format("%s.%s", libName, PlatformLibFormat.match(OS_NAME).libFormat);
-    System.load(generateTempLib(originLib));
+    System.load(generateTempLib(originLib, libDir));
     log.info("Successfully loaded {}", originLib);
   }
 }
