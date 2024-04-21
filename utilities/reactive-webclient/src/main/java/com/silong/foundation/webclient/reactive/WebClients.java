@@ -18,6 +18,15 @@
  */
 package com.silong.foundation.webclient.reactive;
 
+import static com.silong.foundation.webclient.reactive.config.WebClientConfig.NETTY_CLIENT_CATEGORY;
+import static com.silong.foundation.webclient.reactive.config.WebClientConnectionPoolConfig.DEFAULT_CONFIG;
+import static com.silong.foundation.webclient.reactive.config.WebClientSslConfig.DEFAULT_APN;
+import static io.netty.channel.ChannelOption.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.springframework.util.StringUtils.hasLength;
+import static reactor.netty.transport.logging.AdvancedByteBufFormat.TEXTUAL;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
 import com.silong.foundation.webclient.reactive.config.WebClientConnectionPoolConfig;
@@ -29,6 +38,19 @@ import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import java.io.File;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.KeyStore;
+import java.security.cert.*;
+import java.time.Duration;
+import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import javax.net.ssl.CertPathTrustManagerParameters;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -44,29 +66,6 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 import reactor.netty.transport.ProxyProvider;
 import reactor.netty.transport.ProxyProvider.Builder;
-
-import javax.net.ssl.CertPathTrustManagerParameters;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.File;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.KeyStore;
-import java.security.cert.*;
-import java.time.Duration;
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-
-import static com.silong.foundation.webclient.reactive.config.WebClientConfig.NETTY_CLIENT_CATEGORY;
-import static com.silong.foundation.webclient.reactive.config.WebClientConnectionPoolConfig.DEFAULT_CONFIG;
-import static com.silong.foundation.webclient.reactive.config.WebClientSslConfig.DEFAULT_APN;
-import static io.netty.channel.ChannelOption.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.springframework.util.StringUtils.hasLength;
-import static reactor.netty.transport.logging.AdvancedByteBufFormat.TEXTUAL;
 
 /**
  * WebClient创建工具
@@ -275,7 +274,7 @@ public final class WebClients {
   }
 
   @SneakyThrows
-  @reactor.util.annotation.NonNull
+  @NonNull
   private static SslContext buildSslContext(WebClientSslConfig webClientSslConfig) {
     SslProvider sslProvider = OpenSsl.isAvailable() ? SslProvider.OPENSSL : SslProvider.JDK;
     return SslContextBuilder.forClient()
