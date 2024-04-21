@@ -47,6 +47,7 @@ public final class NativeLibLoader {
   /** 临时目录 */
   public static final Path TEMP_DIR = new File(System.getProperty("java.io.tmpdir")).toPath();
 
+  /** 默认本地库在classpath中存放的目录 */
   private static final String DEFAULT_LIB_DIR = "/native";
 
   /** 操作系统名 */
