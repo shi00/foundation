@@ -77,7 +77,7 @@ public final class XxHashGenerator {
                 "Invalid data:%s or offset:%d or length:%d.",
                 data == null ? null : HexFormat.of().formatHex(data), offset, length));
     try (Arena arena = Arena.ofConfined()) {
-      return XXH3_64bits_withSeed(arena.allocateArray(JAVA_BYTE, data), data.length, 0xcafebabeL);
+      return XXH3_64bits_withSeed(arena.allocateFrom(JAVA_BYTE, data), data.length, 0xcafebabeL);
     }
   }
 
@@ -109,7 +109,7 @@ public final class XxHashGenerator {
                 "Invalid data:%s or offset:%d or length:%d.",
                 data == null ? null : HexFormat.of().formatHex(data), offset, length));
     try (Arena arena = Arena.ofConfined()) {
-      return XXH32(arena.allocateArray(JAVA_BYTE, data), data.length, 0xcafebabe);
+      return XXH32(arena.allocateFrom(JAVA_BYTE, data), data.length, 0xcafebabe);
     }
   }
 
