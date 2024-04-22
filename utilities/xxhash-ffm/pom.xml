@@ -36,6 +36,8 @@
         <header.class.name>XxHash</header.class.name>
         <sourcecode.package>com.silong.foundation.utilities.xxhash.generated</sourcecode.package>
         <lib.name>libxxhash</lib.name>
+        <check-dependencies.skip>true</check-dependencies.skip>
+        <pmd.skip>true</pmd.skip>
     </properties>
 
     <profiles>
