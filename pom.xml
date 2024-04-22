@@ -102,6 +102,7 @@
         <module>distributed-job/hook</module>
         <module>distributed-job/longhaul</module>
         <module>distributed-job/scrapper</module>
+        <module>utilities/whispercpp-ffm</module>
     </modules>
 
     <properties>
