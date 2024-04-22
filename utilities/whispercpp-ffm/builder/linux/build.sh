@@ -6,7 +6,7 @@ HEADER_CLASS_NAME=$4
 SOURCECODE_PACKAGE=$5
 
 echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR" "$HEADER_CLASS_NAME" "$SOURCECODE_PACKAGE"
-echo "================== Start building whisper.cpp =================="
+echo "================== Start building whispercpp =================="
 
 git clone https://github.com/ggerganov/whisper.cpp.git &&
 cd whisper.cpp &&
@@ -15,13 +15,13 @@ make stream
 
 #判断文件是否存在
 if [ ! -f "$SHARDED_LIB_NAME" ]; then
-    echo "Failed to build whisper.cpp."
+    echo "Failed to build whispercpp."
     exit 1
 fi
 
 cp "$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"/"$SHARDED_LIB_NAME"
 
-echo "================== Start generate source code for whisper.cpp =================="
+echo "================== Start generate source code for whispercpp =================="
 jextract --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" --target-package "$SOURCECODE_PACKAGE" --include-dir . whisper.h
 if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
   echo "Failed to generate code by jextract"
