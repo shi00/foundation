@@ -129,8 +129,8 @@
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.3.2</maven-jxr-plugin.version>
-        <spotbugs-maven-plugin.version>4.8.2.0</spotbugs-maven-plugin.version>
-        <findsecbugs-plugin.version>1.12.0</findsecbugs-plugin.version>
+        <spotbugs-maven-plugin.version>4.8.4.0</spotbugs-maven-plugin.version>
+        <findsecbugs-plugin.version>1.13.0</findsecbugs-plugin.version>
         <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
         <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
         <apache-rat-plugin.version>0.16</apache-rat-plugin.version>
@@ -160,7 +160,7 @@
         <guava.version>33.0.0-jre</guava.version>
         <passay.version>1.6.4</passay.version>
         <zxcvbn.version>1.8.2</zxcvbn.version>
-        <spotbugs.version>4.8.3</spotbugs.version>
+        <spotbugs.version>4.8.4</spotbugs.version>
         <disruptor.version>4.0.0</disruptor.version>
         <jctools.version>4.0.2</jctools.version>
         <jetcd.version>0.7.7</jetcd.version>
