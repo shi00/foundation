@@ -30,6 +30,7 @@ module whispercpp.ffm {
   requires nativelib.loader;
   requires static lombok;
   requires org.slf4j;
+  requires java.desktop;
 
   exports com.silong.foundation.utilities.whispercpp;
 }
