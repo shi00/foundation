@@ -20,6 +20,12 @@
  */
 package com.silong.foundation.utilities.whispercpp;
 
+import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.WHISPER_SAMPLING_BEAM_SEARCH;
+import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.WHISPER_SAMPLING_GREEDY;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * whisper 采样策略
  *
@@ -27,7 +33,12 @@ package com.silong.foundation.utilities.whispercpp;
  * @version 1.0.0
  * @since 2024-04-22 16:25
  */
+@AllArgsConstructor
+@Getter
 public enum WhisperSamplingStrategy {
-  WHISPER_SAMPLING_GREEDY, // similar to OpenAI's GreedyDecoder
-  WHISPER_SAMPLING_BEAM_SEARCH, // similar to OpenAI's BeamSearchDecoder
+  WHISPER_SAMPLING_GREEDY(WHISPER_SAMPLING_GREEDY()), // similar to OpenAI's GreedyDecoder
+  WHISPER_SAMPLING_BEAM_SEARCH(
+      WHISPER_SAMPLING_BEAM_SEARCH()); // similar to OpenAI's BeamSearchDecoder
+
+  private final int value;
 }
