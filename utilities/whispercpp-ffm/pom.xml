@@ -32,10 +32,10 @@
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <native.libdir>libs</native.libdir>
- 
-        <output.src.dir>whisper-java-src</output.src.dir>
+
+        <output.src.dir>whispercpp-java-src</output.src.dir>
         <output.shared-lib.dir>classes</output.shared-lib.dir>
-        <header.class.name>Whisper</header.class.name>
+        <header.class.name>WhisperCpp</header.class.name>
         <lib.name>libwhisper</lib.name>
         <sourcecode.package>com.silong.foundation.utilities.whispercpp.generated</sourcecode.package>
 
@@ -67,7 +67,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-xxhash-linux:${project.version}</name>
+                                            <name>builder-whispercpp-linux:${project.version}</name>
                                             <build>
                                                 <contextDir>${project.basedir}/builder/linux</contextDir>
                                                 <dockerFile>Dockerfile</dockerFile>
@@ -86,7 +86,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-xxhash-linux:${project.version}</name>
+                                            <name>builder-whispercpp-linux:${project.version}</name>
                                             <run>
                                                 <network>
                                                     <mode>host</mode>
@@ -103,7 +103,7 @@
                                                             ${project.build.directory}/generated-sources:/opt/${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}:/opt/${output.shared-lib.dir}
+                                                            ${project.basedir}/src/main/resources/${native.libdir}/${os.detected.name}/${os.detected.arch}:/opt/${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -159,7 +159,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-xxhash-windows:${project.version}</name>
+                                            <name>builder-whispercpp-windows:${project.version}</name>
                                             <build>
                                                 <dockerFile>Dockerfile</dockerFile>
                                                 <contextDir>${project.basedir}\builder\windows</contextDir>
@@ -178,7 +178,7 @@
                                 <configuration>
                                     <images>
                                         <image>
-                                            <name>builder-xxhash-windows:${project.version}</name>
+                                            <name>builder-whispercpp-windows:${project.version}</name>
                                             <run>
                                                 <network>
                                                     <name>nat</name>
@@ -196,7 +196,7 @@
                                                             ${project.build.directory}\generated-sources:c:\${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.basedir}\src\main\resources\native\${os.detected.name}\${os.detected.arch}:c:\${output.shared-lib.dir}
+                                                            ${project.basedir}\src\main\resources\${native.libdir}\${os.detected.name}\${os.detected.arch}:c:\${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -238,9 +238,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -274,7 +278,7 @@
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}"/>
+                                <mkdir dir="${project.basedir}/src/main/resources/${native.libdir}/${os.detected.name}/${os.detected.arch}"/>
                                 <mkdir dir="${project.build.directory}/generated-sources"/>
                             </target>
                         </configuration>
@@ -289,7 +293,7 @@
                     <filesets>
                         <fileset>
                             <directory>
-                                ${project.basedir}/src/main/resources/native
+                                ${project.basedir}/src/main/resources/${native.libdir}
                             </directory>
                             <followSymlinks>false</followSymlinks>
                             <includes>
@@ -301,7 +305,7 @@
                         </fileset>
                         <fileset>
                             <directory>
-                                ${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}
+                                ${project.basedir}/src/main/resources/${native.libdir}/${os.detected.name}/${os.detected.arch}
                             </directory>
                             <followSymlinks>false</followSymlinks>
                             <includes>
@@ -314,6 +318,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>${maven-source-plugin.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/models/*</exclude>
+                        <exclude>*.json</exclude>
+                        <exclude>**/${native.libdir}/*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
