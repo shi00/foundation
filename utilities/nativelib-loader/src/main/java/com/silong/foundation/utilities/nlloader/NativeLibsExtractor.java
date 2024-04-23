@@ -149,7 +149,9 @@ public final class NativeLibsExtractor {
     }
   }
 
-  @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "获取代码位置")
+  @SuppressFBWarnings(
+      value = "PATH_TRAVERSAL_IN",
+      justification = "Get the jar file to which the code belongs")
   static Path byGetProtectionDomain(Class<?> clazz) throws URISyntaxException {
     return Paths.get(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
   }
