@@ -30,7 +30,7 @@ import java.io.File;
  * @version 1.0.0
  * @since 2024-04-22 18:45
  */
-public interface Whisper extends AutoCloseable {
+public interface Whisper {
 
   /**
    * 根据配置获取Whisper实例
