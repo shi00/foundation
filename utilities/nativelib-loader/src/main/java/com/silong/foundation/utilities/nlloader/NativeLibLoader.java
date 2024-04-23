@@ -22,6 +22,7 @@
 package com.silong.foundation.utilities.nlloader;
 
 import static com.silong.foundation.utilities.nlloader.PlatformDetector.*;
+import static java.io.File.pathSeparator;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Objects.requireNonNull;
 
@@ -149,11 +150,31 @@ public final class NativeLibLoader {
       throw new IllegalArgumentException("libDir must not be null or empty.");
     }
 
-    String originLib = libName;
+    // 不能包含库格式，由运行环境决定
+    if (Arrays.stream(PlatformLibFormat.values())
+        .map(platformLibFormat -> platformLibFormat.libFormat)
+        .anyMatch(libName::endsWith)) {
+      throw new IllegalArgumentException("libName cannot contain library format suffix.");
+    }
 
+    String originLib = String.format("%s.%s", libName, PlatformLibFormat.match(OS_NAME).libFormat);
     try {
-      System.loadLibrary(libName);
+      System.loadLibrary(libName); // 首先尝试从java.library.path加载
     } catch (UnsatisfiedLinkError t) {
+
+      // 在classpath包含的目录中查找文件，如果找到则直接加载
+      File libFile =
+          Arrays.stream(System.getProperty("java.class.path").split(pathSeparator))
+              .map(File::new)
+              .filter(File::isDirectory)
+              .map(f -> f.toPath().resolve(originLib).toFile())
+              .filter(File::exists)
+              .findAny()
+              .orElse(null);
+      if (libFile != null) {
+        System.load(libFile.getCanonicalPath());
+        return;
+      }
 
       // 按需添加目录前缀
       if (!libDir.startsWith("/")) {
@@ -164,15 +185,7 @@ public final class NativeLibLoader {
         libDir = libDir.substring(0, libDir.length() - 1);
       }
 
-      // 不能包含库格式，由运行环境决定
-      if (Arrays.stream(PlatformLibFormat.values())
-          .map(platformLibFormat -> platformLibFormat.libFormat)
-          .anyMatch(libName::endsWith)) {
-        throw new IllegalArgumentException("libName cannot contain library format suffix.");
-      }
-
-      // 加载临时生成的库文件
-      originLib = String.format("%s.%s", libName, PlatformLibFormat.match(OS_NAME).libFormat);
+      // 尝试从jar包中查找库文件，然后加载
       System.load(generateTempLib(originLib, libDir));
     }
 

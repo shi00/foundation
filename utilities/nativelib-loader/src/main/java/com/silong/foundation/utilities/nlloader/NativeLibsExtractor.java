@@ -21,7 +21,6 @@
 
 package com.silong.foundation.utilities.nlloader;
 
-import static com.silong.foundation.utilities.nlloader.NativeLibLoader.OS_NAME;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.zip.ZipFile.OPEN_READ;
 
@@ -62,7 +61,7 @@ public final class NativeLibsExtractor {
    */
   @SneakyThrows(IOException.class)
   public static void extractNativeLibs(@NonNull Path jarFile, @NonNull Path targetDir) {
-    PlatformLibFormat format = PlatformLibFormat.match(OS_NAME);
+    PlatformLibFormat format = PlatformLibFormat.match(NativeLibLoader.OS_NAME);
 
     // 创建目标目录，并列出目标目录下所有共享库
     Files.createDirectories(targetDir);
