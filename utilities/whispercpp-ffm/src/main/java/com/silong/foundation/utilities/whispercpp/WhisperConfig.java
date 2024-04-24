@@ -55,6 +55,9 @@ public class WhisperConfig {
     /** number of threads to use during computation */
     private int n_threads = Math.min(4, getRuntime().availableProcessors());
 
+    /** number of processors to use during computation */
+    private int n_processors = 1;
+
     /** max tokens to use from past text as prompt for the decoder */
     private int n_max_text_ctx = 16384;
 
@@ -159,6 +162,7 @@ public class WhisperConfig {
   public static class Greedy {
     private static final Greedy DEFAULT_GREEDY = new Greedy(5);
 
+    /** number of best candidates to keep */
     private int best_of;
   }
 
@@ -168,7 +172,9 @@ public class WhisperConfig {
   public static class BeamSearch {
     private static final BeamSearch DEFAULT_BEAM_SEARCH = new BeamSearch(5, -1.0f);
 
+    /** beam size for beam search */
     private int beam_size; // ref:
+
     // https://github.com/openai/whisper/blob/f82bc59f5ea234d4b97fb2860842ed38519f7e65/whisper/transcribe.py#L265
 
     private float patience; // TODO: not implemented, ref: https://arxiv.org/pdf/2204.05424.pdf
