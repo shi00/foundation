@@ -47,6 +47,7 @@ public interface Whisper {
    *
    * @param wavFile 文件
    * @return 识别文本
+   * @throws Exception 异常
    */
-  String speech2Text(File wavFile);
+  String speech2Text(File wavFile) throws Exception;
 }
