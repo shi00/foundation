@@ -24,6 +24,7 @@ package com.silong.foundation.utilities.whispercpp;
 import static com.silong.foundation.utilities.whispercpp.WhisperCppImpl.free;
 import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.*;
 import static java.lang.foreign.Arena.global;
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.lang.foreign.MemorySegment;
@@ -40,10 +41,22 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum Language {
+  /** 自动识别语言 */
+  auto(NULL),
+
+  /** 英文 */
   en(global().allocateFrom("en", UTF_8)),
+
+  /** 中文 */
   zh(global().allocateFrom("zh", UTF_8)),
+
+  /** 西班牙语 */
   es(global().allocateFrom("es", UTF_8)),
+
+  /** 俄语 */
   ru(global().allocateFrom("ru", UTF_8)),
+
+  /** 德语 */
   de(global().allocateFrom("de", UTF_8));
 
   /** c指针 */
@@ -55,6 +68,9 @@ public enum Language {
    * @return 语言id
    */
   public int getLangId() {
+    if (charPtr == NULL) {
+      return 1111;
+    }
     return whisper_lang_id(charPtr);
   }
 
@@ -64,6 +80,9 @@ public enum Language {
    * @return 语言
    */
   public String getLangStr() {
+    if (charPtr == NULL) {
+      return "auto";
+    }
     return getLangStr(getLangId());
   }
 
@@ -74,6 +93,9 @@ public enum Language {
    * @return 语言
    */
   public static String getLangStr(int langId) {
+    if (langId == 1111) {
+      return "auto";
+    }
     MemorySegment charPtr = whisper_lang_str(langId);
     try {
       return charPtr.getString(0, UTF_8);
