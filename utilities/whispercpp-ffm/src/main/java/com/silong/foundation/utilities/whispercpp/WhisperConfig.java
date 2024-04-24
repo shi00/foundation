@@ -51,9 +51,13 @@ public class WhisperConfig {
   @Data
   public static class WhisperFullParams {
     private WhisperSamplingStrategy strategy = WHISPER_SAMPLING_GREEDY;
+
+    /** number of threads to use during computation */
     private int n_threads = Math.min(4, getRuntime().availableProcessors());
-    private int n_max_text_ctx =
-        16384; // max tokens to use from past text as prompt for the decoder
+
+    /** max tokens to use from past text as prompt for the decoder */
+    private int n_max_text_ctx = 16384;
+
     private int offset_ms = 0; // start offset in ms
     private int duration_ms = 0; // audio duration to process in ms
 

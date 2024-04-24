@@ -12,6 +12,7 @@
     }
   },
   "fullParams": {
-    "language": "zh"
+    "language": "en",
+    "detect_language": false
   }
 }
