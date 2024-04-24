@@ -22,7 +22,9 @@
 package com.silong.foundation.utilities.whispercpp;
 
 import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.*;
+import static java.util.stream.Collectors.joining;
 
+import java.util.Arrays;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -53,4 +55,24 @@ public enum WhisperAlignmentHeadsPreset {
   WHISPER_AHEADS_LARGE_V3(WHISPER_AHEADS_LARGE_V3());
 
   private final int value;
+
+  /**
+   * 根据value值解析枚举类型
+   *
+   * @param value 值
+   * @return 枚举
+   */
+  public static WhisperAlignmentHeadsPreset parse(int value) {
+    WhisperAlignmentHeadsPreset[] values = WhisperAlignmentHeadsPreset.values();
+    return Arrays.stream(values)
+        .filter(v -> v.getValue() == value)
+        .findAny()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    String.format(
+                        "value: %d, values: %s",
+                        value,
+                        Arrays.stream(values).map(Enum::name).collect(joining(", ", "[", "]")))));
+  }
 }
