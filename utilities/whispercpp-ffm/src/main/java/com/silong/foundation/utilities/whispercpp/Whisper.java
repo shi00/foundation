@@ -39,7 +39,7 @@ public interface Whisper {
    * @return 实例
    */
   static Whisper getInstance(WhisperConfig config) {
-    return new WhisperCpp(config);
+    return new WhisperCppImpl(config);
   }
 
   /**
