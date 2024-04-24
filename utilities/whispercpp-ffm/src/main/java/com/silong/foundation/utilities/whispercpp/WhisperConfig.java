@@ -21,6 +21,7 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
+import static com.silong.foundation.utilities.whispercpp.Language.en;
 import static com.silong.foundation.utilities.whispercpp.WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY;
 import static java.lang.Runtime.getRuntime;
 
@@ -104,13 +105,17 @@ public class WhisperConfig {
     private int[] prompt_tokens;
     private int prompt_n_tokens = 0;
 
-    // for auto-detection, set to nullptr, "" or "auto"
-    private String language = "en";
+    /** for auto-detection, set to nullptr, "" or "auto" */
+    private Language language = en;
+
+    /** exit after automatically detecting language */
     private boolean detect_language = false;
 
-    // common decoding parameters:
+    /** common decoding parameters: */
     private boolean suppress_blank = true; // ref:
+
     // https://github.com/openai/whisper/blob/f82bc59f5ea234d4b97fb2860842ed38519f7e65/whisper/decoding.py#L89
+
     private boolean suppress_non_speech_tokens = false; // ref:
     // https://github.com/openai/whisper/blob/7858aa9c08d98f75575035ecd6481f462d66ca27/whisper/tokenizer.py#L224-L253
 
