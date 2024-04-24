@@ -1025,7 +1025,9 @@ abstract class AudioFloatConverter {
       conv = new AudioFloatLSBFilter(conv, format);
     }
 
-    if (conv != null) conv.format = format;
+    if (conv != null) {
+      conv.format = format;
+    }
     return conv;
   }
 
