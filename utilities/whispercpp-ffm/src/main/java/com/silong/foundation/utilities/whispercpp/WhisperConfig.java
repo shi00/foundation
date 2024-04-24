@@ -21,7 +21,6 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
-import static com.silong.foundation.utilities.whispercpp.Language.en;
 import static com.silong.foundation.utilities.whispercpp.WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY;
 import static java.lang.Runtime.getRuntime;
 
@@ -106,7 +105,7 @@ public class WhisperConfig {
     private int prompt_n_tokens = 0;
 
     /** for auto-detection, set to nullptr, "" or "auto" */
-    private Language language = en;
+    private String language = "en";
 
     /** exit after automatically detecting language */
     private boolean detect_language = false;
