@@ -38,6 +38,9 @@ public interface Whisper {
   /** 支持的音频采样率 */
   float SUPPORTED_SAMPLED_RATE = 16000.0f;
 
+  /** 支持的采样比特数 */
+  int SUPPORTED_SAMPLED_BITS = 16;
+
   /**
    * 根据配置获取Whisper实例
    *
