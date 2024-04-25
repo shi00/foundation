@@ -12,7 +12,7 @@
     }
   },
   "fullParams": {
-    "language": "en",
+    "language": "auto",
     "detect_language": false
   }
 }
