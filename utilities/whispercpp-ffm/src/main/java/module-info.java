@@ -31,6 +31,7 @@ module whispercpp.ffm {
   requires static lombok;
   requires org.slf4j;
   requires java.desktop;
+  requires jakarta.annotation;
 
   exports com.silong.foundation.utilities.whispercpp;
 }
