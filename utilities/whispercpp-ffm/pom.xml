@@ -262,6 +262,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.silong</groupId>
             <artifactId>nativelib-loader</artifactId>
             <version>1.0.0</version>
