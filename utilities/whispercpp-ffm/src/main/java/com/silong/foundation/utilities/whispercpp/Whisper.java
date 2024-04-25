@@ -21,7 +21,10 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.io.File;
+import java.io.InputStream;
 
 /**
  * Whisper接口
@@ -32,15 +35,29 @@ import java.io.File;
  */
 public interface Whisper {
 
+  /** 支持的音频采样率 */
+  float SUPPORTED_SAMPLED_RATE = 16000.0f;
+
   /**
    * 根据配置获取Whisper实例
    *
    * @param config 配置
    * @return 实例
    */
+  @Nonnull
   static Whisper getInstance(WhisperConfig config) {
     return new WhisperCppImpl(config);
   }
+
+  /**
+   * 识别语言文件语种，返回zh,en,es等语言缩写
+   *
+   * @param wavFile 文件
+   * @return 语种
+   * @throws Exception 异常
+   */
+  @Nullable
+  String recognizeLanguage(File wavFile) throws Exception;
 
   /**
    * wav语音文件识别
@@ -49,5 +66,16 @@ public interface Whisper {
    * @return 识别文本
    * @throws Exception 异常
    */
-  String speech2Text(File wavFile) throws Exception;
+  @Nullable
+  String[] speech2Text(File wavFile) throws Exception;
+
+  /**
+   * wav语音识别
+   *
+   * @param inputStream 数据输入流
+   * @return 识别文本
+   * @throws Exception 异常
+   */
+  @Nullable
+  String[] speech2Text(InputStream inputStream) throws Exception;
 }
