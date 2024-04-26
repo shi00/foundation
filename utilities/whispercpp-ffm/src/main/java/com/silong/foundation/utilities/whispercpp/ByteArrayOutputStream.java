@@ -33,6 +33,15 @@ import java.nio.ByteBuffer;
 class ByteArrayOutputStream extends java.io.ByteArrayOutputStream {
 
   /**
+   * 构造方法
+   *
+   * @param size byte array长度
+   */
+  public ByteArrayOutputStream(int size) {
+    super(size);
+  }
+
+  /**
    * 返回ByteBuffer
    *
    * @return bytebuffer
