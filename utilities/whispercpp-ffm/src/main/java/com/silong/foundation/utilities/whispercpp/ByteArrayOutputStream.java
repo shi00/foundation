@@ -21,8 +21,6 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
-import java.nio.ByteBuffer;
-
 /**
  * 字节缓存输出流
  *
@@ -42,11 +40,11 @@ class ByteArrayOutputStream extends java.io.ByteArrayOutputStream {
   }
 
   /**
-   * 返回ByteBuffer
+   * 返回内部缓存
    *
-   * @return bytebuffer
+   * @return 内部缓存
    */
-  public ByteBuffer byteBuffer() {
-    return ByteBuffer.wrap(this.buf, 0, count);
+  public byte[] buf() {
+    return buf;
   }
 }
