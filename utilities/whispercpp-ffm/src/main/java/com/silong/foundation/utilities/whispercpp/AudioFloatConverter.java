@@ -29,13 +29,12 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioFormat.Encoding;
 
 /**
- * 规避内部api无法访问问题，拷贝一份 com.sun.media内部的AudioFloatConverter
+ * This class is used to convert between 8,16,24,32,32+ bit signed/unsigned big/little endian
+ * fixed/floating point byte buffers and float buffers.
  *
- * @author louis sin
- * @version 1.0.0
- * @since 2024-04-24 10:42
+ * @author Karl Helgason
  */
-abstract class AudioFloatConverter {
+public abstract class AudioFloatConverter {
 
   /***************************************************************************
    *
@@ -1025,9 +1024,7 @@ abstract class AudioFloatConverter {
       conv = new AudioFloatLSBFilter(conv, format);
     }
 
-    if (conv != null) {
-      conv.format = format;
-    }
+    if (conv != null) conv.format = format;
     return conv;
   }
 
