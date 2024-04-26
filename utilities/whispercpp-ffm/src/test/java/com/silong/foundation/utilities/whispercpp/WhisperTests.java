@@ -24,13 +24,14 @@ package com.silong.foundation.utilities.whispercpp;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
 import static java.util.Objects.requireNonNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -42,7 +43,12 @@ import org.junit.jupiter.api.Test;
  */
 public class WhisperTests {
 
-  private final Whisper whisper = Whisper.getInstance(loadJsonFromClassPath());
+  private static Whisper whisper;
+
+  @BeforeAll
+  static void init() {
+    whisper = Whisper.getInstance(loadJsonFromClassPath());
+  }
 
   @SneakyThrows(IOException.class)
   private static WhisperConfig loadJsonFromClassPath() {
@@ -58,12 +64,32 @@ public class WhisperTests {
   }
 
   @Test
-  public void test1() throws IOException {
-    String text =
+  public void testEN() throws Exception {
+    String[] text =
         whisper.speech2Text(
             Paths.get(".", "src", "test", "resources", "Have-you-seen-one-of-these.wav")
                 .toFile()
                 .getCanonicalFile());
-    Assertions.assertEquals(" Have you seen one of these?", text);
+    assertEquals(" Have you seen one of these?", text[0]);
+  }
+
+  @Test
+  public void testEN1() throws Exception {
+    String language =
+        whisper.recognizeLanguage(
+            Paths.get(".", "src", "test", "resources", "Have-you-seen-one-of-these.wav")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals("en", language);
+  }
+
+  @Test
+  public void testZH() throws Exception {
+    String[] text =
+        whisper.speech2Text(
+            Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.wav")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals("这个地方是观光名胜吗?", text[0]);
   }
 }

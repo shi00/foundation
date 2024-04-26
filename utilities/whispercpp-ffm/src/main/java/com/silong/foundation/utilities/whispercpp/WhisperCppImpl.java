@@ -21,10 +21,10 @@
 package com.silong.foundation.utilities.whispercpp;
 
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
-import static com.silong.foundation.utilities.whispercpp.AudioFloatConverter.getConverter;
 import static com.silong.foundation.utilities.whispercpp.WhisperAlignmentHeadsPreset.parse;
 import static com.silong.foundation.utilities.whispercpp.WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY;
 import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp.*;
+import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.false_;
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_ahead.n_head;
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_ahead.n_text_layer;
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_aheads.heads;
@@ -34,9 +34,14 @@ import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.beam_search.beam_size;
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.beam_search.patience;
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.detect_language;
+import static java.lang.Runtime.getRuntime;
 import static java.lang.foreign.MemoryLayout.sequenceLayout;
 import static java.lang.foreign.MemorySegment.NULL;
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.joining;
 
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperContextParams;
@@ -44,9 +49,17 @@ import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperFullParam
 import com.silong.foundation.utilities.whispercpp.generated.whisper_ahead;
 import java.io.*;
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandle;
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.sound.sampled.*;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -60,29 +73,71 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2024-04-20 15:33
  */
 @Slf4j
-class WhisperCpp implements Whisper {
+class WhisperCppImpl implements Whisper {
+
+  private static final Linker LINKER = Linker.nativeLinker();
+
+  private static final MethodHandle FREE =
+      LINKER.downcallHandle(
+          LINKER.defaultLookup().find("free").orElseThrow(), FunctionDescriptor.ofVoid(ADDRESS));
+
+  private static final ThreadLocal<byte[]> BYTE_BUFFER = new ThreadLocal<>();
 
   static {
     loadLibrary("libwhisper", "libs");
   }
 
-  /** whisper上下文 */
-  private final MemorySegment whisperContext;
+  /** 默认whisper上下文 */
+  private final MemorySegment defaultWhisperContext;
 
-  /** whisper全量参数 */
-  private final MemorySegment whisperFullParams;
+  /** 默认whisper全量参数 */
+  private final MemorySegment defaultWhisperFullParams;
+
+  /** 配置参数 */
+  private final WhisperConfig config;
 
   /**
    * 构造方法
    *
    * @param config whisper配置
    */
-  WhisperCpp(@NonNull WhisperConfig config) {
-    String modelPath = checkModelExist(config.getModelPath());
-    config.setModelPath(modelPath); // 更新模型文件路径
-    log.info("modelPath: {}", modelPath);
-    whisperContext = buildWhisperContext(config.getContextParams(), modelPath);
-    whisperFullParams = buildWhisperFullParams(config.getFullParams());
+  WhisperCppImpl(@NonNull WhisperConfig config) {
+    MemorySegment systemInfo = whisper_print_system_info();
+    try (Arena arena = Arena.ofConfined()) {
+      // 模型是否支持多语言，如果不支持则回退到英文，也不支持翻译到英文
+      WhisperFullParams fullParams = config.getFullParams();
+      String language = fullParams.getLanguage();
+
+      // 检测识别语言是否支持
+      if (!"auto".equals(language) && whisper_lang_id(arena.allocateFrom(language, UTF_8)) == -1) {
+        throw new IllegalArgumentException("unknown language: " + language);
+      }
+
+      log.info(
+          "system_info: n_threads = {} / {} | {}",
+          fullParams.getN_threads() * fullParams.getN_processors(),
+          getRuntime().availableProcessors(),
+          systemInfo.getString(0, UTF_8));
+
+      String modelPath = checkModelExist(config.getModelPath());
+      config.setModelPath(modelPath); // 更新模型文件路径
+      log.info("modelPath: {}", modelPath);
+      defaultWhisperContext = buildWhisperContext(config.getContextParams(), modelPath);
+
+      // 检查模型是否支持多语言
+      if (whisper_is_multilingual(defaultWhisperContext) == false_()) {
+        if (!"en".equals(language) || fullParams.isTranslate()) {
+          fullParams.setLanguage("en");
+          fullParams.setTranslate(false);
+        }
+        log.warn("model is not multilingual, ignoring language and translation options.");
+      }
+
+      defaultWhisperFullParams = buildWhisperFullParams(fullParams);
+      this.config = config;
+    } finally {
+      free(systemInfo);
+    }
   }
 
   private static MemorySegment buildWhisperContext(WhisperContextParams config, String modelPath) {
@@ -175,11 +230,7 @@ class WhisperCpp implements Whisper {
    */
   @SneakyThrows(IOException.class)
   private static String checkModelExist(String modelPath) {
-    File file = Path.of(modelPath).toFile();
-    if (!(file.exists() && file.isFile() && file.canRead())) {
-      throw new IllegalArgumentException("Invalid model file: " + modelPath);
-    }
-    return file.getCanonicalPath();
+    return validate(Path.of(modelPath).toFile(), "Invalid model file: ").getCanonicalPath();
   }
 
   /**
@@ -236,44 +287,181 @@ class WhisperCpp implements Whisper {
     return whisperContextParams;
   }
 
-  @Override
+  /**
+   * 读取wav文件，转为pcm float数据
+   *
+   * @param audioInputStreamSupplier 语音数据流
+   * @return pcm float数据
+   */
   @SneakyThrows({IOException.class, UnsupportedAudioFileException.class})
-  public String speech2Text(@NonNull File f) {
-    try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(f);
-        Arena arena = Arena.ofConfined()) {
-
-      // read all the available data to a little endian capture buffer
-      int available = audioInputStream.available();
-      byte[] data = new byte[available];
-      if (audioInputStream.read(data) != available) {
-        throw new IOException(String.format("Failed to read " + f.getCanonicalPath()));
-      }
-      float[] samples = new float[available / 2];
+  private static float[] readWav(Supplier<AudioInputStream> audioInputStreamSupplier) {
+    try (AudioInputStream audioInputStream = audioInputStreamSupplier.get()) {
       AudioFormat format = audioInputStream.getFormat();
-      AudioFloatConverter converter = getConverter(format);
-      if (converter == null) {
-        throw new UnsupportedOperationException(
-            String.format("AudioFormat:[%s] is not supported.", format));
-      }
-      converter.toFloatArray(data, samples);
-      MemorySegment ms = arena.allocate(sequenceLayout(samples.length, C_FLOAT));
-      for (int i = 0; i < samples.length; i++) {
-        ms.setAtIndex(C_FLOAT, i, samples[i]);
+
+      if (format.getSampleRate() != SUPPORTED_SAMPLED_RATE) {
+        throw new UnsupportedAudioFileException(
+            String.format(
+                "Only supports audio files with samplingRate: %dKHZ",
+                ((int) (SUPPORTED_SAMPLED_RATE / 1000))));
       }
 
-      // 开始并行处理音频采样
-      if (whisper_full_parallel(whisperContext, whisperFullParams, ms, samples.length, 1) != 0) {
-        throw new IOException(String.format("Failed to process audio %s.", f.getCanonicalPath()));
+      if (format.getSampleSizeInBits() != SUPPORTED_SAMPLED_BITS) {
+        throw new UnsupportedAudioFileException(
+            String.format(
+                "Only supports audio files with samplingBits: %d", SUPPORTED_SAMPLED_BITS));
       }
 
-      int segments = whisper_full_n_segments(whisperContext);
-      for (int i = 0; i < segments; i++) {
-        MemorySegment charPtr = whisper_full_get_segment_text(whisperContext, i);
-        String text = charPtr.getString(0, UTF_8);
-        log.info("text: {}", text);
-        return text;
+      // read all the available data to a buffer
+      int available = audioInputStream.available();
+
+      byte[] bytes = BYTE_BUFFER.get();
+      if (!(bytes != null && bytes.length >= available)) {
+        bytes = new byte[available];
       }
-      return "";
+
+      if (audioInputStream.read(bytes) != available) {
+        throw new IOException("Failed to read audioInputStream.");
+      }
+
+      ShortBuffer shortBuf =
+          ByteBuffer.wrap(bytes, 0, available)
+              .order(format.isBigEndian() ? BIG_ENDIAN : LITTLE_ENDIAN)
+              .asShortBuffer();
+
+      // 音频数据的帧数量
+      int frames = available / format.getFrameSize();
+      float[] samples = new float[frames];
+      if (format.getChannels() == 1) {
+        for (int i = 0; i < frames; i++) {
+          samples[i] = shortBuf.get(i) * 1.0f / 32768.0f;
+        }
+      } else {
+        for (int i = 0; i < frames; i++) {
+          samples[i] = (shortBuf.get(2 * i) + shortBuf.get(2 * i + 1)) * 1.0f / 65536.0f;
+        }
+      }
+      return samples;
     }
+  }
+
+  private static void logDebugResultWithTimes(MemorySegment ctx, int segment, String text) {
+    if (log.isDebugEnabled()) {
+      long startTime = whisper_full_get_segment_t0(ctx, segment);
+      long endTime = whisper_full_get_segment_t1(ctx, segment);
+      log.debug("[{} --- {}] text: {}", formatHHmmssSSS(startTime), formatHHmmssSSS(endTime), text);
+    }
+  }
+
+  @Nullable
+  @Override
+  public String[] speech2Text(InputStream inputStream) {
+    return analyzeAudioData(
+        defaultWhisperContext,
+        defaultWhisperFullParams,
+        config.getFullParams().getN_processors(), // 计算用核心数
+        () -> readWav(() -> getAudioInputStream(inputStream)),
+        ctx -> {
+          int segments;
+          if ((segments = whisper_full_n_segments(ctx)) > 0) {
+            String[] result = new String[segments];
+            for (int i = 0; i < segments; i++) {
+              MemorySegment charPtr =
+                  whisper_full_get_segment_text(ctx, i); // 此处无需释放返回的const char * ，此指针为栈分配
+              String text = NULL.equals(charPtr) ? "" : charPtr.getString(0, UTF_8);
+              logDebugResultWithTimes(ctx, i, text);
+              result[i] = text;
+            }
+            return result;
+          }
+          return null;
+        });
+  }
+
+  @Override
+  @Nullable
+  public String[] speech2Text(File f) throws IOException {
+    try (InputStream inputStream =
+        new BufferedInputStream(new FileInputStream(validate(f, "Invalid wav file: ")))) {
+      return speech2Text(inputStream);
+    }
+  }
+
+  @Override
+  @Nullable
+  public String recognizeLanguage(File f) {
+    return analyzeAudioData(
+        defaultWhisperContext,
+        defaultWhisperFullParams,
+        config.getFullParams().getN_processors(), // 计算用核心数
+        () -> readWav(() -> getAudioInputStream(f)),
+        ctx -> {
+          MemorySegment charPtr =
+              whisper_lang_str(whisper_full_lang_id(ctx)); // 此处无需释放返回的const char * ，此指针为栈分配
+          return NULL.equals(charPtr) ? null : charPtr.getString(0, UTF_8);
+        });
+  }
+
+  private static <T> T analyzeAudioData(
+      @NonNull MemorySegment whisperContext,
+      @NonNull MemorySegment whisperFullParams,
+      int nProcessor,
+      @NonNull Supplier<float[]> audioDataSupplier,
+      @NonNull Function<MemorySegment, T> handler) {
+    try (Arena arena = Arena.ofConfined()) {
+      // 开始并行处理音频采样，非线程安全
+      float[] samples = audioDataSupplier.get();
+      if (whisper_full_parallel(
+              whisperContext,
+              whisperFullParams,
+              arena.allocateFrom(C_FLOAT, samples), // 采样数据
+              samples.length,
+              nProcessor)
+          != 0) {
+        throw new IllegalStateException("Failed to analyze audio data.");
+      }
+      return handler.apply(whisperContext);
+    }
+  }
+
+  private static String formatHHmmssSSS(long millis) {
+    long hours = MILLISECONDS.toHours(millis);
+    long minutes = MILLISECONDS.toMinutes(millis);
+    long seconds = MILLISECONDS.toSeconds(millis);
+    return String.format(
+        "%02d:%02d:%02d.%03d",
+        hours,
+        minutes - HOURS.toMinutes(hours),
+        seconds - MINUTES.toSeconds(minutes),
+        millis - SECONDS.toMillis(seconds));
+  }
+
+  private static File validate(@NonNull File f, String message) throws IOException {
+    if (!(f.exists() && f.isFile() && f.canRead())) {
+      throw new IllegalArgumentException(String.format(message + f.getCanonicalPath()));
+    }
+    return f;
+  }
+
+  @SneakyThrows({IOException.class, UnsupportedAudioFileException.class})
+  private static AudioInputStream getAudioInputStream(InputStream inputStream) {
+    return AudioSystem.getAudioInputStream(
+        inputStream instanceof BufferedInputStream
+            ? inputStream
+            : new BufferedInputStream(inputStream));
+  }
+
+  @SneakyThrows({IOException.class, UnsupportedAudioFileException.class})
+  private static AudioInputStream getAudioInputStream(File f) {
+    return AudioSystem.getAudioInputStream(validate(f, "Invalid wav file: "));
+  }
+
+  /**
+   * 释放内存空间
+   *
+   * @param ptr 指针
+   */
+  @SneakyThrows
+  static void free(MemorySegment ptr) {
+    FREE.invokeExact(ptr);
   }
 }
