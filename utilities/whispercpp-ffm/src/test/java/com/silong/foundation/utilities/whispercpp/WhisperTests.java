@@ -92,4 +92,14 @@ public class WhisperTests {
                 .getCanonicalFile());
     assertEquals("这个地方是观光名胜吗?", text[0]);
   }
+
+  @Test
+  public void testZH1() throws Exception {
+    String[] text =
+        whisper.speech2Text(
+            Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.mp3")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals("这个地方是观光名胜吗?", text[0]);
+  }
 }
