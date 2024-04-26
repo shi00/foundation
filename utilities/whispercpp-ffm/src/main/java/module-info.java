@@ -32,6 +32,7 @@ module whispercpp.ffm {
   requires org.slf4j;
   requires java.desktop;
   requires jakarta.annotation;
+  requires ffsampledsp.complete;
 
   exports com.silong.foundation.utilities.whispercpp;
 }
