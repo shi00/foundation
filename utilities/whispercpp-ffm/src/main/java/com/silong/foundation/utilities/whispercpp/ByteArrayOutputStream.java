@@ -28,7 +28,7 @@ package com.silong.foundation.utilities.whispercpp;
  * @version 1.0.0
  * @since 2024-04-26 16:04
  */
-class ByteArrayOutputStream extends java.io.ByteArrayOutputStream {
+public class ByteArrayOutputStream extends java.io.ByteArrayOutputStream {
 
   /**
    * 构造方法
