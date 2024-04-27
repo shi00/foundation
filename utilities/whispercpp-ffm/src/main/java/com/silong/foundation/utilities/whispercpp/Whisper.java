@@ -36,10 +36,13 @@ import java.io.InputStream;
 public interface Whisper {
 
   /** 支持的音频采样率 */
-  float SUPPORTED_SAMPLED_RATE = 16000.0f;
+  int SUPPORTED_SAMPLED_RATE = 16000;
 
   /** 支持的采样比特数 */
   int SUPPORTED_SAMPLED_BITS = 16;
+
+  /** 支持的最大声道数量 */
+  int MAX_CHANNELS = 2;
 
   /**
    * 根据配置获取Whisper实例
