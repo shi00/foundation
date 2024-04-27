@@ -347,28 +347,22 @@ class WhisperCppImpl implements Whisper {
   private static File any2Wav(File audioFile) throws IOException, EncoderException {
     validate(audioFile, "Invalid audio file: ");
 
-    File tempAudioFile = createTempFile().toFile();
-
-    if (log.isInfoEnabled()) {
-      log.info(
-          "source:{} --convert--> target:{}",
-          audioFile.getCanonicalPath(),
-          tempAudioFile.getCanonicalPath());
-    }
-
     // 检查解码器
     Encoder encoder = new Encoder();
     String[] audioDecoders = encoder.getAudioDecoders();
-    if (!Arrays.asList(audioDecoders).contains(TARGET_CODEC)) {
+    if (audioDecoders == null
+        || audioDecoders.length == 0
+        || Arrays.stream(audioDecoders).parallel().noneMatch(TARGET_CODEC::equals)) {
       throw new IllegalStateException(
-          String.format("Decoder %s not found in the supported list.", TARGET_CODEC));
+          String.format(
+              "%s not found in the supported list: %s.", TARGET_CODEC, toString(audioDecoders)));
     }
 
     if (log.isDebugEnabled()) {
-      log.debug(
-          "Supported decoders: {}", Arrays.stream(audioDecoders).collect(joining(",", "[", "]")));
+      log.debug("Supported decoders: {}", toString(audioDecoders));
     }
 
+    File tempAudioFile = createTempFile().toFile();
     MultimediaObject multimediaObject = new MultimediaObject(audioFile);
     AudioInfo audioInfo = multimediaObject.getInfo().getAudio();
     int channels = Math.min(MAX_CHANNELS, audioInfo.getChannels());
@@ -383,9 +377,26 @@ class WhisperCppImpl implements Whisper {
                     .setBitRate(channels * SUPPORTED_SAMPLED_BITS * SUPPORTED_SAMPLED_RATE)
                     .setChannels(channels)
                     .setSamplingRate(SUPPORTED_SAMPLED_RATE)));
+
+    if (log.isInfoEnabled()) {
+      log.info(
+          "source:{} --convert--> target:{}",
+          audioFile.getCanonicalPath(),
+          tempAudioFile.getCanonicalPath());
+    }
+
     return tempAudioFile;
   }
 
+  /**
+   * 音频文件转whisper cpp要求的wav数据
+   *
+   * @param audioFile 音频文件
+   * @return wav buffer
+   * @throws IOException 异常
+   * @throws EncoderException 异常
+   * @throws UnsupportedAudioFileException 异常
+   */
   private static ByteBuffer convert2WhisperCppWav(File audioFile)
       throws IOException, EncoderException, UnsupportedAudioFileException {
     try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(audioFile)) {
@@ -498,23 +509,31 @@ class WhisperCppImpl implements Whisper {
   }
 
   private static float[] convert2FloatArray(ByteBuffer byteBuffer) {
-    AudioFormat audioFormat = requireNonNull(AUDIO_FORMAT.get());
-    ShortBuffer shortBuf =
-        byteBuffer.order(audioFormat.isBigEndian() ? BIG_ENDIAN : LITTLE_ENDIAN).asShortBuffer();
+    try {
+      AudioFormat audioFormat = requireNonNull(AUDIO_FORMAT.get());
+      if (log.isDebugEnabled()) {
+        log.debug("Converted AudioFormat: {}", audioFormat);
+      }
 
-    // 音频数据的帧数量
-    int frames = byteBuffer.limit() / audioFormat.getFrameSize();
-    float[] samples = new float[frames];
-    if (audioFormat.getChannels() == 1) {
-      for (int i = 0; i < frames; i++) {
-        samples[i] = shortBuf.get(i) * 1.0f / 32768.0f;
+      ShortBuffer pcm16sl =
+          byteBuffer.order(audioFormat.isBigEndian() ? BIG_ENDIAN : LITTLE_ENDIAN).asShortBuffer();
+
+      // 音频数据的帧数量
+      int frames = byteBuffer.limit() / audioFormat.getFrameSize();
+      float[] samples = new float[frames];
+      if (audioFormat.getChannels() == 1) {
+        for (int i = 0; i < frames; i++) {
+          samples[i] = pcm16sl.get(i) * 1.0f / 32768.0f;
+        }
+      } else {
+        for (int i = 0; i < frames; i++) {
+          samples[i] = (pcm16sl.get(2 * i) + pcm16sl.get(2 * i + 1)) * 1.0f / 65536.0f;
+        }
       }
-    } else {
-      for (int i = 0; i < frames; i++) {
-        samples[i] = (shortBuf.get(2 * i) + shortBuf.get(2 * i + 1)) * 1.0f / 65536.0f;
-      }
+      return samples;
+    } finally {
+      AUDIO_FORMAT.remove();
     }
-    return samples;
   }
 
   /**
@@ -555,14 +574,6 @@ class WhisperCppImpl implements Whisper {
         }
         return handler.apply(whisperContext);
       }
-    }
-  }
-
-  private static void logDebugResultWithTimes(MemorySegment ctx, int segment, String text) {
-    if (log.isDebugEnabled()) {
-      long startTime = whisper_full_get_segment_t0(ctx, segment);
-      long endTime = whisper_full_get_segment_t1(ctx, segment);
-      log.debug("[{} --- {}] text: {}", formatHHmmssSSS(startTime), formatHHmmssSSS(endTime), text);
     }
   }
 
@@ -697,6 +708,18 @@ class WhisperCppImpl implements Whisper {
       justification = "Create a temporary file in the temporary directory.")
   private static Path createTempFile() throws IOException {
     return Files.createTempFile(TEMP_DIR, "whisper-cpp", "." + WAVE.getExtension());
+  }
+
+  private static void logDebugResultWithTimes(MemorySegment ctx, int segment, String text) {
+    if (log.isDebugEnabled()) {
+      long startTime = whisper_full_get_segment_t0(ctx, segment);
+      long endTime = whisper_full_get_segment_t1(ctx, segment);
+      log.debug("[{} --- {}] text: {}", formatHHmmssSSS(startTime), formatHHmmssSSS(endTime), text);
+    }
+  }
+
+  private static String toString(String[] strings) {
+    return strings == null ? "null" : Arrays.stream(strings).collect(joining(", ", "[", "]"));
   }
 
   /**
