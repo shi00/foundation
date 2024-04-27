@@ -50,6 +50,7 @@ import static javax.sound.sampled.AudioFileFormat.Type.WAVE;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperContextParams;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperFullParams;
 import com.silong.foundation.utilities.whispercpp.generated.whisper_ahead;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nullable;
 import java.io.*;
 import java.lang.foreign.Arena;
@@ -691,6 +692,9 @@ class WhisperCppImpl implements Whisper {
    * @return 临时文件
    * @throws IOException 异常
    */
+  @SuppressFBWarnings(
+      value = "PATH_TRAVERSAL_IN",
+      justification = "Create a temporary file in the temporary directory.")
   private static Path createTempFile() throws IOException {
     return Files.createTempFile(TEMP_DIR, "whisper-cpp", "." + WAVE.getExtension());
   }
