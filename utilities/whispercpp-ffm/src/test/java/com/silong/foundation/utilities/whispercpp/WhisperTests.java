@@ -84,6 +84,16 @@ public class WhisperTests {
   }
 
   @Test
+  public void testEN2() throws Exception {
+    String[] text =
+        whisper.speech2Text(
+            Paths.get(".", "src", "test", "resources", "Thank-you-that-was-helpful.ogg")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals(" Thank you. That was helpful.", text[0]);
+  }
+
+  @Test
   public void testZH() throws Exception {
     String[] text =
         whisper.speech2Text(
@@ -98,6 +108,16 @@ public class WhisperTests {
     String[] text =
         whisper.speech2Text(
             Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.mp3")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals("这个地方是观光名胜吗?", text[0]);
+  }
+
+  @Test
+  public void testZH2() throws Exception {
+    String[] text =
+        whisper.speech2Text(
+            Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.ogg")
                 .toFile()
                 .getCanonicalFile());
     assertEquals("这个地方是观光名胜吗?", text[0]);
