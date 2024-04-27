@@ -254,17 +254,6 @@ class WhisperCppImpl implements Whisper {
   }
 
   /**
-   * 检查模型文件是否可加载
-   *
-   * @param modelPath 模型文件路径
-   * @return 模型文件
-   */
-  @SneakyThrows(IOException.class)
-  private static String checkModelExist(String modelPath) {
-    return validate(Path.of(modelPath).toFile(), "Invalid model file: ").getCanonicalPath();
-  }
-
-  /**
    * 根据配置生成上下文参数
    *
    * @param arena 内存区域
@@ -327,7 +316,7 @@ class WhisperCppImpl implements Whisper {
    * @throws EncoderException 异常
    */
   private static File any2Wav(InputStream inputStream) throws IOException, EncoderException {
-    Objects.requireNonNull(inputStream, "inputStream must not be null.");
+    requireNonNull(inputStream, "inputStream must not be null.");
     Path tempInputFile = createTempFile();
     if (log.isDebugEnabled()) {
       log.debug("Create temporary input audio file: {}", tempInputFile.toFile().getCanonicalPath());
@@ -464,6 +453,7 @@ class WhisperCppImpl implements Whisper {
       log.debug("targetFormat: {}", targetFormat);
     }
 
+    // 转换为目标格式
     try (AudioInputStream input = AudioSystem.getAudioInputStream(targetFormat, in)) {
       ByteArrayOutputStream outputStream = BYTE_BUFFER_OUTPUT_STREAM.get();
       if (outputStream == null) {
@@ -500,7 +490,10 @@ class WhisperCppImpl implements Whisper {
     }
 
     // 音频流无法一个字节一个字节读取，只能一帧一帧读取，所以此处需要根据帧大小分配小缓存
-    byte[] bytes = new byte[AUDIO_FORMAT.get().getFrameSize()];
+    byte[] bytes =
+        new byte
+            [requireNonNull(AUDIO_FORMAT.get(), "Target audioFormat must not be null.")
+                .getFrameSize()];
     int readBytes;
     while ((readBytes = inputStream.read(bytes)) != -1) {
       byteArrayOutputStream.write(bytes, 0, readBytes);
@@ -581,7 +574,7 @@ class WhisperCppImpl implements Whisper {
   @Override
   public String[] speech2Text(InputStream inputStream)
       throws UnsupportedAudioFileException, IOException, EncoderException {
-    Objects.requireNonNull(inputStream, "inputStream must not be null.");
+    requireNonNull(inputStream, "inputStream must not be null.");
     float[] audioData = convert2FloatArray(convert2WhisperCppWav(inputStream));
     return analyze(
         defaultWhisperContext,
@@ -720,6 +713,17 @@ class WhisperCppImpl implements Whisper {
 
   private static String toString(String[] strings) {
     return strings == null ? "null" : Arrays.stream(strings).collect(joining(", ", "[", "]"));
+  }
+
+  /**
+   * 检查模型文件是否可加载
+   *
+   * @param modelPath 模型文件路径
+   * @return 模型文件
+   */
+  @SneakyThrows(IOException.class)
+  private static String checkModelExist(String modelPath) {
+    return validate(Path.of(modelPath).toFile(), "Invalid model file: ").getCanonicalPath();
   }
 
   /**
