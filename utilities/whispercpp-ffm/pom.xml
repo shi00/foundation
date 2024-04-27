@@ -38,6 +38,7 @@
         <header.class.name>WhisperCpp</header.class.name>
         <lib.name>libwhisper</lib.name>
         <sourcecode.package>com.silong.foundation.utilities.whispercpp.generated</sourcecode.package>
+        <jave.version>3.5.0</jave.version>
 
         <check-dependencies.skip>true</check-dependencies.skip>
         <pmd.skip>true</pmd.skip>
@@ -258,35 +259,32 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.googlecode.soundlibs</groupId>
-            <artifactId>jlayer</artifactId>
-            <version>1.0.1.4</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.googlecode.soundlibs</groupId>
-            <artifactId>mp3spi</artifactId>
-            <version>1.9.5.4</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.googlecode.soundlibs</groupId>
-            <artifactId>vorbisspi</artifactId>
-            <version>1.0.3.3</version>
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>
             <artifactId>nativelib-loader</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>ws.schild</groupId>
+            <artifactId>jave-core</artifactId>
+            <version>${jave.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ws.schild</groupId>
+            <artifactId>jave-nativebin-win64</artifactId>
+            <version>${jave.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ws.schild</groupId>
+            <artifactId>jave-nativebin-linux64</artifactId>
+            <version>${jave.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
