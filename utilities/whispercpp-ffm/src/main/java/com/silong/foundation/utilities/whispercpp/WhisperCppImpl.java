@@ -51,6 +51,8 @@ import com.silong.foundation.utilities.whispercpp.WhisperConfig.BeamSearch;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperContextParams;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperFullParams;
 import com.silong.foundation.utilities.whispercpp.generated.whisper_ahead;
+import com.silong.foundation.utilities.whispercpp.generated.whisper_new_segment_callback;
+import com.silong.foundation.utilities.whispercpp.generated.whisper_progress_callback;
 import jakarta.annotation.Nullable;
 import java.io.*;
 import java.lang.foreign.*;
@@ -162,6 +164,7 @@ class WhisperCppImpl implements Whisper {
    * @param config 配置
    * @return 参数
    */
+  @SneakyThrows
   private static MemorySegment buildWhisperFullParams(WhisperFullParams config) {
     Arena arena = Arena.global();
     MemorySegment params = whisper_full_default_params(arena, WHISPER_SAMPLING_GREEDY.getValue());
@@ -230,9 +233,53 @@ class WhisperCppImpl implements Whisper {
     beam_size(memorySegment1, beamSearch.getBeam_size());
     beam_search(params, memorySegment1);
 
+    MemorySegment newSegmentCallbackPtr =
+        configurePtr(
+            config.getWhisperNewSegmentCallbackClassFQDN(),
+            whisper_new_segment_callback.Function.class,
+            aClass -> {
+              whisper_new_segment_callback.Function callback = newInstance(aClass);
+              MemorySegment ms = whisper_new_segment_callback.allocate(callback, arena);
+              new_segment_callback(params, ms); // 注册回调函数
+              return ms;
+            });
+
+    MemorySegment newSegmentUserDataPtr =
+        configurePtr(
+            config.getWhisperNewSegmentCallbackUserDataClassFQDN(),
+            ForeignParams.class,
+            aClass -> {
+              ForeignParams userData = newInstance(aClass);
+              MemorySegment userDataMemorySegment = userData.convertTo();
+              new_segment_callback_user_data(params, userDataMemorySegment); // 注册回调函数
+              return userDataMemorySegment;
+            });
+
+    MemorySegment progressCallbackPtr =
+        configurePtr(
+            config.getWhisperProgressCallbackClassFQDN(),
+            whisper_progress_callback.Function.class,
+            aClass -> {
+              whisper_progress_callback.Function callback = newInstance(aClass);
+              MemorySegment ms = whisper_progress_callback.allocate(callback, arena);
+              progress_callback(params, ms); // 注册回调函数
+              return ms;
+            });
+
+    MemorySegment progressUserDataPtr =
+        configurePtr(
+            config.getWhisperProgressCallbackUserDataClassFQDN(),
+            ForeignParams.class,
+            aClass -> {
+              ForeignParams userData = newInstance(aClass);
+              MemorySegment userDataMemorySegment = userData.convertTo();
+              progress_callback_user_data(params, userDataMemorySegment); // 注册回调函数
+              return userDataMemorySegment;
+            });
+
     if (log.isDebugEnabled()) {
       log.debug(
-          "whisper_full_params: [language: {}, detect_language: {}, strategy: {}, n_threads: {}, n_max_text_ctx: {}{}offset_ms: {}, duration_ms: {}, translate: {}, no_context: {}, no_timestamps: {}{}single_segment: {}, print_special: {}, print_progress: {}, print_realtime: {}, print_timestamps: {}{}token_timestamps: {}, thold_pt: {}, thold_ptsum: {}, max_len: {}, split_on_word: {}{}max_tokens: {}, speed_up: {}, debug_mode: {}, audio_ctx: {}, tdrz_enable: {}{}suppress_regex: {}, initial_prompt: {}, prompt_tokens: {}, suppress_blank: {}, suppress_non_speech_tokens: {}{}temperature: {}, max_initial_ts: {}, length_penalty: {}, temperature_inc: {}, entropy_thold :{}{}logprob_thold: {}, no_speech_thold: {}, greedy: {}, beamSearch: {}]",
+          "whisper_full_params: [language: {}, detect_language: {}, strategy: {}, n_threads: {}, n_max_text_ctx: {}{}offset_ms: {}, duration_ms: {}, translate: {}, no_context: {}, no_timestamps: {}{}single_segment: {}, print_special: {}, print_progress: {}, print_realtime: {}, print_timestamps: {}{}token_timestamps: {}, thold_pt: {}, thold_ptsum: {}, max_len: {}, split_on_word: {}{}max_tokens: {}, speed_up: {}, debug_mode: {}, audio_ctx: {}, tdrz_enable: {}{}suppress_regex: {}, initial_prompt: {}, prompt_tokens: {}, suppress_blank: {}, suppress_non_speech_tokens: {}{}temperature: {}, max_initial_ts: {}, length_penalty: {}, temperature_inc: {}, entropy_thold :{}{}logprob_thold: {}, no_speech_thold: {}, greedy: {}, beamSearch: {}, whisper_new_segment_callback: {}{}new_segment_callback_user_data: {}, whisper_progress_callback: {}, progress_callback_user_data: {}]",
           language(params).getString(0, UTF_8),
           detect_language(params),
           WhisperSamplingStrategy.parse(strategy(params)),
@@ -278,10 +325,47 @@ class WhisperCppImpl implements Whisper {
           logprob_thold(params),
           no_speech_thold(params),
           greedyToString(greedy(params)),
-          beamSearchToString(beam_search(params)));
+          beamSearchToString(beam_search(params)),
+          NULL.equals(new_segment_callback(params))
+              ? "null"
+              : newSegmentCallbackPtr.address() == new_segment_callback(params).address()
+                  ? config.getWhisperNewSegmentCallbackClassFQDN()
+                  : "unknown",
+          System.lineSeparator(),
+          NULL.equals(new_segment_callback_user_data(params))
+              ? "null"
+              : newSegmentUserDataPtr.address() == new_segment_callback_user_data(params).address()
+                  ? config.getWhisperNewSegmentCallbackClassFQDN()
+                  : "unknown",
+          NULL.equals(progress_callback(params))
+              ? "null"
+              : progressCallbackPtr.address() == progress_callback(params).address()
+                  ? config.getWhisperProgressCallbackClassFQDN()
+                  : "unknown",
+          NULL.equals(progress_callback_user_data(params))
+              ? "null"
+              : progressUserDataPtr.address() == progress_callback_user_data(params).address()
+                  ? config.getWhisperProgressCallbackUserDataClassFQDN()
+                  : "unknown");
     }
 
     return params;
+  }
+
+  private static MemorySegment configurePtr(
+      String classFQDN, Class<?> superClass, Function<Class<?>, MemorySegment> configurator)
+      throws ClassNotFoundException {
+    if (classFQDN == null || classFQDN.isEmpty()) {
+      return NULL;
+    }
+
+    Class<?> aClass = Class.forName(classFQDN);
+    if (!superClass.isAssignableFrom(aClass)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "%s does not implement the interface %s.", classFQDN, superClass.getName()));
+    }
+    return configurator.apply(aClass);
   }
 
   private static MemorySegment buildWhisperContext(WhisperContextParams config, String modelPath) {
@@ -428,7 +512,7 @@ class WhisperCppImpl implements Whisper {
       throws IOException, EncoderException, UnsupportedAudioFileException {
     try (AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(audioFile)) {
       return toByteBuffer(audioInputStream);
-    } catch (UnsupportedAudioFileException e) {
+    } catch (Exception e) {
       // 对于java原生不支持的格式使用ffmpeg处理
       return toByteBuffer(AudioSystem.getAudioInputStream(any2Wav(audioFile)));
     }
@@ -450,7 +534,7 @@ class WhisperCppImpl implements Whisper {
                 ? AudioSystem.getAudioInputStream(audioInputStream)
                 : AudioSystem.getAudioInputStream(new BufferedInputStream(audioInputStream))) {
       return toByteBuffer(in);
-    } catch (UnsupportedAudioFileException e) {
+    } catch (Exception e) {
       // 对于java原生不支持的格式使用ffmpeg处理
       return toByteBuffer(AudioSystem.getAudioInputStream(any2Wav(audioInputStream)));
     }
