@@ -21,6 +21,7 @@
 package com.silong.foundation.utilities.whispercpp;
 
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
+import static com.silong.foundation.utilities.whispercpp.Utils.*;
 import static com.silong.foundation.utilities.whispercpp.WhisperAlignmentHeadsPreset.parse;
 import static com.silong.foundation.utilities.whispercpp.WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY;
 import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp.*;
@@ -33,38 +34,31 @@ import static com.silong.foundation.utilities.whispercpp.generated.whisper_conte
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.*;
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.beam_search.beam_size;
 import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.beam_search.patience;
-import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.detect_language;
+import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.greedy.best_of;
+import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.no_speech_thold;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.foreign.MemoryLayout.sequenceLayout;
 import static java.lang.foreign.MemorySegment.NULL;
-import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.Objects.requireNonNull;
-import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.joining;
 import static javax.sound.sampled.AudioFileFormat.Type.WAVE;
 
+import com.silong.foundation.utilities.whispercpp.WhisperConfig.BeamSearch;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperContextParams;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperFullParams;
 import com.silong.foundation.utilities.whispercpp.generated.whisper_ahead;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nullable;
 import java.io.*;
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandle;
+import java.lang.foreign.*;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -88,15 +82,6 @@ import ws.schild.jave.info.AudioInfo;
  */
 @Slf4j
 class WhisperCppImpl implements Whisper {
-
-  private static final Linker LINKER = Linker.nativeLinker();
-
-  private static final MethodHandle FREE =
-      LINKER.downcallHandle(
-          LINKER.defaultLookup().find("free").orElseThrow(), FunctionDescriptor.ofVoid(ADDRESS));
-
-  // 临时目录
-  public static final Path TEMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"));
 
   static {
     loadLibrary("libwhisper", "libs");
@@ -171,12 +156,12 @@ class WhisperCppImpl implements Whisper {
     }
   }
 
-  private static MemorySegment buildWhisperContext(WhisperContextParams config, String modelPath) {
-    Arena arena = Arena.global();
-    return whisper_init_from_file_with_params(
-        arena.allocateFrom(modelPath, UTF_8), buildWhisperContextParams(arena, config));
-  }
-
+  /**
+   * 根据配置创建全量参数
+   *
+   * @param config 配置
+   * @return 参数
+   */
   private static MemorySegment buildWhisperFullParams(WhisperFullParams config) {
     Arena arena = Arena.global();
     MemorySegment params = whisper_full_default_params(arena, WHISPER_SAMPLING_GREEDY.getValue());
@@ -236,21 +221,73 @@ class WhisperCppImpl implements Whisper {
     no_speech_thold(params, config.getNo_speech_thold());
 
     MemorySegment memorySegment = greedy.allocate(arena);
-    greedy.best_of(memorySegment, config.getGreedy().getBest_of());
+    best_of(memorySegment, config.getGreedy().getBest_of());
     greedy(params, memorySegment);
 
     MemorySegment memorySegment1 = beam_search.allocate(arena);
-    WhisperConfig.BeamSearch beamSearch = config.getBeam_search();
+    BeamSearch beamSearch = config.getBeam_search();
     patience(memorySegment1, beamSearch.getPatience());
     beam_size(memorySegment1, beamSearch.getBeam_size());
     beam_search(params, memorySegment1);
 
-    log.info(
-        "language: {}, detect_language: {}",
-        language(params).getString(0, UTF_8),
-        detect_language(params));
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "whisper_full_params: [language: {}, detect_language: {}, strategy: {}, n_threads: {}, n_max_text_ctx: {}{}offset_ms: {}, duration_ms: {}, translate: {}, no_context: {}, no_timestamps: {}{}single_segment: {}, print_special: {}, print_progress: {}, print_realtime: {}, print_timestamps: {}{}token_timestamps: {}, thold_pt: {}, thold_ptsum: {}, max_len: {}, split_on_word: {}{}max_tokens: {}, speed_up: {}, debug_mode: {}, audio_ctx: {}, tdrz_enable: {}{}suppress_regex: {}, initial_prompt: {}, prompt_tokens: {}, suppress_blank: {}, suppress_non_speech_tokens: {}{}temperature: {}, max_initial_ts: {}, length_penalty: {}, temperature_inc: {}, entropy_thold :{}{}logprob_thold: {}, no_speech_thold: {}, greedy: {}, beamSearch: {}]",
+          language(params).getString(0, UTF_8),
+          detect_language(params),
+          WhisperSamplingStrategy.parse(strategy(params)),
+          n_threads(params),
+          n_max_text_ctx(params),
+          System.lineSeparator(),
+          offset_ms(params),
+          duration_ms(params),
+          translate(params),
+          no_context(params),
+          no_timestamps(params),
+          System.lineSeparator(),
+          single_segment(params),
+          print_special(params),
+          print_progress(params),
+          print_realtime(params),
+          print_timestamps(params),
+          System.lineSeparator(),
+          token_timestamps(params),
+          thold_pt(params),
+          thold_ptsum(params),
+          max_len(params),
+          split_on_word(params),
+          System.lineSeparator(),
+          max_tokens(params),
+          speed_up(params),
+          debug_mode(params),
+          audio_ctx(params),
+          tdrz_enable(params),
+          System.lineSeparator(),
+          charPtr2ToString(suppress_regex(params), "null"),
+          charPtr2ToString(initial_prompt(params), "null"),
+          valueArrayToString(prompt_tokens(params), C_INT, prompt_n_tokens(params)),
+          suppress_blank(params),
+          suppress_non_speech_tokens(params),
+          System.lineSeparator(),
+          temperature(params),
+          max_initial_ts(params),
+          length_penalty(params),
+          temperature_inc(params),
+          entropy_thold(params),
+          System.lineSeparator(),
+          logprob_thold(params),
+          no_speech_thold(params),
+          greedyToString(greedy(params)),
+          beamSearchToString(beam_search(params)));
+    }
 
     return params;
+  }
+
+  private static MemorySegment buildWhisperContext(WhisperContextParams config, String modelPath) {
+    Arena arena = Arena.global();
+    return whisper_init_from_file_with_params(
+        arena.allocateFrom(modelPath, UTF_8), buildWhisperContextParams(arena, config));
   }
 
   /**
@@ -344,11 +381,12 @@ class WhisperCppImpl implements Whisper {
         || Arrays.stream(audioDecoders).parallel().noneMatch(TARGET_CODEC::equals)) {
       throw new IllegalStateException(
           String.format(
-              "%s not found in the supported list: %s.", TARGET_CODEC, toString(audioDecoders)));
+              "%s not found in the supported list: %s.",
+              TARGET_CODEC, Utils.toString(audioDecoders)));
     }
 
     if (log.isDebugEnabled()) {
-      log.debug("Supported decoders: {}", toString(audioDecoders));
+      log.debug("Supported decoders: {}", Utils.toString(audioDecoders));
     }
 
     File tempAudioFile = createTempFile().toFile();
@@ -434,7 +472,7 @@ class WhisperCppImpl implements Whisper {
             sourceFormat.getChannels(),
             true,
             false);
-    if (equals(sourceFormat, whisperCppWavFormat)) {
+    if (Utils.equals(sourceFormat, whisperCppWavFormat)) {
       AUDIO_FORMAT.set(sourceFormat);
       log.debug("No need to convert audio data.");
       return readFrom(in);
@@ -581,7 +619,7 @@ class WhisperCppImpl implements Whisper {
         defaultWhisperFullParams,
         config.getFullParams().getN_processors(), // 计算用核心数
         () -> audioData,
-        WhisperCppImpl::processWhisperContext);
+        WhisperCppImpl::extractAnalyzedResult);
   }
 
   @Override
@@ -595,7 +633,7 @@ class WhisperCppImpl implements Whisper {
         defaultWhisperFullParams,
         config.getFullParams().getN_processors(), // 计算用核心数
         () -> audioData,
-        WhisperCppImpl::processWhisperContext);
+        WhisperCppImpl::extractAnalyzedResult);
   }
 
   /**
@@ -604,14 +642,14 @@ class WhisperCppImpl implements Whisper {
    * @param ctx whisper.cpp上下文
    * @return 识别结果
    */
-  private static String[] processWhisperContext(MemorySegment ctx) {
+  private static String[] extractAnalyzedResult(MemorySegment ctx) {
     int segments;
     if ((segments = whisper_full_n_segments(ctx)) > 0) {
       String[] result = new String[segments];
       for (int i = 0; i < segments; i++) {
         MemorySegment charPtr =
             whisper_full_get_segment_text(ctx, i); // 此处无需释放返回的const char * ，此指针为栈分配
-        String text = NULL.equals(charPtr) ? "" : charPtr.getString(0, UTF_8);
+        String text = charPtr2ToString(charPtr, "");
         logDebugResultWithTimes(ctx, i, text);
         result[i] = text;
       }
@@ -631,29 +669,9 @@ class WhisperCppImpl implements Whisper {
         defaultWhisperFullParams,
         config.getFullParams().getN_processors(), // 计算用核心数
         () -> audioData,
-        ctx -> {
-          MemorySegment charPtr =
-              whisper_lang_str(whisper_full_lang_id(ctx)); // 此处无需释放返回的const char * ，此指针为栈分配
-          return NULL.equals(charPtr) ? null : charPtr.getString(0, UTF_8);
-        });
-  }
-
-  /**
-   * 时间格式化
-   *
-   * @param millis 毫秒时间
-   * @return 格式化结果
-   */
-  private static String formatHHmmssSSS(long millis) {
-    long hours = MILLISECONDS.toHours(millis);
-    long minutes = MILLISECONDS.toMinutes(millis);
-    long seconds = MILLISECONDS.toSeconds(millis);
-    return String.format(
-        "%02d:%02d:%02d.%03d",
-        hours,
-        minutes - HOURS.toMinutes(hours),
-        seconds - MINUTES.toSeconds(minutes),
-        millis - SECONDS.toMillis(seconds));
+        ctx ->
+            // 此处无需释放返回的const char * ，此指针为栈分配
+            charPtr2ToString(whisper_lang_str(whisper_full_lang_id(ctx)), null));
   }
 
   /**
@@ -671,48 +689,13 @@ class WhisperCppImpl implements Whisper {
     return f;
   }
 
-  /**
-   * 音频格式比较
-   *
-   * @param af1 格式1
-   * @param af2 格式2
-   * @return true or false
-   */
-  private static boolean equals(AudioFormat af1, AudioFormat af2) {
-    return af1 != null
-        && af2 != null
-        && Objects.equals(af1.getEncoding(), af2.getEncoding())
-        && af1.getChannels() == af2.getChannels()
-        && af1.isBigEndian() == af2.isBigEndian()
-        && af1.getFrameRate() == af2.getFrameRate()
-        && af1.getSampleRate() == af2.getSampleRate()
-        && af1.getFrameSize() == af2.getFrameSize()
-        && af1.getSampleSizeInBits() == af2.getSampleSizeInBits();
-  }
-
-  /**
-   * 生成临时文件
-   *
-   * @return 临时文件
-   * @throws IOException 异常
-   */
-  @SuppressFBWarnings(
-      value = "PATH_TRAVERSAL_IN",
-      justification = "Create a temporary file in the temporary directory.")
-  private static Path createTempFile() throws IOException {
-    return Files.createTempFile(TEMP_DIR, "whisper-cpp", "." + WAVE.getExtension());
-  }
-
   private static void logDebugResultWithTimes(MemorySegment ctx, int segment, String text) {
     if (log.isDebugEnabled()) {
       long startTime = whisper_full_get_segment_t0(ctx, segment);
       long endTime = whisper_full_get_segment_t1(ctx, segment);
-      log.debug("[{} --- {}] text: {}", formatHHmmssSSS(startTime), formatHHmmssSSS(endTime), text);
+      log.debug(
+          "[{} --- {}] text: {}", format2HHmmssSSS(startTime), format2HHmmssSSS(endTime), text);
     }
-  }
-
-  private static String toString(String[] strings) {
-    return strings == null ? "null" : Arrays.stream(strings).collect(joining(", ", "[", "]"));
   }
 
   /**
@@ -724,15 +707,5 @@ class WhisperCppImpl implements Whisper {
   @SneakyThrows(IOException.class)
   private static String checkModelExist(String modelPath) {
     return validate(Path.of(modelPath).toFile(), "Invalid model file: ").getCanonicalPath();
-  }
-
-  /**
-   * 释放内存空间
-   *
-   * @param ptr 指针
-   */
-  @SneakyThrows
-  static void free(MemorySegment ptr) {
-    FREE.invokeExact(ptr);
   }
 }
