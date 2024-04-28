@@ -50,7 +50,29 @@ public class WhisperConfig {
   /** whisper全参数(部分支持) */
   @Data
   public static class WhisperFullParams {
+
+    /** 采样策略 */
     private WhisperSamplingStrategy strategy = WHISPER_SAMPLING_GREEDY;
+
+    /**
+     * called for every newly generated text segment. <br>
+     * 回调函数类权限定名，必须实现接口: <br>
+     * <ref>com.silong.foundation.utilities.whispercpp.generated.whisper_new_segment_callback.Function</ref>
+     */
+    private String whisperNewSegmentCallbackClassFQDN;
+
+    /** 回调方法携带的用户数据类 */
+    private String whisperNewSegmentCallbackUserDataClassFQDN;
+
+    /**
+     * called on each progress update. <br>
+     * 回调函数类权限定名，必须实现接口: <br>
+     * <ref>com.silong.foundation.utilities.whispercpp.generated.whisper_progress_callback.Function</ref>
+     */
+    private String whisperProgressCallbackClassFQDN;
+
+    /** 回调方法携带的用户数据类 */
+    private String whisperProgressCallbackUserDataClassFQDN;
 
     /** number of threads to use during computation */
     private int n_threads = Math.min(4, getRuntime().availableProcessors());
