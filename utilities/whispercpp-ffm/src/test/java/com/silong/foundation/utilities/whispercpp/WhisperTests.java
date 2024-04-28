@@ -94,6 +94,22 @@ public class WhisperTests {
   }
 
   @Test
+  public void testEN3() throws Exception {
+    String[] text =
+        whisper.speech2Text(
+            Paths.get(
+                    ".",
+                    "src",
+                    "test",
+                    "resources",
+                    "Oh-really-Im- sorry-sweetie-Been-a-little-distracted-this-morning.wav")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals(
+        " Oh, really? I'm sorry, sweetie. Been a little distracted this morning.", text[0]);
+  }
+
+  @Test
   public void testZH() throws Exception {
     String[] text =
         whisper.speech2Text(
