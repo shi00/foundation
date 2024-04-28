@@ -145,6 +145,19 @@ interface Utils {
   }
 
   /**
+   * 调用无参数public构造方法构造实例
+   *
+   * @param aClass class
+   * @return 实例
+   * @param <T> 类型
+   */
+  @SneakyThrows
+  @SuppressWarnings("unchecked")
+  static <T> T newInstance(@NonNull Class<?> aClass) {
+    return (T) aClass.getDeclaredConstructor().newInstance();
+  }
+
+  /**
    * 生成临时文件
    *
    * @return 临时文件
