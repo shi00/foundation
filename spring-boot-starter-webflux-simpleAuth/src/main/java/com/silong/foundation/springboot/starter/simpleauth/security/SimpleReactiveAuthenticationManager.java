@@ -43,7 +43,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
   /** 配置信息 */
   @SuppressFBWarnings(
       value = {"EI_EXPOSE_REP2"},
-      justification = "只读初始配置")
+      justification = "Read-only initial configuration")
   private final SimpleAuthProperties properties;
 
   /**

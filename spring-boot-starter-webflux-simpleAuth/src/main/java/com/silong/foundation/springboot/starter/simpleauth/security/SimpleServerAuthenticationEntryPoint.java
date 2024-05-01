@@ -18,6 +18,11 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
+import static com.silong.foundation.common.constants.CommonErrorCode.AUTHENTICATION_FAILED;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.common.model.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -31,11 +36,6 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import static com.silong.foundation.common.constants.CommonErrorCode.AUTHENTICATION_FAILED;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-
 /**
  * 鉴权异常处理器
  *
@@ -46,7 +46,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @Slf4j
 @SuppressFBWarnings(
     value = {"EI_EXPOSE_REP2"},
-    justification = "只读初始配置")
+    justification = "Read-only initial configuration")
 public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticationEntryPoint {
 
   private final String appName;
