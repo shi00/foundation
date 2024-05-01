@@ -22,12 +22,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
+import java.util.Map;
+import java.util.Set;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
-
-import java.util.Map;
-import java.util.Set;
 
 /**
  * 服务配置
@@ -41,7 +40,7 @@ import java.util.Set;
 @ConfigurationProperties(prefix = "simple-auth")
 @SuppressFBWarnings(
     value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
-    justification = "只读初始配置")
+    justification = "Read-only initial configuration")
 public class SimpleAuthProperties {
 
   /** 客户端和服务端可接受的时间差，默认：10000毫秒 */
