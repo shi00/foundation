@@ -38,10 +38,7 @@
         <header.class.name>WhisperCpp</header.class.name>
         <lib.name>libwhisper</lib.name>
         <sourcecode.package>com.silong.foundation.utilities.whispercpp.generated</sourcecode.package>
-        <jave.version>3.5.0</jave.version>
 
-        <check-dependencies.skip>true</check-dependencies.skip>
-        <pmd.skip>true</pmd.skip>
     </properties>
 
     <profiles>
@@ -138,6 +135,11 @@
         </profile>
         <profile>
             <id>windows</id>
+            <properties>
+                <build_params>
+                    https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.0/windows/w_openvino_toolkit_windows_2024.0.0.14509.34caeefd078_x86_64.zip
+                </build_params>
+            </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
                 <os>
@@ -209,6 +211,7 @@
                                                         powershell .\build.ps1 ${output.src.dir}
                                                         ${output.shared-lib.dir}
                                                         ${lib.name} ${header.class.name} ${sourcecode.package}
+                                                        ${build_params}
                                                     </shell>
                                                 </entrypoint>
                                                 <wait>
@@ -274,17 +277,14 @@
         <dependency>
             <groupId>ws.schild</groupId>
             <artifactId>jave-core</artifactId>
-            <version>${jave.version}</version>
         </dependency>
         <dependency>
             <groupId>ws.schild</groupId>
             <artifactId>jave-nativebin-win64</artifactId>
-            <version>${jave.version}</version>
         </dependency>
         <dependency>
             <groupId>ws.schild</groupId>
             <artifactId>jave-nativebin-linux64</artifactId>
-            <version>${jave.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
