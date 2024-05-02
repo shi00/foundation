@@ -94,7 +94,7 @@ switch ($speedup_type)
         cmake --build build -j --config Release
 
         Rename-Item -Path "build\bin\Release\whisper.dll" -NewName “$libName.dll”
-        $build_success = [System.IO.File]::Exists("build\bin\Release\$libName.dll")
+        $build_success = [System.IO.File]::Exists("c:\whisper.cpp\build\bin\Release\$libName.dll")
         if ($build_success)
         {
             copy "build\bin\Release\$libName.dll" "c:\$dllDir"
