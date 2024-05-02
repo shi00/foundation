@@ -34,3 +34,6 @@ ADD build.ps1 .
 #COPY cmake* downloads
 #COPY PowerShell* downloads
 
+# 清理临时文件
+RUN del /q/f/s %TEMP%
+

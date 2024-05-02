@@ -41,3 +41,6 @@ ADD build.ps1 .
 #预制构建工具包到downloads目录下，规避下载速度慢问题
 COPY cmake* downloads
 COPY PowerShell* downloads
+
+# 清理临时文件
+RUN del /q/f/s %TEMP%
