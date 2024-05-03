@@ -35,7 +35,7 @@ import lombok.Data;
 @Builder
 @SuppressFBWarnings(
     value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
-    justification = "附加信息是只读Map")
+    justification = "Read-only extension information.")
 public class WorkerInfo {
   /** worker name。 */
   private final String name;
