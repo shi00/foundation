@@ -18,16 +18,15 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
+import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import java.util.Collection;
-
 /**
- * 简介
+ * 认证token
  *
  * @author louis sin
  * @version 1.0.0
@@ -57,6 +56,18 @@ public class SimpleAuthenticationToken extends AbstractAuthenticationToken {
    */
   public SimpleAuthenticationToken(Collection<SimpleGrantedAuthority> authorities) {
     super(authorities);
+  }
+
+  /**
+   * 构造方法
+   *
+   * @param authorities 授权列表
+   * @param authenticated 鉴权结果
+   */
+  public SimpleAuthenticationToken(
+      Collection<SimpleGrantedAuthority> authorities, boolean authenticated) {
+    super(authorities);
+    setAuthenticated(authenticated);
   }
 
   /**
