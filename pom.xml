@@ -199,9 +199,9 @@
         <oshi-core.version>6.6.0</oshi-core.version>
         <!--开源组件-->
 
-        <checkstyle.skip>false</checkstyle.skip>
+        <checkstyle.skip>false</checkstyle.skip><!--checkstyle检查插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
         <pmd.skip>false</pmd.skip>  <!--pmd插件暂不支持java21,22，设置此标识用于各模块自行控制是否执行-->
-        <check-dependencies.skip>false</check-dependencies.skip><!--pmd插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
+        <check-dependencies.skip>false</check-dependencies.skip><!--依赖检查插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
     </properties>
 
     <dependencyManagement>
