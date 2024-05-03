@@ -30,7 +30,6 @@
     <version>1.0.0</version>
 
     <properties>
-        <java.version>17</java.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
@@ -53,8 +52,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <release>${java.version}</release>
+                    <release>11</release>
                     <parameters>true</parameters>
+                    <annotationProcessorPaths>
+                        <annotationProcessorPath>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </annotationProcessorPath>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
