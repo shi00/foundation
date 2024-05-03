@@ -16,10 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.silong.foundation.duuid.spi;
 
 /**
- * workid分配器
+ * workid分配器。
  *
  * @author louis sin
  * @version 1.0.0
@@ -27,7 +28,7 @@ package com.silong.foundation.duuid.spi;
  */
 public interface WorkerIdAllocator {
   /**
-   * 根据worker信息分配worker id
+   * 根据worker信息分配worker id。
    *
    * @param info worker信息
    * @return workerid

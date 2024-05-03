@@ -16,16 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.silong.foundation.duuid.spi;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.Map;
-
 /**
- * Id分配器信息
+ * Id分配器信息。
  *
  * @author louis sin
  * @version 1.0.0
@@ -37,9 +37,9 @@ import java.util.Map;
     value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
     justification = "附加信息是只读Map")
 public class WorkerInfo {
-  /** worker name */
+  /** worker name。 */
   private final String name;
 
-  /** 附加信息 */
+  /** 附加信息。 */
   private final Map<String, String> extraInfo;
 }
