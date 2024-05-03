@@ -35,7 +35,8 @@ import java.time.Duration;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
-import org.apache.commons.lang3.RandomUtils;
+import org.apache.commons.rng.UniformRandomProvider;
+import org.apache.commons.rng.simple.RandomSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -78,6 +79,9 @@ public class SimpleAuthTests {
     }
   }
 
+  // Instantiate a generator with a factory method.
+  static UniformRandomProvider RNG = RandomSource.XO_RO_SHI_RO_128_PP.create();
+
   static final Faker FAKER = new Faker();
 
   @LocalServerPort private int port;
@@ -95,7 +99,7 @@ public class SimpleAuthTests {
   @Test
   void test1() {
     String timestamp = Long.toString(System.currentTimeMillis());
-    String random = Integer.toString(RandomUtils.nextInt());
+    String random = Integer.toString(RNG.nextInt());
     String signature = HmacToolkit.hmacSha256(id + timestamp + random, workKey);
     String userId = "119988";
     Mono<Long> resultMono =
@@ -136,7 +140,7 @@ public class SimpleAuthTests {
   @Test
   void test3() {
     String timestamp = Long.toString(System.currentTimeMillis());
-    String random = Integer.toString(RandomUtils.nextInt());
+    String random = Integer.toString(RNG.nextInt());
     String signature = HmacToolkit.hmacSha256(id + timestamp + random, workKey);
     long userId = 119988;
     String name = FAKER.funnyName().name();
@@ -161,7 +165,7 @@ public class SimpleAuthTests {
   @Test
   void test4() {
     String timestamp = Long.toString(System.currentTimeMillis());
-    String random = Integer.toString(RandomUtils.nextInt());
+    String random = Integer.toString(RNG.nextInt());
     String signature = HmacToolkit.hmacSha256(id + timestamp + random, workKey);
     long userId = 119988;
     String name = FAKER.funnyName().name();
@@ -209,7 +213,7 @@ public class SimpleAuthTests {
   @Test
   void test6() {
     String timestamp = Long.toString(System.currentTimeMillis());
-    String random = Integer.toString(RandomUtils.nextInt());
+    String random = Integer.toString(RNG.nextInt());
     String signature = "abc";
     long userId = 119988;
     String name = FAKER.funnyName().name();

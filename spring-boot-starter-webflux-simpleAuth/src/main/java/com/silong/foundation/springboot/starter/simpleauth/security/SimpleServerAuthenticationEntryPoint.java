@@ -20,11 +20,12 @@ package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import static com.silong.foundation.common.constants.CommonErrorCode.AUTHENTICATION_FAILED;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.common.model.ErrorDetail;
+import com.silong.foundation.springboot.starter.simpleauth.security.SimpleServerAuthenticationConverter.AccessForbiddenException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +76,11 @@ public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticatio
       ServerWebExchange exchange, AuthenticationException ex, ServerHttpResponse response) {
     ServerHttpRequest request = exchange.getRequest();
     log.error("{} {} Authentication failed.", request.getMethod(), request.getPath(), ex);
-    response.setStatusCode(UNAUTHORIZED);
+    if (ex instanceof AccessForbiddenException) {
+      response.setStatusCode(FORBIDDEN);
+    } else {
+      response.setStatusCode(UNAUTHORIZED);
+    }
     response.getHeaders().setContentType(APPLICATION_JSON);
     ErrorDetail errorDetail = AUTHENTICATION_FAILED.format(appName);
     String result = objectMapper.writeValueAsString(errorDetail);

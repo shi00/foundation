@@ -57,7 +57,9 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
 
   @Override
   public Mono<Authentication> authenticate(Authentication authentication) {
-    if (authentication.isAuthenticated() || authentication.getAuthorities().isEmpty()) {
+
+    // 已经鉴权成功无需再鉴权
+    if (authentication.isAuthenticated()) {
       return Mono.just(authentication);
     }
 

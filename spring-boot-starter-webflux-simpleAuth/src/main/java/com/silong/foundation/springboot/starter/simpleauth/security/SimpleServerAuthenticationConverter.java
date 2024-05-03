@@ -19,8 +19,8 @@
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
 import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
 import java.util.HashMap;
@@ -28,8 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
@@ -49,9 +50,6 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
   /** 百名单授权 */
   private static final Authentication GEUST =
       new SimpleAuthenticationToken(singletonList(new SimpleGrantedAuthority("guest")), true);
-
-  /** 禁止访问 */
-  private static final Authentication DENIED = new SimpleAuthenticationToken(emptyList());
 
   private final Map<String, List<SimpleGrantedAuthority>> cache = new HashMap<>();
 
@@ -89,7 +87,11 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
                 .matches(exchange)
                 .filter(ServerWebExchangeMatcher.MatchResult::isMatch)
                 .map(matchResult -> getNeedAuthentication(exchange))
-                .switchIfEmpty(Mono.just(DENIED)));
+                .switchIfEmpty(
+                    Mono.defer(
+                        () ->
+                            Mono.error(
+                                () -> new AccessForbiddenException(FORBIDDEN.getReasonPhrase())))));
   }
 
   private Authentication getNeedAuthentication(ServerWebExchange exchange) {
@@ -97,7 +99,10 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
     String identity = httpHeaders.getFirst(IDENTITY);
     List<SimpleGrantedAuthority> grantedAuthorities = cache.get(identity);
     if (grantedAuthorities == null || grantedAuthorities.isEmpty()) {
-      throw new BadCredentialsException("Could not find any roles for the request.");
+      throw new InsufficientAuthenticationException(
+          String.format(
+              "Could not find any roles for the request:%s with identity:%s.",
+              exchange.getRequest().getPath().value(), identity));
     }
     return new SimpleAuthenticationToken(
         httpHeaders.getFirst(SIGNATURE),
@@ -105,5 +110,13 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
         httpHeaders.getFirst(TIMESTAMP),
         httpHeaders.getFirst(RANDOM),
         grantedAuthorities);
+  }
+
+  /** 访问被禁止异常 */
+  public static class AccessForbiddenException extends AuthenticationException {
+
+    public AccessForbiddenException(String msg) {
+      super(msg);
+    }
   }
 }
