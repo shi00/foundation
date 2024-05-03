@@ -79,7 +79,7 @@ public final class NativeLibLoader {
    */
   private static String generateTempLib(String originLib, String libDir) throws IOException {
     int index = originLib.lastIndexOf('.');
-    String prefix = originLib.substring(0, index - 1);
+    String prefix = originLib.substring(0, index);
     String suffix = originLib.substring(index);
     Path tmpLib = TEMP_DIR.resolve(String.format("%s_%d%s", prefix, System.nanoTime(), suffix));
     String libPath = String.format("%s/%s/%s/%s", libDir, OS_NAME, OS_ARCH, originLib);
