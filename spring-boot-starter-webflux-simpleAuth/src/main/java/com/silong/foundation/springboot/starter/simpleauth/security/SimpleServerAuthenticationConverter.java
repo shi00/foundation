@@ -18,7 +18,15 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
 import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -29,15 +37,6 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-
 /**
  * 请求鉴权转换器，提取请求头内鉴权信息供后续模块使用
  *
@@ -47,8 +46,11 @@ import static java.util.Collections.singletonList;
  */
 public class SimpleServerAuthenticationConverter implements ServerAuthenticationConverter {
 
-  private static final Authentication GEUST;
+  /** 百名单授权 */
+  private static final Authentication GEUST =
+      new SimpleAuthenticationToken(singletonList(new SimpleGrantedAuthority("guest")), true);
 
+  /** 禁止访问 */
   private static final Authentication DENIED = new SimpleAuthenticationToken(emptyList());
 
   private final Map<String, List<SimpleGrantedAuthority>> cache = new HashMap<>();
@@ -56,11 +58,6 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
   private final ServerWebExchangeMatcher noAuthServerWebExchangeMatcher;
 
   private final ServerWebExchangeMatcher authServerWebExchangeMatcher;
-
-  static {
-    GEUST = new SimpleAuthenticationToken(singletonList(new SimpleGrantedAuthority("guest")));
-    GEUST.setAuthenticated(true);
-  }
 
   /**
    * 构造方法
@@ -86,7 +83,7 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
     return noAuthServerWebExchangeMatcher
         .matches(exchange)
         .filter(ServerWebExchangeMatcher.MatchResult::isMatch)
-        .map(matchResult -> GEUST)
+        .map(matchResult -> GEUST) // 匹配白名单，则以guest身份访问
         .switchIfEmpty(
             authServerWebExchangeMatcher
                 .matches(exchange)
