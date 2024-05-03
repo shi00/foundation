@@ -16,7 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.silong.foundation.duuid.spi;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -28,9 +32,6 @@ import io.etcd.jetcd.options.PutOption;
 import io.grpc.netty.GrpcSslContexts;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import lombok.extern.slf4j.Slf4j;
-
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -41,13 +42,11 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import javax.net.ssl.SSLException;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * 基于ETCD v3的WorkerId分配器<br>
- * 通过key的多版本属性，以key的版本号作为workId
+ * 基于ETCD v3的WorkerId分配器，通过key的多版本属性，以key的版本号作为workId。
  *
  * @author louis sin
  * @version 1.0.0
@@ -56,13 +55,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Slf4j
 public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
 
-  /** etcd服务器端点地址列表，多个地址用逗号(,)分隔 */
+  /** etcd服务器端点地址列表，多个地址用逗号(,)分隔。 */
   public static final String ETCDV3_ENDPOINTS = "etcdv3.endpoints";
 
-  /** etcd用户 */
+  /** etcd用户。 */
   public static final String ETCDV3_USER = "etcdv3.user";
 
-  /** etcd用户密码 */
+  /** etcd用户密码。 */
   public static final String ETCDV3_PASSWORD = "etcdv3.password";
 
   /**
@@ -71,16 +70,19 @@ public class Etcdv3WorkerIdAllocator implements WorkerIdAllocator {
    */
   public static final String ETCDV3_TRUST_CERT_COLLECTION_FILE = "etcdv3.trustCertCollectionFile";
 
-  /** an X.509 certificate chain file in PEM format */
+  /** an X.509 certificate chain file in PEM format. */
   public static final String ETCDV3_KEY_CERT_CHAIN_FILE = "etcdv3.keyCertChainFile";
 
-  /** a PKCS#8 private key file in PEM format */
+  /** a PKCS#8 private key file in PEM format. */
   public static final String ETCDV3_KEY_FILE = "etcdv3.keyFile";
 
   private static final String HTTPS_PREFIX = "https://";
+
   private static final ByteSequence KEY = ByteSequence.from("duuid/worker-id".getBytes(UTF_8));
+
   private static final PutOption PUT_OPTION =
-      PutOption.newBuilder().withLeaseId(0).withPrevKV().build();
+      PutOption.builder().withLeaseId(0).withPrevKV().build();
+
   private static final Duration TIMEOUT = Duration.of(10, ChronoUnit.SECONDS);
 
   @Override
