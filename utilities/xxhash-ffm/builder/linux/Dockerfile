@@ -14,8 +14,15 @@ RUN apt update && apt install wget && wget -t 3 -c --no-check-certificate https:
 && tar zxvf openjdk-22-jextract+3-13_linux-x64_bin.tar.gz \
 && mv jextract-22 jextract \
 && rm -rf *.tar.gz
+
+# 设置环境变量
 ENV PATH $PATH:/opt/jextract/bin
 #安装java相关软件包
+
+# update vcpkg
+RUN rm -rf vcpkg \
+&& git clone https://github.com/microsoft/vcpkg.git \
+&& ./vcpkg/bootstrap-vcpkg.sh
 
 FROM base
 
