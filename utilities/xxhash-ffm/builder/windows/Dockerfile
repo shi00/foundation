@@ -17,9 +17,9 @@ RUN choco install wget -Y \
 WORKDIR "c:\Program Files"
 
 # install jextract
-RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_access/jextract/22/3/openjdk-22-jextract+3-13_windows-x64_bin.tar.gz \
-&& tar zxvf openjdk-22-jextract+3-13_windows-x64_bin.tar.gz \
-&& del openjdk-22-jextract+3-13_windows-x64_bin.tar.gz \
+RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_access/jextract/22/4/openjdk-22-jextract+4-30_windows-x64_bin.tar.gz \
+&& tar zxvf openjdk-22-jextract+4-30_windows-x64_bin.tar.gz \
+&& del openjdk-22-jextract+4-30_windows-x64_bin.tar.gz \
 && setx path "%PATH%;C:\Program Files\jextract-22\bin" \
 && refreshenv
 
