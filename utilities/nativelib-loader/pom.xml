@@ -33,7 +33,6 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <pmd.skip>true</pmd.skip>
     </properties>
 
     <dependencies>
