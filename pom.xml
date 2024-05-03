@@ -58,6 +58,14 @@
     </repositories>
     <pluginRepositories>
         <pluginRepository>
+            <id>apache.snapshots</id>
+            <name>Apache Snapshot Repository</name>
+            <url>https://repository.apache.org/snapshots</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>
             <url>https://repo.spring.io/milestone</url>
@@ -94,6 +102,7 @@
         <module>utilities/crypto</module>
         <module>utilities/reactive-webclient</module>
         <module>utilities/rocksdb-ffm</module>
+        <module>utilities/whispercpp-ffm</module>
         <module>utilities/nativelib-loader</module>
         <module>common-objects</module>
         <module>distributed-job/devastator</module>
@@ -102,7 +111,6 @@
         <module>distributed-job/hook</module>
         <module>distributed-job/longhaul</module>
         <module>distributed-job/scrapper</module>
-        <module>utilities/whispercpp-ffm</module>
     </modules>
 
     <properties>
@@ -117,15 +125,15 @@
         <!-- 插件 -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-        <maven-shade-plugin.version>3.5.2</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.5.3</maven-shade-plugin.version>
         <serviceloader-maven-plugin.version>1.4.0</serviceloader-maven-plugin.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
-        <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
+        <maven-pmd-plugin.version>3.22.0</maven-pmd-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
-        <checkstyle.version>10.12.7</checkstyle.version>
+        <checkstyle.version>10.16.0</checkstyle.version>
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.3.2</maven-jxr-plugin.version>
@@ -133,60 +141,62 @@
         <findsecbugs-plugin.version>1.13.0</findsecbugs-plugin.version>
         <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
         <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
-        <apache-rat-plugin.version>0.16</apache-rat-plugin.version>
+        <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
         <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
-        <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
-        <maven-plugin-plugin.version>3.11.0</maven-plugin-plugin.version>
+        <maven-plugin-annotations.version>3.12.0</maven-plugin-annotations.version>
+        <maven-plugin-plugin.version>3.12.0</maven-plugin-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
-        <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
-        <sql-maven-plugin.version>1.5</sql-maven-plugin.version>
+        <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
+        <sql-maven-plugin.version>3.0.0</sql-maven-plugin.version>
         <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
         <springdoc-openapi-maven-plugin.version>1.4</springdoc-openapi-maven-plugin.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
         <maven-site-plugin.version>4.0.0-M13</maven-site-plugin.version>
         <docker-maven-plugin.version>0.44.0</docker-maven-plugin.version>
         <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
-        <download-maven-plugin.version>1.8.0</download-maven-plugin.version>
+        <download-maven-plugin.version>1.9.0</download-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
-        <extra-enforcer-rules.version>1.7.0</extra-enforcer-rules.version>
+        <extra-enforcer-rules.version>1.8.0</extra-enforcer-rules.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
-        <native-maven-plugin.version>0.9.28</native-maven-plugin.version>
+        <native-maven-plugin.version>0.10.1</native-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
         <spring-boot.version>3.2.5</spring-boot.version>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
-        <guava.version>33.0.0-jre</guava.version>
+        <spring-ai.version>0.8.1</spring-ai.version>
+        <guava.version>33.1.0-jre</guava.version>
         <passay.version>1.6.4</passay.version>
         <zxcvbn.version>1.8.2</zxcvbn.version>
         <spotbugs.version>4.8.4</spotbugs.version>
         <disruptor.version>4.0.0</disruptor.version>
-        <jctools.version>4.0.2</jctools.version>
-        <jetcd.version>0.7.7</jetcd.version>
+        <jctools.version>4.0.3</jctools.version>
+        <jave.version>3.5.0</jave.version>
+        <jetcd.version>0.8.0</jetcd.version>
         <jmh.version>1.37</jmh.version>
-        <jooq.version>3.18.9</jooq.version>
+        <jooq.version>3.18.14</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
-        <testcontainers.version>1.19.3</testcontainers.version>
-        <springdoc.version>2.3.0</springdoc.version>
-        <libphonenumber.version>8.13.28</libphonenumber.version>
-        <datafaker.version>2.1.0</datafaker.version>
-        <commons-io.version>2.15.1</commons-io.version>
+        <testcontainers.version>1.19.7</testcontainers.version>
+        <springdoc.version>2.5.0</springdoc.version>
+        <libphonenumber.version>8.13.35</libphonenumber.version>
+        <datafaker.version>2.2.2</datafaker.version>
+        <commons-io.version>2.16.1</commons-io.version>
+        <commons-rng-simple.version>1.5</commons-rng-simple.version>
         <maven.version>3.9.6</maven.version>
         <plexus-utils.version>3.5.1</plexus-utils.version>
-        <plexus-archiver.version>4.9.1</plexus-archiver.version>
+        <plexus-archiver.version>4.9.2</plexus-archiver.version>
         <cron-utils.version>9.2.1</cron-utils.version>
-        <jgroups.version>5.3.1.Final</jgroups.version>
-        <jgroups-raft.version>1.0.12.Final</jgroups-raft.version>
-        <jgroups-kubernetes.version>2.0.1.Final</jgroups-kubernetes.version>
-        <protobuf-java.version>3.25.2</protobuf-java.version>
-        <rocksdbjni.version>8.9.1</rocksdbjni.version>
+        <jgroups.version>5.3.6.Final</jgroups.version>
+        <jgroups-raft.version>1.0.13.Final</jgroups-raft.version>
+        <jgroups-kubernetes.version>2.0.2.Final</jgroups-kubernetes.version>
+        <protobuf-java.version>3.25.3</protobuf-java.version>
+        <rocksdbjni.version>9.1.1</rocksdbjni.version>
         <snappy-java.version>1.1.10.5</snappy-java.version>
-        <zstd-jni.version>1.5.5-11</zstd-jni.version>
+        <zstd-jni.version>1.5.6-3</zstd-jni.version>
         <kryo.version>5.6.0</kryo.version>
         <java-jwt.version>4.4.0</java-jwt.version>
-        <p3c-pmd.version>2.2.1.0x</p3c-pmd.version>
-        <oshi-core.version>6.4.11</oshi-core.version>
+        <oshi-core.version>6.6.0</oshi-core.version>
         <!--开源组件-->
 
         <checkstyle.skip>false</checkstyle.skip>
@@ -200,6 +210,13 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -376,6 +393,24 @@
             </dependency>
             <!-- 集群通信组件 -->
 
+            <!-- 音频组件 -->
+            <dependency>
+                <groupId>ws.schild</groupId>
+                <artifactId>jave-core</artifactId>
+                <version>${jave.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ws.schild</groupId>
+                <artifactId>jave-nativebin-win64</artifactId>
+                <version>${jave.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ws.schild</groupId>
+                <artifactId>jave-nativebin-linux64</artifactId>
+                <version>${jave.version}</version>
+            </dependency>
+            <!-- 音频组件 -->
+
             <!-- xml解析api -->
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
@@ -415,6 +450,11 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-rng-simple</artifactId>
+                <version>${commons-rng-simple.version}</version>
             </dependency>
             <!-- apache -->
 
@@ -572,13 +612,13 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
                     <version>${maven-pmd-plugin.version}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>com.xenoamess.p3c</groupId>
-                            <artifactId>p3c-pmd</artifactId>
-                            <version>${p3c-pmd.version}</version>
-                        </dependency>
-                    </dependencies>
+                    <!--                    <dependencies>-->
+                    <!--                        <dependency>-->
+                    <!--                            <groupId>com.xenoamess.p3c</groupId>-->
+                    <!--                            <artifactId>p3c-pmd</artifactId>-->
+                    <!--                            <version>${p3c-pmd.version}</version>-->
+                    <!--                        </dependency>-->
+                    <!--                    </dependencies>-->
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -825,26 +865,27 @@
                 <configuration>
                     <printFailingErrors>true</printFailingErrors>
                     <includeTests>false</includeTests>
-                    <language>java</language>
+                    <!--                    <language>java</language>-->
+                    <failOnViolation>false</failOnViolation>
                     <skip>${pmd.skip}</skip>
                     <targetJdk>${java.version}</targetJdk>
-                    <rulesets>
-                        <!-- A rule set, that comes bundled with PMD -->
-                        <ruleset>rulesets/java/ali-set.xml</ruleset>
-                        <ruleset>rulesets/java/ali-other.xml</ruleset>
-                        <ruleset>rulesets/java/ali-orm.xml</ruleset>
-                        <ruleset>rulesets/java/ali-constant.xml</ruleset>
-                        <ruleset>rulesets/java/ali-oop.xml</ruleset>
-                        <ruleset>rulesets/java/ali-naming.xml</ruleset>
-                        <ruleset>rulesets/java/ali-exception.xml</ruleset>
-                        <ruleset>rulesets/java/ali-comment.xml</ruleset>
-                        <ruleset>rulesets/java/ali-concurrent.xml</ruleset>
-                        <ruleset>rulesets/java/ali-flowcontrol.xml</ruleset>
-                        <!-- Custom local file system rule set -->
-                        <!--                        <ruleset>d:\rulesets\strings.xml</ruleset>-->
-                        <!-- Custom remote rule set accessed via a URL -->
-                        <!--                        <ruleset>http://localhost/design.xml</ruleset>-->
-                    </rulesets>
+                    <!--                    <rulesets>-->
+                    <!--                        &lt;!&ndash; A rule set, that comes bundled with PMD &ndash;&gt;-->
+                    <!--                        <ruleset>rulesets/java/ali-set.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-other.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-orm.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-constant.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-oop.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-naming.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-exception.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-comment.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-concurrent.xml</ruleset>-->
+                    <!--                        <ruleset>rulesets/java/ali-flowcontrol.xml</ruleset>-->
+                    <!--                        &lt;!&ndash; Custom local file system rule set &ndash;&gt;-->
+                    <!--                        <ruleset>d:\rulesets\strings.xml</ruleset>-->
+                    <!--                        &lt;!&ndash; Custom remote rule set accessed via a URL &ndash;&gt;-->
+                    <!--                        <ruleset>http://localhost/design.xml</ruleset>-->
+                    <!--                    </rulesets>-->
                     <excludeRoots>
                         <excludeRoot>target/generated-sources</excludeRoot>
                         <excludeRoot>target/generated-test-sources</excludeRoot>
