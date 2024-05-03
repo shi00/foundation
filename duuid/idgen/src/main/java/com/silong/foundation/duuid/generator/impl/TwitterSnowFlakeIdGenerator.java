@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.silong.foundation.duuid.generator.impl;
 
 import com.silong.foundation.duuid.generator.DuuidGenerator;
@@ -54,10 +55,13 @@ public class TwitterSnowFlakeIdGenerator implements DuuidGenerator {
 
   /** 数据中心 */
   private final long datacenterId;
+
   /** 机器标识 */
   private final long machineId;
+
   /** 序列号 */
   private long sequence = 0L;
+
   /** 上一次时间戳 */
   private long lastStmp = -1L;
 

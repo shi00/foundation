@@ -16,23 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.silong.foundation.duuid.generator.impl;
-
-import com.silong.foundation.duuid.generator.DuuidGenerator;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.extern.slf4j.Slf4j;
-import org.jctools.queues.SpmcArrayQueue;
-
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.TimeZone;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Supplier;
 
 import static com.silong.foundation.duuid.generator.impl.CircularQueueDuuidGenerator.Constants.*;
 import static java.util.Calendar.*;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+import com.silong.foundation.duuid.generator.DuuidGenerator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.TimeZone;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
+import org.jctools.queues.SpmcArrayQueue;
 
 /**
  *
