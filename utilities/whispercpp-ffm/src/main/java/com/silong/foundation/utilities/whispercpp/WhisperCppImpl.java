@@ -50,9 +50,8 @@ import static javax.sound.sampled.AudioFileFormat.Type.WAVE;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.BeamSearch;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperContextParams;
 import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperFullParams;
-import com.silong.foundation.utilities.whispercpp.generated.whisper_ahead;
-import com.silong.foundation.utilities.whispercpp.generated.whisper_new_segment_callback;
-import com.silong.foundation.utilities.whispercpp.generated.whisper_progress_callback;
+import com.silong.foundation.utilities.whispercpp.WhisperConfig.WhisperGrammarElement;
+import com.silong.foundation.utilities.whispercpp.generated.*;
 import jakarta.annotation.Nullable;
 import java.io.*;
 import java.lang.foreign.*;
@@ -250,7 +249,7 @@ class WhisperCppImpl implements Whisper {
             ForeignParams.class,
             aClass -> {
               ForeignParams userData = newInstance(aClass);
-              MemorySegment userDataMemorySegment = userData.convertTo();
+              MemorySegment userDataMemorySegment = userData.convertTo(arena);
               new_segment_callback_user_data(params, userDataMemorySegment); // 注册回调函数
               return userDataMemorySegment;
             });
@@ -272,14 +271,105 @@ class WhisperCppImpl implements Whisper {
             ForeignParams.class,
             aClass -> {
               ForeignParams userData = newInstance(aClass);
-              MemorySegment userDataMemorySegment = userData.convertTo();
+              MemorySegment userDataMemorySegment = userData.convertTo(arena);
               progress_callback_user_data(params, userDataMemorySegment); // 注册回调函数
               return userDataMemorySegment;
             });
 
+    MemorySegment encoderBeginCallbackPtr =
+        configurePtr(
+            config.getWhisperEncoderBeginCallbackClassFQDN(),
+            whisper_encoder_begin_callback.Function.class,
+            aClass -> {
+              whisper_encoder_begin_callback.Function callback = newInstance(aClass);
+              MemorySegment ms = whisper_encoder_begin_callback.allocate(callback, arena);
+              encoder_begin_callback(params, ms); // 注册回调函数
+              return ms;
+            });
+
+    MemorySegment encoderBeginCallbackUserDataPtr =
+        configurePtr(
+            config.getWhisperEncoderBeginCallbackUserDataClassFQDN(),
+            ForeignParams.class,
+            aClass -> {
+              ForeignParams userData = newInstance(aClass);
+              MemorySegment userDataMemorySegment = userData.convertTo(arena);
+              encoder_begin_callback_user_data(params, userDataMemorySegment); // 注册回调函数
+              return userDataMemorySegment;
+            });
+
+    MemorySegment abortCallbackPtr =
+        configurePtr(
+            config.getAbortCallbackClassFQDN(),
+            ggml_abort_callback.Function.class,
+            aClass -> {
+              ggml_abort_callback.Function callback = newInstance(aClass);
+              MemorySegment ms = ggml_abort_callback.allocate(callback, arena);
+              abort_callback(params, ms); // 注册回调函数
+              return ms;
+            });
+
+    MemorySegment abortCallbackUserDataPtr =
+        configurePtr(
+            config.getAbortCallbackUserDataClassFQDN(),
+            ForeignParams.class,
+            aClass -> {
+              ForeignParams userData = newInstance(aClass);
+              MemorySegment userDataMemorySegment = userData.convertTo(arena);
+              abort_callback_user_data(params, userDataMemorySegment); // 注册回调函数
+              return userDataMemorySegment;
+            });
+
+    MemorySegment whisperLogitsFilterCallbackPtr =
+        configurePtr(
+            config.getWhisperLogitsFilterCallbackClassFQDN(),
+            whisper_logits_filter_callback.Function.class,
+            aClass -> {
+              whisper_logits_filter_callback.Function callback = newInstance(aClass);
+              MemorySegment ms = whisper_logits_filter_callback.allocate(callback, arena);
+              logits_filter_callback(params, ms); // 注册回调函数
+              return ms;
+            });
+
+    MemorySegment whisperLogitsFilterCallbackUserDataPtr =
+        configurePtr(
+            config.getWhisperLogitsFilterCallbackUserDataClassFQDN(),
+            ForeignParams.class,
+            aClass -> {
+              ForeignParams userData = newInstance(aClass);
+              MemorySegment userDataMemorySegment = userData.convertTo(arena);
+              logits_filter_callback_user_data(params, userDataMemorySegment); // 注册回调函数
+              return userDataMemorySegment;
+            });
+
+    // 配置语法规则  TODO
+    WhisperGrammarElement[][] grammarRules = config.getGrammar_rules();
+    if (grammarRules != null && grammarRules.length != 0) {
+      MemorySegment arrayPtr = arena.allocate(C_POINTER, grammarRules.length);
+      for (int i = 0; i < grammarRules.length; i++) {
+        WhisperGrammarElement[] grammarRule = grammarRules[i];
+        if (grammarRule != null && grammarRule.length != 0) {
+          MemorySegment array = whisper_grammar_element.allocateArray(grammarRule.length, arena);
+          for (int j = 0; j < grammarRule.length; j++) {
+            WhisperGrammarElement element = grammarRule[j];
+            MemorySegment slice = whisper_grammar_element.asSlice(array, j);
+            if (element != null) {
+              whisper_grammar_element.type(slice, element.getType().getValue());
+              whisper_grammar_element.value(slice, element.getValue());
+            }
+          }
+          arrayPtr.setAtIndex(C_POINTER, i, array);
+        }
+      }
+      grammar_rules(params, arrayPtr);
+      n_grammar_rules(params, config.getN_grammar_rules());
+      i_start_rule(params, config.getI_start_rule());
+      grammar_penalty(params, config.getGrammar_penalty());
+    }
+
     if (log.isDebugEnabled()) {
       log.debug(
-          "whisper_full_params: [language: {}, detect_language: {}, strategy: {}, n_threads: {}, n_max_text_ctx: {}{}offset_ms: {}, duration_ms: {}, translate: {}, no_context: {}, no_timestamps: {}{}single_segment: {}, print_special: {}, print_progress: {}, print_realtime: {}, print_timestamps: {}{}token_timestamps: {}, thold_pt: {}, thold_ptsum: {}, max_len: {}, split_on_word: {}{}max_tokens: {}, speed_up: {}, debug_mode: {}, audio_ctx: {}, tdrz_enable: {}{}suppress_regex: {}, initial_prompt: {}, prompt_tokens: {}, suppress_blank: {}, suppress_non_speech_tokens: {}{}temperature: {}, max_initial_ts: {}, length_penalty: {}, temperature_inc: {}, entropy_thold :{}{}logprob_thold: {}, no_speech_thold: {}, greedy: {}, beamSearch: {}, whisper_new_segment_callback: {}{}new_segment_callback_user_data: {}, whisper_progress_callback: {}, progress_callback_user_data: {}]",
+          "whisper_full_params: [language: {}, detect_language: {}, strategy: {}, n_threads: {}, n_max_text_ctx: {}{}offset_ms: {}, duration_ms: {}, translate: {}, no_context: {}, no_timestamps: {}{}single_segment: {}, print_special: {}, print_progress: {}, print_realtime: {}, print_timestamps: {}{}token_timestamps: {}, thold_pt: {}, thold_ptsum: {}, max_len: {}, split_on_word: {}{}max_tokens: {}, speed_up: {}, debug_mode: {}, audio_ctx: {}, tdrz_enable: {}{}suppress_regex: {}, initial_prompt: {}, prompt_tokens: {}, suppress_blank: {}, suppress_non_speech_tokens: {}{}temperature: {}, max_initial_ts: {}, length_penalty: {}, temperature_inc: {}, entropy_thold :{}{}logprob_thold: {}, no_speech_thold: {}, greedy: {}, beamSearch: {}, new_segment_callback: {}{}new_segment_callback_user_data: {}, progress_callback: {}, progress_callback_user_data: {}, encoder_begin_callback: {}, encoder_begin_callback_user_data: {}{}abort_callback: {}, abort_callback_user_data: {}, logits_filter_callback: {}, logits_filter_callback_user_data:{}]",
           language(params).getString(0, UTF_8),
           detect_language(params),
           WhisperSamplingStrategy.parse(strategy(params)),
@@ -346,6 +436,39 @@ class WhisperCppImpl implements Whisper {
               ? "null"
               : progressUserDataPtr.address() == progress_callback_user_data(params).address()
                   ? config.getWhisperProgressCallbackUserDataClassFQDN()
+                  : "unknown",
+          NULL.equals(encoder_begin_callback(params))
+              ? "null"
+              : encoderBeginCallbackPtr.address() == encoder_begin_callback(params).address()
+                  ? config.getWhisperEncoderBeginCallbackClassFQDN()
+                  : "unknown",
+          NULL.equals(encoder_begin_callback_user_data(params))
+              ? "null"
+              : encoderBeginCallbackUserDataPtr.address()
+                      == encoder_begin_callback_user_data(params).address()
+                  ? config.getWhisperEncoderBeginCallbackUserDataClassFQDN()
+                  : "unknown",
+          System.lineSeparator(),
+          NULL.equals(abort_callback(params))
+              ? "null"
+              : abortCallbackPtr.address() == abort_callback(params).address()
+                  ? config.getAbortCallbackClassFQDN()
+                  : "unknown",
+          NULL.equals(abort_callback_user_data(params))
+              ? "null"
+              : abortCallbackUserDataPtr.address() == abort_callback_user_data(params).address()
+                  ? config.getAbortCallbackUserDataClassFQDN()
+                  : "unknown",
+          NULL.equals(logits_filter_callback(params))
+              ? "null"
+              : whisperLogitsFilterCallbackPtr.address() == logits_filter_callback(params).address()
+                  ? config.getWhisperLogitsFilterCallbackClassFQDN()
+                  : "unknown",
+          NULL.equals(logits_filter_callback_user_data(params))
+              ? "null"
+              : whisperLogitsFilterCallbackUserDataPtr.address()
+                      == logits_filter_callback_user_data(params).address()
+                  ? config.getWhisperLogitsFilterCallbackUserDataClassFQDN()
                   : "unknown");
     }
 
