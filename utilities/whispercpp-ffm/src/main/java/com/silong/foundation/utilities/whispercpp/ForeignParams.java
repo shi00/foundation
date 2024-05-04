@@ -37,9 +37,9 @@ public interface ForeignParams {
   /**
    * 转换
    *
-   * @param arena 分配器
+   * @param allocator 分配器
    * @return memorysegment
    */
   @Nonnull
-  MemorySegment convertTo(SegmentAllocator arena);
+  MemorySegment convertTo(SegmentAllocator allocator);
 }
