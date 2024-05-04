@@ -24,6 +24,10 @@ package com.silong.foundation.utilities.whispercpp;
 import static com.silong.foundation.utilities.whispercpp.WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY;
 import static java.lang.Runtime.getRuntime;
 
+import com.silong.foundation.utilities.whispercpp.generated.whisper_grammar_element;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -102,7 +106,7 @@ public class WhisperConfig {
     private String whisperLogitsFilterCallbackClassFQDN;
 
     /** 回调方法携带的用户数据类 */
-    private String logitsFilterCallbackUserDataClassFQDN;
+    private String whisperLogitsFilterCallbackUserDataClassFQDN;
 
     private WhisperGrammarElement[][] grammar_rules;
 
@@ -230,12 +234,21 @@ public class WhisperConfig {
   @Data
   @AllArgsConstructor
   @NoArgsConstructor
-  public static class WhisperGrammarElement {
+  public static class WhisperGrammarElement implements ForeignParams {
 
     private WhisperGreType type;
 
     /** Unicode code point or rule ID */
-    private long value;
+    private int value;
+
+    @NonNull
+    @Override
+    public MemorySegment convertTo(SegmentAllocator arena) {
+      MemorySegment ms = whisper_grammar_element.allocate(arena);
+      whisper_grammar_element.type(ms, type.getValue());
+      whisper_grammar_element.value(ms, value);
+      return ms;
+    }
   }
 
   @Data
