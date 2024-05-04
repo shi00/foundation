@@ -16,7 +16,7 @@ RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_acc
 && del openjdk-22-jextract+4-30_windows-x64_bin.tar.gz \
 && choco uninstall wget -y \
 && choco install python -y --version=3.10 \
-&& setx path "%PATH%;C:\Python310;C:\Program Files\jextract-22\bin;C:\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\BuildTools\MSBuild\Current\Bin\amd64" \
+&& setx path "%PATH%;C:\Python310;C:\Program Files\jextract-22\;C:\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\BuildTools\MSBuild\Current\Bin\amd64" \
 && refreshenv
 
 WORKDIR "c:\\"
