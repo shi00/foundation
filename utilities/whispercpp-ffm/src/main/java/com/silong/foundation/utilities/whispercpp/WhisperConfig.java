@@ -74,6 +74,44 @@ public class WhisperConfig {
     /** 回调方法携带的用户数据类 */
     private String whisperProgressCallbackUserDataClassFQDN;
 
+    /**
+     * called each time before the encoder starts. <br>
+     * 回调函数类权限定名，必须实现接口: <br>
+     * <ref>com.silong.foundation.utilities.whispercpp.generated.whisper_encoder_begin_callback.Function</ref>
+     */
+    private String whisperEncoderBeginCallbackClassFQDN;
+
+    /** 回调方法携带的用户数据类 */
+    private String whisperEncoderBeginCallbackUserDataClassFQDN;
+
+    /**
+     * called each time before ggml computation starts. <br>
+     * 回调函数类权限定名，必须实现接口: <br>
+     * <ref>com.silong.foundation.utilities.whispercpp.generated.ggml_abort_callback.Function</ref>
+     */
+    private String abortCallbackClassFQDN;
+
+    /** 回调方法携带的用户数据类 */
+    private String abortCallbackUserDataClassFQDN;
+
+    /**
+     * called by each decoder to filter obtained logits. <br>
+     * 回调函数类权限定名，必须实现接口: <br>
+     * <ref>com.silong.foundation.utilities.whispercpp.generated.whisper_logits_filter_callback.Function</ref>
+     */
+    private String whisperLogitsFilterCallbackClassFQDN;
+
+    /** 回调方法携带的用户数据类 */
+    private String logitsFilterCallbackUserDataClassFQDN;
+
+    private WhisperGrammarElement[][] grammar_rules;
+
+    private int n_grammar_rules;
+
+    private int i_start_rule;
+
+    private float grammar_penalty;
+
     /** number of threads to use during computation */
     private int n_threads = Math.min(4, getRuntime().availableProcessors());
 
@@ -180,6 +218,24 @@ public class WhisperConfig {
     private long dtw_mem_size;
 
     private WhisperAheads dtw_aheads;
+  }
+
+  /**
+   * whisper 语法元素
+   *
+   * @author louis sin
+   * @version 1.0.0
+   * @since 2024-05-01 11:57
+   */
+  @Data
+  @AllArgsConstructor
+  @NoArgsConstructor
+  public static class WhisperGrammarElement {
+
+    private WhisperGreType type;
+
+    /** Unicode code point or rule ID */
+    private long value;
   }
 
   @Data
