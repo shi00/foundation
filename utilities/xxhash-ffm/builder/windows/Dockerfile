@@ -20,7 +20,7 @@ WORKDIR "c:\Program Files"
 RUN wget -t 3 -c --no-check-certificate https://download.java.net/java/early_access/jextract/22/4/openjdk-22-jextract+4-30_windows-x64_bin.tar.gz \
 && tar zxvf openjdk-22-jextract+4-30_windows-x64_bin.tar.gz \
 && del openjdk-22-jextract+4-30_windows-x64_bin.tar.gz \
-&& setx path "%PATH%;C:\Program Files\jextract-22\bin" \
+&& setx path "%PATH%;C:\Program Files\jextract-22" \
 && refreshenv
 
 FROM base

@@ -12,11 +12,10 @@ WORKDIR /opt
 #安装java相关软件包
 RUN apt update && apt install wget && wget -t 3 -c --no-check-certificate https://download.java.net/java/early_access/jextract/22/4/openjdk-22-jextract+4-30_linux-x64_bin.tar.gz \
 && tar zxvf openjdk-22-jextract+4-30_linux-x64_bin.tar.gz \
-&& mv jextract-22 jextract \
 && rm -rf *.tar.gz
 
 # 设置环境变量
-ENV PATH $PATH:/opt/jextract/bin
+ENV PATH $PATH:/opt/jextract-22/
 #安装java相关软件包
 
 # update vcpkg
