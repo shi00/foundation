@@ -243,8 +243,8 @@ public class WhisperConfig {
 
     @NonNull
     @Override
-    public MemorySegment convertTo(SegmentAllocator arena) {
-      MemorySegment ms = whisper_grammar_element.allocate(arena);
+    public MemorySegment convertTo(SegmentAllocator allocator) {
+      MemorySegment ms = whisper_grammar_element.allocate(allocator);
       whisper_grammar_element.type(ms, type.getValue());
       whisper_grammar_element.value(ms, value);
       return ms;
