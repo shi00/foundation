@@ -23,6 +23,7 @@ package com.silong.foundation.utilities.whispercpp;
 
 import jakarta.annotation.Nonnull;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 
 /**
  * 本地参数接口，支持把自身转换为MemorySegment供外部方法使用
@@ -36,8 +37,9 @@ public interface ForeignParams {
   /**
    * 转换
    *
+   * @param arena 分配器
    * @return memorysegment
    */
   @Nonnull
-  MemorySegment convertTo();
+  MemorySegment convertTo(SegmentAllocator arena);
 }
