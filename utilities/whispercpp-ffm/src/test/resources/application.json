@@ -1,5 +1,5 @@
 {
-  "modelPath": "D:\\whispercpp-models\\ggml-large-v3.bin",
+  "modelPath": "D:\\whispercpp-models\\openvino\\ggml-large-v3.bin",
   "contextParams": {
     "use_gpu": true,
     "gpu_device": 0,
