@@ -161,6 +161,7 @@
         <extra-enforcer-rules.version>1.8.0</extra-enforcer-rules.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
         <native-maven-plugin.version>0.10.1</native-maven-plugin.version>
+        <copy-rename-maven-plugin.version>1.0.1</copy-rename-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
@@ -630,6 +631,11 @@
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>${jacoco-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.coderplus.maven.plugins</groupId>
+                    <artifactId>copy-rename-maven-plugin</artifactId>
+                    <version>${copy-rename-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.springframework.experimental</groupId>
