@@ -34,8 +34,12 @@ module whispercpp.ffm {
   requires jakarta.annotation;
   requires com.github.spotbugs.annotations;
   requires jave.core;
+  requires jakarta.validation;
   requires jave.nativebin.win64;
-  requires jave.nativebin.linux64;
+
+  opens libs.windows.x86_64 to
+      nativelib.loader;
+  opens models;
 
   exports com.silong.foundation.utilities.whispercpp;
 }
