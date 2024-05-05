@@ -91,6 +91,7 @@
         <module>duuid/etcdv3-workerid-provider</module>
         <module>duuid/mysql-workerid-provider</module>
         <module>duuid/duuid-server</module>
+        <module>voice-assistant</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
         <module>plugins/maven/etcdv3</module>
         <module>plugins/maven/mysql</module>
