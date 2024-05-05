@@ -50,6 +50,17 @@
                     <name>linux</name>
                 </os>
             </activation>
+            <properties>
+                <build_params>
+                    https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.0/windows/w_openvino_toolkit_windows_2024.0.0.14509.34caeefd078_x86_64.zip
+                </build_params>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>ws.schild</groupId>
+                    <artifactId>jave-nativebin-linux64</artifactId>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -112,6 +123,7 @@
                                                     <shell>
                                                         ./build.sh ${output.src.dir} ${output.shared-lib.dir}
                                                         ${lib.name} ${header.class.name} ${sourcecode.package}
+                                                        ${build_params}
                                                     </shell>
                                                 </entrypoint>
                                                 <wait>
@@ -146,6 +158,12 @@
                     <name>windows</name>
                 </os>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>ws.schild</groupId>
+                    <artifactId>jave-nativebin-win64</artifactId>
+                </dependency>
+            </dependencies>
             <build>
                 <!-- windows容器启动需要挂载classes和generated-sources目录，此处与Linux平台不同(linux docker会自己创建不存在的挂载目录)，需要提前创建好提供给windows容器 -->
                 <plugins>
@@ -266,6 +284,10 @@
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
@@ -277,14 +299,6 @@
         <dependency>
             <groupId>ws.schild</groupId>
             <artifactId>jave-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ws.schild</groupId>
-            <artifactId>jave-nativebin-win64</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ws.schild</groupId>
-            <artifactId>jave-nativebin-linux64</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -300,6 +314,25 @@
             </extension>
         </extensions>
         <plugins>
+            <plugin>
+                <groupId>com.coderplus.maven.plugins</groupId>
+                <artifactId>copy-rename-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-file</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${project.build.sourceDirectory}/module-info.java.${os.detected.classifier}
+                            </sourceFile>
+                            <destinationFile>${project.build.sourceDirectory}/module-info.java
+                            </destinationFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -325,6 +358,13 @@
                 <configuration>
                     <excludeDefaultDirectories>false</excludeDefaultDirectories>
                     <filesets>
+                        <fileset>
+                            <directory>${project.build.sourceDirectory}</directory>
+                            <followSymlinks>false</followSymlinks>
+                            <includes>
+                                <include>module-info.java</include>
+                            </includes>
+                        </fileset>
                         <fileset>
                             <directory>
                                 ${project.basedir}/src/main/resources/${native.libdir}
