@@ -39,7 +39,6 @@ module whispercpp.ffm {
 
   opens libs.linux.x86_64 to
       nativelib.loader;
-  opens models;
 
   exports com.silong.foundation.utilities.whispercpp;
 }
