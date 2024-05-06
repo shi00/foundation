@@ -1,17 +1,55 @@
-#! /bin/sh
+#! /bin/bash
 OUTPUT_SRC_DIR=$1
 SHARDED_LIB_DIR=$2
 SHARDED_LIB_NAME=$3".so"
 HEADER_CLASS_NAME=$4
 SOURCECODE_PACKAGE=$5
+BUILD_PARAMS=$6
 
-echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR" "$HEADER_CLASS_NAME" "$SOURCECODE_PACKAGE"
+echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR" "$HEADER_CLASS_NAME" "$SOURCECODE_PACKAGE" "$BUILD_PARAMS"
 echo "================== Start building whispercpp =================="
 
-git clone https://github.com/ggerganov/whisper.cpp.git &&
-cd whisper.cpp &&
-make "$SHARDED_LIB_NAME" &&
-make stream
+git clone https://github.com/ggerganov/whisper.cpp.git
+if [ ! -d "./whisper.cpp/" ];then
+  echo "Failed to clone whisper.cpp from github."
+  exit 1
+fi
+
+cd "whisper.cpp"
+
+if echo "$BUILD_PARAMS" | grep -iqF "openvino"; then
+ echo "Start downloading OpenVINO......"
+ openvino_file=${BUILD_PARAMS##*/} #substring 最后一个/后的字符串
+ openvino_dir=${openvino_file%.*}  #substring 最后一个.前的字符串
+ echo "openvino_file=$openvino_file"
+ echo "openvino_dir=$openvino_dir"
+ echo "openvino_url=$BUILD_PARAMS"
+ wget -t 3 -c --no-check-certificate "$BUILD_PARAMS"  # 下载openvino
+ if [ ! -f "./$openvino_file" ];then
+   echo "Failed to download $openvino_file."
+   exit 1
+ fi
+
+ #解压openvino运行时包
+ tar zxvf "$openvino_file"
+ rm -rf "$openvino_file"
+
+ cd "models"
+ python3 -m venv openvino_conv_env && source "openvino_conv_env/bin/activate" && python -m pip install --upgrade pip  && pip install -r requirements-openvino.txt
+ source "/opt/whisper.cpp/$openvino_dir/setupvars.sh"
+
+ # 开始构建
+ cd ".."
+
+ cmake -B build -DWHISPER_OPENVINO=1
+ cmake --build build -j --config Release
+
+elif echo "$BUILD_PARAMS" | grep -iqF "cuda"; then
+  echo "CUDA is not supported now."
+  exit 1
+else
+  make "$SHARDED_LIB_NAME" && make stream
+fi
 
 #判断文件是否存在
 if [ ! -f "$SHARDED_LIB_NAME" ]; then
