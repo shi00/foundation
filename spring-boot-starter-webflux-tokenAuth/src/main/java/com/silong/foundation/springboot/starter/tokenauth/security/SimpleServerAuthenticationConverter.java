@@ -138,6 +138,11 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
     }
 
     String identity = decodedJWT.getClaim(IDENTITY).asString();
+    if (!hasLength(identity)) {
+      log.error("{} is not exist in access token.", IDENTITY);
+      throw new IllegalAccessTokenException("Illegal access token.");
+    }
+
     List<SimpleGrantedAuthority> grantedAuthorities = cache.get(identity);
     if (grantedAuthorities == null || grantedAuthorities.isEmpty()) {
       log.error("Could not find any roles for identity:{}.", identity);
