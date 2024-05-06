@@ -23,6 +23,7 @@ import static java.util.Collections.singletonList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
   private static final Authentication GEUST =
       new SimpleAuthenticationToken(singletonList(new SimpleGrantedAuthority("guest")), true);
 
-  private final Map<String, List<SimpleGrantedAuthority>> cache = new HashMap<>();
+  private final Map<String, List<SimpleGrantedAuthority>> cache;
 
   private final ServerWebExchangeMatcher noAuthServerWebExchangeMatcher;
 
@@ -63,13 +64,15 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
    * @param properties 服务配置
    */
   public SimpleServerAuthenticationConverter(SimpleAuthProperties properties) {
+    Map<String, List<SimpleGrantedAuthority>> map = new HashMap<>();
     properties
         .getUserRolesMappings()
         .forEach(
             (key, value) ->
-                cache.put(
+                map.put(
                     key,
                     value.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())));
+    this.cache = Collections.unmodifiableMap(map);
     this.authServerWebExchangeMatcher =
         ServerWebExchangeMatchers.pathMatchers(properties.getAuthList().toArray(new String[0]));
     this.noAuthServerWebExchangeMatcher =
