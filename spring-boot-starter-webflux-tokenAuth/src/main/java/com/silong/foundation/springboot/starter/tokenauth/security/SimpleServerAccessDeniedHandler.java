@@ -18,13 +18,12 @@
  */
 package com.silong.foundation.springboot.starter.tokenauth.security;
 
-import static com.silong.foundation.common.constants.CommonErrorCode.INSUFFICIENT_PERMISSIONS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.silong.foundation.common.model.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -65,14 +64,18 @@ public class SimpleServerAccessDeniedHandler implements ServerAccessDeniedHandle
   }
 
   @Override
-  @SneakyThrows
+  @SneakyThrows(JsonProcessingException.class)
   public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException denied) {
     ServerHttpRequest request = exchange.getRequest();
     log.error("Not authorized to {} {}", request.getMethod(), request.getPath().value(), denied);
     ServerHttpResponse response = exchange.getResponse();
     response.setStatusCode(FORBIDDEN);
     response.getHeaders().setContentType(APPLICATION_JSON);
-    ErrorDetail errorDetail = INSUFFICIENT_PERMISSIONS.format(appName);
+    ErrorDetail errorDetail =
+        ErrorDetail.builder()
+            .errorCode(String.format(ErrorDetail.FORBIDDEN, appName))
+            .errorMessage(denied.getMessage())
+            .build();
     String result = objectMapper.writeValueAsString(errorDetail);
     DataBuffer buffer = response.bufferFactory().wrap(result.getBytes(UTF_8));
     return response.writeWith(Mono.just(buffer));
