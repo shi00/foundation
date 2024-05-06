@@ -29,7 +29,4 @@ package com.silong.foundation.springboot.starter.tokenauth.constants;
 public interface AuthHeaders {
   /** 访问token */
   String ACCESS_TOKEN = "Access-Token";
-
-  /** 刷新访问token使用的token */
-  String REFRESH_TOKEN = "Refresh-Token";
 }
