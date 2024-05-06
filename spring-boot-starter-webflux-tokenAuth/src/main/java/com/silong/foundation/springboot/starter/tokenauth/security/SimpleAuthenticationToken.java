@@ -41,9 +41,6 @@ public class SimpleAuthenticationToken extends AbstractAuthenticationToken {
   /** 访问令牌 */
   private String accessToken;
 
-  /** 刷新token */
-  private String refreshToken;
-
   /**
    * 构造方法
    *
@@ -52,25 +49,20 @@ public class SimpleAuthenticationToken extends AbstractAuthenticationToken {
    */
   public SimpleAuthenticationToken(
       Collection<SimpleGrantedAuthority> authorities, boolean authenticated) {
-    this(null, null, authorities, authenticated);
+    this(null, authorities, authenticated);
   }
 
   /**
    * 构造方法
    *
    * @param accessToken 访问token
-   * @param refreshToken 刷新token
    * @param authorities 授权列表
    * @param authenticated 鉴权结果
    */
   public SimpleAuthenticationToken(
-      String accessToken,
-      String refreshToken,
-      Collection<SimpleGrantedAuthority> authorities,
-      boolean authenticated) {
+      String accessToken, Collection<SimpleGrantedAuthority> authorities, boolean authenticated) {
     super(authorities);
     this.accessToken = accessToken;
-    this.refreshToken = refreshToken;
     setAuthenticated(authenticated);
   }
 
