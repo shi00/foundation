@@ -327,7 +327,7 @@
                         <configuration>
                             <sourceFile>${project.build.sourceDirectory}/module-info.java.${os.detected.classifier}
                             </sourceFile>
-                            <destinationFile>${project.build.sourceDirectory}/module-info.java
+                            <destinationFile>${project.build.directory}/generated-sources/module-info.java
                             </destinationFile>
                         </configuration>
                     </execution>
