@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 OUTPUT_SRC_DIR=$1
 SHARDED_LIB_DIR=$2
 SHARDED_LIB_NAME=$3".so"
