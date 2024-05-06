@@ -19,6 +19,7 @@
 
 package com.silong.foundation.springboot.starter.tokenauth.security;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import java.util.Collection;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,30 +40,21 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 public class SimpleAuthenticationToken extends AbstractAuthenticationToken {
 
   /** 访问令牌 */
-  private String accessToken;
+  private DecodedJWT decodedJWT;
 
   /**
    * 构造方法
    *
+   * @param decodedJWT 访问token
    * @param authorities 授权列表
    * @param authenticated 鉴权结果
    */
   public SimpleAuthenticationToken(
-      Collection<SimpleGrantedAuthority> authorities, boolean authenticated) {
-    this(null, authorities, authenticated);
-  }
-
-  /**
-   * 构造方法
-   *
-   * @param accessToken 访问token
-   * @param authorities 授权列表
-   * @param authenticated 鉴权结果
-   */
-  public SimpleAuthenticationToken(
-      String accessToken, Collection<SimpleGrantedAuthority> authorities, boolean authenticated) {
+      DecodedJWT decodedJWT,
+      Collection<SimpleGrantedAuthority> authorities,
+      boolean authenticated) {
     super(authorities);
-    this.accessToken = accessToken;
+    this.decodedJWT = decodedJWT;
     setAuthenticated(authenticated);
   }
 
