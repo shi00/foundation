@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessForbiddenException;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessTokenNotFoundException;
 import com.silong.foundation.springboot.starter.tokenauth.exception.IdentityNotFoundException;
-import com.silong.foundation.springboot.starter.tokenauth.exception.ServerInternalException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -99,13 +98,6 @@ public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticatio
       errorDetail =
           ErrorDetail.builder()
               .errorCode(ErrorCode.IDENTITY_NOT_FOUND.format(appName))
-              .errorMessage(ex.getMessage())
-              .build();
-    } else if (ex instanceof ServerInternalException) {
-      response.setStatusCode(INTERNAL_SERVER_ERROR);
-      errorDetail =
-          ErrorDetail.builder()
-              .errorCode(ErrorCode.INTERNAL_ERROR.format(appName))
               .errorMessage(ex.getMessage())
               .build();
     } else {

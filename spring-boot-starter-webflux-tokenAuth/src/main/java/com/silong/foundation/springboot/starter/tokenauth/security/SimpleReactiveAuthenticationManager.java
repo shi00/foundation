@@ -21,14 +21,12 @@ package com.silong.foundation.springboot.starter.tokenauth.security;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.silong.foundation.springboot.starter.tokenauth.configure.config.SimpleAuthProperties;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessTokenExpiredException;
 import com.silong.foundation.springboot.starter.tokenauth.exception.IllegalAccessTokenException;
-import com.silong.foundation.springboot.starter.tokenauth.exception.ServerInternalException;
 import java.time.Instant;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
 import reactor.core.publisher.Mono;
@@ -43,9 +41,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticationManager {
 
-  private RedisTemplate<String, String> tokenRedisTemplate;
-
-  private Cache<String, String> tokenCache;
+  private final Map<String, String> tokenCache;
 
   private final SimpleAuthProperties authProperties;
 
@@ -59,24 +55,8 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
    * @param appName 应用名
    */
   public SimpleReactiveAuthenticationManager(
-      Cache<String, String> tokenCache, SimpleAuthProperties authProperties, String appName) {
+      Map<String, String> tokenCache, SimpleAuthProperties authProperties, String appName) {
     this.tokenCache = tokenCache;
-    this.authProperties = authProperties;
-    this.appName = appName;
-  }
-
-  /**
-   * 构造方法
-   *
-   * @param tokenRedisTemplate redis客户端
-   * @param authProperties 配置
-   * @param appName 应用名
-   */
-  public SimpleReactiveAuthenticationManager(
-      RedisTemplate<String, String> tokenRedisTemplate,
-      SimpleAuthProperties authProperties,
-      String appName) {
-    this.tokenRedisTemplate = tokenRedisTemplate;
     this.authProperties = authProperties;
     this.appName = appName;
   }
@@ -100,18 +80,10 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     }
 
     String tokenKey = String.format("%s-token-%s", appName, decodedJWT.getToken());
-    if (tokenCache != null) {
-      String v = tokenCache.getIfPresent(tokenKey);
-      if (v == null) {
-        throw new IllegalAccessTokenException("Invalid access token.");
-      }
-    } else if (tokenRedisTemplate != null) {
-      String v = tokenRedisTemplate.opsForValue().get(tokenKey);
-      if (v == null) {
-        throw new IllegalAccessTokenException("Invalid access token.");
-      }
-    } else {
-      throw new ServerInternalException("An exception occurred during authentication.");
+
+    String v = tokenCache.get(tokenKey);
+    if (v == null) {
+      throw new IllegalAccessTokenException("Invalid access token.");
     }
     authentication.setAuthenticated(true);
     return Mono.just(authentication);
