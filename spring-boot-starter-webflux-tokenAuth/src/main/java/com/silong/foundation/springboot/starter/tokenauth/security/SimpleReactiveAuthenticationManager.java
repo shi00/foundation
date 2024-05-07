@@ -99,7 +99,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
       throw new AccessTokenExpiredException("Access token has expired.");
     }
 
-    String tokenKey = String.format("%s-%s", appName, decodedJWT.getToken());
+    String tokenKey = String.format("%s-token-%s", appName, decodedJWT.getToken());
     if (tokenCache != null) {
       String v = tokenCache.getIfPresent(tokenKey);
       if (v == null) {
