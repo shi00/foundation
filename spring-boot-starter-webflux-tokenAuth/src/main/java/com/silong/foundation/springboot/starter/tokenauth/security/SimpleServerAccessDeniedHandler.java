@@ -73,7 +73,7 @@ public class SimpleServerAccessDeniedHandler implements ServerAccessDeniedHandle
     response.getHeaders().setContentType(APPLICATION_JSON);
     ErrorDetail errorDetail =
         ErrorDetail.builder()
-            .errorCode(String.format(ErrorCode.FORBIDDEN.getFormat(), appName))
+            .errorCode(ErrorCode.FORBIDDEN.format(appName))
             .errorMessage(denied.getMessage())
             .build();
     String result = objectMapper.writeValueAsString(errorDetail);
