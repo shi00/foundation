@@ -32,6 +32,7 @@ import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.springboot.starter.tokenauth.configure.config.SimpleAuthProperties;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessForbiddenException;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessTokenNotFoundException;
+import com.silong.foundation.springboot.starter.tokenauth.exception.IdentityNotFoundException;
 import com.silong.foundation.springboot.starter.tokenauth.exception.IllegalAccessTokenException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -119,7 +120,9 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
                     Mono.defer(
                         () ->
                             Mono.error(
-                                () -> new AccessForbiddenException(FORBIDDEN.getReasonPhrase())))));
+                                () ->
+                                    new AccessForbiddenException(
+                                        FORBIDDEN.getReasonPhrase()))))); // 白名单和鉴权名单外的访问全部禁止
   }
 
   private Authentication getNeedAuthentication(ServerWebExchange exchange) {
@@ -134,19 +137,21 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
       decodedJWT = verifier.verify(at);
     } catch (JWTVerificationException e) {
       log.error("Failed to verify token.", e);
-      throw new IllegalAccessTokenException("Illegal access token.");
+      throw new IllegalAccessTokenException(e.getMessage());
     }
 
     String identity = decodedJWT.getClaim(IDENTITY).asString();
     if (!hasLength(identity)) {
-      log.error("{} is not exist in access token.", IDENTITY);
-      throw new IllegalAccessTokenException("Illegal access token.");
+      log.error("{} could not be found in the access token.", IDENTITY);
+      throw new IdentityNotFoundException(IDENTITY + " could not be found in the access token.");
     }
 
     List<SimpleGrantedAuthority> grantedAuthorities = cache.get(identity);
     if (grantedAuthorities == null || grantedAuthorities.isEmpty()) {
-      log.error("Could not find any roles for identity:{}.", identity);
-      throw new IllegalAccessTokenException("Illegal access token.");
+      String msg =
+          String.format("No authorization could be found for the %s:%s.", IDENTITY, identity);
+      log.error(msg);
+      throw new IllegalAccessTokenException(msg);
     }
     return new SimpleAuthenticationToken(decodedJWT, grantedAuthorities, false);
   }
