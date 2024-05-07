@@ -34,8 +34,10 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 enum ErrorCode {
-  /** 授权失败 */
-  UNAUTHORIZED("%s.003"),
+  /** token中找不到identity */
+  IDENTITY_NOT_FOUND("%s.004"),
+  /** 请求头中找不到token */
+  TOKEN_NOT_FOUND("%s.003"),
   /** 认证失败 */
   UNAUTHENTICATED("%s.002"),
   /** 禁止访问 */
@@ -43,4 +45,8 @@ enum ErrorCode {
 
   /** 错误码格式 */
   private final String format;
+
+  public String format(String prefix) {
+    return String.format(format, prefix);
+  }
 }
