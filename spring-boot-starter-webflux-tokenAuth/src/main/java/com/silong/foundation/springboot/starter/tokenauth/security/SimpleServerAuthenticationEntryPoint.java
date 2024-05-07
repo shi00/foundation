@@ -25,6 +25,8 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessForbiddenException;
+import com.silong.foundation.springboot.starter.tokenauth.exception.AccessTokenNotFoundException;
+import com.silong.foundation.springboot.starter.tokenauth.exception.IdentityNotFoundException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -81,14 +83,28 @@ public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticatio
       response.setStatusCode(FORBIDDEN);
       errorDetail =
           ErrorDetail.builder()
-              .errorCode(String.format(ErrorDetail.FORBIDDEN, appName))
+              .errorCode(ErrorCode.FORBIDDEN.format(appName))
+              .errorMessage(ex.getMessage())
+              .build();
+    } else if (ex instanceof AccessTokenNotFoundException) {
+      response.setStatusCode(BAD_REQUEST);
+      errorDetail =
+          ErrorDetail.builder()
+              .errorCode(ErrorCode.TOKEN_NOT_FOUND.format(appName))
+              .errorMessage(ex.getMessage())
+              .build();
+    } else if (ex instanceof IdentityNotFoundException) {
+      response.setStatusCode(BAD_REQUEST);
+      errorDetail =
+          ErrorDetail.builder()
+              .errorCode(ErrorCode.IDENTITY_NOT_FOUND.format(appName))
               .errorMessage(ex.getMessage())
               .build();
     } else {
       response.setStatusCode(UNAUTHORIZED);
       errorDetail =
           ErrorDetail.builder()
-              .errorCode(String.format(ErrorDetail.UNAUTHENTICATED, appName))
+              .errorCode(ErrorCode.UNAUTHENTICATED.format(appName))
               .errorMessage(ex.getMessage())
               .build();
     }
