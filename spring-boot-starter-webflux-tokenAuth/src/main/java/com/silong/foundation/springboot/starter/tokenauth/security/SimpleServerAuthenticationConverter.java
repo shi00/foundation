@@ -98,7 +98,6 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
         JWT.require(
                 Algorithm.HMAC256(
                     AesGcmToolkit.decrypt(properties.getSignKey(), properties.getWorkKey())))
-            .acceptExpiresAt(properties.getTokenTimeout())
             // specify any specific claim validations
             .withIssuer(appName)
             // reusable verifier instance
