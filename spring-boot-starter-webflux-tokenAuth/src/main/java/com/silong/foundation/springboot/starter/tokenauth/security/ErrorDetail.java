@@ -36,11 +36,6 @@ import lombok.experimental.Accessors;
 @Builder
 @Accessors(fluent = true)
 class ErrorDetail {
-
-  public static final String FORBIDDEN = "%s.001";
-
-  public static final String UNAUTHENTICATED = "%s.002";
-
   /** 错误码 */
   @JsonProperty("error_code")
   private String errorCode;
