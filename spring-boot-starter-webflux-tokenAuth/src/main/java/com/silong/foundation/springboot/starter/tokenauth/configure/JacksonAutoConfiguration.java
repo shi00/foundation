@@ -21,8 +21,10 @@
 
 package com.silong.foundation.springboot.starter.tokenauth.configure;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
+import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
 import static com.fasterxml.jackson.databind.json.JsonMapper.*;
 import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
 
@@ -48,7 +50,9 @@ public class JacksonAutoConfiguration {
   ObjectMapper registerObjectMapper() {
     return builder()
         .enable(ACCEPT_CASE_INSENSITIVE_ENUMS)
+        .configure(INDENT_OUTPUT, true)
         .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .configure(FAIL_ON_NULL_FOR_PRIMITIVES, true)
         .build();
   }
 }
