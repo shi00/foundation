@@ -34,6 +34,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 enum ErrorCode {
+  /** 鉴权内部错误 */
+  INTERNAL_ERROR("%s.005"),
   /** token中找不到identity */
   IDENTITY_NOT_FOUND("%s.004"),
   /** 请求头中找不到token */
