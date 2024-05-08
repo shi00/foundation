@@ -28,10 +28,13 @@ package com.silong.foundation.springboot.starter.tokenauth.misc;
  * @version 1.0.0
  * @since 2022-01-18 17:04
  */
-public interface AuthHeaders {
+public interface Constants {
   /** 访问token */
   String ACCESS_TOKEN = "Access-Token";
 
   /** 用户唯一标识 */
   String IDENTITY = "Identity";
+
+  /** token 缓存名 */
+  String TOKEN_CACHE = "token-cache";
 }
