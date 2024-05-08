@@ -19,19 +19,23 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.exception;
+package com.silong.foundation.springboot.starter.tokenauth.misc;
 
-import org.springframework.security.core.AuthenticationException;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.Data;
 
 /**
- * 鉴权服务器内部异常
+ * 用户凭证
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-05-06 16:40
+ * @since 2024-05-08 10:44
  */
-public class ServerInternalException extends AuthenticationException {
-  public ServerInternalException(String msg) {
-    super(msg);
-  }
+@Data
+public class Credentials {
+  /** 用户 */
+  @NotEmpty private String userName;
+
+  /** 密码 */
+  @NotEmpty private String password;
 }
