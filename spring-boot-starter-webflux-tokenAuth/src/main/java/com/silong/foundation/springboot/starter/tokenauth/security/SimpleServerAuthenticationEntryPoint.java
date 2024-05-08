@@ -22,13 +22,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessForbiddenException;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessTokenNotFoundException;
 import com.silong.foundation.springboot.starter.tokenauth.exception.IdentityNotFoundException;
+import com.silong.foundation.springboot.starter.tokenauth.misc.ErrorCode;
+import com.silong.foundation.springboot.starter.tokenauth.misc.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -53,17 +52,13 @@ public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticatio
 
   private final String appName;
 
-  private final ObjectMapper objectMapper;
-
   /**
    * 构造方法
    *
    * @param appName 服务名
-   * @param objectMapper jackson
    */
-  public SimpleServerAuthenticationEntryPoint(String appName, ObjectMapper objectMapper) {
+  public SimpleServerAuthenticationEntryPoint(String appName) {
     this.appName = appName;
-    this.objectMapper = objectMapper;
   }
 
   @Override
@@ -72,7 +67,6 @@ public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticatio
         .flatMap(response -> writeErrorDetail(exchange, ex, response));
   }
 
-  @SneakyThrows(JsonProcessingException.class)
   private Mono<Void> writeErrorDetail(
       ServerWebExchange exchange, AuthenticationException ex, ServerHttpResponse response) {
     ServerHttpRequest request = exchange.getRequest();
@@ -109,8 +103,7 @@ public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticatio
               .build();
     }
     response.getHeaders().setContentType(APPLICATION_JSON);
-    String result = objectMapper.writeValueAsString(errorDetail);
-    DataBuffer buffer = response.bufferFactory().wrap(result.getBytes(UTF_8));
+    DataBuffer buffer = response.bufferFactory().wrap(errorDetail.toJson().getBytes(UTF_8));
     return response.writeWith(Mono.just(buffer));
   }
 }
