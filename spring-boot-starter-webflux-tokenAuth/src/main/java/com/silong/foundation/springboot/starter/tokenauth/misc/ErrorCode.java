@@ -18,34 +18,37 @@
  *  * under the License.
  *
  */
-package com.silong.foundation.springboot.starter.tokenauth.security;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Data;
-import lombok.experimental.Accessors;
+package com.silong.foundation.springboot.starter.tokenauth.misc;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
- * 错误信息
+ * 错误码
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-03 11:10
+ * @since 2024-05-07 9:33
  */
-@Data
-@Builder
-@Accessors(fluent = true)
-class ErrorDetail {
-  /** 错误码 */
-  @JsonProperty("error_code")
-  private String errorCode;
+@Getter
+@AllArgsConstructor
+public enum ErrorCode {
+  /** 鉴权内部错误 */
+  INTERNAL_ERROR("%s.005"),
+  /** token中找不到identity */
+  IDENTITY_NOT_FOUND("%s.004"),
+  /** 请求头中找不到token */
+  TOKEN_NOT_FOUND("%s.003"),
+  /** 认证失败 */
+  UNAUTHENTICATED("%s.002"),
+  /** 禁止访问 */
+  FORBIDDEN("%s.001");
 
-  /** 错误描述 */
-  @JsonProperty("error_msg")
-  private String errorMessage;
+  /** 错误码格式 */
+  private final String format;
 
-  @Override
-  public String toString() {
-    return String.format("ErrorDetail: (code:%s, message:%s)", errorCode, errorMessage);
+  public String format(String prefix) {
+    return String.format(format, prefix);
   }
 }
