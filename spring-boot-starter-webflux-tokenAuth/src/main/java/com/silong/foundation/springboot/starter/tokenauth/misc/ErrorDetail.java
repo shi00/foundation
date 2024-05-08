@@ -20,10 +20,10 @@
  */
 package com.silong.foundation.springboot.starter.tokenauth.misc;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.springframework.lang.NonNull;
 
 /**
  * 错误信息
@@ -36,16 +36,22 @@ import lombok.experimental.Accessors;
 @Builder
 @Accessors(fluent = true)
 public class ErrorDetail {
+
+  private static final String JSON_FORMAT = "{\"error_code\": \"%s\",\"error_msg\": \"%s\"}";
+
   /** 错误码 */
-  @JsonProperty("error_code")
   private String errorCode;
 
   /** 错误描述 */
-  @JsonProperty("error_msg")
   private String errorMessage;
 
-  @Override
-  public String toString() {
-    return String.format("ErrorDetail: (code:%s, message:%s)", errorCode, errorMessage);
+  /**
+   * 转换为json 字符串
+   *
+   * @return json
+   */
+  @NonNull
+  public String toJson() {
+    return String.format(JSON_FORMAT, errorCode, errorMessage);
   }
 }
