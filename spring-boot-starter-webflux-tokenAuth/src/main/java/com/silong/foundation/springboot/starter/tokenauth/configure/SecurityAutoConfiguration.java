@@ -23,6 +23,8 @@ import static com.silong.foundation.springboot.starter.tokenauth.configure.Token
 import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
 import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.AUTHENTICATION;
 
+import com.auth0.jwt.algorithms.Algorithm;
+import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.springboot.starter.tokenauth.configure.config.SimpleAuthProperties;
 import com.silong.foundation.springboot.starter.tokenauth.security.*;
 import java.util.Map;
@@ -71,10 +73,23 @@ public class SecurityAutoConfiguration {
   private CorsConfigurationSource corsConfigurationSource;
 
   @Bean
-  @ConditionalOnProperty(prefix = "token-auth", value = "work-key")
-  SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+  @ConditionalOnProperty(
+      prefix = "token-auth",
+      value = {"sign-key", "work-key"})
+  Algorithm registerSignAlg() {
+    return Algorithm.HMAC256(
+        AesGcmToolkit.decrypt(
+            simpleAuthProperties.getSignKey(), simpleAuthProperties.getWorkKey()));
+  }
+
+  @Bean
+  @ConditionalOnProperty(
+      prefix = "token-auth",
+      value = {"sign-key", "work-key"})
+  SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, Algorithm signAlg) {
     return configure(
             http,
+            signAlg,
             simpleAuthProperties,
             corsConfigurationSource,
             new SimpleServerAuthenticationEntryPoint(appName),
@@ -84,6 +99,7 @@ public class SecurityAutoConfiguration {
 
   private ServerHttpSecurity configure(
       ServerHttpSecurity http,
+      Algorithm signAlg,
       SimpleAuthProperties simpleAuthProperties,
       CorsConfigurationSource corsConfigurationSource,
       SimpleServerAuthenticationEntryPoint authenticationEntryPoint,
@@ -144,18 +160,19 @@ public class SecurityAutoConfiguration {
                     .denyAll())
         // 定制鉴权过滤器
         .addFilterAt(
-            authenticationWebFilter(simpleAuthProperties, authenticationEntryPoint),
+            authenticationWebFilter(simpleAuthProperties, signAlg, authenticationEntryPoint),
             AUTHENTICATION);
   }
 
   AuthenticationWebFilter authenticationWebFilter(
       SimpleAuthProperties simpleAuthProperties,
+      Algorithm signAlg,
       SimpleServerAuthenticationEntryPoint simpleServerAuthenticationEntryPoint) {
     AuthenticationWebFilter authenticationWebFilter =
         new AuthenticationWebFilter(
             new SimpleReactiveAuthenticationManager(tokenCache, simpleAuthProperties, appName));
     authenticationWebFilter.setServerAuthenticationConverter(
-        new SimpleServerAuthenticationConverter(simpleAuthProperties, appName));
+        new SimpleServerAuthenticationConverter(simpleAuthProperties, signAlg, appName));
     authenticationWebFilter.setAuthenticationSuccessHandler(
         SimpleServerAuthenticationSuccessHandler.getInstance());
     authenticationWebFilter.setAuthenticationFailureHandler(
