@@ -18,6 +18,7 @@
  */
 package com.silong.foundation.springboot.starter.tokenauth.security;
 
+import static com.silong.foundation.springboot.starter.tokenauth.handler.AuthTokenHandler.generateTokenKey;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -79,8 +80,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
       throw new AccessTokenExpiredException("Access token has expired.");
     }
 
-    String tokenKey = String.format("%s-token-%s", appName, decodedJWT.getToken());
-
+    String tokenKey = generateTokenKey(appName, decodedJWT.getToken());
     String v = tokenCache.get(tokenKey);
     if (v == null) {
       throw new IllegalAccessTokenException("Invalid access token.");
