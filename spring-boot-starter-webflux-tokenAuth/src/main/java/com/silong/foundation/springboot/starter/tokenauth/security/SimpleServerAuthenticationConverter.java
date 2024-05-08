@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.springboot.starter.tokenauth.security;
 
-import static com.silong.foundation.springboot.starter.tokenauth.misc.AuthHeaders.*;
+import static com.silong.foundation.springboot.starter.tokenauth.misc.Constants.*;
 import static java.util.Collections.singletonList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.util.StringUtils.hasLength;
