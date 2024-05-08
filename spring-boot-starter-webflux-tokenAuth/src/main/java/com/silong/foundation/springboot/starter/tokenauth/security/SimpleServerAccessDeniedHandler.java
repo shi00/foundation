@@ -22,12 +22,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.tokenauth.misc.ErrorCode;
 import com.silong.foundation.springboot.starter.tokenauth.misc.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -52,21 +49,16 @@ public class SimpleServerAccessDeniedHandler implements ServerAccessDeniedHandle
 
   private final String appName;
 
-  private final ObjectMapper objectMapper;
-
   /**
    * 构造方法
    *
    * @param appName 服务名
-   * @param objectMapper jackson
    */
-  public SimpleServerAccessDeniedHandler(String appName, ObjectMapper objectMapper) {
+  public SimpleServerAccessDeniedHandler(String appName) {
     this.appName = appName;
-    this.objectMapper = objectMapper;
   }
 
   @Override
-  @SneakyThrows(JsonProcessingException.class)
   public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException denied) {
     ServerHttpRequest request = exchange.getRequest();
     log.error("Not authorized to {} {}", request.getMethod(), request.getPath().value(), denied);
@@ -78,8 +70,7 @@ public class SimpleServerAccessDeniedHandler implements ServerAccessDeniedHandle
             .errorCode(ErrorCode.FORBIDDEN.format(appName))
             .errorMessage(denied.getMessage())
             .build();
-    String result = objectMapper.writeValueAsString(errorDetail);
-    DataBuffer buffer = response.bufferFactory().wrap(result.getBytes(UTF_8));
+    DataBuffer buffer = response.bufferFactory().wrap(errorDetail.toJson().getBytes(UTF_8));
     return response.writeWith(Mono.just(buffer));
   }
 }
