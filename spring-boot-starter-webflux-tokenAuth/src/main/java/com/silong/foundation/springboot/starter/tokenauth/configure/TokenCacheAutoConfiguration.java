@@ -24,6 +24,7 @@ package com.silong.foundation.springboot.starter.tokenauth.configure;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
+import static com.silong.foundation.springboot.starter.tokenauth.misc.Constants.TOKEN_CACHE;
 import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
 
 import com.hazelcast.config.*;
@@ -47,14 +48,12 @@ import org.springframework.context.annotation.Configuration;
  * @since 2024-05-07 10:45
  */
 @Configuration
+@ConditionalOnProperty(prefix = "token-auth.hazelcast-config", value = "cluster-name")
 @EnableConfigurationProperties(SimpleAuthProperties.class)
 @ConditionalOnWebApplication(type = REACTIVE)
 public class TokenCacheAutoConfiguration {
 
-  public static final String TOKEN_CACHE = "token-cache";
-
   @Bean
-  @ConditionalOnProperty(prefix = "token-auth.hazelcast-config", value = "cluster-name")
   Config registerHazelcastConfig(
       @Value("${spring.application.name}") String appName, SimpleAuthProperties properties) {
     SimpleAuthProperties.HazelcastConfig hazelcastConfig = properties.getHazelcastConfig();
@@ -99,13 +98,11 @@ public class TokenCacheAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnProperty(prefix = "token-auth.hazelcast-config", value = "cluster-name")
   HazelcastInstance registerHazelcastInstance(Config config) {
     return Hazelcast.newHazelcastInstance(config);
   }
 
   @Bean(TOKEN_CACHE)
-  @ConditionalOnProperty(prefix = "token-auth.hazelcast-config", value = "cluster-name")
   Map<String, String> registerTokenCache(HazelcastInstance hazelcastInstance) {
     return hazelcastInstance.getMap(TOKEN_CACHE);
   }
