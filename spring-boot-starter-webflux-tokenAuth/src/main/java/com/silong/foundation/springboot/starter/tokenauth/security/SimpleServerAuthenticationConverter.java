@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.springboot.starter.tokenauth.security;
 
-import static com.silong.foundation.springboot.starter.tokenauth.constants.AuthHeaders.*;
+import static com.silong.foundation.springboot.starter.tokenauth.misc.AuthHeaders.*;
 import static java.util.Collections.singletonList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.util.StringUtils.hasLength;
@@ -28,7 +28,6 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.springboot.starter.tokenauth.configure.config.SimpleAuthProperties;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessForbiddenException;
 import com.silong.foundation.springboot.starter.tokenauth.exception.AccessTokenNotFoundException;
@@ -39,9 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -77,10 +74,11 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
    * 构造方法
    *
    * @param properties 服务配置
+   * @param algorithm token签名算法
    * @param appName 应用名
    */
   public SimpleServerAuthenticationConverter(
-      @NonNull SimpleAuthProperties properties, @Value("spring.application.name") String appName) {
+      SimpleAuthProperties properties, Algorithm algorithm, String appName) {
     Map<String, List<SimpleGrantedAuthority>> map = new HashMap<>();
     properties
         .getUserRolesMappings()
@@ -94,14 +92,7 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
         ServerWebExchangeMatchers.pathMatchers(properties.getAuthList().toArray(new String[0]));
     this.noAuthServerWebExchangeMatcher =
         ServerWebExchangeMatchers.pathMatchers(properties.getWhiteList().toArray(new String[0]));
-    this.verifier =
-        JWT.require(
-                Algorithm.HMAC256(
-                    AesGcmToolkit.decrypt(properties.getSignKey(), properties.getWorkKey())))
-            // specify any specific claim validations
-            .withIssuer(appName)
-            // reusable verifier instance
-            .build();
+    this.verifier = JWT.require(algorithm).withIssuer(appName).build();
   }
 
   @Override
