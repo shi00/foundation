@@ -40,7 +40,7 @@
         <sourcecode.package>com.silong.foundation.utilities.whispercpp.generated</sourcecode.package>
         <check-dependencies.skip>true</check-dependencies.skip><!--依赖检查插件暂不支持java22-->
     </properties>
-
+    
     <profiles>
         <profile>
             <id>linux</id>
