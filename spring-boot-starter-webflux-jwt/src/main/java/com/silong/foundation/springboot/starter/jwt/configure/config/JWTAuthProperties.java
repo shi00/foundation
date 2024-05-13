@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.configure.config;
+package com.silong.foundation.springboot.starter.jwt.configure.config;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
