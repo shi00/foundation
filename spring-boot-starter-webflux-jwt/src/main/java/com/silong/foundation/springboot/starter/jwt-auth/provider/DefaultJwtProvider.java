@@ -39,7 +39,8 @@ import org.springframework.lang.NonNull;
  * @version 1.0.0
  * @since 2024-05-08 17:24
  */
-public class DefaultJwtProvider implements JWTProvider {
+public class DefaultJwtProvider
+    implements com.silong.foundation.springboot.starter.tokenauth.provider.JWTProvider {
 
   private final Algorithm algorithm;
 
