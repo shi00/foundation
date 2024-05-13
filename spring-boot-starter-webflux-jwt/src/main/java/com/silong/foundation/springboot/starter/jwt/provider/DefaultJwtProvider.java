@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.provider;
+package com.silong.foundation.springboot.starter.jwt.provider;
 
 import static org.springframework.util.StringUtils.hasLength;
 
