@@ -19,8 +19,9 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.misc;
+package com.silong.foundation.springboot.starter.tokenauth.common;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
@@ -34,8 +35,12 @@ import lombok.Data;
 @Data
 public class Credentials {
   /** 用户 */
-  @NotEmpty private String userName;
+  @JsonProperty("user_name")
+  @NotEmpty
+  private String userName;
 
   /** 密码 */
-  @NotEmpty private String password;
+  @JsonProperty("password")
+  @NotEmpty
+  private String password;
 }
