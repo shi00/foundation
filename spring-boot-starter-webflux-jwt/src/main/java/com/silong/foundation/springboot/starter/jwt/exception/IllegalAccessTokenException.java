@@ -19,19 +19,19 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.exception;
+package com.silong.foundation.springboot.starter.jwt.exception;
 
 import org.springframework.security.core.AuthenticationException;
 
 /**
- * 找不到用户标识异常
+ * 非法访问令牌异常
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2024-05-06 16:39
  */
-public class IdentityNotFoundException extends AuthenticationException {
-  public IdentityNotFoundException(String msg) {
+public class IllegalAccessTokenException extends AuthenticationException {
+  public IllegalAccessTokenException(String msg) {
     super(msg);
   }
 }

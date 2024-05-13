@@ -19,19 +19,19 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.exception;
+package com.silong.foundation.springboot.starter.jwt.exception;
 
 import org.springframework.security.core.AuthenticationException;
 
 /**
- * 访问被禁止异常
+ * 找不到用户标识异常
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-05-06 16:40
+ * @since 2024-05-06 16:39
  */
-public class AccessForbiddenException extends AuthenticationException {
-  public AccessForbiddenException(String msg) {
+public class IdentityNotFoundException extends AuthenticationException {
+  public IdentityNotFoundException(String msg) {
     super(msg);
   }
 }

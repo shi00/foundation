@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.exception;
+package com.silong.foundation.springboot.starter.jwt.exception;
 
 import org.springframework.security.core.AuthenticationException;
 

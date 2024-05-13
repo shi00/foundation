@@ -19,19 +19,19 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.exception;
+package com.silong.foundation.springboot.starter.jwt.exception;
 
 import org.springframework.security.core.AuthenticationException;
 
 /**
- * 非法访问令牌异常
+ * 访问被禁止异常
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-05-06 16:39
+ * @since 2024-05-06 16:40
  */
-public class IllegalAccessTokenException extends AuthenticationException {
-  public IllegalAccessTokenException(String msg) {
+public class AccessForbiddenException extends AuthenticationException {
+  public AccessForbiddenException(String msg) {
     super(msg);
   }
 }
