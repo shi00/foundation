@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.misc;
+package com.silong.foundation.springboot.starter.tokenauth.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

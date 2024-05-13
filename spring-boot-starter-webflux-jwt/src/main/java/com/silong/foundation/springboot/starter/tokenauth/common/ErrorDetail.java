@@ -18,7 +18,7 @@
  *  * under the License.
  *
  */
-package com.silong.foundation.springboot.starter.tokenauth.misc;
+package com.silong.foundation.springboot.starter.tokenauth.common;
 
 import lombok.Builder;
 import lombok.Data;
