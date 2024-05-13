@@ -31,7 +31,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import lombok.SneakyThrows;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -45,9 +47,22 @@ public class WhisperTests {
 
   private static Whisper whisper;
 
+  private long startTime;
+
   @BeforeAll
   static void init() {
     whisper = Whisper.getInstance(loadJsonFromClassPath());
+  }
+
+  @BeforeEach
+  void beforeTest() {
+    startTime = System.currentTimeMillis();
+  }
+
+  @AfterEach
+  void afterTest() {
+    System.out.printf(
+        "timeConsume: %dms%s", System.currentTimeMillis() - startTime, System.lineSeparator());
   }
 
   @SneakyThrows(IOException.class)
