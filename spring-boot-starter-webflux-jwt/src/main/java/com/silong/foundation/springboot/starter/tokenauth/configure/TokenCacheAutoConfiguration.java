@@ -31,7 +31,7 @@ import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.silong.foundation.springboot.starter.tokenauth.configure.config.SimpleAuthProperties;
+import com.silong.foundation.springboot.starter.tokenauth.configure.config.JWTAuthProperties;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -48,15 +48,15 @@ import org.springframework.context.annotation.Configuration;
  * @since 2024-05-07 10:45
  */
 @Configuration
-@ConditionalOnProperty(prefix = "token-auth.hazelcast-config", value = "cluster-name")
-@EnableConfigurationProperties(SimpleAuthProperties.class)
+@ConditionalOnProperty(prefix = "jwt-auth.hazelcast-config", value = "cluster-name")
+@EnableConfigurationProperties(JWTAuthProperties.class)
 @ConditionalOnWebApplication(type = REACTIVE)
 public class TokenCacheAutoConfiguration {
 
   @Bean
   Config registerHazelcastConfig(
-      @Value("${spring.application.name}") String appName, SimpleAuthProperties properties) {
-    SimpleAuthProperties.HazelcastConfig hazelcastConfig = properties.getHazelcastConfig();
+      @Value("${spring.application.name}") String appName, JWTAuthProperties properties) {
+    JWTAuthProperties.HazelcastConfig hazelcastConfig = properties.getHazelcastConfig();
     return new Config()
         .setClusterName(appName + "-token-cache-cluster")
         .addMapConfig(
