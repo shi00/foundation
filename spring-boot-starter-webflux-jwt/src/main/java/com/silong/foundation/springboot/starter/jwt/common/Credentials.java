@@ -19,36 +19,28 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.common;
+package com.silong.foundation.springboot.starter.jwt.common;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.Data;
 
 /**
- * 错误码
+ * 用户凭证
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-05-07 9:33
+ * @since 2024-05-08 10:44
  */
-@Getter
-@AllArgsConstructor
-public enum ErrorCode {
-  /** 鉴权内部错误 */
-  INTERNAL_ERROR("%s.005"),
-  /** token中找不到identity */
-  IDENTITY_NOT_FOUND("%s.004"),
-  /** 请求头中找不到token */
-  TOKEN_NOT_FOUND("%s.003"),
-  /** 认证失败 */
-  UNAUTHENTICATED("%s.002"),
-  /** 禁止访问 */
-  FORBIDDEN("%s.001");
+@Data
+public class Credentials {
+  /** 用户 */
+  @JsonProperty("user_name")
+  @NotEmpty
+  private String userName;
 
-  /** 错误码格式 */
-  private final String format;
-
-  public String format(String prefix) {
-    return String.format(format, prefix);
-  }
+  /** 密码 */
+  @JsonProperty("password")
+  @NotEmpty
+  private String password;
 }

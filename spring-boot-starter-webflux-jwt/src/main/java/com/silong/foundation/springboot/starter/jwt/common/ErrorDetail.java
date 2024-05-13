@@ -19,22 +19,40 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.common;
+package com.silong.foundation.springboot.starter.jwt.common;
+
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.Accessors;
+import org.springframework.lang.NonNull;
 
 /**
- * 鉴权请求头名称常量
+ * 错误信息
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-18 17:04
+ * @since 2022-01-03 11:10
  */
-public interface Constants {
-  /** 访问token */
-  String ACCESS_TOKEN = "Access-Token";
+@Data
+@Builder
+@Accessors(fluent = true)
+public class ErrorDetail {
 
-  /** 用户唯一标识 */
-  String IDENTITY = "Identity";
+  private static final String JSON_FORMAT = "{\"error_code\": \"%s\",\"error_msg\": \"%s\"}";
 
-  /** token 缓存名 */
-  String TOKEN_CACHE = "token-cache";
+  /** 错误码 */
+  private String errorCode;
+
+  /** 错误描述 */
+  private String errorMessage;
+
+  /**
+   * 转换为json 字符串
+   *
+   * @return json
+   */
+  @NonNull
+  public String toJson() {
+    return String.format(JSON_FORMAT, errorCode, errorMessage);
+  }
 }

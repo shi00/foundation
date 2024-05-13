@@ -19,40 +19,36 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.common;
+package com.silong.foundation.springboot.starter.jwt.common;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.experimental.Accessors;
-import org.springframework.lang.NonNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
- * 错误信息
+ * 错误码
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2022-01-03 11:10
+ * @since 2024-05-07 9:33
  */
-@Data
-@Builder
-@Accessors(fluent = true)
-public class ErrorDetail {
+@Getter
+@AllArgsConstructor
+public enum ErrorCode {
+  /** 鉴权内部错误 */
+  INTERNAL_ERROR("%s.005"),
+  /** token中找不到identity */
+  IDENTITY_NOT_FOUND("%s.004"),
+  /** 请求头中找不到token */
+  TOKEN_NOT_FOUND("%s.003"),
+  /** 认证失败 */
+  UNAUTHENTICATED("%s.002"),
+  /** 禁止访问 */
+  FORBIDDEN("%s.001");
 
-  private static final String JSON_FORMAT = "{\"error_code\": \"%s\",\"error_msg\": \"%s\"}";
+  /** 错误码格式 */
+  private final String format;
 
-  /** 错误码 */
-  private String errorCode;
-
-  /** 错误描述 */
-  private String errorMessage;
-
-  /**
-   * 转换为json 字符串
-   *
-   * @return json
-   */
-  @NonNull
-  public String toJson() {
-    return String.format(JSON_FORMAT, errorCode, errorMessage);
+  public String format(String prefix) {
+    return String.format(format, prefix);
   }
 }

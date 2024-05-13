@@ -19,28 +19,22 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.common;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotEmpty;
-import lombok.Data;
+package com.silong.foundation.springboot.starter.jwt.common;
 
 /**
- * 用户凭证
+ * 鉴权请求头名称常量
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-05-08 10:44
+ * @since 2022-01-18 17:04
  */
-@Data
-public class Credentials {
-  /** 用户 */
-  @JsonProperty("user_name")
-  @NotEmpty
-  private String userName;
+public interface Constants {
+  /** 访问token */
+  String ACCESS_TOKEN = "Access-Token";
 
-  /** 密码 */
-  @JsonProperty("password")
-  @NotEmpty
-  private String password;
+  /** 用户唯一标识 */
+  String IDENTITY = "Identity";
+
+  /** token 缓存名 */
+  String TOKEN_CACHE = "token-cache";
 }
