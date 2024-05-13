@@ -18,6 +18,10 @@
  */
 package com.silong.foundation.duuid.server;
 
+import static com.silong.foundation.springboot.starter.tokenauth.constants.AuthHeaders.*;
+import static io.swagger.v3.oas.annotations.enums.SecuritySchemeIn.HEADER;
+import static io.swagger.v3.oas.annotations.enums.SecuritySchemeType.APIKEY;
+
 import com.silong.foundation.crypto.RootKey;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Contact;
@@ -27,10 +31,6 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
-import static io.swagger.v3.oas.annotations.enums.SecuritySchemeIn.HEADER;
-import static io.swagger.v3.oas.annotations.enums.SecuritySchemeType.APIKEY;
 
 /**
  * Duuid生成器服务
