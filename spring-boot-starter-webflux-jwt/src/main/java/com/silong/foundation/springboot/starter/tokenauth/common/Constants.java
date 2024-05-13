@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.misc;
+package com.silong.foundation.springboot.starter.tokenauth.common;
 
 /**
  * 鉴权请求头名称常量
