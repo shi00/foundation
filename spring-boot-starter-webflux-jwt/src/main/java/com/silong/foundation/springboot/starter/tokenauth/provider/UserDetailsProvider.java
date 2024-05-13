@@ -21,6 +21,7 @@
 
 package com.silong.foundation.springboot.starter.tokenauth.provider;
 
+import java.util.Set;
 import javax.annotation.Nullable;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -42,4 +43,13 @@ public interface UserDetailsProvider {
    */
   @Nullable
   UserDetails findByUserName(@NonNull String userName);
+
+  /**
+   * 根据用户名获取用户角色列表
+   *
+   * @param userName 用户名
+   * @return 角色列表
+   */
+  @NonNull
+  Set<String> findUserRoles(@NonNull String userName);
 }

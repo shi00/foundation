@@ -24,7 +24,7 @@ package com.silong.foundation.springboot.starter.tokenauth.configure;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
-import static com.silong.foundation.springboot.starter.tokenauth.misc.Constants.TOKEN_CACHE;
+import static com.silong.foundation.springboot.starter.tokenauth.common.Constants.TOKEN_CACHE;
 import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
 
 import com.hazelcast.config.*;
