@@ -27,6 +27,7 @@ import com.silong.foundation.springboot.starter.jwt.common.ErrorDetail;
 import com.silong.foundation.springboot.starter.jwt.exception.AccessForbiddenException;
 import com.silong.foundation.springboot.starter.jwt.exception.AccessTokenNotFoundException;
 import com.silong.foundation.springboot.starter.jwt.exception.IdentityNotFoundException;
+import com.silong.foundation.springboot.starter.jwt.exception.IllegalUserException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -92,6 +93,13 @@ public class SimpleServerAuthenticationEntryPoint implements ServerAuthenticatio
       errorDetail =
           ErrorDetail.builder()
               .errorCode(ErrorCode.IDENTITY_NOT_FOUND.format(appName))
+              .errorMessage(ex.getMessage())
+              .build();
+    } else if (ex instanceof IllegalUserException) {
+      response.setStatusCode(BAD_REQUEST);
+      errorDetail =
+          ErrorDetail.builder()
+              .errorCode(ErrorCode.ILLEGAL_USER.format(appName))
               .errorMessage(ex.getMessage())
               .build();
     } else {
