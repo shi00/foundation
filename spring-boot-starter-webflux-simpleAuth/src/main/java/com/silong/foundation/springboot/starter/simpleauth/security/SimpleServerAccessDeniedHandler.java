@@ -18,13 +18,12 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
-import static com.silong.foundation.common.constants.CommonErrorCode.INSUFFICIENT_PERMISSIONS;
+import static com.silong.foundation.springboot.starter.simpleauth.security.ErrorCode.INSUFFICIENT_PERMISSIONS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.silong.foundation.common.model.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;

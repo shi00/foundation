@@ -18,13 +18,12 @@
  */
 package com.silong.foundation.springboot.starter.simpleauth.security;
 
-import static com.silong.foundation.common.constants.CommonErrorCode.AUTHENTICATION_FAILED;
+import static com.silong.foundation.springboot.starter.simpleauth.security.ErrorCode.AUTHENTICATION_FAILED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.silong.foundation.common.model.ErrorDetail;
 import com.silong.foundation.springboot.starter.simpleauth.security.SimpleServerAuthenticationConverter.AccessForbiddenException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.SneakyThrows;
