@@ -29,6 +29,7 @@ package com.silong.foundation.springboot.starter.jwt.common;
  * @since 2022-01-18 17:04
  */
 public interface Constants {
+
   /** 访问token */
   String ACCESS_TOKEN = "Access-Token";
 
