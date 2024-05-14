@@ -28,10 +28,13 @@ package com.silong.foundation.springboot.starter.simpleauth.constants;
 public interface AuthHeaders {
   /** 身份标识 */
   String IDENTITY = "Identity";
+
   /** 随机内容 */
   String RANDOM = "Random";
+
   /** 时间戳 */
   String TIMESTAMP = "Timestamp";
+
   /** 签名 */
   String SIGNATURE = "Signature";
 }
