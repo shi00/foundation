@@ -31,7 +31,7 @@ import com.hazelcast.config.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.silong.foundation.springboot.starter.tokenauth.configure.config.JWTAuthProperties;
+import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
