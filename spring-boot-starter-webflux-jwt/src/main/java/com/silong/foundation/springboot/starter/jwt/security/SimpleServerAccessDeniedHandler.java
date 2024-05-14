@@ -16,14 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.silong.foundation.springboot.starter.tokenauth.security;
+
+package com.silong.foundation.springboot.starter.jwt.security;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import com.silong.foundation.springboot.starter.tokenauth.misc.ErrorCode;
-import com.silong.foundation.springboot.starter.tokenauth.misc.ErrorDetail;
+import com.silong.foundation.springboot.starter.jwt.common.ErrorCode;
+import com.silong.foundation.springboot.starter.jwt.common.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
