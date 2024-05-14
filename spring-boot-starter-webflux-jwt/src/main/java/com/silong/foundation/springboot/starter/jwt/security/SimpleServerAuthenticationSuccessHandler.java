@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.silong.foundation.springboot.starter.tokenauth.security;
+package com.silong.foundation.springboot.starter.jwt.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
