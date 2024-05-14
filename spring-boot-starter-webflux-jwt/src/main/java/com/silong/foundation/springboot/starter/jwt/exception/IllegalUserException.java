@@ -19,38 +19,19 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.jwt.common;
+package com.silong.foundation.springboot.starter.jwt.exception;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import org.springframework.security.core.AuthenticationException;
 
 /**
- * 错误码
+ * 非法用户异常
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-05-07 9:33
+ * @since 2024-05-06 16:39
  */
-@Getter
-@AllArgsConstructor
-public enum ErrorCode {
-  /** 鉴权内部错误 */
-  ILLEGAL_USER("%s.006"),
-  /** 鉴权内部错误 */
-  INTERNAL_ERROR("%s.005"),
-  /** token中找不到identity */
-  IDENTITY_NOT_FOUND("%s.004"),
-  /** 请求头中找不到token */
-  TOKEN_NOT_FOUND("%s.003"),
-  /** 认证失败 */
-  UNAUTHENTICATED("%s.002"),
-  /** 禁止访问 */
-  FORBIDDEN("%s.001");
-
-  /** 错误码格式 */
-  private final String format;
-
-  public String format(String prefix) {
-    return String.format(format, prefix);
+public class IllegalUserException extends AuthenticationException {
+  public IllegalUserException(String msg) {
+    super(msg);
   }
 }
