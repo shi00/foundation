@@ -77,7 +77,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     this.authProperties = authProperties;
   }
 
-  private static String maskString(String strText, int start, int end, char maskChar) {
+  private static String maskString(String strText, int start, int end) {
     if (strText == null || strText.isEmpty()) {
       return "";
     }
@@ -100,7 +100,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     }
 
     return strText.substring(0, start)
-        + String.valueOf(maskChar).repeat(maskLength)
+        + "*".repeat(maskLength)
         + strText.substring(start + maskLength);
   }
 
@@ -140,7 +140,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     // 查询缓存，确认token是否由服务发放
     String tokenRecord = tokenCache.get(token);
     if (tokenRecord == null || tokenRecord.isEmpty()) {
-      log.error("The record of token could not be found. token: {}", maskString(token, 5, 10, '*'));
+      log.error("The record of token could not be found. token: {}", maskString(token, 5, 10));
       throw new IllegalAccessTokenException("Illegal Access Token.");
     }
 
@@ -151,7 +151,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     if (expireTime.compareTo(Instant.now()) < 0) {
       log.error(
           "The token is overdue. token: {}, issuedAt: {}, expiredAt: {}",
-          maskString(token, 5, 10, '*'),
+          maskString(token, 5, 10),
           issuedAtAsInstant.toEpochMilli(),
           expireTime.toEpochMilli());
       throw new AccessTokenExpiredException("Access token has expired.");
