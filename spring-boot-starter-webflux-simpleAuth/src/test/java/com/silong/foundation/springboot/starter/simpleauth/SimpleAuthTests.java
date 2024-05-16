@@ -26,7 +26,6 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.silong.foundation.common.constants.HttpStatusCode;
 import com.silong.foundation.crypto.digest.HmacToolkit;
 import com.silong.foundation.springboot.starter.simpleauth.TestService.User;
 import com.silong.foundation.webclient.reactive.WebClients;
@@ -206,7 +205,7 @@ public class SimpleAuthTests {
         .expectErrorMatches(
             e ->
                 e instanceof AuthenticatedException ee
-                    && ee.httpStatusCode == Integer.parseInt(HttpStatusCode.FORBIDDEN))
+                    && ee.httpStatusCode == Integer.parseInt("403"))
         .verify(Duration.ofSeconds(10));
   }
 
@@ -238,7 +237,7 @@ public class SimpleAuthTests {
         .expectErrorMatches(
             e ->
                 e instanceof AuthenticatedException ee
-                    && ee.httpStatusCode == Integer.parseInt(HttpStatusCode.UNAUTHORIZED))
+                    && ee.httpStatusCode == Integer.parseInt("401"))
         .verify(Duration.ofSeconds(10));
   }
 
