@@ -128,7 +128,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     }
 
     // 查询缓存，确认token是否由服务发放
-    String tokenRecord = tokenCache.get(generateTokenKey(appName, identity, token));
+    String tokenRecord = tokenCache.get(generateTokenKey(identity, appName, token));
     if (tokenRecord == null || tokenRecord.isEmpty()) {
       log.error("The record of token could not be found. token: {}", maskString(token, 5, 10));
       throw new IllegalAccessTokenException("Illegal Access Token.");
