@@ -21,6 +21,7 @@
 package com.silong.foundation.springboot.starter.jwt.security;
 
 import static com.silong.foundation.springboot.starter.jwt.common.Constants.IDENTITY;
+import static com.silong.foundation.springboot.starter.jwt.handler.AuthTokenHandler.generateTokenKey;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.springframework.util.StringUtils.hasLength;
 
@@ -58,42 +59,31 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
 
   private final UserDetailsProvider userDetailsProvider;
 
+  private final String appName;
+
   /**
    * 构造方法
    *
+   * @param appName 服务名
    * @param tokenCache token内存缓存
    * @param jwtProvider jwt provider
    * @param userDetailsProvider user details provider
    * @param authProperties 配置
    */
   public SimpleReactiveAuthenticationManager(
+      String appName,
       Map<String, String> tokenCache,
       JWTProvider jwtProvider,
       UserDetailsProvider userDetailsProvider,
       JWTAuthProperties authProperties) {
+    this.appName = appName;
     this.tokenCache = tokenCache;
     this.jwtProvider = jwtProvider;
     this.userDetailsProvider = userDetailsProvider;
     this.authProperties = authProperties;
   }
 
-  private static String maskString(String strText, int start, int end) {
-    if (!hasLength(strText)) {
-      return "";
-    }
-
-    if (start < 0) {
-      start = 0;
-    }
-
-    if (end > strText.length()) {
-      end = strText.length();
-    }
-
-    if (start > end) {
-      throw new IllegalArgumentException("End index cannot be greater than start index.");
-    }
-
+  private String maskString(String strText, int start, int end) {
     int maskLength = end - start;
     if (maskLength == 0) {
       return strText;
@@ -138,7 +128,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     }
 
     // 查询缓存，确认token是否由服务发放
-    String tokenRecord = tokenCache.get(token);
+    String tokenRecord = tokenCache.get(generateTokenKey(appName, identity, token));
     if (tokenRecord == null || tokenRecord.isEmpty()) {
       log.error("The record of token could not be found. token: {}", maskString(token, 5, 10));
       throw new IllegalAccessTokenException("Illegal Access Token.");
