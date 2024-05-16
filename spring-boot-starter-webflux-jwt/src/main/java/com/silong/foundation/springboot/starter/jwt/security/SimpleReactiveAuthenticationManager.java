@@ -113,7 +113,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     }
 
     // 读取用户名
-    String userName = decodedJWT.getAudience().getFirst();
+    String userName = decodedJWT.getAudience().get(0);
     if (!hasLength(userName)) {
       log.error("userName could not be found in the access token.");
       throw new IdentityNotFoundException("Illegal Access Token.");
