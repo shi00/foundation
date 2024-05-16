@@ -20,7 +20,6 @@
  */
 package com.silong.foundation.springboot.starter.jwt.security;
 
-import static com.silong.foundation.springboot.starter.jwt.common.Constants.IDENTITY;
 import static com.silong.foundation.springboot.starter.jwt.handler.AuthTokenHandler.generateTokenKey;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.springframework.util.StringUtils.hasLength;
@@ -114,21 +113,21 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     }
 
     // 读取用户名
-    String identity = decodedJWT.getAudience().getFirst();
-    if (!hasLength(identity)) {
-      log.error("{} could not be found in the access token.", IDENTITY);
+    String userName = decodedJWT.getAudience().getFirst();
+    if (!hasLength(userName)) {
+      log.error("userName could not be found in the access token.");
       throw new IdentityNotFoundException("Illegal Access Token.");
     }
 
     // 查找用户
-    UserDetails userDetails = userDetailsProvider.findByUserName(identity);
+    UserDetails userDetails = userDetailsProvider.findByUserName(userName);
     if (userDetails == null) {
-      log.error("{} could not be found.", identity);
+      log.error("{} could not be found.", userName);
       throw new IllegalUserException("Illegal Access Token.");
     }
 
     // 查询缓存，确认token是否由服务发放
-    String tokenRecord = tokenCache.get(generateTokenKey(identity, appName, token));
+    String tokenRecord = tokenCache.get(generateTokenKey(userName, appName, token));
     if (tokenRecord == null || tokenRecord.isEmpty()) {
       log.error("The record of token could not be found. token: {}", maskString(token, 5, 10));
       throw new IllegalAccessTokenException("Illegal Access Token.");
