@@ -79,8 +79,8 @@ public class JWTAuthProperties {
     /** hazelcast监听地址 */
     @NotEmpty private String address;
 
-    /** hazelcast监听端口号，取值：[1025，41951] */
-    @Range(min = 1025, max = 41951)
+    /** hazelcast监听端口号，取值：[1025，65535] */
+    @Range(min = 1025, max = 65535)
     private int port;
 
     @NotEmpty private String clusterName;
@@ -103,8 +103,8 @@ public class JWTAuthProperties {
       @Range(min = 0, max = 255)
       private int timeToLive;
 
-      /** 组播端口号，取值：[1025，41951] */
-      @Range(min = 1025, max = 41951)
+      /** 组播端口号，取值：[1025，65535] */
+      @Range(min = 1025, max = 65535)
       private int port;
     }
   }
