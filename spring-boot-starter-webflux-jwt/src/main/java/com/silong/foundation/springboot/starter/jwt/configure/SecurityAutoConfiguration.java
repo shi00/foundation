@@ -24,13 +24,11 @@ package com.silong.foundation.springboot.starter.jwt.configure;
 import static com.silong.foundation.springboot.starter.jwt.common.Constants.TOKEN_CACHE;
 import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
 import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.HTTP_BASIC;
-import static org.springframework.security.crypto.password.Pbkdf2PasswordEncoder.SecretKeyFactoryAlgorithm.PBKDF2WithHmacSHA256;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import com.silong.foundation.springboot.starter.jwt.provider.DefaultJwtProvider;
-import com.silong.foundation.springboot.starter.jwt.provider.DefaultUserDetailsProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleReactiveAuthenticationManager;
@@ -52,8 +50,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity.*;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler;
@@ -92,22 +88,6 @@ public class SecurityAutoConfiguration {
   @ConditionalOnMissingBean
   JWTProvider jwtProvider(Algorithm algorithm, String appName) {
     return new DefaultJwtProvider(algorithm, appName);
-  }
-
-  @Bean
-  @ConditionalOnMissingBean
-  PasswordEncoder passwordEncoder() {
-    return new Pbkdf2PasswordEncoder(
-        AesGcmToolkit.decrypt(JWTAuthProperties.getSignKey(), JWTAuthProperties.getWorkKey()),
-        16,
-        310000,
-        PBKDF2WithHmacSHA256);
-  }
-
-  @Bean
-  @ConditionalOnMissingBean
-  UserDetailsProvider defaultUserDetailsProvider() {
-    return new DefaultUserDetailsProvider();
   }
 
   @Bean
