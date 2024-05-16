@@ -87,7 +87,6 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     if (maskLength == 0) {
       return strText;
     }
-
     return strText.substring(0, start)
         + "*".repeat(maskLength)
         + strText.substring(start + maskLength);
