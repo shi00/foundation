@@ -1,0 +1,5 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.silong.foundation.springboot.starter.jwt.configure.SecurityAutoConfiguration,\
+  com.silong.foundation.springboot.starter.jwt.configure.RoutesAutoConfiguration,\
+  com.silong.foundation.springboot.starter.jwt.configure.TokenCacheAutoConfiguration,\
+  com.silong.foundation.springboot.starter.jwt.configure.UserProviderAutoConfiguration
