@@ -30,6 +30,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import com.silong.foundation.springboot.starter.jwt.provider.DefaultJwtProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.DefaultUserDetailsProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleReactiveAuthenticationManager;
@@ -124,6 +125,12 @@ public class SecurityAutoConfiguration {
         16,
         310000,
         PBKDF2WithHmacSHA256);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  UserDetailsProvider defaultUserDetailsProvider() {
+    return new DefaultUserDetailsProvider();
   }
 
   @Bean
