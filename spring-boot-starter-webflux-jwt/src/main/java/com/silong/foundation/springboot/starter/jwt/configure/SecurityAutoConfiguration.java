@@ -49,12 +49,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity.*;
-import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -62,7 +59,6 @@ import org.springframework.security.web.server.authentication.AuthenticationWebF
 import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.security.web.server.savedrequest.NoOpServerRequestCache;
-import reactor.core.publisher.Mono;
 
 /**
  * 安全配置
@@ -91,25 +87,6 @@ public class SecurityAutoConfiguration {
 
   /** 配置 */
   private JWTAuthProperties JWTAuthProperties;
-
-  @Bean
-  ReactiveUserDetailsService registerReactiveUserDetailsService() {
-    return username ->
-        Mono.defer(
-            () -> {
-              UserDetails userDetails = userDetailsProvider.findByUserName(username);
-              return userDetails != null ? Mono.just(userDetails) : Mono.empty();
-            });
-  }
-
-  @Bean
-  UserDetailsRepositoryReactiveAuthenticationManager reactiveAuthenticationManager(
-      ReactiveUserDetailsService reactiveUserDetailsService, PasswordEncoder passwordEncoder) {
-    var authenticationManager =
-        new UserDetailsRepositoryReactiveAuthenticationManager(reactiveUserDetailsService);
-    authenticationManager.setPasswordEncoder(passwordEncoder);
-    return authenticationManager;
-  }
 
   @Bean
   @ConditionalOnMissingBean
@@ -224,7 +201,7 @@ public class SecurityAutoConfiguration {
     AuthenticationWebFilter authenticationWebFilter =
         new AuthenticationWebFilter(
             new SimpleReactiveAuthenticationManager(
-                tokenCache, jwtProvider, userDetailsProvider, JWTAuthProperties));
+                appName, tokenCache, jwtProvider, userDetailsProvider, JWTAuthProperties));
     authenticationWebFilter.setServerAuthenticationConverter(
         new SimpleServerAuthenticationConverter(JWTAuthProperties));
     authenticationWebFilter.setAuthenticationSuccessHandler(
