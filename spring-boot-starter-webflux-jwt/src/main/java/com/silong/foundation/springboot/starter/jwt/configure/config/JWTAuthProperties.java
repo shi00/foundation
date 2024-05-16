@@ -19,14 +19,14 @@
 
 package com.silong.foundation.springboot.starter.jwt.configure.config;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -49,7 +49,10 @@ import org.springframework.validation.annotation.Validated;
 public class JWTAuthProperties {
 
   /** token超时时长，默认：3600秒，如果为0表示永不超时 */
-  @PositiveOrZero private int tokenTimeout = (int) TimeUnit.HOURS.toSeconds(1);
+  @PositiveOrZero private int tokenTimeout = (int) HOURS.toSeconds(1);
+
+  /** 鉴权路径 */
+  @NotEmpty private String authPath;
 
   /** 单个节点可容纳的最大token数量 */
   @Positive private int perNodeMaxTokenSize;
@@ -65,14 +68,6 @@ public class JWTAuthProperties {
 
   /** 需鉴权请求路径名单 */
   @Valid @NotEmpty private Set<@NotEmpty String> authList;
-
-  /** 用户到角色映射 */
-  @Valid @NotEmpty
-  private Map<@NotEmpty String, @NotEmpty @Valid Set<@NotEmpty String>> userRolesMappings;
-
-  /** 角色到请求路径映射 */
-  @Valid @NotEmpty
-  private Map<@NotEmpty String, @NotEmpty @Valid Set<@NotEmpty String>> rolePathsMappings;
 
   /** hazelcast配置 */
   @Valid @NestedConfigurationProperty
