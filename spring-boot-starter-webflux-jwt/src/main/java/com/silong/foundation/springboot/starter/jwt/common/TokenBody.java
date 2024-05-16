@@ -21,9 +21,8 @@
 
 package com.silong.foundation.springboot.starter.jwt.common;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.experimental.Accessors;
 import org.springframework.lang.NonNull;
 
 /**
@@ -34,8 +33,7 @@ import org.springframework.lang.NonNull;
  * @since 2024-05-16 14:52
  */
 @Data
-@Builder
-@Accessors(fluent = true)
+@AllArgsConstructor
 public class TokenBody {
 
   private static final String JSON_FORMAT = "{\"token\": \"%s\"}";
