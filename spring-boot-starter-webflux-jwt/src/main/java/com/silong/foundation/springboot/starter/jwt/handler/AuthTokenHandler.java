@@ -26,6 +26,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.ErrorDetail;
+import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
 import com.silong.foundation.springboot.starter.jwt.exception.IllegalUserException;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
@@ -55,8 +56,6 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
 
-  private static final String JSON_FORMAT = "{\"token\": \"%s\"}";
-
   private final Map<String, String> tokenCache;
 
   private final String appName;
@@ -73,15 +72,15 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
    * @param appName 应用名
    * @param userDetailsProvider 用户详情供应者
    * @param passwordEncoder 密码校验
-   * @param tokenCache token缓存
    * @param jwtProvider jwt供应者
+   * @param tokenCache token缓存
    */
   public AuthTokenHandler(
       @NonNull String appName,
       @NonNull UserDetailsProvider userDetailsProvider,
       @NonNull PasswordEncoder passwordEncoder,
-      @NonNull Map<String, String> tokenCache,
-      @NonNull JWTProvider jwtProvider) {
+      @NonNull JWTProvider jwtProvider,
+      @NonNull Map<String, String> tokenCache) {
     this.appName = appName;
     this.userDetailsProvider = userDetailsProvider;
     this.passwordEncoder = passwordEncoder;
@@ -101,7 +100,7 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
     tokenCache.put(generateTokenKey(userName, appName, token), "ok"); // 缓存起来
     return ServerResponse.ok()
         .contentType(APPLICATION_JSON)
-        .body(String.format(JSON_FORMAT, token), String.class);
+        .body(new TokenBody(token).toJson(), String.class);
   }
 
   /**
