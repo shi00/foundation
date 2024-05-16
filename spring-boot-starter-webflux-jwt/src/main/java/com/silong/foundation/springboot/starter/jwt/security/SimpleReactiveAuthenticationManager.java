@@ -78,7 +78,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
   }
 
   private static String maskString(String strText, int start, int end) {
-    if (strText == null || strText.isEmpty()) {
+    if (!hasLength(strText)) {
       return "";
     }
 
