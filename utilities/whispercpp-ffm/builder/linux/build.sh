@@ -15,7 +15,10 @@ if [ ! -d "./whisper.cpp/" ];then
   exit 1
 fi
 
+# 切换到最新的release版本
 cd "whisper.cpp"
+last_tag=$(git describe --tags)
+git checkout "$last_tag"
 
 if echo "$BUILD_PARAMS" | grep -iqF "openvino"; then
  echo "Start downloading OpenVINO......"
