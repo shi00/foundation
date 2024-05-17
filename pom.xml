@@ -180,7 +180,7 @@
         <jmh.version>1.37</jmh.version>
         <jooq.version>3.18.14</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
-        <testcontainers.version>1.19.7</testcontainers.version>
+        <testcontainers.version>1.19.8</testcontainers.version>
         <springdoc.version>2.5.0</springdoc.version>
         <libphonenumber.version>8.13.35</libphonenumber.version>
         <datafaker.version>2.2.2</datafaker.version>
