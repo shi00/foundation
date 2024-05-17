@@ -17,7 +17,10 @@ if (!$is_src_dir)
     Exit 1
 }
 
+# 切换到最新的release版本
 cd .\whisper.cpp\
+$last_tag = git describe --tags
+git checkout $last_tag
 
 #根据构建参数获取加速类型
 $speedup_type = ""
