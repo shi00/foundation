@@ -24,13 +24,10 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.Set;
 import lombok.Data;
-import org.hibernate.validator.constraints.Range;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -54,9 +51,6 @@ public class JWTAuthProperties {
   /** 鉴权路径 */
   @NotEmpty private String authPath;
 
-  /** 单个节点可容纳的最大token数量 */
-  @Positive private int perNodeMaxTokenSize;
-
   /** 使用HmacSha256签名使用的密钥 */
   @NotEmpty private String workKey;
 
@@ -68,44 +62,4 @@ public class JWTAuthProperties {
 
   /** 需鉴权请求路径名单 */
   @Valid @NotEmpty private Set<@NotEmpty String> authList;
-
-  /** hazelcast配置 */
-  @Valid @NestedConfigurationProperty
-  private HazelcastConfig hazelcastConfig = new HazelcastConfig();
-
-  @Data
-  public static class HazelcastConfig {
-
-    /** hazelcast监听地址 */
-    @NotEmpty private String address;
-
-    /** hazelcast监听端口号，取值：[1025，65535] */
-    @Range(min = 1025, max = 65535)
-    private int port;
-
-    @NotEmpty private String clusterName;
-
-    @NestedConfigurationProperty @Valid
-    private MulticastConfig multicastConfig = new MulticastConfig();
-
-    @Data
-    public static class MulticastConfig {
-      /** 是否启用组播查找集群成员 */
-      private boolean enable;
-
-      /** 组播组 */
-      @NotEmpty private String group;
-
-      /** 组播发现成员超时时间，单位：秒 */
-      @Positive private int timeout;
-
-      /** 组播包存活时间，取值：[0,255] */
-      @Range(min = 0, max = 255)
-      private int timeToLive;
-
-      /** 组播端口号，取值：[1025，65535] */
-      @Range(min = 1025, max = 65535)
-      private int port;
-    }
-  }
 }
