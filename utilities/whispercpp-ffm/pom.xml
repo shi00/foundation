@@ -40,7 +40,7 @@
         <sourcecode.package>com.silong.foundation.utilities.whispercpp.generated</sourcecode.package>
         <check-dependencies.skip>true</check-dependencies.skip><!--依赖检查插件暂不支持java22-->
     </properties>
-    
+
     <profiles>
         <profile>
             <id>linux</id>
@@ -319,7 +319,7 @@
                 <artifactId>copy-rename-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-file</id>
+                        <id>copy-module-info</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>copy</goal>
@@ -328,6 +328,19 @@
                             <sourceFile>${project.build.sourceDirectory}/module-info.java.${os.detected.classifier}
                             </sourceFile>
                             <destinationFile>${project.build.directory}/generated-sources/module-info.java
+                            </destinationFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-test-application-json</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${project.basedir}/src/test/resources/application.json.${os.detected.classifier}
+                            </sourceFile>
+                            <destinationFile>${project.build.testOutputDirectory}/application.json
                             </destinationFile>
                         </configuration>
                     </execution>
