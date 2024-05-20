@@ -23,6 +23,8 @@ package com.silong.foundation.springboot.starter.jwt;
 
 import java.util.Collection;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,40 +36,68 @@ import org.springframework.security.core.userdetails.UserDetails;
  * @version 1.0.0
  * @since 2024-05-20 14:08
  */
+@Data
+@AllArgsConstructor
 public class TestUser implements UserDetails {
+
+  private static final Collection<? extends GrantedAuthority> DEFAULT_AUTHORITIES =
+      List.of(
+          new SimpleGrantedAuthority("guest"),
+          new SimpleGrantedAuthority("operator"),
+          new SimpleGrantedAuthority("admin"));
+
+  public static TestUser SAM =
+      new TestUser(DEFAULT_AUTHORITIES, "password", "sam", true, true, true, true);
+
+  public static TestUser TOM =
+      new TestUser(DEFAULT_AUTHORITIES, "password", "tom", true, true, true, true);
+
+  private Collection<? extends GrantedAuthority> authorities;
+
+  private String password;
+
+  private String userName;
+
+  private boolean isAccountNonExpired;
+
+  private boolean isAccountNonLocked;
+
+  private boolean isCredentialNonExpired;
+
+  private boolean enabled;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of(new SimpleGrantedAuthority("guest"), new SimpleGrantedAuthority("admin"));
+    return authorities;
   }
 
   @Override
   public String getPassword() {
-    return "1";
+    return password;
   }
 
   @Override
   public String getUsername() {
-    return "sam";
+    return userName;
   }
 
   @Override
   public boolean isAccountNonExpired() {
-    return true;
+    return isAccountNonExpired;
   }
 
   @Override
   public boolean isAccountNonLocked() {
-    return true;
+    return isAccountNonLocked;
   }
 
   @Override
   public boolean isCredentialsNonExpired() {
-    return true;
+    return isCredentialNonExpired;
   }
 
   @Override
   public boolean isEnabled() {
-    return true;
+    return enabled;
   }
 }
