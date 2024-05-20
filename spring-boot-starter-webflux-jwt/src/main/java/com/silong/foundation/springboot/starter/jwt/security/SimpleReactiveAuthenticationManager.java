@@ -33,7 +33,7 @@ import com.silong.foundation.springboot.starter.jwt.exception.IllegalUserExcepti
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
 import java.time.Instant;
-import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -50,7 +50,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticationManager {
 
-  private final Map<String, String> tokenCache;
+  private final ConcurrentMap<String, String> tokenCache;
 
   private final JWTAuthProperties authProperties;
 
@@ -71,7 +71,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
    */
   public SimpleReactiveAuthenticationManager(
       String appName,
-      Map<String, String> tokenCache,
+      ConcurrentMap<String, String> tokenCache,
       JWTProvider jwtProvider,
       UserDetailsProvider userDetailsProvider,
       JWTAuthProperties authProperties) {

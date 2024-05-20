@@ -21,7 +21,6 @@
 
 package com.silong.foundation.springboot.starter.jwt.configure;
 
-import static com.silong.foundation.springboot.starter.jwt.common.Constants.TOKEN_CACHE;
 import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
 import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.HTTP_BASIC;
 
@@ -36,10 +35,9 @@ import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAccessD
 import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAuthenticationConverter;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAuthenticationEntryPoint;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAuthenticationSuccessHandler;
-import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -76,7 +74,7 @@ public class SecurityAutoConfiguration {
   private String appName;
 
   /** token缓存 */
-  private Map<String, String> tokenCache;
+  private ConcurrentMap<String, String> tokenCache;
 
   /** 用户信息提供者 */
   private UserDetailsProvider userDetailsProvider;
@@ -202,8 +200,7 @@ public class SecurityAutoConfiguration {
   }
 
   @Autowired
-  @Qualifier(TOKEN_CACHE)
-  public void setTokenCache(Map<String, String> tokenCache) {
+  public void setTokenCache(ConcurrentMap<String, String> tokenCache) {
     this.tokenCache = tokenCache;
   }
 
