@@ -51,9 +51,6 @@ public class JWTAuthProperties {
   /** 鉴权路径 */
   @NotEmpty private String authPath;
 
-  /** 使用HmacSha256签名使用的密钥 */
-  @NotEmpty private String workKey;
-
   /** token签名密钥 */
   @NotEmpty private String signKey;
 

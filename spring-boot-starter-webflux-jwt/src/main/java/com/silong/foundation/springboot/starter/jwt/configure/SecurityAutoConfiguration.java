@@ -67,7 +67,7 @@ import org.springframework.security.web.server.savedrequest.NoOpServerRequestCac
 @ConditionalOnWebApplication(type = REACTIVE)
 @ConditionalOnProperty(
     prefix = "jwt-auth",
-    value = {"sign-key", "work-key"})
+    value = {"sign-key"})
 public class SecurityAutoConfiguration {
   /** 服务名 */
   private String appName;
