@@ -41,8 +41,13 @@ import org.springframework.core.env.*;
 @Slf4j
 public class CryptoEncryptPropertiesPostProcessor implements EnvironmentPostProcessor, Ordered {
 
+  public static final String DEFAULT_CRYPTO_WORK_KEY_PROPERTY_NAME =
+      "crypto.work-key.property-name";
+
+  public static final String DEFAULT_CRYPTO_WORK_KEY = "crypto.work-key";
+
   private static final String CRYPTO_WORK_KEY_NAME =
-      System.getProperty("crypto.work-key.property-name", "crypto.work-key").trim();
+      System.getProperty(DEFAULT_CRYPTO_WORK_KEY_PROPERTY_NAME, DEFAULT_CRYPTO_WORK_KEY).trim();
 
   static {
     RootKey.initialize();
