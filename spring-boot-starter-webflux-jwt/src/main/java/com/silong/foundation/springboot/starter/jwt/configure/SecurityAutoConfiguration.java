@@ -25,7 +25,6 @@ import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebA
 import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.HTTP_BASIC;
 
 import com.auth0.jwt.algorithms.Algorithm;
-import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import com.silong.foundation.springboot.starter.jwt.provider.DefaultJwtProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
@@ -91,8 +90,7 @@ public class SecurityAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   Algorithm registerTokenSignAlg() {
-    return Algorithm.HMAC256(
-        AesGcmToolkit.decrypt(JWTAuthProperties.getSignKey(), JWTAuthProperties.getWorkKey()));
+    return Algorithm.HMAC256(JWTAuthProperties.getSignKey());
   }
 
   @Bean
