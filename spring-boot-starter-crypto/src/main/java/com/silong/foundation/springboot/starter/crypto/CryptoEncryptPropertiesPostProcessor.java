@@ -21,6 +21,8 @@
 
 package com.silong.foundation.springboot.starter.crypto;
 
+import static org.springframework.util.StringUtils.hasLength;
+
 import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import java.util.*;
@@ -32,7 +34,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.*;
 
 /**
- * crypto加密属性后处理器
+ * crypto加密属性后处理器，可处理配置中的占位符${XXX}
  *
  * @author louis sin
  * @version 1.0.0
@@ -64,6 +66,10 @@ public class CryptoEncryptPropertiesPostProcessor implements EnvironmentPostProc
     }
 
     String workKey = environment.getProperty(CRYPTO_WORK_KEY_NAME);
+    if (!hasLength(workKey) || !workKey.startsWith("security:")) {
+      log.error("{} has invalid value: {}.", CRYPTO_WORK_KEY_NAME, workKey);
+      return;
+    }
 
     // 读取所有配置
     var map = new HashMap<>();
@@ -76,25 +82,29 @@ public class CryptoEncryptPropertiesPostProcessor implements EnvironmentPostProc
     var props = new Properties();
     map.entrySet().stream()
         .filter(
-            e ->
-                !CRYPTO_WORK_KEY_NAME.equals(e.getKey().toString())
-                    && !e.getValue().toString().equals(workKey)
-                    && e.getValue() instanceof CharSequence v
-                    && v.toString().startsWith("security:"))
-        .map(e -> convert(e, workKey))
+            e -> {
+              String v;
+              return !CRYPTO_WORK_KEY_NAME.equals(e.getKey().toString())
+                  && !workKey.equals(v = environment.getProperty(e.getKey().toString()))
+                  && hasLength(v)
+                  && v.startsWith("security:");
+            })
+        .map(e -> convert(environment, e, workKey))
         .filter(Objects::nonNull)
         .forEach(e -> props.put(e.getKey(), e.getValue()));
 
     if (!props.isEmpty()) {
-      MutablePropertySources propertySources = environment.getPropertySources();
-      propertySources.addFirst(new PropertiesPropertySource("crypto-decrypt-sources", props));
+      environment
+          .getPropertySources()
+          .addFirst(new PropertiesPropertySource("crypto-decrypt-sources", props));
     }
   }
 
-  private static SimpleEntry<Object, String> convert(Map.Entry<Object, Object> e, String workKey) {
+  private static SimpleEntry<Object, String> convert(
+      ConfigurableEnvironment environment, Map.Entry<Object, Object> e, String workKey) {
     try {
-      return new SimpleEntry<>(
-          e.getKey().toString(), AesGcmToolkit.decrypt(e.getValue().toString(), workKey));
+      String key = e.getKey().toString();
+      return new SimpleEntry<>(key, AesGcmToolkit.decrypt(environment.getProperty(key), workKey));
     } catch (Exception ex) {
       log.error(String.format("Failed to covert %s to decrypt property.", e), ex);
       return null;
