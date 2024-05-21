@@ -24,7 +24,6 @@ package com.silong.foundation.springboot.starter.jwt.configure;
 import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
 import static org.springframework.security.crypto.password.Pbkdf2PasswordEncoder.SecretKeyFactoryAlgorithm.PBKDF2WithHmacSHA256;
 
-import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import com.silong.foundation.springboot.starter.jwt.provider.DefaultUserDetailsProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
@@ -55,10 +54,7 @@ public class UserProviderAutoConfiguration {
   @ConditionalOnMissingBean
   PasswordEncoder passwordEncoder() {
     return new Pbkdf2PasswordEncoder(
-        AesGcmToolkit.decrypt(jwtAuthProperties.getSignKey(), jwtAuthProperties.getWorkKey()),
-        16,
-        310000,
-        PBKDF2WithHmacSHA256);
+        jwtAuthProperties.getSignKey(), 16, 310000, PBKDF2WithHmacSHA256);
   }
 
   @Bean
