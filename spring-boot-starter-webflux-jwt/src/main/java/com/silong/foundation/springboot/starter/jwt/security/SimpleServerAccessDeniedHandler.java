@@ -23,9 +23,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.jwt.common.ErrorCode;
 import com.silong.foundation.springboot.starter.jwt.common.ErrorDetail;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -50,15 +53,20 @@ public class SimpleServerAccessDeniedHandler implements ServerAccessDeniedHandle
 
   private final String appName;
 
+  private final ObjectMapper objectMapper;
+
   /**
    * 构造方法
    *
    * @param appName 服务名
+   * @param objectMapper jackson mapper
    */
-  public SimpleServerAccessDeniedHandler(String appName) {
+  public SimpleServerAccessDeniedHandler(String appName, ObjectMapper objectMapper) {
     this.appName = appName;
+    this.objectMapper = objectMapper;
   }
 
+  @SneakyThrows(JsonProcessingException.class)
   @Override
   public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException denied) {
     ServerHttpRequest request = exchange.getRequest();
@@ -67,11 +75,9 @@ public class SimpleServerAccessDeniedHandler implements ServerAccessDeniedHandle
     response.setStatusCode(FORBIDDEN);
     response.getHeaders().setContentType(APPLICATION_JSON);
     ErrorDetail errorDetail =
-        ErrorDetail.builder()
-            .errorCode(ErrorCode.FORBIDDEN.format(appName))
-            .errorMessage(denied.getMessage())
-            .build();
-    DataBuffer buffer = response.bufferFactory().wrap(errorDetail.toJson().getBytes(UTF_8));
+        new ErrorDetail(ErrorCode.FORBIDDEN.format(appName), denied.getMessage());
+    DataBuffer buffer =
+        response.bufferFactory().wrap(objectMapper.writeValueAsString(errorDetail).getBytes(UTF_8));
     return response.writeWith(Mono.just(buffer));
   }
 }

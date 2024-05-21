@@ -25,6 +25,7 @@ import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebA
 import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.HTTP_BASIC;
 
 import com.auth0.jwt.algorithms.Algorithm;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import com.silong.foundation.springboot.starter.jwt.provider.DefaultJwtProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
@@ -81,6 +82,8 @@ public class SecurityAutoConfiguration {
   /** 配置 */
   private JWTAuthProperties JWTAuthProperties;
 
+  private ObjectMapper objectMapper;
+
   @Bean
   @ConditionalOnMissingBean
   JWTProvider jwtProvider(Algorithm algorithm) {
@@ -100,8 +103,8 @@ public class SecurityAutoConfiguration {
             http,
             jwtProvider,
             JWTAuthProperties,
-            new SimpleServerAuthenticationEntryPoint(appName),
-            new SimpleServerAccessDeniedHandler(appName))
+            new SimpleServerAuthenticationEntryPoint(appName, objectMapper),
+            new SimpleServerAccessDeniedHandler(appName, objectMapper))
         .build();
   }
 
@@ -195,6 +198,11 @@ public class SecurityAutoConfiguration {
   @Autowired
   public void setUserDetailsProvider(UserDetailsProvider userDetailsProvider) {
     this.userDetailsProvider = userDetailsProvider;
+  }
+
+  @Autowired
+  public void setObjectMapper(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
   }
 
   @Autowired

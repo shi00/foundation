@@ -21,10 +21,10 @@
 
 package com.silong.foundation.springboot.starter.jwt.common;
 
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.experimental.Accessors;
-import org.springframework.lang.NonNull;
+import lombok.NoArgsConstructor;
 
 /**
  * 错误信息
@@ -34,25 +34,15 @@ import org.springframework.lang.NonNull;
  * @since 2022-01-03 11:10
  */
 @Data
-@Builder
-@Accessors(fluent = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class ErrorDetail {
 
-  private static final String JSON_FORMAT = "{\"error_code\": \"%s\",\"error_msg\": \"%s\"}";
-
   /** 错误码 */
+  @JsonProperty("error_code")
   private String errorCode;
 
   /** 错误描述 */
+  @JsonProperty("error_message")
   private String errorMessage;
-
-  /**
-   * 转换为json 字符串
-   *
-   * @return json
-   */
-  @NonNull
-  public String toJson() {
-    return String.format(JSON_FORMAT, errorCode, errorMessage);
-  }
 }

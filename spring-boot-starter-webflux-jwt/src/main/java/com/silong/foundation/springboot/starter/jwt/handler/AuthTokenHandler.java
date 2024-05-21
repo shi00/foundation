@@ -171,9 +171,6 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
                     .contentType(APPLICATION_JSON)
                     .body(
                         BodyInserters.fromValue(
-                            ErrorDetail.builder()
-                                .errorCode(UNAUTHENTICATED.format(appName))
-                                .errorMessage(t.getMessage())
-                                .build())));
+                            new ErrorDetail(UNAUTHENTICATED.format(appName), t.getMessage()))));
   }
 }
