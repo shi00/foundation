@@ -94,6 +94,7 @@
         <module>voice-assistant</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
         <module>spring-boot-starter-webflux-jwt</module>
+        <module>spring-boot-starter-crypto</module>
         <module>plugins/maven/etcdv3</module>
         <module>plugins/maven/mysql</module>
         <module>plugins/maven/props-writer</module>
