@@ -47,7 +47,7 @@ public class CryptoEncryptPropertiesPostProcessor implements EnvironmentPostProc
   public static final String DEFAULT_CRYPTO_WORK_KEY = "crypto.work-key";
 
   private static final String CRYPTO_WORK_KEY_NAME =
-      System.getProperty(DEFAULT_CRYPTO_WORK_KEY_PROPERTY_NAME, DEFAULT_CRYPTO_WORK_KEY).trim();
+      System.getProperty(DEFAULT_CRYPTO_WORK_KEY_PROPERTY_NAME, DEFAULT_CRYPTO_WORK_KEY);
 
   static {
     RootKey.initialize();
@@ -77,9 +77,10 @@ public class CryptoEncryptPropertiesPostProcessor implements EnvironmentPostProc
     map.entrySet().stream()
         .filter(
             e ->
-                !CRYPTO_WORK_KEY_NAME.equals(e.getKey().toString().trim())
+                !CRYPTO_WORK_KEY_NAME.equals(e.getKey().toString())
+                    && e.getValue().toString().equals(workKey)
                     && e.getValue() instanceof CharSequence v
-                    && v.toString().trim().startsWith("security:"))
+                    && v.toString().startsWith("security:"))
         .map(e -> convert(e, workKey))
         .filter(Objects::nonNull)
         .forEach(e -> props.put(e.getKey(), e.getValue()));
@@ -93,8 +94,7 @@ public class CryptoEncryptPropertiesPostProcessor implements EnvironmentPostProc
   private static SimpleEntry<Object, String> convert(Map.Entry<Object, Object> e, String workKey) {
     try {
       return new SimpleEntry<>(
-          e.getKey().toString().trim(),
-          AesGcmToolkit.decrypt(e.getValue().toString().trim(), workKey));
+          e.getKey().toString(), AesGcmToolkit.decrypt(e.getValue().toString(), workKey));
     } catch (Exception ex) {
       log.error(String.format("Failed to covert %s to decrypt property.", e), ex);
       return null;
