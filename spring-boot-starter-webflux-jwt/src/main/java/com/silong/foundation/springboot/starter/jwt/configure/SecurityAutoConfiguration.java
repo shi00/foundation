@@ -84,7 +84,7 @@ public class SecurityAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  JWTProvider jwtProvider(Algorithm algorithm, String appName) {
+  JWTProvider jwtProvider(Algorithm algorithm) {
     return new DefaultJwtProvider(algorithm, appName);
   }
 
