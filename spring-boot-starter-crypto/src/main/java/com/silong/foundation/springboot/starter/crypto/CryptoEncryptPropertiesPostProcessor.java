@@ -78,7 +78,7 @@ public class CryptoEncryptPropertiesPostProcessor implements EnvironmentPostProc
         .filter(
             e ->
                 !CRYPTO_WORK_KEY_NAME.equals(e.getKey().toString())
-                    && e.getValue().toString().equals(workKey)
+                    && !e.getValue().toString().equals(workKey)
                     && e.getValue() instanceof CharSequence v
                     && v.toString().startsWith("security:"))
         .map(e -> convert(e, workKey))
