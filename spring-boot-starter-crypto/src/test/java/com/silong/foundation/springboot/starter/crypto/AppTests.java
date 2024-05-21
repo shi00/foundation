@@ -61,6 +61,12 @@ public class AppTests {
   }
 
   @Test
+  void testPlaceholder() {
+    ResponseEntity<String> idEntity = restTemplate.getForEntity("/placeholder", String.class);
+    Assertions.assertEquals(idEntity.getBody(), "123456");
+  }
+
+  @Test
   void testId() {
     ResponseEntity<String> idEntity = restTemplate.postForEntity("/id", null, String.class);
     Assertions.assertEquals(idEntity.getBody(), "123456");

@@ -45,9 +45,17 @@ public class TestController {
   @Value("${encrypt.pass}")
   private String pass;
 
+  @Value("${encrypt.placeholder}")
+  private String placeholder;
+
   @PostMapping("/id")
   public String generateId() {
     return id;
+  }
+
+  @GetMapping("/placeholder")
+  public String generatePlaceholder() {
+    return placeholder;
   }
 
   @GetMapping("/pass")
