@@ -47,10 +47,24 @@ public class TestUser implements UserDetails {
           new SimpleGrantedAuthority("admin"));
 
   public static TestUser SAM =
-      new TestUser(DEFAULT_AUTHORITIES, "password", "sam", true, true, true, true);
+      new TestUser(
+          DEFAULT_AUTHORITIES,
+          "c76f0d9ab3e9c5649ba15bbb29ddb89eaee2053931590b373ab25adedc9ad22a17bca94375f73ea4963606d53d10b6b4",
+          "sam",
+          true,
+          true,
+          true,
+          true);
 
   public static TestUser TOM =
-      new TestUser(DEFAULT_AUTHORITIES, "password", "tom", true, true, true, true);
+      new TestUser(
+          DEFAULT_AUTHORITIES,
+          "c76f0d9ab3e9c5649ba15bbb29ddb89eaee2053931590b373ab25adedc9ad22a17bca94375f73ea4963606d53d10b6b4",
+          "tom",
+          true,
+          true,
+          true,
+          true);
 
   private Collection<? extends GrantedAuthority> authorities;
 
