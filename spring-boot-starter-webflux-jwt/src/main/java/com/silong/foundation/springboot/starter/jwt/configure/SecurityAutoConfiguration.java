@@ -119,10 +119,6 @@ public class SecurityAutoConfiguration {
       SimpleServerAuthenticationEntryPoint authenticationEntryPoint,
       SimpleServerAccessDeniedHandler accessDeniedHandler) {
 
-    log.info("whiteList: {}", JWTAuthProperties.getWhiteList());
-
-    log.info("authList: {}", JWTAuthProperties.getAuthList());
-
     return
     // 关闭csrf，rest接口不提供浏览器使用
     http.csrf(CsrfSpec::disable)
@@ -157,6 +153,9 @@ public class SecurityAutoConfiguration {
                     .authenticationEntryPoint(authenticationEntryPoint))
         .authorizeExchange(
             authorizeExchangeSpec -> {
+              log.info("whiteList: {}", JWTAuthProperties.getWhiteList());
+
+              log.info("authList: {}", JWTAuthProperties.getAuthList());
 
               // 配置登录接口无需鉴权
               authorizeExchangeSpec.pathMatchers(POST, JWTAuthProperties.getAuthPath()).permitAll();
