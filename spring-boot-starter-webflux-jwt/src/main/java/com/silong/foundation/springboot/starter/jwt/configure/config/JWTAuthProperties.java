@@ -24,10 +24,13 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.http.HttpMethod;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -55,8 +58,8 @@ public class JWTAuthProperties {
   @NotEmpty private String signKey;
 
   /** 无需鉴权请求路径名单 */
-  @Valid @NotEmpty private Set<@NotEmpty String> whiteList;
+  @Valid private Map<@NotNull HttpMethod, @NotEmpty @Valid List<@NotEmpty String>> whiteList;
 
   /** 需鉴权请求路径名单 */
-  @Valid @NotEmpty private Set<@NotEmpty String> authList;
+  @Valid private Map<@NotNull HttpMethod, @NotEmpty @Valid List<@NotEmpty String>> authList;
 }

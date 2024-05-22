@@ -44,6 +44,7 @@ import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -67,6 +68,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 @EnableWebFlux
 @AutoConfigureBefore(WebFluxAutoConfiguration.class)
 @EnableConfigurationProperties({JWTAuthProperties.class})
+@ConditionalOnProperty(prefix = "jwt-auth", value = "auth-path")
 @ConditionalOnWebApplication(type = REACTIVE)
 public class RoutesAutoConfiguration {
 

@@ -19,6 +19,7 @@
 package com.silong.foundation.springboot.starter.jwt.security;
 
 import static com.silong.foundation.springboot.starter.jwt.common.Constants.*;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.security.core.authority.AuthorityUtils.createAuthorityList;
 import static org.springframework.util.StringUtils.hasLength;
@@ -26,10 +27,14 @@ import static org.springframework.util.StringUtils.hasLength;
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import com.silong.foundation.springboot.starter.jwt.exception.AccessForbiddenException;
 import com.silong.foundation.springboot.starter.jwt.exception.AccessTokenNotFoundException;
+import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
+import org.springframework.security.web.server.util.matcher.OrServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.server.ServerWebExchange;
@@ -59,10 +64,25 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
    * @param properties 服务配置
    */
   public SimpleServerAuthenticationConverter(JWTAuthProperties properties) {
-    this.authServerWebExchangeMatcher =
-        ServerWebExchangeMatchers.pathMatchers(properties.getAuthList().toArray(new String[0]));
+    this.authServerWebExchangeMatcher = buildServerWebExchangeMatcher(properties.getAuthList());
     this.noAuthServerWebExchangeMatcher =
-        ServerWebExchangeMatchers.pathMatchers(properties.getWhiteList().toArray(new String[0]));
+        new OrServerWebExchangeMatcher(
+            buildServerWebExchangeMatcher(properties.getWhiteList()),
+            ServerWebExchangeMatchers.pathMatchers(POST, properties.getAuthPath()));
+  }
+
+  private static ServerWebExchangeMatcher buildServerWebExchangeMatcher(
+      Map<HttpMethod, List<String>> map) {
+    if (map == null || map.isEmpty()) {
+      return exchange -> ServerWebExchangeMatcher.MatchResult.notMatch();
+    }
+    return new OrServerWebExchangeMatcher(
+        map.entrySet().stream()
+            .map(
+                e ->
+                    ServerWebExchangeMatchers.pathMatchers(
+                        e.getKey(), e.getValue().toArray(new String[0])))
+            .toList());
   }
 
   @Override

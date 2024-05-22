@@ -22,6 +22,7 @@
 package com.silong.foundation.springboot.starter.jwt.configure;
 
 import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.security.config.web.server.SecurityWebFiltersOrder.HTTP_BASIC;
 
 import com.auth0.jwt.algorithms.Algorithm;
@@ -35,6 +36,8 @@ import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAccessD
 import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAuthenticationConverter;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAuthenticationEntryPoint;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAuthenticationSuccessHandler;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +48,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity.*;
@@ -68,7 +72,7 @@ import org.springframework.security.web.server.savedrequest.NoOpServerRequestCac
 @ConditionalOnWebApplication(type = REACTIVE)
 @ConditionalOnProperty(
     prefix = "jwt-auth",
-    value = {"sign-key"})
+    value = {"sign-key", "auth-path"})
 public class SecurityAutoConfiguration {
   /** 服务名 */
   private String appName;
@@ -115,40 +119,33 @@ public class SecurityAutoConfiguration {
       SimpleServerAuthenticationEntryPoint authenticationEntryPoint,
       SimpleServerAccessDeniedHandler accessDeniedHandler) {
     // 关闭csrf，rest接口不提供浏览器使用
-    http = http.csrf(CsrfSpec::disable);
+    http.csrf(CsrfSpec::disable)
 
-    // 关闭跨越资源共享CORS
-    http = http.cors(CorsSpec::disable);
+        // 关闭跨越资源共享CORS
+        .cors(CorsSpec::disable)
 
-    // 关闭http基础鉴权
-    http = http.httpBasic(HttpBasicSpec::disable);
+        // 关闭http基础鉴权
+        .httpBasic(HttpBasicSpec::disable)
 
-    // 关闭表单登录
-    http = http.formLogin(FormLoginSpec::disable);
+        // 关闭表单登录
+        .formLogin(FormLoginSpec::disable)
 
-    // 关闭登出
-    http = http.logout(LogoutSpec::disable);
+        // 关闭登出
+        .logout(LogoutSpec::disable)
 
-    // 关闭匿名用户
-    http = http.anonymous(AnonymousSpec::disable);
+        // 关闭匿名用户
+        .anonymous(AnonymousSpec::disable)
 
-    // 关闭请求缓存
-    http =
-        http.requestCache(
-            requestCacheSpec ->
-                requestCacheSpec.requestCache(NoOpServerRequestCache.getInstance()));
+        // 关闭请求缓存
+        .requestCache(
+            requestCacheSpec -> requestCacheSpec.requestCache(NoOpServerRequestCache.getInstance()))
 
-    // 无安全上下文缓存
-    http = http.securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
+        // 无安全上下文缓存
+        .securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
 
-    // 登录接口加入白名单
-    String[] whiteList = JWTAuthProperties.getWhiteList().toArray(new String[0]);
+    log.info("whiteList: {}", JWTAuthProperties.getWhiteList());
 
-    log.info("whiteList: {}", String.join(", ", whiteList));
-
-    String[] authList = JWTAuthProperties.getAuthList().toArray(new String[0]);
-
-    log.info("authList: {}", String.join(", ", authList));
+    log.info("authList: {}", JWTAuthProperties.getAuthList());
 
     return http
         // 定制权限不足异常处理
@@ -159,18 +156,37 @@ public class SecurityAutoConfiguration {
                     .accessDeniedHandler(accessDeniedHandler)
                     .authenticationEntryPoint(authenticationEntryPoint))
         .authorizeExchange(
-            authorizeExchangeSpec ->
-                authorizeExchangeSpec
-                    .pathMatchers(whiteList) // 其他无需鉴权接口，如：查询版本
-                    .permitAll()
-                    .pathMatchers(authList) // 须鉴权接口
-                    .authenticated()
-                    .anyExchange()
-                    .denyAll())
-        // 定制鉴权过滤器
+            authorizeExchangeSpec -> {
+
+              // 配置登录接口无需鉴权
+              authorizeExchangeSpec.pathMatchers(POST, JWTAuthProperties.getAuthPath()).permitAll();
+
+              // 按配置配置无需鉴权的接口
+              Map<HttpMethod, List<String>> whiteList = JWTAuthProperties.getWhiteList();
+              if (whiteList != null && !whiteList.isEmpty()) {
+                whiteList.forEach(
+                    (k, v) ->
+                        authorizeExchangeSpec
+                            .pathMatchers(k, v.toArray(String[]::new))
+                            .permitAll());
+              }
+
+              // 按配置配置需要鉴权的接口
+              Map<HttpMethod, List<String>> authList = JWTAuthProperties.getAuthList();
+              if (authList != null && !authList.isEmpty()) {
+                authList.forEach(
+                    (k, v) ->
+                        authorizeExchangeSpec
+                            .pathMatchers(k, v.toArray(String[]::new))
+                            .authenticated());
+              }
+
+              // 其他访问路径一律拒绝访问
+              authorizeExchangeSpec.anyExchange().denyAll();
+            })
         .addFilterAt(
             authenticationWebFilter(JWTAuthProperties, jwtProvider, authenticationEntryPoint),
-            HTTP_BASIC);
+            HTTP_BASIC); // 定制鉴权过滤器
   }
 
   AuthenticationWebFilter authenticationWebFilter(

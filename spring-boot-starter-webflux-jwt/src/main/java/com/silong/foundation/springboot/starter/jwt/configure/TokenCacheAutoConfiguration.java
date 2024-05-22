@@ -42,7 +42,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 2024-05-07 10:45
  */
 @Configuration
-@ConditionalOnProperty(prefix = "spring.data.redis", value = "host")
+@ConditionalOnProperty(value = {"spring.data.redis.host", "jwt-auth.auth-path"})
 @EnableConfigurationProperties(JWTAuthProperties.class)
 @ConditionalOnWebApplication(type = REACTIVE)
 public class TokenCacheAutoConfiguration {
