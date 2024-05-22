@@ -21,9 +21,10 @@
 
 package com.silong.foundation.springboot.starter.jwt.common;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.springframework.lang.NonNull;
+import lombok.NoArgsConstructor;
 
 /**
  * 描述信息
@@ -34,20 +35,9 @@ import org.springframework.lang.NonNull;
  */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class TokenBody {
 
-  private static final String JSON_FORMAT = "{\"token\": \"%s\"}";
-
   /** token */
-  private String token;
-
-  /**
-   * 转换为json 字符串
-   *
-   * @return json
-   */
-  @NonNull
-  public String toJson() {
-    return String.format(JSON_FORMAT, token);
-  }
+  @JsonProperty private String token;
 }
