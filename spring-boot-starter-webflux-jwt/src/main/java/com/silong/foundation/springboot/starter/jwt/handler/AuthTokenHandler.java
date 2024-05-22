@@ -100,7 +100,7 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
     tokenCache.put(generateTokenKey(userName, appName, token), "ok"); // 缓存起来
     return ServerResponse.ok()
         .contentType(APPLICATION_JSON)
-        .body(new TokenBody(token).toJson(), String.class);
+        .body(BodyInserters.fromValue(new TokenBody(token)));
   }
 
   /**
@@ -166,11 +166,13 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
             credentials -> log.info("{} authentication is successful.", credentials.getUserName()))
         .flatMap(this::generateToken)
         .onErrorResume(
-            t ->
-                ServerResponse.status(HttpStatus.UNAUTHORIZED.value())
-                    .contentType(APPLICATION_JSON)
-                    .body(
-                        BodyInserters.fromValue(
-                            new ErrorDetail(UNAUTHENTICATED.format(appName), t.getMessage()))));
+            t -> {
+              log.error("Failed to login.", t);
+              return ServerResponse.status(HttpStatus.UNAUTHORIZED.value())
+                  .contentType(APPLICATION_JSON)
+                  .body(
+                      BodyInserters.fromValue(
+                          new ErrorDetail(UNAUTHENTICATED.format(appName), t.getMessage())));
+            });
   }
 }
