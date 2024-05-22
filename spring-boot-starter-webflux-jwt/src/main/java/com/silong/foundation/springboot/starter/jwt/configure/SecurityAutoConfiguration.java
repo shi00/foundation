@@ -118,6 +118,12 @@ public class SecurityAutoConfiguration {
       JWTAuthProperties JWTAuthProperties,
       SimpleServerAuthenticationEntryPoint authenticationEntryPoint,
       SimpleServerAccessDeniedHandler accessDeniedHandler) {
+
+    log.info("whiteList: {}", JWTAuthProperties.getWhiteList());
+
+    log.info("authList: {}", JWTAuthProperties.getAuthList());
+
+    return
     // 关闭csrf，rest接口不提供浏览器使用
     http.csrf(CsrfSpec::disable)
 
@@ -141,13 +147,7 @@ public class SecurityAutoConfiguration {
             requestCacheSpec -> requestCacheSpec.requestCache(NoOpServerRequestCache.getInstance()))
 
         // 无安全上下文缓存
-        .securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
-
-    log.info("whiteList: {}", JWTAuthProperties.getWhiteList());
-
-    log.info("authList: {}", JWTAuthProperties.getAuthList());
-
-    return http
+        .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
         // 定制权限不足异常处理
         // 定制鉴权失败异常处理
         .exceptionHandling(
