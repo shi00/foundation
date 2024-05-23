@@ -21,7 +21,6 @@
 
 package com.silong.foundation.springboot.starter.jwt;
 
-import com.silong.foundation.crypto.RootKey;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -34,10 +33,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 public class JwtAuthTestApp {
-
-  static {
-    RootKey.initialize();
-  }
 
   /**
    * 服务启动入口
