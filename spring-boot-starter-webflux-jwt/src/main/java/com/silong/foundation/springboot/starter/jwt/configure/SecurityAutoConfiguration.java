@@ -118,10 +118,7 @@ public class SecurityAutoConfiguration {
       JWTAuthProperties JWTAuthProperties,
       SimpleServerAuthenticationEntryPoint authenticationEntryPoint,
       SimpleServerAccessDeniedHandler accessDeniedHandler) {
-
-    return
-    // 关闭csrf，rest接口不提供浏览器使用
-    http.csrf(CsrfSpec::disable)
+    return http.csrf(CsrfSpec::disable) // 关闭csrf，rest接口不提供浏览器使用
 
         // 关闭跨越资源共享CORS
         .cors(CorsSpec::disable)
