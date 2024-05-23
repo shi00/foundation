@@ -59,7 +59,7 @@ public class TestUser implements UserDetails {
   public static TestUser TOM =
       new TestUser(
           DEFAULT_AUTHORITIES,
-          "c76f0d9ab3e9c5649ba15bbb29ddb89eaee2053931590b373ab25adedc9ad22a17bca94375f73ea4963606d53d10b6b4",
+          "d52edb12c56147f2d853bbcebfafb2128ac343edafa4b9822ba16e52255044dd47ca6de446afaa22783d34a937f24e68",
           "tom",
           true,
           true,
