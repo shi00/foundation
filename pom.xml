@@ -169,7 +169,7 @@
         <!--开源组件-->
         <spring-boot.version>3.2.5</spring-boot.version>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
-        <spring-ai.version>0.8.1</spring-ai.version>
+        <spring-ai.version>1.0.3</spring-ai.version>
         <guava.version>33.1.0-jre</guava.version>
         <passay.version>1.6.4</passay.version>
         <zxcvbn.version>1.8.2</zxcvbn.version>
@@ -220,7 +220,7 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.springframework.ai</groupId>
+                <groupId>io.springboot.ai</groupId>
                 <artifactId>spring-ai-bom</artifactId>
                 <version>${spring-ai.version}</version>
                 <type>pom</type>

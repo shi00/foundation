@@ -1,4 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.silong.foundation.springboot.starter.tokenauth.configure.SecurityAutoConfiguration,\
-  com.silong.foundation.springboot.starter.tokenauth.configure.JacksonAutoConfiguration,\
-  com.silong.foundation.springboot.starter.tokenauth.configure.TokenCacheAutoConfiguration
