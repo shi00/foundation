@@ -188,17 +188,21 @@ class WhisperCppImpl implements Whisper {
     dtw_n_top(whisperContextParams, contextParamsConfig.getDtw_n_top());
     MemorySegment dtwAheads = dtw_aheads(whisperContextParams);
     WhisperConfig.WhisperAheads dtwAheadsConfig = contextParamsConfig.getDtw_aheads();
-    n_heads(dtwAheads, dtwAheadsConfig.getN_heads());
-    WhisperConfig.WhisperAhead[] headsConfig = dtwAheadsConfig.getHeads();
+    WhisperConfig.WhisperAhead[] headsConfig = null;
+    if (dtwAheadsConfig != null) {
+      n_heads(dtwAheads, dtwAheadsConfig.getN_heads());
+      headsConfig = dtwAheadsConfig.getHeads();
+    }
     int headsSize = -1;
     if (headsConfig != null && (headsSize = headsConfig.length) != 0) {
       AtomicInteger index = new AtomicInteger(0);
       MemorySegment heads = whisper_ahead.allocateArray(headsConfig.length, arena);
+      WhisperConfig.WhisperAhead[] _headsConfig = headsConfig;
       heads
           .elements(sequenceLayout(headsConfig.length, whisper_ahead.layout()))
           .forEachOrdered(
               head -> {
-                WhisperConfig.WhisperAhead whisperAhead = headsConfig[index.getAndIncrement()];
+                WhisperConfig.WhisperAhead whisperAhead = _headsConfig[index.getAndIncrement()];
                 n_text_layer(head, whisperAhead.getN_text_layer());
                 n_head(head, whisperAhead.getN_head());
               });
