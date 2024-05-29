@@ -167,7 +167,7 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.2.5</spring-boot.version>
+        <spring-boot.version>3.3.0</spring-boot.version>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <spring-ai.version>1.0.3</spring-ai.version>
         <guava.version>33.1.0-jre</guava.version>
@@ -179,7 +179,7 @@
         <jave.version>3.5.0</jave.version>
         <jetcd.version>0.8.0</jetcd.version>
         <jmh.version>1.37</jmh.version>
-        <jooq.version>3.18.14</jooq.version>
+        <jooq.version>3.19.8</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
         <testcontainers.version>1.19.8</testcontainers.version>
         <springdoc.version>2.5.0</springdoc.version>
