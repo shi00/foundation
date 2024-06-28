@@ -133,10 +133,10 @@
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
-        <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
-        <maven-pmd-plugin.version>3.22.0</maven-pmd-plugin.version>
+        <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
+        <maven-pmd-plugin.version>3.23.0</maven-pmd-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
-        <checkstyle.version>10.16.0</checkstyle.version>
+        <checkstyle.version>10.17.0</checkstyle.version>
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.3.2</maven-jxr-plugin.version>
@@ -167,23 +167,23 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.3.0</spring-boot.version>
-        <spring-cloud.version>2023.0.1</spring-cloud.version>
+        <spring-boot.version>3.3.1</spring-boot.version>
+        <spring-cloud.version>2023.0.2</spring-cloud.version>
         <spring-ai.version>1.0.3</spring-ai.version>
-        <guava.version>33.1.0-jre</guava.version>
+        <guava.version>33.2.1-jre</guava.version>
         <passay.version>1.6.4</passay.version>
-        <zxcvbn.version>1.8.2</zxcvbn.version>
-        <spotbugs.version>4.8.4</spotbugs.version>
+        <zxcvbn.version>1.9.0</zxcvbn.version>
+        <spotbugs.version>4.8.6</spotbugs.version>
         <disruptor.version>4.0.0</disruptor.version>
-        <jctools.version>4.0.3</jctools.version>
+        <jctools.version>4.0.5</jctools.version>
         <jave.version>3.5.0</jave.version>
-        <jetcd.version>0.8.0</jetcd.version>
+        <jetcd.version>0.8.2</jetcd.version>
         <jmh.version>1.37</jmh.version>
-        <jooq.version>3.19.8</jooq.version>
+        <jooq.version>3.19.10</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
         <testcontainers.version>1.19.8</testcontainers.version>
         <springdoc.version>2.5.0</springdoc.version>
-        <libphonenumber.version>8.13.35</libphonenumber.version>
+        <libphonenumber.version>8.13.39</libphonenumber.version>
         <datafaker.version>2.2.2</datafaker.version>
         <commons-io.version>2.16.1</commons-io.version>
         <commons-rng-simple.version>1.5</commons-rng-simple.version>
@@ -191,18 +191,19 @@
         <plexus-utils.version>3.5.1</plexus-utils.version>
         <plexus-archiver.version>4.9.2</plexus-archiver.version>
         <cron-utils.version>9.2.1</cron-utils.version>
-        <jgroups.version>5.3.6.Final</jgroups.version>
+        <jgroups.version>5.3.7.Final</jgroups.version>
         <jgroups-raft.version>1.0.13.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.2.Final</jgroups-kubernetes.version>
         <protobuf-java.version>3.25.3</protobuf-java.version>
-        <rocksdbjni.version>9.1.1</rocksdbjni.version>
+        <rocksdbjni.version>9.2.1</rocksdbjni.version>
         <snappy-java.version>1.1.10.5</snappy-java.version>
         <zstd-jni.version>1.5.6-3</zstd-jni.version>
         <kryo.version>5.6.0</kryo.version>
         <java-jwt.version>4.4.0</java-jwt.version>
-        <oshi-core.version>6.6.0</oshi-core.version>
+        <oshi-core.version>6.6.1</oshi-core.version>
         <mysql-connector-j.version>8.4.0</mysql-connector-j.version>
-        <redisson-spring-boot-starter.version>3.30.0</redisson-spring-boot-starter.version>
+        <redisson-spring-boot-starter.version>3.32.0</redisson-spring-boot-starter.version>
+        <commons-collections4.version>4.5.0-M2</commons-collections4.version>
         <!--开源组件-->
 
         <checkstyle.skip>false</checkstyle.skip><!--checkstyle检查插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
@@ -440,6 +441,12 @@
                 <version>${mysql-connector-j.version}</version>
             </dependency>
             <!-- jdbc驱动 -->
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${commons-collections4.version}</version>
+            </dependency>
 
             <!-- OpenAPI -->
             <dependency>
