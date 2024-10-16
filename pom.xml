@@ -95,6 +95,7 @@
         <module>spring-boot-starter-webflux-simpleAuth</module>
         <module>spring-boot-starter-webflux-jwt</module>
         <module>spring-boot-starter-crypto</module>
+        <module>spring-boot-starter-raft</module>
         <module>plugins/maven/etcdv3</module>
         <module>plugins/maven/mysql</module>
         <module>plugins/maven/props-writer</module>
@@ -133,8 +134,8 @@
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
-        <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
-        <maven-pmd-plugin.version>3.23.0</maven-pmd-plugin.version>
+        <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
+        <maven-pmd-plugin.version>3.25.0</maven-pmd-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
         <checkstyle.version>10.17.0</checkstyle.version>
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
@@ -156,7 +157,7 @@
         <springdoc-openapi-maven-plugin.version>1.4</springdoc-openapi-maven-plugin.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
         <maven-site-plugin.version>4.0.0-M13</maven-site-plugin.version>
-        <docker-maven-plugin.version>0.44.0</docker-maven-plugin.version>
+        <docker-maven-plugin.version>0.45.0</docker-maven-plugin.version>
         <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
         <download-maven-plugin.version>1.9.0</download-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
@@ -167,43 +168,44 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.3.1</spring-boot.version>
+        <spring-boot.version>3.3.4</spring-boot.version>
         <spring-cloud.version>2023.0.3</spring-cloud.version>
-        <spring-ai.version>1.0.3</spring-ai.version>
-        <guava.version>33.2.1-jre</guava.version>
-        <passay.version>1.6.4</passay.version>
+        <guava.version>33.3.0-jre</guava.version>
+        <passay.version>1.6.5</passay.version>
         <zxcvbn.version>1.9.0</zxcvbn.version>
         <spotbugs.version>4.8.6</spotbugs.version>
         <disruptor.version>4.0.0</disruptor.version>
         <jctools.version>4.0.5</jctools.version>
         <jave.version>3.5.0</jave.version>
-        <jetcd.version>0.8.2</jetcd.version>
+        <jetcd.version>0.8.3</jetcd.version>
         <jmh.version>1.37</jmh.version>
-        <jooq.version>3.19.10</jooq.version>
+        <jooq.version>3.19.11</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
-        <testcontainers.version>1.19.8</testcontainers.version>
+        <testcontainers.version>1.20.1</testcontainers.version>
         <springdoc.version>2.6.0</springdoc.version>
-        <libphonenumber.version>8.13.41</libphonenumber.version>
+        <libphonenumber.version>8.13.45</libphonenumber.version>
         <datafaker.version>2.3.1</datafaker.version>
         <commons-io.version>2.16.1</commons-io.version>
-        <commons-rng-simple.version>1.5</commons-rng-simple.version>
+        <commons-rng-simple.version>1.6</commons-rng-simple.version>
         <maven.version>3.9.8</maven.version>
-        <plexus-utils.version>4.0.1</plexus-utils.version>
+        <plexus-utils.version>3.5.1</plexus-utils.version>
         <plexus-archiver.version>4.10.0</plexus-archiver.version>
         <cron-utils.version>9.2.1</cron-utils.version>
-        <jgroups.version>5.3.9.Final</jgroups.version>
+        <jgroups.version>5.3.11.Final</jgroups.version>
         <jgroups-raft.version>1.0.13.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.2.Final</jgroups-kubernetes.version>
-        <protobuf-java.version>3.25.3</protobuf-java.version>
-        <rocksdbjni.version>9.4.0</rocksdbjni.version>
-        <snappy-java.version>1.1.10.5</snappy-java.version>
-        <zstd-jni.version>1.5.6-3</zstd-jni.version>
+        <protobuf-java.version>3.25.4</protobuf-java.version>
+        <rocksdbjni.version>9.5.2</rocksdbjni.version>
+        <snappy-java.version>1.1.10.7</snappy-java.version>
+        <zstd-jni.version>1.5.6-5</zstd-jni.version>
         <kryo.version>5.6.0</kryo.version>
         <java-jwt.version>4.4.0</java-jwt.version>
-        <oshi-core.version>6.6.1</oshi-core.version>
+        <oshi-core.version>6.6.3</oshi-core.version>
         <mysql-connector-j.version>9.0.0</mysql-connector-j.version>
-        <redisson-spring-boot-starter.version>3.32.0</redisson-spring-boot-starter.version>
+        <redisson-spring-boot-starter.version>3.36.0</redisson-spring-boot-starter.version>
         <commons-collections4.version>4.4</commons-collections4.version>
+        <langchain4j.version>0.35.0</langchain4j.version>
+        <k8s-client.version>21.0.2</k8s-client.version>
         <!--开源组件-->
 
         <checkstyle.skip>false</checkstyle.skip><!--checkstyle检查插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
@@ -217,13 +219,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.springboot.ai</groupId>
-                <artifactId>spring-ai-bom</artifactId>
-                <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -257,6 +252,27 @@
                 <version>${guava.version}</version>
             </dependency>
             <!-- google 基础库 -->
+
+            <!-- k8s client -->
+            <dependency>
+                <groupId>io.kubernetes</groupId>
+                <artifactId>client-java</artifactId>
+                <version>${k8s-client.version}</version>
+            </dependency>
+            <!-- k8s client -->
+
+            <!-- LLM AI -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j</artifactId>
+                <version>${langchain4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
+                <version>${langchain4j.version}</version>
+            </dependency>
+            <!-- LLM AI -->
 
             <!-- protobuf -->
             <dependency>
