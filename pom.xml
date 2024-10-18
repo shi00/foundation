@@ -95,7 +95,7 @@
         <module>spring-boot-starter-webflux-simpleAuth</module>
         <module>spring-boot-starter-webflux-jwt</module>
         <module>spring-boot-starter-crypto</module>
-        <module>spring-boot-starter-raft</module>
+        <module>spring-boot-starter-raft-k8s</module>
         <module>plugins/maven/etcdv3</module>
         <module>plugins/maven/mysql</module>
         <module>plugins/maven/props-writer</module>
@@ -143,7 +143,7 @@
         <maven-jxr-plugin.version>3.3.2</maven-jxr-plugin.version>
         <spotbugs-maven-plugin.version>4.8.4.0</spotbugs-maven-plugin.version>
         <findsecbugs-plugin.version>1.13.0</findsecbugs-plugin.version>
-        <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
+        <maven-dependency-plugin.version>3.8.0</maven-dependency-plugin.version>
         <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
         <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
         <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
@@ -194,7 +194,7 @@
         <jgroups.version>5.3.11.Final</jgroups.version>
         <jgroups-raft.version>1.0.13.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.2.Final</jgroups-kubernetes.version>
-        <protobuf-java.version>3.25.4</protobuf-java.version>
+        <protobuf-java.version>3.25.5</protobuf-java.version>
         <rocksdbjni.version>9.5.2</rocksdbjni.version>
         <snappy-java.version>1.1.10.7</snappy-java.version>
         <zstd-jni.version>1.5.6-5</zstd-jni.version>
