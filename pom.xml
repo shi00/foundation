@@ -154,6 +154,7 @@
         <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
         <sql-maven-plugin.version>3.0.0</sql-maven-plugin.version>
         <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
+        <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
         <springdoc-openapi-maven-plugin.version>1.4</springdoc-openapi-maven-plugin.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
         <maven-site-plugin.version>4.0.0-M13</maven-site-plugin.version>
@@ -632,6 +633,11 @@
                     <groupId>com.github.os72</groupId>
                     <artifactId>protoc-jar-maven-plugin</artifactId>
                     <version>${protoc-jar-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.xolstice.maven.plugins</groupId>
+                    <artifactId>protobuf-maven-plugin</artifactId>
+                    <version>${protobuf-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>io.fabric8</groupId>
