@@ -183,7 +183,7 @@
         <jmh.version>1.37</jmh.version>
         <jooq.version>3.19.11</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
-        <testcontainers.version>1.20.1</testcontainers.version>
+        <testcontainers.version>1.20.2</testcontainers.version>
         <springdoc.version>2.6.0</springdoc.version>
         <libphonenumber.version>8.13.45</libphonenumber.version>
         <datafaker.version>2.3.1</datafaker.version>
