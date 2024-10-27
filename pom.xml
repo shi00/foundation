@@ -202,7 +202,7 @@
         <zstd-jni.version>1.5.6-5</zstd-jni.version>
         <kryo.version>5.6.0</kryo.version>
         <java-jwt.version>4.4.0</java-jwt.version>
-        <oshi-core.version>6.6.3</oshi-core.version>
+        <oshi-core.version>6.6.5</oshi-core.version>
         <mysql-connector-j.version>9.0.0</mysql-connector-j.version>
         <redisson-spring-boot-starter.version>3.36.0</redisson-spring-boot-starter.version>
         <commons-collections4.version>4.4</commons-collections4.version>
