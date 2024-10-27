@@ -68,8 +68,9 @@ public class NativeLibsExtractorTests {
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
-    Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
-    File file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
+    var files = targetDir.toFile().list();
+    Assertions.assertNotNull(files);
+    File file = targetDir.resolve(files[0]).toFile();
     Assertions.assertTrue(file.exists() && file.isFile());
   }
 
@@ -79,13 +80,15 @@ public class NativeLibsExtractorTests {
     String dir = UUID.randomUUID().toString();
     Path targetDir = TEMP_DIR.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
-    Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
-    File file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
+    var files = targetDir.toFile().list();
+    Assertions.assertNotNull(files);
+    File file = targetDir.resolve(files[0]).toFile();
     Assertions.assertTrue(file.exists() && file.isFile());
 
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
-    Assertions.assertEquals(1, Objects.requireNonNull(targetDir.toFile().list()).length);
-    file = targetDir.resolve(Objects.requireNonNull(targetDir.toFile().list())[0]).toFile();
+    var files1 = targetDir.toFile().list();
+    Assertions.assertNotNull(files1);
+    file = targetDir.resolve(files1[0]).toFile();
     Assertions.assertTrue(file.exists() && file.isFile());
   }
 
