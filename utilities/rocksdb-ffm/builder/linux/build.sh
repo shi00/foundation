@@ -29,7 +29,7 @@ cp installed/x64-linux-dynamic/lib/"libzstd.so" /opt/"$SHARDED_LIB_DIR"
 cp installed/x64-linux-dynamic/lib/"liblz4.so" /opt/"$SHARDED_LIB_DIR"
 
 echo "================== Start generate source code for rocksdb =================="
-jextract --source --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" -t "$SOURCECODE_PACKAGE" -I ./installed/x64-linux-dynamic/include/rocksdb ./installed/x64-linux-dynamic/include/rocksdb/c.h
+jextract --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" --target-package "$SOURCECODE_PACKAGE" --include-dir ./installed/x64-linux-dynamic/include/rocksdb ./installed/x64-linux-dynamic/include/rocksdb/c.h
 if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
   echo "Failed to generate code by jextract"
   exit 1
