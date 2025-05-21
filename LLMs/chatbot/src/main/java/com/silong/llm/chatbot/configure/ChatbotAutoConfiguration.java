@@ -75,7 +75,7 @@ public class ChatbotAutoConfiguration {
   @Bean
   ChatClient chatClient(ChatClient.Builder builder) {
     return builder
-        .defaultSystem(spec -> spec.text(properties.getSystemMessage()))
+        .defaultSystem(properties.getSystemMessage())
         .defaultAdvisors(
             MessageChatMemoryAdvisor.builder(chatMemory())
                 .scheduler(Schedulers.boundedElastic())
