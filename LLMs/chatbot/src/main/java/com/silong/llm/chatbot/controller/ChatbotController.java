@@ -29,6 +29,7 @@ import java.util.UUID;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -90,17 +91,17 @@ public class ChatbotController {
                     : UUID.randomUUID().toString().replace("-", ""))
         .doOnNext(id -> exchange.getResponse().getHeaders().add(CONVERSATION_ID, id))
         .flatMap(
-            id -> {
-              return chatClient
-                  .prompt()
-                  .user(query)
-                  .advisors(advisorSpec -> advisorSpec.param(CONVERSATION_ID, id))
-                  .stream()
-                  .content()
-                  .doOnNext(text -> log.info("Assistant response: {} --- {}", id, text))
-                  .doOnComplete(
-                      () -> log.info("Assistant response finish with conversationId: {}.", id));
-            })
+            id ->
+                chatClient
+                    .prompt()
+                    .system(spec -> spec.param("field", "in many fields"))
+                    .user(query)
+                    .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, id))
+                    .stream()
+                    .content()
+                    .doOnNext(text -> log.info("Assistant response: {} --- {}", id, text))
+                    .doOnComplete(
+                        () -> log.info("Assistant response finish with conversationId: {}.", id)))
         .onErrorResume(
             t ->
                 switch (t) {

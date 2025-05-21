@@ -33,6 +33,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import java.net.InetSocketAddress;
 import javax.net.ssl.SSLException;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
@@ -42,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
 
 /**
@@ -73,9 +75,11 @@ public class ChatbotAutoConfiguration {
   @Bean
   ChatClient chatClient(ChatClient.Builder builder) {
     return builder
-        .defaultSystem(properties.getSystemMessage())
         .defaultSystem(spec -> spec.text(properties.getSystemMessage()))
-        //        .defaultAdvisors(advisorSpec -> advisorSpec.advisors())
+        .defaultAdvisors(
+            MessageChatMemoryAdvisor.builder(chatMemory())
+                .scheduler(Schedulers.boundedElastic())
+                .build())
         .build();
   }
 
