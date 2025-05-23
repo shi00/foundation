@@ -43,8 +43,7 @@ import org.springframework.validation.annotation.Validated;
 public class ChatbotProperties {
 
   /** 代理配置 */
-  @NestedConfigurationProperty
-  private AzureOpenAIProxyProperties proxy = new AzureOpenAIProxyProperties();
+  @NestedConfigurationProperty private ProxyProperties proxy = new ProxyProperties();
 
   /** 响应结果读超时，默认：60秒 */
   @NotNull private Duration readTimeout;

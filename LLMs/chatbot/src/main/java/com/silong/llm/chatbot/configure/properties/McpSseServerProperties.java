@@ -21,31 +21,36 @@
 
 package com.silong.llm.chatbot.configure.properties;
 
-import com.azure.core.http.ProxyOptions.Type;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Data;
+import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.validation.annotation.Validated;
 
 /**
- * 代理配置
+ * Mcp服务器配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2025-05-19 20:27
+ * @since 2025-05-23 20:33
  */
 @Data
-public class AzureOpenAIProxyProperties {
+@Validated
+@ConfigurationProperties(prefix = McpSseClientProperties.CONFIG_PREFIX)
+public class McpSseServerProperties {
 
-  /** 代理主机 */
-  private String host;
+  @Data
+  public static class Config {
 
-  /** 代理主机端口 */
-  private Integer port;
+    /** 客户端忽略ssl认证, 默认：false */
+    private boolean enabledInSecureClient;
 
-  /** 代理用户 */
-  private String username;
+    /** 代理配置 */
+    @NestedConfigurationProperty private ProxyProperties proxy = new ProxyProperties();
+  }
 
-  /** 代理密码 */
-  private String password;
-
-  /** 代理类型 */
-  private Type proxyType;
+  /** MCP Server服务器配置 */
+  private final Map<String, Config> configs = new HashMap<>();
 }
