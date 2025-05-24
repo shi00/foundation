@@ -140,6 +140,7 @@ public class ChatbotAutoConfiguration {
       HttpClient httpClient =
           HttpClient.create()
               .keepAlive(true)
+              .disableRetry(false)
               .compress(true)
               .responseTimeout(chatbotProperties.getReadTimeout());
 
@@ -178,27 +179,36 @@ public class ChatbotAutoConfiguration {
                   mcpSseServerProperties.getConfigs().get(serverName);
               HttpClient httpClient =
                   HttpClient.create()
-                      .wiretap(true)
                       .keepAlive(true)
                       .baseUrl(url)
                       .responseTimeout(chatbotProperties.getReadTimeout())
                       .disableRetry(false)
                       .compress(true);
+
+              LogProperties mcpClientLogConfig = config.getMcpClientLogConfig();
+              if (mcpClientLogConfig.isEnabled()) {
+                httpClient.wiretap(
+                    mcpClientLogConfig.getCategory(),
+                    mcpClientLogConfig.getLogLevel(),
+                    mcpClientLogConfig.getFormat(),
+                    UTF_8);
+              }
+
               if (url.toLowerCase(Locale.ROOT).startsWith("https")
-                  && config != null
                   && config.isEnabledInSecureClient()) {
                 httpClient.secure(sslSpec -> sslSpec.sslContext(TRUST_ALL_SSL_CONTEXT));
               }
 
-              if (config != null && config.getProxy().isEnabled()) {
+              ProxyProperties configProxy = config.getProxy();
+              if (configProxy.isEnabled()) {
                 httpClient.proxy(
                     proxy ->
                         proxy
-                            .type(Proxy.valueOf(config.getProxy().getProxyType()))
-                            .host(config.getProxy().getHost())
-                            .port(config.getProxy().getPort())
-                            .username(config.getProxy().getUsername())
-                            .password(userName -> config.getProxy().getPassword()));
+                            .type(Proxy.valueOf(configProxy.getProxyType()))
+                            .host(configProxy.getHost())
+                            .port(configProxy.getPort())
+                            .username(configProxy.getUsername())
+                            .password(userName -> configProxy.getPassword()));
               }
 
               return new NamedClientMcpTransport(
