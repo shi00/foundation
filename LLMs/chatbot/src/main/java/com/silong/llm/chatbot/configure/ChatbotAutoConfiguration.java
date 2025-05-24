@@ -49,7 +49,6 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.mcp.client.autoconfigure.NamedClientMcpTransport;
 import org.springframework.ai.mcp.client.autoconfigure.properties.McpClientCommonProperties;
-import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties;
 import org.springframework.ai.model.azure.openai.autoconfigure.AzureOpenAIClientBuilderCustomizer;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,7 +72,6 @@ import reactor.netty.transport.ProxyProvider.Proxy;
 @EnableConfigurationProperties({
   ChatbotProperties.class,
   McpClientCommonProperties.class,
-  McpSseClientProperties.class,
   McpSseServerProperties.class
 })
 public class ChatbotAutoConfiguration {
@@ -81,8 +79,6 @@ public class ChatbotAutoConfiguration {
   private static final SslContext TRUST_ALL_SSL_CONTEXT = trustAllSslContext();
 
   private ChatbotProperties chatbotProperties;
-
-  private McpSseClientProperties mcpSseClientProperties;
 
   private McpSseServerProperties mcpSseServerProperties;
 
@@ -167,10 +163,10 @@ public class ChatbotAutoConfiguration {
 
   @Bean
   public List<NamedClientMcpTransport> mcpClientTransport() {
-    return mcpSseClientProperties.getConnections().entrySet().stream()
+    return mcpSseServerProperties.getConfigs().entrySet().stream()
         .map(
             entry -> {
-              String url = entry.getValue().url();
+              String url = entry.getValue().getSseParameters().url();
               String serverName = entry.getKey();
               McpSseServerProperties.Config config =
                   mcpSseServerProperties.getConfigs().get(serverName);
@@ -213,16 +209,11 @@ public class ChatbotAutoConfiguration {
                   WebFluxSseClientTransport.builder(
                           WebClient.builder()
                               .clientConnector(new ReactorClientHttpConnector(httpClient)))
-                      .sseEndpoint(entry.getValue().sseEndpoint())
+                      .sseEndpoint(entry.getValue().getSseParameters().sseEndpoint())
                       .objectMapper(new ObjectMapper())
                       .build());
             })
         .toList();
-  }
-
-  @Autowired
-  public void setMcpSseClientProperties(McpSseClientProperties mcpSseClientProperties) {
-    this.mcpSseClientProperties = mcpSseClientProperties;
   }
 
   @Autowired

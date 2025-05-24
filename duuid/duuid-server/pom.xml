@@ -39,9 +39,8 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <os>
-                    <family>unix</family>
+                    <family>linux</family>
                     <arch>x86_64</arch>
-                    <name>linux</name>
                 </os>
             </activation>
             <dependencies>

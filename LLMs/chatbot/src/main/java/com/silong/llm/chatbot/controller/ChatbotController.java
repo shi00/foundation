@@ -30,6 +30,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -70,7 +71,7 @@ public class ChatbotController {
    * @param exchange Contract for an HTTP request-response interaction
    * @return 大模型返回响应
    */
-  @PostMapping("/chat/stream")
+  @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public Flux<String> chatStream(
       @RequestBody String query,
       @RequestHeader(name = CONVERSATION_ID, required = false) String conversationId,
