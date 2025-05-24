@@ -50,6 +50,10 @@ public class McpSseServerProperties {
     /** 客户端忽略ssl认证, 默认：false */
     private boolean enabledInSecureClient;
 
+    /** 与MCP服务器交互的客户端日志配置 */
+    @NestedConfigurationProperty @Valid
+    private LogProperties mcpClientLogConfig = new LogProperties();
+
     /** 代理配置 */
     @Valid @NestedConfigurationProperty private ProxyProperties proxy = new ProxyProperties();
   }

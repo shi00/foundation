@@ -50,10 +50,6 @@ public class ChatbotProperties {
   @NestedConfigurationProperty @Valid
   private LogProperties chatClientLogConfig = new LogProperties();
 
-  /** 与MCP服务器交互的客户端日志配置 */
-  @NestedConfigurationProperty @Valid
-  private LogProperties mcpClientLogConfig = new LogProperties();
-
   /** 每个会话保留的聊天记录条数阈值，最小为10 */
   @Min(10)
   @NotNull
