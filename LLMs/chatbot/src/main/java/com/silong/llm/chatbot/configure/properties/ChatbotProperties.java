@@ -21,10 +21,11 @@
 
 package com.silong.llm.chatbot.configure.properties;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -43,19 +44,19 @@ import org.springframework.validation.annotation.Validated;
 public class ChatbotProperties {
 
   /** 代理配置 */
-  @NestedConfigurationProperty private ProxyProperties proxy = new ProxyProperties();
+  @NestedConfigurationProperty @Valid private ProxyProperties proxy = new ProxyProperties();
 
   /** 响应结果读超时，默认：60秒 */
   @NotNull private Duration readTimeout;
 
-  /** 每个会话保留的聊天记录条数阈值，最小为10，最大100 */
+  /** 每个会话保留的聊天记录条数阈值，最小为10 */
   @Min(10)
-  @Max(100)
-  private int chatHistoryThresholdPerConversation;
+  @NotNull
+  private Integer chatHistoryThresholdPerConversation;
 
   /** 传递一条“系统”类型的消息作为输入。系统消息为对话提供高级指令。例如，您可以使用系统消息指示生成器像某个角色一样行事，或以特定格式提供答案。 */
-  private String systemMessage;
+  @NotBlank private String systemMessage;
 
-  /** 客户端忽略ssl认证 */
-  private boolean enabledInSecureClient = true;
+  /** 客户端忽略ssl认证，默认：false */
+  private boolean enabledInSecureClient;
 }

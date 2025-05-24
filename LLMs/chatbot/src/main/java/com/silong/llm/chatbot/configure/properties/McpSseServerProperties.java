@@ -21,6 +21,8 @@
 
 package com.silong.llm.chatbot.configure.properties;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
@@ -48,9 +50,9 @@ public class McpSseServerProperties {
     private boolean enabledInSecureClient;
 
     /** 代理配置 */
-    @NestedConfigurationProperty private ProxyProperties proxy = new ProxyProperties();
+    @Valid @NestedConfigurationProperty private ProxyProperties proxy = new ProxyProperties();
   }
 
   /** MCP Server服务器配置 */
-  private final Map<String, Config> configs = new HashMap<>();
+  @NotNull private final Map<String, Config> configs = new HashMap<>();
 }

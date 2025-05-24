@@ -21,6 +21,8 @@
 
 package com.silong.llm.chatbot.configure.properties;
 
+import com.silong.llm.chatbot.validator.annotation.NullOrNotBlank;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 /**
@@ -33,21 +35,23 @@ import lombok.Data;
 @Data
 public class ProxyProperties {
 
-  /** 是否启用 */
+  /** 是否启用代理 */
   private boolean enabled;
 
   /** 代理主机 */
-  private String host;
+  @NullOrNotBlank private String host;
 
   /** 代理主机端口 */
+  @Min(1025)
+  @Max(65535)
   private Integer port;
 
   /** 代理用户 */
-  private String username;
+  @NullOrNotBlank private String username;
 
   /** 代理密码 */
-  private String password;
+  @NullOrNotBlank private String password;
 
   /** 代理类型 */
-  private String proxyType;
+  @NullOrNotBlank private String proxyType;
 }
