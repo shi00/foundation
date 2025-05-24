@@ -46,13 +46,21 @@ public class ChatbotProperties {
   /** 代理配置 */
   @NestedConfigurationProperty @Valid private ProxyProperties proxy = new ProxyProperties();
 
-  /** 响应结果读超时，默认：60秒 */
-  @NotNull private Duration readTimeout;
+  /** 与大模型交互的客户端日志配置 */
+  @NestedConfigurationProperty @Valid
+  private LogProperties chatClientLogConfig = new LogProperties();
+
+  /** 与MCP服务器交互的客户端日志配置 */
+  @NestedConfigurationProperty @Valid
+  private LogProperties mcpClientLogConfig = new LogProperties();
 
   /** 每个会话保留的聊天记录条数阈值，最小为10 */
   @Min(10)
   @NotNull
   private Integer chatHistoryThresholdPerConversation;
+
+  /** 响应结果读超时，默认：60秒 */
+  @NotNull private Duration readTimeout;
 
   /** 传递一条“系统”类型的消息作为输入。系统消息为对话提供高级指令。例如，您可以使用系统消息指示生成器像某个角色一样行事，或以特定格式提供答案。 */
   @NotBlank private String systemMessage;

@@ -21,7 +21,6 @@
 
 package com.silong.foundation.rocksdbffm.options;
 
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
 /**
@@ -32,21 +31,13 @@ import java.lang.foreign.MemorySegment;
  * @since 2023-12-13 11:04
  */
 public sealed interface Options permits WriteOptions, ReadOptions {
-
-  /**
-   * 获取Options对应的native memoryLayout
-   *
-   * @return 内存布局
-   */
-  MemoryLayout layout();
-
   /**
    * Rocksdb相关Options转换为java Options
    *
-   * @param options options
+   * @param optionsPtr options指针
    * @return this
    */
-  Options from(MemorySegment options);
+  Options from(MemorySegment optionsPtr);
 
   /**
    * java Options转为Rocksdb native options

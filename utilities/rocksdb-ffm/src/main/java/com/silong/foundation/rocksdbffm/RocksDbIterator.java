@@ -21,7 +21,7 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.rocksdbffm.fi.Tuple2;
 
 /**
  * Defines the interface for an Iterator which provides access to data one entry at a time. Multiple

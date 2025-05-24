@@ -66,8 +66,8 @@ class WriteBatchImpl implements WriteBatch, Serializable {
       int valueLength) {
     validateByteArrays(key, keyOffset, keyLength, "Invalid key.");
     validateByteArrays(value, valueOffset, valueLength, "Invalid value.");
-    MemorySegment keyPtr = arena.allocateArray(C_CHAR, key).asSlice(keyOffset, keyLength);
-    MemorySegment valuePtr = arena.allocateArray(C_CHAR, value).asSlice(valueOffset, valueLength);
+    MemorySegment keyPtr = arena.allocateFrom(C_CHAR, key).asSlice(keyOffset, keyLength);
+    MemorySegment valuePtr = arena.allocateFrom(C_CHAR, value).asSlice(valueOffset, valueLength);
     rocksdb_writebatch_put_cf(
         writeBatch, columnFamilyHandle, keyPtr, keyPtr.byteSize(), valuePtr, valuePtr.byteSize());
   }
@@ -76,7 +76,7 @@ class WriteBatchImpl implements WriteBatch, Serializable {
   public void delete(
       @NonNull MemorySegment columnFamilyHandle, byte[] key, int keyOffset, int keyLength) {
     validateByteArrays(key, keyOffset, keyLength, "Invalid key.");
-    MemorySegment keyPtr = arena.allocateArray(C_CHAR, key).asSlice(keyOffset, keyLength);
+    MemorySegment keyPtr = arena.allocateFrom(C_CHAR, key).asSlice(keyOffset, keyLength);
     rocksdb_writebatch_delete_cf(writeBatch, columnFamilyHandle, keyPtr, keyPtr.byteSize());
   }
 
@@ -92,9 +92,9 @@ class WriteBatchImpl implements WriteBatch, Serializable {
     validateByteArrays(startKey, startKeyOffset, startKeyLength, "Invalid startKey.");
     validateByteArrays(endKey, endKeyOffset, endKeyLength, "Invalid endKey.");
     MemorySegment startKeyPtr =
-        arena.allocateArray(C_CHAR, startKey).asSlice(startKeyOffset, startKeyLength);
+        arena.allocateFrom(C_CHAR, startKey).asSlice(startKeyOffset, startKeyLength);
     MemorySegment endKeyPtr =
-        arena.allocateArray(C_CHAR, endKey).asSlice(endKeyOffset, endKeyLength);
+        arena.allocateFrom(C_CHAR, endKey).asSlice(endKeyOffset, endKeyLength);
     rocksdb_writebatch_delete_range_cf(
         writeBatch,
         columnFamilyHandle,

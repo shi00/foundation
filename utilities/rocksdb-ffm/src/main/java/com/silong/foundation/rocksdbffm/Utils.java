@@ -21,15 +21,13 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.C_POINTER;
 import static com.silong.foundation.utilities.nlloader.PlatformDetector.*;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.silong.foundation.common.lambda.Consumer3;
-import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.rocksdbffm.fi.Tuple2;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -163,50 +161,6 @@ public class Utils {
     return new String(charPtr.asSlice(0, length).toArray(JAVA_BYTE), UTF_8);
   }
 
-  static boolean checkColumnFamilyHandleName(
-      Arena arena,
-      String expectedName,
-      MemorySegment columnFamilyHandle,
-      Consumer3<String, String, Boolean> consumer3) {
-    MemorySegment cfnLengthPtr = arena.allocate(C_POINTER);
-    MemorySegment cfNamePtr =
-        rocksdb_column_family_handle_get_name(columnFamilyHandle, cfnLengthPtr);
-    String cfn = getUtf8String(cfNamePtr, cfnLengthPtr.get(JAVA_LONG, 0));
-    boolean equals = expectedName.equals(cfn);
-    consumer3.accept(expectedName, cfn, equals);
-    return equals;
-  }
-
-  public static void freeDbOptions(@NonNull MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_options_destroy(optionsPtr);
-    }
-  }
-
-  public static void freeColumnFamilyOptions(@NonNull MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_options_destroy(optionsPtr);
-    }
-  }
-
-  public static void freeReadOptions(@NonNull MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_readoptions_destroy(optionsPtr);
-    }
-  }
-
-  public static void freeWriteOptions(@NonNull MemorySegment optionsPtr) {
-    if (!NULL.equals(optionsPtr)) {
-      rocksdb_writeoptions_destroy(optionsPtr);
-    }
-  }
-
-  public static void freeRocksDb(@NonNull MemorySegment dbPtr) {
-    if (!NULL.equals(dbPtr)) {
-      rocksdb_close(dbPtr);
-    }
-  }
-
   /**
    * 分配char** 错误信息出参
    *
@@ -214,7 +168,7 @@ public class Utils {
    * @return 错误信息指针
    */
   public static MemorySegment newErrPtr(@NonNull Arena arena) {
-    return arena.allocateArray(C_POINTER, 1);
+    return arena.allocate(C_POINTER, 1);
   }
 
   /**
@@ -273,6 +227,10 @@ public class Utils {
    */
   public static byte boolean2Byte(boolean b) {
     return (byte) (b ? 1 : 0);
+  }
+
+  public static Boolean byte2Boolean(byte v) {
+    return v == 0 ? Boolean.FALSE : Boolean.TRUE;
   }
 
   /** Forbidden */

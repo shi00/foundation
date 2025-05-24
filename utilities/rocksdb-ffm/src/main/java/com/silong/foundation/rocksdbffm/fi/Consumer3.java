@@ -19,30 +19,23 @@
  *
  */
 
-package com.silong.foundation.rocksdbffm.options;
-
-import java.lang.foreign.MemoryLayout;
+package com.silong.foundation.rocksdbffm.fi;
 
 /**
- * 占位符，对于c++中存在的数据结构，在java侧没有对应的MemoryLayout表示，使用占位符进行简单表示，无法支持相应值的读写
+ * consumer with 3 parameters
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2023-12-26 10:14
+ * @since 2023-11-04 20:28
  */
-public sealed interface PlaceHolder permits StdFunctionPlaceHolder {
-
+@FunctionalInterface
+public interface Consumer3<T1, T2, T3> {
   /**
-   * 内存布局
+   * Performs this operation on the given argument.
    *
-   * @return 内存布局
+   * @param t1 the input argument
+   * @param t2 the input argument
+   * @param t3 the input argument
    */
-  MemoryLayout layout();
-
-  /**
-   * 占位符占用字节数
-   *
-   * @return 字节数
-   */
-  int size();
+  void accept(T1 t1, T2 t2, T3 t3);
 }

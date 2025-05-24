@@ -21,6 +21,7 @@
 
 package com.silong.foundation.rocksdbffm.enu;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
@@ -31,6 +32,7 @@ import lombok.Getter;
  * @since 2023-12-22 11:19
  */
 @Getter
+@AllArgsConstructor
 public enum CompressionType {
   K_NO_COMPRESSION(0),
 
@@ -59,8 +61,4 @@ public enum CompressionType {
   K_DISABLE_COMPRESSION_OPTION(0xff);
 
   final int value;
-
-  CompressionType(int value) {
-    this.value = value;
-  }
 }

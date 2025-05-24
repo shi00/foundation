@@ -26,17 +26,19 @@ import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_LZ4_COMPRESSION;
 import static com.silong.foundation.rocksdbffm.enu.CompressionType.K_ZSTD;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
+import static com.silong.foundation.rocksdbffm.generated.RocksDB_1.rocksdb_readoptions_create;
 import static com.silong.foundation.utilities.nlloader.NativeLibsExtractor.extractNativeLibs;
 import static com.silong.foundation.utilities.nlloader.NativeLibsExtractor.locate;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.silong.foundation.common.lambda.Tuple2;
-import com.silong.foundation.common.lambda.Tuple3;
 import com.silong.foundation.rocksdbffm.config.ColumnFamilyConfig;
 import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
-import com.silong.foundation.rocksdbffm.options.ReadOptions;
-import com.silong.foundation.rocksdbffm.options.WriteOptions;
+import com.silong.foundation.rocksdbffm.enu.ReadTier;
+import com.silong.foundation.rocksdbffm.fi.Consumer3;
+import com.silong.foundation.rocksdbffm.fi.Tuple2;
+import com.silong.foundation.rocksdbffm.fi.Tuple3;
 import com.silong.foundation.utilities.nlloader.PlatformLibFormat;
 import java.io.IOException;
 import java.io.Serial;
@@ -125,7 +127,7 @@ class RocksDbImpl implements RocksDb {
     try (Arena arena = Arena.ofConfined()) {
       this.config = config;
       MemorySegment dbOptionsPtr = createRocksdbOptions(config); // global scope，close释放
-      MemorySegment path = arena.allocateUtf8String(config.getPersistDataPath());
+      MemorySegment path = arena.allocateFrom(config.getPersistDataPath(), UTF_8);
       MemorySegment errPtr = newErrPtr(arena); // 出参，获取错误信息
 
       // 构建列族列表对应的ttl列表
@@ -137,7 +139,7 @@ class RocksDbImpl implements RocksDb {
               path,
               config.getColumnFamilyConfigs());
       List<String> columnFamilyNames = new LinkedList<>();
-      MemorySegment ttlsPtr = arena.allocateArray(C_INT, columnFamilyConfigs.size());
+      MemorySegment ttlsPtr = arena.allocate(C_INT, columnFamilyConfigs.size());
       int index = 0;
       for (Tuple3<String, Integer, RocksDbComparator> tuple3 : columnFamilyConfigs) {
         columnFamilyNames.add(tuple3.t1());
@@ -152,7 +154,7 @@ class RocksDbImpl implements RocksDb {
           createColumnFamilyOptions(arena, dbOptionsPtr, columnFamilyConfigs);
 
       // 出参，获取打开的列族handles，close时释放
-      MemorySegment cfHandlesPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
+      MemorySegment cfHandlesPtr = arena.allocate(C_POINTER, columnFamilyNames.size());
 
       // 打开指定的列族
       MemorySegment dbPtr = // global scope，close释放
@@ -177,15 +179,15 @@ class RocksDbImpl implements RocksDb {
         this.dbOptionsPtr = dbOptionsPtr;
 
         // 创建默认读取options，global scope close时释放
-        this.readOptionsPtr = new ReadOptions().to();
+        this.readOptionsPtr = rocksdb_readoptions_create();
         if (log.isDebugEnabled()) {
-          log.debug("default {}", ReadOptions.toString(readOptionsPtr));
+          log.debug("default {}", readOptionsPtrToString(readOptionsPtr));
         }
 
         // 默认WriteOptions
-        this.writeOptionsPtr = new WriteOptions().to();
+        this.writeOptionsPtr = rocksdb_writeoptions_create();
         if (log.isDebugEnabled()) {
-          log.debug("default {}", WriteOptions.toString(writeOptionsPtr));
+          log.debug("default {}", writeOptionsPtrToString(writeOptionsPtr));
         }
 
         // 保存打开的列族
@@ -231,16 +233,16 @@ class RocksDbImpl implements RocksDb {
     if (OK.equals(errMsg)) {
       long length = lenPtr.get(JAVA_LONG, 0);
       for (int i = 0; i < length; i++) {
-        columnFamilies.add(cfsPtr.getAtIndex(C_POINTER, i).getUtf8String(0));
+        columnFamilies.add(cfsPtr.getAtIndex(C_POINTER, i).getString(0, UTF_8));
       }
       log.info(
           "ColumnFamilies:{} that currently exist in rocksdb:[{}]",
           columnFamilies,
-          dbPath.getUtf8String(0));
+          dbPath.getString(0, UTF_8));
     } else {
       log.info(
           "Unable to list columnFamilies of rocksdb:[{}]，prepare to create db. reason:{}",
-          dbPath.getUtf8String(0),
+          dbPath.getString(0, UTF_8),
           errMsg);
     }
     return columnFamilies;
@@ -277,7 +279,7 @@ class RocksDbImpl implements RocksDb {
       Arena arena,
       MemorySegment dbOptionsPtr,
       List<Tuple3<String, Integer, RocksDbComparator>> columnFamilyConfigs) {
-    MemorySegment cfOptionsPtr = arena.allocateArray(C_POINTER, columnFamilyConfigs.size());
+    MemorySegment cfOptionsPtr = arena.allocate(C_POINTER, columnFamilyConfigs.size());
     for (int i = 0; i < columnFamilyConfigs.size(); i++) {
       MemorySegment options = rocksdb_options_create_copy(dbOptionsPtr);
       RocksDbComparator rocksDbComparator = columnFamilyConfigs.get(i).t3();
@@ -317,8 +319,8 @@ class RocksDbImpl implements RocksDb {
   }
 
   @Override
-  public void destroyRocksdbOptions(MemorySegment rocksdbOptionsPtr) {
-    freeDbOptions(rocksdbOptionsPtr);
+  public void destroyRocksdbOptions(@NonNull MemorySegment rocksdbOptionsPtr) {
+    rocksdb_options_destroy(rocksdbOptionsPtr);
   }
 
   /**
@@ -329,9 +331,9 @@ class RocksDbImpl implements RocksDb {
    * @return 列族名称列表指针
    */
   private MemorySegment createColumnFamilyNames(Arena arena, List<String> columnFamilyNames) {
-    MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, columnFamilyNames.size());
+    MemorySegment cfNamesPtr = arena.allocate(C_POINTER, columnFamilyNames.size());
     for (int i = 0; i < columnFamilyNames.size(); i++) {
-      cfNamesPtr.setAtIndex(C_POINTER, i, arena.allocateUtf8String(columnFamilyNames.get(i)));
+      cfNamesPtr.setAtIndex(C_POINTER, i, arena.allocateFrom(columnFamilyNames.get(i), UTF_8));
     }
     return cfNamesPtr;
   }
@@ -396,6 +398,40 @@ class RocksDbImpl implements RocksDb {
     }
   }
 
+  void freeColumnFamilyOptions(@NonNull MemorySegment optionsPtr) {
+    rocksdb_options_destroy(optionsPtr);
+  }
+
+  void freeReadOptions(@NonNull MemorySegment optionsPtr) {
+    rocksdb_readoptions_destroy(optionsPtr);
+  }
+
+  void freeDbOptions(@NonNull MemorySegment dbOptions) {
+    rocksdb_options_destroy(dbOptions);
+  }
+
+  void freeWriteOptions(@NonNull MemorySegment optionsPtr) {
+    rocksdb_writeoptions_destroy(optionsPtr);
+  }
+
+  void freeRocksDb(@NonNull MemorySegment dbPtr) {
+    rocksdb_close(dbPtr);
+  }
+
+  boolean checkColumnFamilyHandleName(
+      Arena arena,
+      String expectedName,
+      MemorySegment columnFamilyHandle,
+      Consumer3<String, String, Boolean> consumer3) {
+    MemorySegment cfnLengthPtr = arena.allocate(C_POINTER);
+    MemorySegment cfNamePtr =
+        rocksdb_column_family_handle_get_name(columnFamilyHandle, cfnLengthPtr);
+    String cfn = getUtf8String(cfNamePtr, cfnLengthPtr.get(JAVA_LONG, 0));
+    boolean equals = expectedName.equals(cfn);
+    consumer3.accept(expectedName, cfn, equals);
+    return equals;
+  }
+
   /**
    * rocksdb是否已经成功打开
    *
@@ -447,8 +483,8 @@ class RocksDbImpl implements RocksDb {
                 rocksdb_options_set_comparator(cfOptions, cmp = comparator.comparator());
               }
 
-              MemorySegment cfNamesPtr = arena.allocateArray(C_POINTER, 1);
-              cfNamesPtr.set(C_POINTER, 0, arena.allocateUtf8String(key));
+              MemorySegment cfNamesPtr = arena.allocate(C_POINTER, 1);
+              cfNamesPtr.set(C_POINTER, 0, arena.allocateFrom(key, UTF_8));
               MemorySegment errPtr = newErrPtr(arena); // 出参，错误消息
               MemorySegment createdCfsSize = arena.allocate(C_POINTER); // 出参，成功创建列族长度
               MemorySegment cfHandlesPtr =
@@ -547,7 +583,7 @@ class RocksDbImpl implements RocksDb {
 
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment errPtr = newErrPtr(arena);
-      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key).asSlice(offset, length);
+      MemorySegment keyPtr = arena.allocateFrom(C_CHAR, key).asSlice(offset, length);
       rocksdb_delete_cf(
           dbPtr,
           writeOptionsPtr,
@@ -599,9 +635,9 @@ class RocksDbImpl implements RocksDb {
     try (Arena arena = Arena.ofConfined()) {
       MemorySegment errPtr = newErrPtr(arena);
       MemorySegment startKeyPtr =
-          arena.allocateArray(C_CHAR, startKey).asSlice(startKeyOffset, startKeyLength);
+          arena.allocateFrom(C_CHAR, startKey).asSlice(startKeyOffset, startKeyLength);
       MemorySegment endKeyPtr =
-          arena.allocateArray(C_CHAR, endKey).asSlice(endKeyOffset, endKeyLength);
+          arena.allocateFrom(C_CHAR, endKey).asSlice(endKeyOffset, endKeyLength);
       rocksdb_delete_range_cf(
           dbPtr,
           writeOptionsPtr,
@@ -641,8 +677,8 @@ class RocksDbImpl implements RocksDb {
     validateByteArrays(value, valueOffset, valueLength, "Invalid value.");
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key).asSlice(keyOffset, keyLength);
-      MemorySegment valPtr = arena.allocateArray(C_CHAR, value).asSlice(valueOffset, valueLength);
+      MemorySegment keyPtr = arena.allocateFrom(C_CHAR, key).asSlice(keyOffset, keyLength);
+      MemorySegment valPtr = arena.allocateFrom(C_CHAR, value).asSlice(valueOffset, valueLength);
       MemorySegment errPtr = newErrPtr(arena);
       rocksdb_put_cf(
           dbPtr,
@@ -714,16 +750,16 @@ class RocksDbImpl implements RocksDb {
     try (Arena arena = Arena.ofConfined()) {
       int size = keys.length;
       MemorySegment columnFamilyHandles =
-          arena.allocateArray(C_POINTER, size); // 每个待查key对应的columnfamilyhandle列表
-      MemorySegment keysPtr = arena.allocateArray(C_POINTER, size);
-      MemorySegment valuesPtr = arena.allocateArray(C_POINTER, size);
-      MemorySegment keySizesPtr = arena.allocateArray(JAVA_LONG, size);
-      MemorySegment valueSizesPtr = arena.allocateArray(JAVA_LONG, size);
-      MemorySegment errPtr = arena.allocateArray(C_POINTER, size);
+          arena.allocate(C_POINTER, size); // 每个待查key对应的columnfamilyhandle列表
+      MemorySegment keysPtr = arena.allocate(C_POINTER, size);
+      MemorySegment valuesPtr = arena.allocate(C_POINTER, size);
+      MemorySegment keySizesPtr = arena.allocate(JAVA_LONG, size);
+      MemorySegment valueSizesPtr = arena.allocate(JAVA_LONG, size);
+      MemorySegment errPtr = arena.allocate(C_POINTER, size);
       MemorySegment columnFamilyHandle = columnFamilies.get(columnFamilyName).columnFamilyHandle();
       for (int i = 0; i < size; i++) {
         columnFamilyHandles.setAtIndex(C_POINTER, i, columnFamilyHandle);
-        keysPtr.setAtIndex(C_POINTER, i, arena.allocateArray(C_CHAR, keys[i]));
+        keysPtr.setAtIndex(C_POINTER, i, arena.allocateFrom(C_CHAR, keys[i]));
         keySizesPtr.setAtIndex(JAVA_LONG, i, keys[i].length);
       }
 
@@ -746,7 +782,7 @@ class RocksDbImpl implements RocksDb {
               valuesPtr.getAtIndex(C_POINTER, i).reinterpret(arena, Utils::free);
           long length = valueSizesPtr.getAtIndex(JAVA_LONG, i);
           byte[] value = valuePtr.asSlice(0, length).toArray(C_CHAR);
-          result.add(Tuple2.<byte[], byte[]>Tuple2Builder().t2(value).t1(keys[i]).build());
+          result.add(new Tuple2<>(value, keys[i]));
         } else {
           throw new RocksDbException(errMsg);
         }
@@ -762,7 +798,7 @@ class RocksDbImpl implements RocksDb {
     validateByteArrays(key, offset, length, "Invalid key.");
     validateOpenStatus();
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment keyPtr = arena.allocateArray(C_CHAR, key).asSlice(offset, length);
+      MemorySegment keyPtr = arena.allocateFrom(C_CHAR, key).asSlice(offset, length);
       MemorySegment errPtr = newErrPtr(arena);
       MemorySegment valLenPtr = arena.allocate(C_POINTER); // 出参，value长度
       MemorySegment valPtr =
@@ -883,5 +919,41 @@ class RocksDbImpl implements RocksDb {
   @Override
   public void releaseSnapshot(@NonNull MemorySegment snapshot) {
     rocksdb_release_snapshot(dbPtr, snapshot);
+  }
+
+  /**
+   * ToString
+   *
+   * @param readOptionsPtr read options
+   * @return String
+   */
+  static String readOptionsPtrToString(@NonNull MemorySegment readOptionsPtr) {
+    return String.format(
+        "readOptions: [read_tier: %s, async_io: %b, deadline: %dms, io_timeout: %dms,]",
+        enumType(rocksdb_readoptions_get_read_tier(readOptionsPtr), ReadTier.class),
+        rocksdb_readoptions_get_async_io(readOptionsPtr) == 0 ? Boolean.FALSE : Boolean.TRUE,
+        rocksdb_readoptions_get_deadline(readOptionsPtr),
+        rocksdb_readoptions_get_io_timeout(readOptionsPtr));
+  }
+
+  /**
+   * ToString
+   *
+   * @param writeOptionsPtr write options
+   * @return String
+   */
+  static String writeOptionsPtrToString(@NonNull MemorySegment writeOptionsPtr) {
+    return String.format(
+        "writeOptions: [sync:%b, disableWAL:%b, ignore_missing_column_families:%b, no_slowdown:%b, low_pri:%b, memtable_insert_hint_per_batch:%b, rate_limiter_priority:%s, protection_bytes_per_key:%d]",
+        rocksdb_writeoptions_get_sync(writeOptionsPtr) == 0 ? Boolean.FALSE : Boolean.TRUE,
+        rocksdb_writeoptions_get_disable_WAL(writeOptionsPtr) == 0 ? Boolean.FALSE : Boolean.TRUE,
+        rocksdb_writeoptions_get_ignore_missing_column_families(writeOptionsPtr) == 0
+            ? Boolean.FALSE
+            : Boolean.TRUE,
+        noSlowdown(writeOptions),
+        lowPri(writeOptions),
+        memtableInsertHintPerBatch(writeOptions),
+        rateLimiterPriority(writeOptions),
+        protectionBytesPerKey(writeOptions));
   }
 }

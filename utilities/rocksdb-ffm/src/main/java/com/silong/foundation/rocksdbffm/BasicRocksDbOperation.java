@@ -21,8 +21,9 @@
 
 package com.silong.foundation.rocksdbffm;
 
-import com.silong.foundation.common.lambda.Tuple2;
 import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
+import com.silong.foundation.rocksdbffm.fi.Tuple2;
+
 import java.lang.foreign.MemorySegment;
 import java.util.Collection;
 import java.util.List;

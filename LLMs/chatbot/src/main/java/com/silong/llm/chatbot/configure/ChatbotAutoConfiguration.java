@@ -21,12 +21,14 @@
 
 package com.silong.llm.chatbot.configure;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.springframework.util.StringUtils.hasLength;
 
 import com.azure.core.http.ProxyOptions;
 import com.azure.core.http.netty.NettyAsyncHttpClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.configure.properties.ChatbotProperties;
+import com.silong.llm.chatbot.configure.properties.LogProperties;
 import com.silong.llm.chatbot.configure.properties.McpSseServerProperties;
 import com.silong.llm.chatbot.configure.properties.ProxyProperties;
 import io.modelcontextprotocol.client.transport.WebFluxSseClientTransport;
@@ -47,6 +49,7 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.mcp.client.autoconfigure.McpClientAutoConfiguration;
 import org.springframework.ai.mcp.client.autoconfigure.NamedClientMcpTransport;
+import org.springframework.ai.mcp.client.autoconfigure.properties.McpClientCommonProperties;
 import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties;
 import org.springframework.ai.model.azure.openai.autoconfigure.AzureOpenAIClientBuilderCustomizer;
 import org.springframework.ai.tool.ToolCallbackProvider;
@@ -72,6 +75,7 @@ import reactor.netty.transport.ProxyProvider.Proxy;
 @AutoConfigureBefore(McpClientAutoConfiguration.class)
 @EnableConfigurationProperties({
   ChatbotProperties.class,
+  McpClientCommonProperties.class,
   McpSseClientProperties.class,
   McpSseServerProperties.class
 })
@@ -84,6 +88,8 @@ public class ChatbotAutoConfiguration {
   private McpSseClientProperties mcpSseClientProperties;
 
   private McpSseServerProperties mcpSseServerProperties;
+
+  private McpClientCommonProperties mcpClientCommonProperties;
 
   @SneakyThrows(SSLException.class)
   private static SslContext trustAllSslContext() {
@@ -131,18 +137,33 @@ public class ChatbotAutoConfiguration {
         }
       }
 
-      if (chatbotProperties.isEnabledInSecureClient()) {
-        NettyAsyncHttpClientBuilder builder =
-            new NettyAsyncHttpClientBuilder(
-                HttpClient.create()
-                    .keepAlive(true)
-                    .responseTimeout(chatbotProperties.getReadTimeout())
-                    .secure(sslSpec -> sslSpec.sslContext(TRUST_ALL_SSL_CONTEXT)));
-        if (proxy.isEnabled()) {
-          builder.proxy(proxyOptions);
-        }
-        openAiClientBuilder.httpClient(builder.build());
+      HttpClient httpClient =
+          HttpClient.create()
+              .keepAlive(true)
+              .compress(true)
+              .responseTimeout(chatbotProperties.getReadTimeout());
+
+      // 开启日志
+      LogProperties chatClientLogConfig = chatbotProperties.getChatClientLogConfig();
+      if (chatClientLogConfig.isEnabled()) {
+        httpClient.wiretap(
+            chatClientLogConfig.getCategory(),
+            chatClientLogConfig.getLogLevel(),
+            chatClientLogConfig.getFormat(),
+            UTF_8);
       }
+
+      // 忽略ssl证书校验
+      if (chatbotProperties.isEnabledInSecureClient()) {
+        httpClient.secure(sslSpec -> sslSpec.sslContext(TRUST_ALL_SSL_CONTEXT));
+      }
+
+      // 是否启用代理
+      NettyAsyncHttpClientBuilder builder = new NettyAsyncHttpClientBuilder(httpClient);
+      if (proxy.isEnabled()) {
+        builder.proxy(proxyOptions);
+      }
+      openAiClientBuilder.httpClient(builder.build());
     };
   }
 
@@ -200,6 +221,11 @@ public class ChatbotAutoConfiguration {
   @Autowired
   public void setMcpSseServerProperties(McpSseServerProperties mcpSseServerProperties) {
     this.mcpSseServerProperties = mcpSseServerProperties;
+  }
+
+  @Autowired
+  public void setMcpClientCommonProperties(McpClientCommonProperties mcpClientCommonProperties) {
+    this.mcpClientCommonProperties = mcpClientCommonProperties;
   }
 
   @Autowired

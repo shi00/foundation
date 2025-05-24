@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+   com.silong.foundation.springboot.starter.raft.configure.RaftStateMachineConfiguration,\
+   com.silong.foundation.springboot.starter.raft.configure.RaftSystemConfiguration

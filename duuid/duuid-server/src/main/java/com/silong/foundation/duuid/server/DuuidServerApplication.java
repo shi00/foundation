@@ -18,7 +18,7 @@
  */
 package com.silong.foundation.duuid.server;
 
-import static com.silong.foundation.springboot.starter.tokenauth.constants.AuthHeaders.*;
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
 import static io.swagger.v3.oas.annotations.enums.SecuritySchemeIn.HEADER;
 import static io.swagger.v3.oas.annotations.enums.SecuritySchemeType.APIKEY;
 

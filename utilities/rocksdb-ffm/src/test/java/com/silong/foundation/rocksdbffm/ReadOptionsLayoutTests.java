@@ -29,7 +29,6 @@ import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
 import com.silong.foundation.rocksdbffm.enu.IOActivity;
 import com.silong.foundation.rocksdbffm.enu.IOPriority;
 import com.silong.foundation.rocksdbffm.enu.ReadTier;
-import com.silong.foundation.rocksdbffm.options.ReadOptions;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Paths;
 import org.apache.commons.lang3.RandomUtils;

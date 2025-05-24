@@ -92,6 +92,8 @@
         <module>duuid/mysql-workerid-provider</module>
         <module>duuid/duuid-server</module>
         <module>voice-assistant</module>
+        <module>LLMs/chatbot</module>
+        <module>LLMs/crawler</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
         <module>spring-boot-starter-webflux-jwt</module>
         <module>spring-boot-starter-crypto</module>
@@ -127,87 +129,88 @@
         <main.basedir>${project.basedir}</main.basedir>
 
         <!-- 插件 -->
-        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-        <maven-shade-plugin.version>3.5.3</maven-shade-plugin.version>
+        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+        <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
         <serviceloader-maven-plugin.version>1.4.0</serviceloader-maven-plugin.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-        <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
-        <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
-        <maven-pmd-plugin.version>3.25.0</maven-pmd-plugin.version>
-        <pmd.version>7.6.0</pmd.version>
-        <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
-        <checkstyle.version>10.18.2</checkstyle.version>
+        <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+        <maven-pmd-plugin.version>3.26.0</maven-pmd-plugin.version>
+        <pmd.version>7.13.0</pmd.version>
+        <maven-failsafe-plugin.version>3.5.3</maven-failsafe-plugin.version>
+        <checkstyle.version>10.23.1</checkstyle.version>
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
-        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
-        <maven-jxr-plugin.version>3.3.2</maven-jxr-plugin.version>
-        <spotbugs-maven-plugin.version>4.8.6.4</spotbugs-maven-plugin.version>
-        <findsecbugs-plugin.version>1.13.0</findsecbugs-plugin.version>
-        <maven-dependency-plugin.version>3.8.0</maven-dependency-plugin.version>
-        <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
+        <maven-jxr-plugin.version>3.6.0</maven-jxr-plugin.version>
+        <spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
+        <findsecbugs-plugin.version>1.14.0</findsecbugs-plugin.version>
+        <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
+        <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
         <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
-        <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
-        <maven-plugin-annotations.version>3.12.0</maven-plugin-annotations.version>
-        <maven-plugin-plugin.version>3.12.0</maven-plugin-plugin.version>
+        <maven-plugin-api.version>3.9.9</maven-plugin-api.version>
+        <maven-plugin-annotations.version>3.15.1</maven-plugin-annotations.version>
+        <maven-plugin-plugin.version>3.15.1</maven-plugin-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-        <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
-        <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
+        <maven-clean-plugin.version>3.4.1</maven-clean-plugin.version>
+        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
         <sql-maven-plugin.version>3.0.0</sql-maven-plugin.version>
         <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
-        <springdoc-openapi-maven-plugin.version>1.4</springdoc-openapi-maven-plugin.version>
+        <springdoc-openapi-maven-plugin.version>1.5</springdoc-openapi-maven-plugin.version>
         <maven-plugin-testing-harness.version>3.3.0</maven-plugin-testing-harness.version>
-        <maven-site-plugin.version>4.0.0-M13</maven-site-plugin.version>
-        <docker-maven-plugin.version>0.45.0</docker-maven-plugin.version>
-        <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
-        <download-maven-plugin.version>1.9.0</download-maven-plugin.version>
-        <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
-        <extra-enforcer-rules.version>1.8.0</extra-enforcer-rules.version>
+        <maven-site-plugin.version>4.0.0-M16</maven-site-plugin.version>
+        <docker-maven-plugin.version>0.46.0</docker-maven-plugin.version>
+        <maven-project-info-reports-plugin.version>3.9.0</maven-project-info-reports-plugin.version>
+        <download-maven-plugin.version>1.13.0</download-maven-plugin.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+        <extra-enforcer-rules.version>1.10.0</extra-enforcer-rules.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
-        <native-maven-plugin.version>0.10.1</native-maven-plugin.version>
+        <native-maven-plugin.version>0.10.6</native-maven-plugin.version>
         <copy-rename-maven-plugin.version>1.0.1</copy-rename-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.3.4</spring-boot.version>
-        <spring-cloud.version>2023.0.3</spring-cloud.version>
-        <guava.version>33.3.0-jre</guava.version>
-        <passay.version>1.6.5</passay.version>
+        <spring-boot.version>3.4.5</spring-boot.version>
+        <spring-ai.version>1.0.0</spring-ai.version>
+        <spring-cloud.version>2024.0.1</spring-cloud.version>
+        <guava.version>33.4.8-jre</guava.version>
+        <passay.version>1.6.6</passay.version>
         <zxcvbn.version>1.9.0</zxcvbn.version>
-        <spotbugs.version>4.8.6</spotbugs.version>
+        <spotbugs.version>4.9.3</spotbugs.version>
         <disruptor.version>4.0.0</disruptor.version>
         <jctools.version>4.0.5</jctools.version>
         <jave.version>3.5.0</jave.version>
-        <jetcd.version>0.8.3</jetcd.version>
+        <jetcd.version>0.8.5</jetcd.version>
         <jmh.version>1.37</jmh.version>
-        <jooq.version>3.19.11</jooq.version>
+        <jooq.version>3.19.22</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
-        <testcontainers.version>1.20.2</testcontainers.version>
-        <springdoc.version>2.6.0</springdoc.version>
-        <libphonenumber.version>8.13.45</libphonenumber.version>
-        <datafaker.version>2.3.1</datafaker.version>
-        <commons-io.version>2.16.1</commons-io.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
+        <springdoc.version>2.8.8</springdoc.version>
+        <libphonenumber.version>9.0.5</libphonenumber.version>
+        <datafaker.version>2.4.3</datafaker.version>
+        <commons-io.version>2.19.0</commons-io.version>
         <commons-rng-simple.version>1.6</commons-rng-simple.version>
-        <maven.version>3.9.8</maven.version>
-        <plexus-utils.version>3.5.1</plexus-utils.version>
+        <maven.version>3.9.9</maven.version>
+        <plexus-utils.version>3.6.0</plexus-utils.version>
         <plexus-archiver.version>4.10.0</plexus-archiver.version>
         <cron-utils.version>9.2.1</cron-utils.version>
-        <jgroups.version>5.3.11.Final</jgroups.version>
-        <jgroups-raft.version>1.0.13.Final</jgroups-raft.version>
+        <jgroups.version>5.4.8.Final</jgroups.version>
+        <jgroups-raft.version>1.1.0.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.2.Final</jgroups-kubernetes.version>
-        <protobuf-java.version>3.25.5</protobuf-java.version>
-        <rocksdbjni.version>9.5.2</rocksdbjni.version>
+        <protobuf-java.version>3.25.7</protobuf-java.version>
+        <rocksdbjni.version>10.2.1</rocksdbjni.version>
         <snappy-java.version>1.1.10.7</snappy-java.version>
-        <zstd-jni.version>1.5.6-5</zstd-jni.version>
-        <kryo.version>5.6.0</kryo.version>
-        <java-jwt.version>4.4.0</java-jwt.version>
-        <oshi-core.version>6.6.5</oshi-core.version>
-        <mysql-connector-j.version>9.0.0</mysql-connector-j.version>
-        <redisson-spring-boot-starter.version>3.36.0</redisson-spring-boot-starter.version>
-        <commons-collections4.version>4.4</commons-collections4.version>
-        <langchain4j.version>0.35.0</langchain4j.version>
-        <k8s-client.version>21.0.2</k8s-client.version>
+        <zstd-jni.version>1.5.7-3</zstd-jni.version>
+        <kryo.version>5.6.2</kryo.version>
+        <java-jwt.version>4.5.0</java-jwt.version>
+        <oshi-core.version>6.8.1</oshi-core.version>
+        <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
+        <redisson-spring-boot-starter.version>3.46.0</redisson-spring-boot-starter.version>
+        <commons-collections4.version>4.5.0</commons-collections4.version>
+        <langchain4j.version>1.0.0</langchain4j.version>
+        <k8s-client.version>23.0.0</k8s-client.version>
         <!--开源组件-->
 
         <checkstyle.skip>false</checkstyle.skip><!--checkstyle检查插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
@@ -222,6 +225,13 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

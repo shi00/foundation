@@ -30,6 +30,7 @@
     <description>A voice assistant made for my lovely son, whose name is Little Pineapple.</description>
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <check-dependencies.skip>true</check-dependencies.skip><!--依赖检查插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
     </properties>
 
     <profiles>
@@ -38,6 +39,8 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
                 <os>
+                    <family>unix</family>
+                    <arch>x86_64</arch>
                     <name>linux</name>
                 </os>
             </activation>
@@ -63,18 +66,32 @@
     <dependencies>
         <dependency>
             <groupId>com.silong</groupId>
-            <artifactId>crypto</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silong</groupId>
             <artifactId>whispercpp-ffm</artifactId>
             <version>1.0.0</version>
             <classifier>${os.detected.classifier}</classifier>
         </dependency>
         <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.silong</groupId>
+            <artifactId>spring-boot-starter-webflux-jwt</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-module-jackson</artifactId>
+            <version>4.35.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+            <version>4.35.0</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
@@ -82,16 +99,18 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-afterburner</artifactId>
+            <groupId>com.silong</groupId>
+            <artifactId>spring-boot-starter-crypto</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
+            <groupId>com.microsoft.onnxruntime</groupId>
+            <artifactId>onnxruntime</artifactId>
+            <version>1.18.0</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -145,6 +164,21 @@
             </extension>
         </extensions>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>os-classifier</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>${os.detected.classifier}</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -228,7 +262,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <apiDocsUrl>http://localhost:${management.server.port}/actuator/openapi/duuid-server</apiDocsUrl>
+                    <apiDocsUrl>http://localhost:${management.server.port}/actuator/openapi/voice-assistant</apiDocsUrl>
                     <outputFileName>openapi.json</outputFileName>
                     <outputDir>${project.basedir}/openapi</outputDir>
                     <skip>false</skip>

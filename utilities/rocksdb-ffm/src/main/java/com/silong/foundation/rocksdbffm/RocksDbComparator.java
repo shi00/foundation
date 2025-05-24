@@ -25,12 +25,14 @@ import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_compara
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_comparator_destroy;
 import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.silong.foundation.rocksdbffm.generated.rocksdb_comparator_create$compare;
 import com.silong.foundation.rocksdbffm.generated.rocksdb_comparator_create$destructor;
 import com.silong.foundation.rocksdbffm.generated.rocksdb_comparator_create$name;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import lombok.NonNull;
 
 /**
  * Rocksdb Key Comparator，必须提供无参构造方法
@@ -46,10 +48,8 @@ public interface RocksDbComparator {
    *
    * @param comparator 比较器
    */
-  static void destroy(MemorySegment comparator) {
-    if (comparator != null && !NULL.equals(comparator)) {
-      rocksdb_comparator_destroy(comparator);
-    }
+  static void destroy(@NonNull MemorySegment comparator) {
+    rocksdb_comparator_destroy(comparator); // c++析构函数会检测null指针，此处无需处理
   }
 
   /**
@@ -59,19 +59,17 @@ public interface RocksDbComparator {
    */
   default MemorySegment comparator() {
     Arena global = Arena.global();
-    rocksdb_comparator_create$compare compare =
-        (state, key1, len1, key2, len2) -> {
-          byte[] k1 = key1.asSlice(0, len1).toArray(JAVA_BYTE);
-          byte[] k2 = key2.asSlice(0, len2).toArray(JAVA_BYTE);
-          return compare(k1, k2);
-        };
-    rocksdb_comparator_create$destructor destructor = state -> release();
-    rocksdb_comparator_create$name name = state -> global.allocateUtf8String(name());
     return rocksdb_comparator_create(
         NULL,
-        rocksdb_comparator_create$destructor.allocate(destructor, global),
-        rocksdb_comparator_create$compare.allocate(compare, global),
-        rocksdb_comparator_create$name.allocate(name, global));
+        rocksdb_comparator_create$destructor.allocate(_ -> release(), global),
+        rocksdb_comparator_create$compare.allocate(
+            (_, key1, len1, key2, len2) -> {
+              byte[] k1 = key1.asSlice(0, len1).toArray(JAVA_BYTE);
+              byte[] k2 = key2.asSlice(0, len2).toArray(JAVA_BYTE);
+              return compare(k1, k2);
+            },
+            global),
+        rocksdb_comparator_create$name.allocate(_ -> global.allocateFrom(name(), UTF_8), global));
   }
 
   /** 释放比较器资源 */

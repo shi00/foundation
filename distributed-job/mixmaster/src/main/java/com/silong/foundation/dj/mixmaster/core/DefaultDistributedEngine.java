@@ -44,13 +44,11 @@ import com.silong.foundation.dj.mixmaster.message.ProtoBufferMessage;
 import com.silong.foundation.dj.mixmaster.message.TimestampHeader;
 import com.silong.foundation.dj.mixmaster.utils.Slf4jLogFactory;
 import com.silong.foundation.dj.mixmaster.vo.ClusterNodeUUID;
-import com.silong.foundation.dj.mixmaster.vo.ClusterView;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import java.io.*;
 import java.net.*;
-import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -68,6 +66,7 @@ import org.jgroups.protocols.pbcast.DefaultGMS;
 import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.MembershipChangePolicy;
 import org.jgroups.stack.ProtocolStack;
+import org.jgroups.util.ByteArrayDataInputStream;
 import org.jgroups.util.MessageBatch;
 import org.jgroups.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -149,7 +148,7 @@ class DefaultDistributedEngine
   private JwtAuthenticator jwtAuthenticator;
 
   /** 集群视图 */
-  final ClusterView clusterView = new ClusterView(VIEW_CHANGED_RECORDS);
+  private ClusterTopology clusterTopology;
 
   private final CountDownLatch clusterViewLatch = new CountDownLatch(1);
 
@@ -203,12 +202,12 @@ class DefaultDistributedEngine
       }
 
       // 加载集群视图并恢复数据分区的拓扑图
-      clusterView.readFrom(new ByteArrayInputStream(localMetadata.getClusterView().toByteArray()));
-      if (!clusterView.isEmpty()) {
-        List<View> list = clusterView.toList();
-        Collections.reverse(list);
-        list.forEach(view -> clusterMetadata.update(view));
-      }
+//      clusterView.readFrom(new ByteArrayInputStream(localMetadata.getClusterView().toByteArray()));
+//      if (!clusterView.isEmpty()) {
+//        List<View> list = clusterView.toList();
+//        Collections.reverse(list);
+//        list.forEach(view -> clusterMetadata.update(view));
+//      }
     }
   }
 
@@ -318,13 +317,14 @@ class DefaultDistributedEngine
   }
 
   @Override
+  @SneakyThrows
   public void viewAccepted(View newView) {
     if (log.isDebugEnabled()) {
       log.debug("The view of cluster[{}] has changed: {}", properties.getClusterName(), newView);
     }
 
-    View oldView = clusterView.current();
-    clusterView.insert(newView);
+    View oldView = clusterTopology.lastView();
+    clusterTopology.save(newView);
     ViewChangedEvent event = new ViewChangedEvent(oldView, newView);
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
@@ -341,7 +341,7 @@ class DefaultDistributedEngine
           clusterName);
     }
     JoinClusterEvent event =
-        new JoinClusterEvent(clusterView.current(), clusterName, channel.address());
+        new JoinClusterEvent(clusterTopology.lastView(), clusterName, channel.address());
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
@@ -354,7 +354,7 @@ class DefaultDistributedEngine
       log.debug("The node{} has left the cluster[{}].", localIdentity(channel), clusterName);
     }
     LeftClusterEvent event =
-        new LeftClusterEvent(clusterView.current(), clusterName, channel.address());
+        new LeftClusterEvent(clusterTopology.lastView(), clusterName, channel.address());
     if (!eventQueue.offer(event)) {
       log.error("The event queue is full and new events are discarded. event:{}.", event);
     }
@@ -554,8 +554,9 @@ class DefaultDistributedEngine
    */
   @Override
   public void getState(OutputStream output) throws Exception {
-    clusterView.writeTo(output);
-    log.info("The node{} sends the {} to member of cluster.", localIdentity(jChannel), clusterView);
+//    clusterTopology.writeTo(output);
+//    log.info(
+//        "The node{} sends the {} to member of cluster.", localIdentity(jChannel), clusterTopology);
   }
 
   /**
@@ -564,19 +565,21 @@ class DefaultDistributedEngine
    * @param input The InputStream
    */
   @Override
-  public void setState(InputStream input) {
-    ClusterView cView = new ClusterView(0);
-    cView.readFrom(input);
-    if (log.isDebugEnabled()) {
-      log.debug(
-          "{} [coordinatorView:{}, localView:{}]", localIdentity(jChannel), cView, clusterView);
-    }
-    clusterView.merge(cView); // 合并集群视图
-    if (log.isDebugEnabled()) {
-      log.debug("{} [mergedView: {}]", localIdentity(jChannel), clusterView);
-    }
-    clusterViewLatch.countDown();
-    log.info("The node{} receives the {} from coordinator.", localIdentity(jChannel), clusterView);
+  public void setState(InputStream input) throws IOException {
+    int available = input.available();
+    byte[] bytes = new byte[available];
+    input.read(bytes);
+    clusterTopology.readFrom(new ByteArrayDataInputStream(bytes));
+//    if (log.isDebugEnabled()) {
+//      log.debug(
+//          "{} [coordinatorView:{}, localView:{}]", localIdentity(jChannel), cView, clusterView);
+//    }
+//    clusterView.merge(cView); // 合并集群视图
+//    if (log.isDebugEnabled()) {
+//      log.debug("{} [mergedView: {}]", localIdentity(jChannel), clusterView);
+//    }
+//    clusterViewLatch.countDown();
+//    log.info("The node{} receives the {} from coordinator.", localIdentity(jChannel), clusterView);
   }
 
   @Override
@@ -669,6 +672,11 @@ class DefaultDistributedEngine
   public void setClusterMetadata(DefaultClusterMetadata clusterMetadata) {
     this.clusterMetadata = clusterMetadata;
     clusterMetadata.setEngine(this);
+  }
+
+  @Autowired
+  public void setClusterTopology(ClusterTopology clusterTopology) {
+    this.clusterTopology = clusterTopology;
   }
 
   @Autowired

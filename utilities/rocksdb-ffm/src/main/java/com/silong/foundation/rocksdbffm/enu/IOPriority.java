@@ -21,6 +21,9 @@
 
 package com.silong.foundation.rocksdbffm.enu;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * Rocksdb 数据写入的IO优先级
  *
@@ -30,10 +33,14 @@ package com.silong.foundation.rocksdbffm.enu;
  * @version 1.0.0
  * @since 2023-12-12 14:40
  */
+@Getter
+@AllArgsConstructor
 public enum IOPriority {
-  IO_LOW,
-  IO_MID,
-  IO_HIGH,
-  IO_USER,
-  IO_TOTAL
+  IO_LOW(0),
+  IO_MID(1),
+  IO_HIGH(2),
+  IO_USER(3),
+  IO_TOTAL(4);
+
+  final int val;
 }

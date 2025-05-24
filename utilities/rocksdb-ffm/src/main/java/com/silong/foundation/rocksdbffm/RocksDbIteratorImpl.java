@@ -25,7 +25,7 @@ import static com.silong.foundation.rocksdbffm.Utils.*;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-import com.silong.foundation.common.lambda.Tuple2;
+import com.silong.foundation.rocksdbffm.fi.Tuple2;
 import com.silong.foundation.rocksdbffm.generated.RocksDB;
 import java.io.Serial;
 import java.io.Serializable;
@@ -83,7 +83,7 @@ class RocksDbIteratorImpl implements RocksDbIterator, Serializable {
   @Override
   public void checkStatus() throws RocksDbException {
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment errPtr = arena.allocateArray(C_POINTER, 1);
+      MemorySegment errPtr = arena.allocate(C_POINTER, 1);
       rocksdb_iter_get_error(iterator, errPtr);
       String errMsg = readErrMsgAndFree(errPtr);
       if (!OK.equals(errMsg)) {
@@ -106,7 +106,7 @@ class RocksDbIteratorImpl implements RocksDbIterator, Serializable {
   public void seek(byte[] target) {
     validateKey(target);
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment targetPtr = arena.allocateArray(C_CHAR, target);
+      MemorySegment targetPtr = arena.allocateFrom(C_CHAR, target);
       rocksdb_iter_seek(iterator, targetPtr, targetPtr.byteSize());
     }
   }
@@ -115,7 +115,7 @@ class RocksDbIteratorImpl implements RocksDbIterator, Serializable {
   public void seekForPrev(byte[] target) {
     validateKey(target);
     try (Arena arena = Arena.ofConfined()) {
-      MemorySegment targetPtr = arena.allocateArray(C_CHAR, target);
+      MemorySegment targetPtr = arena.allocateFrom(C_CHAR, target);
       rocksdb_iter_seek_for_prev(iterator, targetPtr, targetPtr.byteSize());
     }
   }

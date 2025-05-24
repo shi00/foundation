@@ -7,13 +7,21 @@ option java_outer_classname = "Messages";
 //////////////////////////////////////////////////////////
 //集群视图
 message ClusterView {
-  int32 recordLimit = 1;
-  optional ViewList viewList = 2;
+  int32 recordLimit = 1;//历史视图数量上限
+  optional ViewList viewList = 2; //历史视图列表
 }
 
 message ViewList{
   repeated bytes viewBytes = 1;
 }
+//////////////////////////////////////////////////////////
+
+// 元数据
+message LocalMetadata {
+  int32 totalPartition = 1; //分区总数
+  ClusterView clusterView = 2; //集群视图
+}
+
 //////////////////////////////////////////////////////////
 //集群成员信息
 message ClusterNodeInfo {

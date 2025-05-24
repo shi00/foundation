@@ -21,20 +21,19 @@
 
 package com.silong.foundation.rocksdbffm.options;
 
-import static com.silong.foundation.rocksdbffm.Utils.enumType;
+import static com.silong.foundation.rocksdbffm.Utils.boolean2Byte;
+import static com.silong.foundation.rocksdbffm.Utils.byte2Boolean;
+import static com.silong.foundation.rocksdbffm.enu.IOActivity.K_UNKNOWN;
 import static com.silong.foundation.rocksdbffm.enu.IOPriority.IO_TOTAL;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_writeoptions_create;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.rocksdb_writeoptions_destroy;
-import static java.lang.foreign.MemoryLayout.paddingLayout;
-import static java.lang.foreign.MemoryLayout.structLayout;
-import static java.lang.foreign.ValueLayout.*;
+import static com.silong.foundation.rocksdbffm.generated.RocksDB_1.*;
 
+import com.silong.foundation.rocksdbffm.enu.IOActivity;
 import com.silong.foundation.rocksdbffm.enu.IOPriority;
 import java.io.Serial;
 import java.io.Serializable;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.invoke.VarHandle;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -50,46 +49,6 @@ public final class WriteOptions implements Options, Serializable {
 
   @Serial private static final long serialVersionUID = 8_670_699_038_504_974_883L;
 
-  private static final MemoryLayout LAYOUT =
-      structLayout(
-          JAVA_BOOLEAN.withName("sync"),
-          //          paddingLayout(1),
-          JAVA_BOOLEAN.withName("disableWAL"),
-          //          paddingLayout(1),
-          JAVA_BOOLEAN.withName("ignore_missing_column_families"),
-          //          paddingLayout(1),
-          JAVA_BOOLEAN.withName("no_slowdown"),
-          //          paddingLayout(1),
-          JAVA_BOOLEAN.withName("low_pri"),
-          //          paddingLayout(1),
-          JAVA_BOOLEAN.withName("memtable_insert_hint_per_batch"),
-          paddingLayout(2),
-          JAVA_INT.withName("rate_limiter_priority"),
-          paddingLayout(4),
-          JAVA_LONG.withName("protection_bytes_per_key"));
-
-  private static final VarHandle SYNC = LAYOUT.varHandle(PathElement.groupElement("sync"));
-
-  private static final VarHandle DISABLE_WAL =
-      LAYOUT.varHandle(PathElement.groupElement("disableWAL"));
-
-  private static final VarHandle IGNORE_MISSING_COLUMN_FAMILIES =
-      LAYOUT.varHandle(PathElement.groupElement("ignore_missing_column_families"));
-
-  private static final VarHandle NO_SLOWDOWN =
-      LAYOUT.varHandle(PathElement.groupElement("no_slowdown"));
-
-  private static final VarHandle LOW_PRI = LAYOUT.varHandle(PathElement.groupElement("low_pri"));
-
-  private static final VarHandle MEMTABLE_INSERT_HINT_PER_BATCH =
-      LAYOUT.varHandle(PathElement.groupElement("memtable_insert_hint_per_batch"));
-
-  private static final VarHandle RATE_LIMITER_PRIORITY =
-      LAYOUT.varHandle(PathElement.groupElement("rate_limiter_priority"));
-
-  private static final VarHandle PROTECTION_BYTES_PER_KEY =
-      LAYOUT.varHandle(PathElement.groupElement("protection_bytes_per_key"));
-
   /**
    * If true, the write will be flushed from the operating system buffer cache (by calling
    * WritableFile::Sync()) before the write is considered complete. If this flag is true, writes
@@ -99,7 +58,7 @@ public final class WriteOptions implements Options, Serializable {
    * semantics as the "write()" system call. A DB write with sync==true has similar crash semantics
    * to a "write()" system call followed by "fdatasync()". Default: false
    */
-  private boolean sync;
+  private Boolean sync = Boolean.FALSE;
 
   /**
    * If true, writes will not first go to the write ahead log, and the write may get lost after a
@@ -107,20 +66,20 @@ public final class WriteOptions implements Options, Serializable {
    * write-ahead logs, you must create backups with flush_before_backup=true to avoid losing
    * unflushed memtable data. Default: false
    */
-  private boolean disableWAL;
+  private Boolean disableWAL = Boolean.FALSE;
 
   /**
    * If true and if user is trying to write to column families that don't exist (they were dropped),
    * ignore the write (don't return an error). If there are multiple writes in a WriteBatch, other
    * writes will succeed. Default: false
    */
-  private boolean ignoreMissingColumnFamilies;
+  private Boolean ignoreMissingColumnFamilies = Boolean.FALSE;
 
   /**
    * If true and we need to wait or sleep for the write request, fails immediately with
    * Status::Incomplete(). Default: false
    */
-  private boolean noSlowdown;
+  private Boolean noSlowdown = Boolean.FALSE;
 
   /**
    * If true, this write request is of lower priority if compaction is behind. In this case,
@@ -130,7 +89,7 @@ public final class WriteOptions implements Options, Serializable {
    *
    * <p>Default: false
    */
-  private boolean lowPri;
+  private Boolean lowPri = Boolean.FALSE;
 
   /**
    * If true, this writebatch will maintain the last insert positions of each memtable as hints in
@@ -140,7 +99,7 @@ public final class WriteOptions implements Options, Serializable {
    *
    * <p>Default: false
    */
-  private boolean memtableInsertHintPerBatch;
+  private Boolean memtableInsertHintPerBatch = Boolean.FALSE;
 
   /**
    * For writes associated with this option, charge the internal rate limiter (see
@@ -175,18 +134,20 @@ public final class WriteOptions implements Options, Serializable {
    *
    * <p>Default: zero (disabled).
    */
-  private long protectionBytesPerKey;
+  private long protectionBytesPerKey = 0;
+
+  // For RocksDB internal use only
+  // Default: Env::IOActivity::kUnknown.
+  private IOActivity ioActivity = K_UNKNOWN;
 
   @Override
-  public WriteOptions from(@NonNull MemorySegment writeOptions) {
-    this.sync = sync(writeOptions);
-    this.disableWAL = disableWAL(writeOptions);
-    this.noSlowdown = noSlowdown(writeOptions);
-    this.memtableInsertHintPerBatch = memtableInsertHintPerBatch(writeOptions);
-    this.lowPri = lowPri(writeOptions);
-    this.ignoreMissingColumnFamilies = ignoreMissingColumnFamilies(writeOptions);
-    this.protectionBytesPerKey = protectionBytesPerKey(writeOptions);
-    this.rateLimiterPriority = rateLimiterPriority(writeOptions);
+  public WriteOptions from(@NonNull MemorySegment writeOptionsPtr) {
+    this.sync = getSync(writeOptionsPtr);
+    this.disableWAL = getDisableWAL(writeOptionsPtr);
+    this.noSlowdown = getNoSlowdown(writeOptionsPtr);
+    this.memtableInsertHintPerBatch = getMemtableInsertHintPerBatch(writeOptionsPtr);
+    this.lowPri = getLowPri(writeOptionsPtr);
+    this.ignoreMissingColumnFamilies = getIgnoreMissingColumnFamilies(writeOptionsPtr);
     return this;
   }
 
@@ -197,78 +158,75 @@ public final class WriteOptions implements Options, Serializable {
    */
   @Override
   public MemorySegment to() {
-    MemorySegment writeOptions = rocksdb_writeoptions_create();
-    rateLimiterPriority(this.rateLimiterPriority, writeOptions);
-    lowPri(this.lowPri, writeOptions);
-    sync(this.sync, writeOptions);
-    noSlowdown(this.noSlowdown, writeOptions);
-    ignoreMissingColumnFamilies(this.ignoreMissingColumnFamilies, writeOptions);
-    disableWAL(this.disableWAL, writeOptions);
-    memtableInsertHintPerBatch(this.memtableInsertHintPerBatch, writeOptions);
-    protectionBytesPerKey(this.protectionBytesPerKey, writeOptions);
-    return writeOptions;
+    MemorySegment writeOptionsPtr = create();
+    setDisableWal(writeOptionsPtr);
+    setLowPri(writeOptionsPtr);
+    setIgnoreMissingColumnFamilies(writeOptionsPtr);
+    setMemtableInsertHintPerBatch(writeOptionsPtr);
+    setNoSlowDown(writeOptionsPtr);
+    setSync(writeOptionsPtr);
+    return writeOptionsPtr;
   }
 
-  @Override
-  public MemoryLayout layout() {
-    return LAYOUT;
-  }
-
-  public static String toString(MemorySegment writeOptions) {
+  public static String toString(@NonNull MemorySegment writeOptions) {
     return String.format(
-        "writeOptions:[sync:%b, disableWAL:%b, ignore_missing_column_families:%b, no_slowdown:%b, low_pri:%b, memtable_insert_hint_per_batch:%b, rate_limiter_priority:%s, protection_bytes_per_key:%d]",
-        sync(writeOptions),
-        disableWAL(writeOptions),
-        ignoreMissingColumnFamilies(writeOptions),
-        noSlowdown(writeOptions),
-        lowPri(writeOptions),
-        memtableInsertHintPerBatch(writeOptions),
-        rateLimiterPriority(writeOptions),
-        protectionBytesPerKey(writeOptions));
+        "writeOptions:[sync:%b, disableWAL:%b, ignore_missing_column_families:%b, no_slowdown:%b, low_pri:%b, memtable_insert_hint_per_batch:%b]",
+        getSync(writeOptions),
+        getDisableWAL(writeOptions),
+        getIgnoreMissingColumnFamilies(writeOptions),
+        getNoSlowdown(writeOptions),
+        getLowPri(writeOptions),
+        getMemtableInsertHintPerBatch(writeOptions));
   }
 
-  public static MemorySegment rateLimiterPriority(
-      @NonNull IOPriority ioPriority, @NonNull MemorySegment writeOptions) {
-    RATE_LIMITER_PRIORITY.set(writeOptions, ioPriority.ordinal());
-    return writeOptions;
+  private void setSync(MemorySegment writeOptionsPtr) {
+    rocksdb_writeoptions_set_sync(writeOptionsPtr, boolean2Byte(sync));
   }
 
-  public static MemorySegment protectionBytesPerKey(
-      long protectionBytesPerKey, @NonNull MemorySegment writeOptions) {
-    PROTECTION_BYTES_PER_KEY.set(writeOptions, protectionBytesPerKey);
-    return writeOptions;
+  private void setNoSlowDown(MemorySegment writeOptionsPtr) {
+    rocksdb_writeoptions_set_no_slowdown(writeOptionsPtr, boolean2Byte(noSlowdown));
   }
 
-  public static MemorySegment memtableInsertHintPerBatch(
-      boolean memtableInsertHintPerBatch, @NonNull MemorySegment writeOptions) {
-    MEMTABLE_INSERT_HINT_PER_BATCH.set(writeOptions, memtableInsertHintPerBatch);
-    return writeOptions;
+  private void setMemtableInsertHintPerBatch(MemorySegment writeOptionsPtr) {
+    rocksdb_writeoptions_set_memtable_insert_hint_per_batch(
+        writeOptionsPtr, boolean2Byte(memtableInsertHintPerBatch));
   }
 
-  public static MemorySegment sync(boolean sync, @NonNull MemorySegment writeOptions) {
-    SYNC.set(writeOptions, sync);
-    return writeOptions;
+  private void setLowPri(MemorySegment writeOptionsPtr) {
+    rocksdb_writeoptions_set_low_pri(writeOptionsPtr, boolean2Byte(lowPri));
   }
 
-  public static MemorySegment lowPri(boolean lowPri, @NonNull MemorySegment writeOptions) {
-    LOW_PRI.set(writeOptions, lowPri);
-    return writeOptions;
+  private void setIgnoreMissingColumnFamilies(MemorySegment writeOptionsPtr) {
+    rocksdb_writeoptions_set_ignore_missing_column_families(
+        writeOptionsPtr, boolean2Byte(ignoreMissingColumnFamilies));
   }
 
-  public static MemorySegment noSlowdown(boolean noSlowdown, @NonNull MemorySegment writeOptions) {
-    NO_SLOWDOWN.set(writeOptions, noSlowdown);
-    return writeOptions;
+  private void setDisableWal(MemorySegment writeOptionsPtr) {
+    rocksdb_writeoptions_disable_WAL(writeOptionsPtr, boolean2Byte(disableWAL));
   }
 
-  public static MemorySegment disableWAL(boolean disableWAL, @NonNull MemorySegment writeOptions) {
-    DISABLE_WAL.set(writeOptions, disableWAL);
-    return writeOptions;
+  private static Boolean getIgnoreMissingColumnFamilies(MemorySegment writeOptionsPtr) {
+    return byte2Boolean(rocksdb_writeoptions_get_ignore_missing_column_families(writeOptionsPtr));
   }
 
-  public static MemorySegment ignoreMissingColumnFamilies(
-      boolean ignoreMissingColumnFamilies, @NonNull MemorySegment writeOptions) {
-    IGNORE_MISSING_COLUMN_FAMILIES.set(writeOptions, ignoreMissingColumnFamilies);
-    return writeOptions;
+  private static Boolean getLowPri(MemorySegment writeOptionsPtr) {
+    return byte2Boolean(rocksdb_writeoptions_get_low_pri(writeOptionsPtr));
+  }
+
+  private static Boolean getMemtableInsertHintPerBatch(MemorySegment writeOptionsPtr) {
+    return byte2Boolean(rocksdb_writeoptions_get_memtable_insert_hint_per_batch(writeOptionsPtr));
+  }
+
+  private static Boolean getNoSlowdown(MemorySegment writeOptionsPtr) {
+    return byte2Boolean(rocksdb_writeoptions_get_no_slowdown(writeOptionsPtr));
+  }
+
+  private static Boolean getDisableWAL(MemorySegment writeOptionsPtr) {
+    return byte2Boolean(rocksdb_writeoptions_get_disable_WAL(writeOptionsPtr));
+  }
+
+  private static Boolean getSync(MemorySegment writeOptionsPtr) {
+    return byte2Boolean(rocksdb_writeoptions_get_sync(writeOptionsPtr));
   }
 
   /**
@@ -287,37 +245,5 @@ public final class WriteOptions implements Options, Serializable {
    */
   public static void destroy(@NonNull MemorySegment writeOptions) {
     rocksdb_writeoptions_destroy(writeOptions);
-  }
-
-  public static boolean sync(@NonNull MemorySegment writeOptions) {
-    return (boolean) SYNC.get(writeOptions);
-  }
-
-  public static boolean ignoreMissingColumnFamilies(@NonNull MemorySegment writeOptions) {
-    return (boolean) IGNORE_MISSING_COLUMN_FAMILIES.get(writeOptions);
-  }
-
-  public static boolean noSlowdown(@NonNull MemorySegment writeOptions) {
-    return (boolean) NO_SLOWDOWN.get(writeOptions);
-  }
-
-  public static boolean disableWAL(@NonNull MemorySegment writeOptions) {
-    return (boolean) DISABLE_WAL.get(writeOptions);
-  }
-
-  public static boolean memtableInsertHintPerBatch(@NonNull MemorySegment writeOptions) {
-    return (boolean) MEMTABLE_INSERT_HINT_PER_BATCH.get(writeOptions);
-  }
-
-  public static IOPriority rateLimiterPriority(@NonNull MemorySegment writeOptions) {
-    return enumType((int) RATE_LIMITER_PRIORITY.get(writeOptions), IOPriority.class);
-  }
-
-  public static boolean lowPri(@NonNull MemorySegment writeOptions) {
-    return (boolean) LOW_PRI.get(writeOptions);
-  }
-
-  public static long protectionBytesPerKey(@NonNull MemorySegment writeOptions) {
-    return (long) PROTECTION_BYTES_PER_KEY.get(writeOptions);
   }
 }

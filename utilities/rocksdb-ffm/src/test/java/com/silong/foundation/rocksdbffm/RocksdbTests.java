@@ -28,7 +28,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 
 import com.google.common.primitives.Longs;
-import com.silong.foundation.common.lambda.Tuple2;
 import com.silong.foundation.rocksdbffm.config.ColumnFamilyConfig;
 import com.silong.foundation.rocksdbffm.config.RocksDbConfig;
 import java.lang.foreign.Arena;

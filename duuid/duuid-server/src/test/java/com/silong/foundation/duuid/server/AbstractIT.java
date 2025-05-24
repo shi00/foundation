@@ -18,10 +18,25 @@
  */
 package com.silong.foundation.duuid.server;
 
+import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.TEXT_PLAIN;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+
 import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.digest.HmacToolkit;
 import com.silong.foundation.duuid.server.model.Duuid;
 import com.silong.foundation.springboot.starter.simpleauth.configure.config.SimpleAuthProperties;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,22 +50,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-
-import static com.silong.foundation.springboot.starter.simpleauth.constants.AuthHeaders.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.http.HttpStatus.OK;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.http.MediaType.TEXT_PLAIN;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-
 /**
  * 抽象集成测试
  *
@@ -63,8 +62,7 @@ abstract class AbstractIT {
   /** 工作密钥 */
   static String workKey;
 
-  @LocalServerPort
-  private int port;
+  @LocalServerPort private int port;
 
   @Value("${management.server.port}")
   private int actuatorPort;

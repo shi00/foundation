@@ -26,21 +26,19 @@ import static com.silong.foundation.rocksdbffm.enu.IOActivity.K_UNKNOWN;
 import static com.silong.foundation.rocksdbffm.enu.IOPriority.IO_TOTAL;
 import static com.silong.foundation.rocksdbffm.enu.ReadTier.K_READ_ALL_TIER;
 import static com.silong.foundation.rocksdbffm.generated.RocksDB.*;
-import static java.lang.foreign.MemoryLayout.paddingLayout;
-import static java.lang.foreign.MemoryLayout.structLayout;
+import static com.silong.foundation.rocksdbffm.generated.RocksDB_1.rocksdb_readoptions_get_async_io;
+import static com.silong.foundation.rocksdbffm.generated.RocksDB_1.rocksdb_readoptions_get_deadline;
 import static java.lang.foreign.MemorySegment.NULL;
-import static java.lang.foreign.ValueLayout.*;
 
 import com.silong.foundation.rocksdbffm.enu.IOActivity;
 import com.silong.foundation.rocksdbffm.enu.IOPriority;
 import com.silong.foundation.rocksdbffm.enu.ReadTier;
 import java.io.Serial;
 import java.io.Serializable;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.invoke.VarHandle;
 import lombok.Data;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 读取配置
@@ -50,127 +48,10 @@ import lombok.NonNull;
  * @since 2023-12-13 10:43
  */
 @Data
+@Slf4j
 public final class ReadOptions implements Options, Serializable {
 
   @Serial private static final long serialVersionUID = -3_531_065_411_779_519_195L;
-
-  /** std::function 占位符实例 */
-  private static final StdFunctionPlaceHolder TABLE_FILTER_PLACE_HOLDER =
-      new StdFunctionPlaceHolder();
-
-  private static final MemoryLayout LAYOUT =
-      structLayout(
-          C_POINTER.withName("snapshot"), // 8
-          //          paddingLayout(1),
-          C_POINTER.withName("timestamp"), // 16
-          //          paddingLayout(1),
-          C_POINTER.withName("iter_start_ts"), // 24
-          //          paddingLayout(1),
-          JAVA_LONG.withName("deadline"), // 32
-          //          paddingLayout(1),
-          JAVA_LONG.withName("io_timeout"), // 40
-          //          paddingLayout(1),
-          JAVA_INT.withName("read_tier"), // 44
-          //          paddingLayout(2),
-          JAVA_INT.withName("rate_limiter_priority"), // 48
-          //          paddingLayout(4),
-          uint64_t.withName("value_size_soft_limit"), // 56
-          JAVA_BOOLEAN.withName("verify_checksums"),
-          JAVA_BOOLEAN.withName("fill_cache"),
-          JAVA_BOOLEAN.withName("ignore_range_deletions"),
-          JAVA_BOOLEAN.withName("async_io"),
-          JAVA_BOOLEAN.withName("optimize_multiget_for_io"),
-          paddingLayout(3), // 64
-          JAVA_LONG.withName("readahead_size"), // 72
-          uint64_t.withName("max_skippable_internal_keys"), // 80
-          C_POINTER.withName("iterate_lower_bound"), // 88
-          C_POINTER.withName("iterate_upper_bound"), // 96
-          JAVA_BOOLEAN.withName("tailing"),
-          JAVA_BOOLEAN.withName("managed"),
-          JAVA_BOOLEAN.withName("total_order_seek"),
-          JAVA_BOOLEAN.withName("auto_prefix_mode"),
-          JAVA_BOOLEAN.withName("prefix_same_as_start"),
-          JAVA_BOOLEAN.withName("pin_data"),
-          JAVA_BOOLEAN.withName("adaptive_readahead"),
-          JAVA_BOOLEAN.withName("background_purge_on_iterator_cleanup"), // 104
-          TABLE_FILTER_PLACE_HOLDER.layout().withName("table_filter"), // 112
-          uint8_t.withName("io_activity"),
-          paddingLayout(7));
-
-  private static final VarHandle SNAPSHOT = LAYOUT.varHandle(PathElement.groupElement("snapshot"));
-
-  private static final VarHandle TIMESTAMP =
-      LAYOUT.varHandle(PathElement.groupElement("timestamp"));
-
-  private static final VarHandle ITER_START_TS =
-      LAYOUT.varHandle(PathElement.groupElement("iter_start_ts"));
-
-  private static final VarHandle DEAD_LINE = LAYOUT.varHandle(PathElement.groupElement("deadline"));
-
-  private static final VarHandle IO_TIMEOUT =
-      LAYOUT.varHandle(PathElement.groupElement("io_timeout"));
-
-  private static final VarHandle READ_TIER =
-      LAYOUT.varHandle(PathElement.groupElement("read_tier"));
-
-  private static final VarHandle RATE_LIMITER_PRIORITY =
-      LAYOUT.varHandle(PathElement.groupElement("rate_limiter_priority"));
-
-  private static final VarHandle VALUE_SIZE_SOFT_LIMIT =
-      LAYOUT.varHandle(PathElement.groupElement("value_size_soft_limit"));
-
-  private static final VarHandle VERIFY_CHECKSUMS =
-      LAYOUT.varHandle(PathElement.groupElement("verify_checksums"));
-
-  private static final VarHandle FILL_CACHE =
-      LAYOUT.varHandle(PathElement.groupElement("fill_cache"));
-
-  private static final VarHandle IGNORE_RANGE_DELETIONS =
-      LAYOUT.varHandle(PathElement.groupElement("ignore_range_deletions"));
-
-  private static final VarHandle ASYNC_IO = LAYOUT.varHandle(PathElement.groupElement("async_io"));
-
-  private static final VarHandle OPTIMIZE_MULTIGET_FOR_IO =
-      LAYOUT.varHandle(PathElement.groupElement("optimize_multiget_for_io"));
-
-  private static final VarHandle READAHEAD_SIZE =
-      LAYOUT.varHandle(PathElement.groupElement("readahead_size"));
-
-  private static final VarHandle MAX_SKIPPABLE_INTERNAL_KEYS =
-      LAYOUT.varHandle(PathElement.groupElement("max_skippable_internal_keys"));
-
-  private static final VarHandle ITERATE_LOWER_BOUND =
-      LAYOUT.varHandle(PathElement.groupElement("iterate_lower_bound"));
-
-  private static final VarHandle ITERATE_UPPER_BOUND =
-      LAYOUT.varHandle(PathElement.groupElement("iterate_upper_bound"));
-
-  private static final VarHandle TAILING = LAYOUT.varHandle(PathElement.groupElement("tailing"));
-
-  private static final VarHandle MANAGED = LAYOUT.varHandle(PathElement.groupElement("managed"));
-
-  private static final VarHandle TOTAL_ORDER_SEEK =
-      LAYOUT.varHandle(PathElement.groupElement("total_order_seek"));
-
-  private static final VarHandle AUTO_PREFIX_MODE =
-      LAYOUT.varHandle(PathElement.groupElement("auto_prefix_mode"));
-
-  private static final VarHandle PREFIX_SAME_AS_START =
-      LAYOUT.varHandle(PathElement.groupElement("prefix_same_as_start"));
-
-  private static final VarHandle PIN_DATA = LAYOUT.varHandle(PathElement.groupElement("pin_data"));
-
-  private static final VarHandle ADAPTIVE_READAHEAD =
-      LAYOUT.varHandle(PathElement.groupElement("adaptive_readahead"));
-
-  private static final VarHandle BACKGROUND_PURGE_ON_ITERATOR_CLEANUP =
-      LAYOUT.varHandle(PathElement.groupElement("background_purge_on_iterator_cleanup"));
-
-  //  private static final VarHandle TABLE_FILTER =
-  //      LAYOUT.varHandle(PathElement.groupElement("table_filter"));
-
-  private static final VarHandle IO_ACTIVITY =
-      LAYOUT.varHandle(PathElement.groupElement("io_activity"));
 
   /**
    * If "snapshot" is non-nullptr, read as of the supplied snapshot (which must belong to the DB
@@ -191,11 +72,6 @@ public final class ReadOptions implements Options, Serializable {
    */
   private MemorySegment timestamp = NULL;
 
-  /**
-   * If true and if user is trying to write to column families that don't exist (they were dropped),
-   * ignore the write (don't return an error). If there are multiple writes in a WriteBatch, other
-   * writes will succeed. Default: false
-   */
   private MemorySegment iterStartTs = NULL;
 
   /**
@@ -250,14 +126,14 @@ public final class ReadOptions implements Options, Serializable {
    * If true, all data read from underlying storage will be verified against corresponding
    * checksums.
    */
-  private boolean verifyChecksums = true;
+  private Boolean verifyChecksums = Boolean.TRUE;
 
   /**
    * Should the "data block"/"index block" read for this iteration be placed in block cache? Callers
    * may wish to set this field to false for bulk scans. This would help not to the change eviction
    * order of existing items in the block cache.
    */
-  private boolean fillCache = true;
+  private Boolean fillCache = Boolean.TRUE;
 
   /**
    * If true, range tombstones handling will be skipped in key lookup paths. For DB instances that
@@ -265,13 +141,13 @@ public final class ReadOptions implements Options, Serializable {
    * that, if this assumption (of no previous DeleteRange() calls) is broken, stale keys could be
    * served in read paths.
    */
-  private boolean ignoreRangeDeletions = false;
+  private Boolean ignoreRangeDeletions = Boolean.FALSE;
 
   /**
    * Experimental: If async_io is enabled, RocksDB will prefetch some of data asynchronously.
    * RocksDB apply it if reads are sequential and its internal automatic prefetching.
    */
-  private boolean asyncIO = false;
+  private Boolean asyncIO = Boolean.FALSE;
 
   /**
    * Experimental: If async_io is set, then this flag controls whether we read SST files in multiple
@@ -279,7 +155,7 @@ public final class ReadOptions implements Options, Serializable {
    * number of SST files read in parallel if the keys in the MultiGet batch are in different levels.
    * It comes at the expense of slightly higher CPU overhead.
    */
-  private boolean optimizeMultiGetForIO = true;
+  private Boolean optimizeMultiGetForIO = Boolean.TRUE;
 
   /**
    * RocksDB does auto-readahead for iterators on noticing more than two reads for a table file. The
@@ -331,13 +207,13 @@ public final class ReadOptions implements Options, Serializable {
    * reads. It will return records that were inserted into the database after the creation of the
    * iterator.
    */
-  private boolean tailing = false;
+  private Boolean tailing = Boolean.FALSE;
 
   /**
    * This options is not used anymore. It was to turn on a functionality that has been removed.
    * DEPRECATED
    */
-  @Deprecated private boolean managed = false;
+  @Deprecated private Boolean managed = Boolean.FALSE;
 
   /**
    * Enable a total order seek regardless of index format (e.g. hash index) used in the table. Some
@@ -345,7 +221,7 @@ public final class ReadOptions implements Options, Serializable {
    * also skip prefix bloom when reading from block based table, which only affects Get()
    * performance.
    */
-  private boolean totalOrderSeek = false;
+  private Boolean totalOrderSeek = Boolean.FALSE;
 
   /**
    * When true, by default use total_order_seek = true, and RocksDB can selectively enable prefix
@@ -360,7 +236,7 @@ public final class ReadOptions implements Options, Serializable {
    * IsSameLengthImmediateSuccessor is satisfied; see its BUG section). A bug example is in
    * DBTest2::AutoPrefixMode1, search for "BUG".
    */
-  private boolean autoPrefixMode = false;
+  private Boolean autoPrefixMode = Boolean.FALSE;
 
   /**
    * Enforce that the iterator only iterates over the same prefix as the seek. This option is
@@ -368,14 +244,14 @@ public final class ReadOptions implements Options, Serializable {
    * total_order_seek is false. Unlike iterate_upper_bound, prefix_same_as_start only works within a
    * prefix but in both directions.
    */
-  private boolean prefixSameAsStart = false;
+  private Boolean prefixSameAsStart = Boolean.FALSE;
 
   /**
    * Keep the blocks loaded by the iterator pinned in memory as long as the iterator is not deleted,
    * If used when reading from tables created with BlockBasedTableOptions::use_delta_encoding =
    * false, Iterator's property "rocksdb.iterator.is-key-pinned" is guaranteed to return 1.
    */
-  private boolean pinData = false;
+  private Boolean pinData = Boolean.FALSE;
 
   /**
    * For iterators, RocksDB does auto-readahead on noticing more than two sequential reads for a
@@ -384,13 +260,13 @@ public final class ReadOptions implements Options, Serializable {
    * each level, if iterator moves over next file, readahead_size starts again from 8KB. By enabling
    * this option, RocksDB will do some enhancements for prefetching the data.
    */
-  private boolean adaptiveReadAhead = false;
+  private Boolean adaptiveReadAhead = Boolean.FALSE;
 
   /**
    * If true, when PurgeObsoleteFile is called in CleanupIteratorState, we schedule a background job
    * in the flush job queue and delete obsolete files in background.
    */
-  private boolean backgroundPurgeOnIteratorCleanup = false;
+  private Boolean backgroundPurgeOnIteratorCleanup = Boolean.FALSE;
 
   /**
    * A callback to determine whether relevant keys for this scan exist in a given table based on the
@@ -398,40 +274,46 @@ public final class ReadOptions implements Options, Serializable {
    * the callback returns false, the table will not be scanned. This option only affects Iterators
    * and has no impact on point lookups. Default: empty (every table will be scanned).
    */
-  private PlaceHolder tableFilter = TABLE_FILTER_PLACE_HOLDER;
+  private MemorySegment tableFilter;
 
-  /** For RocksDB internal use only */
+  /**
+   * If auto_readahead_size is set to true, it will auto tune the readahead_size during scans
+   * internally. For this feature to enabled, iterate_upper_bound must also be specified.
+   *
+   * <p>NOTE: - Recommended for forward Scans only. - If there is a backward scans, this option will
+   * be disabled internally and won't be enabled again if the forward scan is issued again.
+   *
+   * <p>Default: true
+   */
+  private Boolean autoReadAheadSize = Boolean.TRUE;
+
+  // *** END options only relevant to iterators or scans ***
+
+  // *** BEGIN options for RocksDB internal use only ***
   private IOActivity ioActivity = K_UNKNOWN;
 
+  // *** END options for RocksDB internal use only ***
+
   @Override
-  public ReadOptions from(@NonNull MemorySegment readOptions) {
-    this.adaptiveReadAhead = adaptiveReadAhead(readOptions);
-    this.autoPrefixMode = autoPrefixMode(readOptions);
-    //    this.tableFilter = tableFilter(readOptions);
-    this.managed = managed(readOptions);
-    this.fillCache = fillCache(readOptions);
-    this.asyncIO = asyncIO(readOptions);
-    this.backgroundPurgeOnIteratorCleanup = backgroundPurgeOnIteratorCleanup(readOptions);
-    this.deadline = deadline(readOptions);
-    this.ioTimeout = ioTimeout(readOptions);
-    this.ignoreRangeDeletions = ignoreRangeDeletions(readOptions);
-    this.ioActivity = ioActivity(readOptions);
-    this.iterateLowerBound = iterateLowerBound(readOptions);
-    this.iterateUpperBound = iterateUpperBound(readOptions);
-    this.rateLimiterPriority = rateLimiterPriority(readOptions);
-    this.optimizeMultiGetForIO = optimizeMultiGetForIO(readOptions);
-    this.maxSkippableInternalKeys = maxSkippableInternalKeys(readOptions);
-    this.pinData = pinData(readOptions);
-    this.tailing = tailing(readOptions);
-    this.totalOrderSeek = totalOrderSeek(readOptions);
-    this.readTier = readTier(readOptions);
-    this.prefixSameAsStart = prefixSameAsStart(readOptions);
-    this.timestamp = timestamp(readOptions);
-    this.iterStartTs = iterStartTs(readOptions);
-    this.readAheadSize = readAheadSize(readOptions);
-    this.snapshot = snapshot(readOptions);
-    this.valueSizeSoftLimit = valueSizeSoftLimit(readOptions);
-    this.verifyChecksums = verifyChecksums(readOptions);
+  public ReadOptions from(@NonNull MemorySegment readOptionsPtr) {
+    this.asyncIO = byte2Boolean(rocksdb_readoptions_get_async_io(readOptionsPtr));
+    this.deadline = rocksdb_readoptions_get_deadline(readOptionsPtr);
+    this.fillCache = byte2Boolean(rocksdb_readoptions_get_fill_cache(readOptionsPtr));
+    this.backgroundPurgeOnIteratorCleanup =
+        byte2Boolean(rocksdb_readoptions_get_background_purge_on_iterator_cleanup(readOptionsPtr));
+    this.ignoreRangeDeletions =
+        byte2Boolean(rocksdb_readoptions_get_ignore_range_deletions(readOptionsPtr));
+    this.ioTimeout = rocksdb_readoptions_get_io_timeout(readOptionsPtr);
+    this.maxSkippableInternalKeys =
+        rocksdb_readoptions_get_max_skippable_internal_keys(readOptionsPtr);
+    this.pinData = byte2Boolean(rocksdb_readoptions_get_pin_data(readOptionsPtr));
+    this.prefixSameAsStart =
+        byte2Boolean(rocksdb_readoptions_get_prefix_same_as_start(readOptionsPtr));
+    this.readTier = enumType(rocksdb_readoptions_get_read_tier(readOptionsPtr), ReadTier.class);
+    this.readAheadSize = rocksdb_readoptions_get_readahead_size(readOptionsPtr);
+    this.tailing = byte2Boolean(rocksdb_readoptions_get_tailing(readOptionsPtr));
+    this.totalOrderSeek = byte2Boolean(rocksdb_readoptions_get_total_order_seek(readOptionsPtr));
+    this.verifyChecksums = byte2Boolean(rocksdb_readoptions_get_verify_checksums(readOptionsPtr));
     return this;
   }
 
@@ -442,40 +324,20 @@ public final class ReadOptions implements Options, Serializable {
    */
   @Override
   public MemorySegment to() {
-    MemorySegment readOptions = rocksdb_readoptions_create();
-    verifyChecksums(this.verifyChecksums, readOptions);
-    valueSizeSoftLimit(this.valueSizeSoftLimit, readOptions);
-    snapshot(this.snapshot, readOptions);
-    readAheadSize(this.readAheadSize, readOptions);
-    iterStartTs(this.iterStartTs, readOptions);
-    timestamp(this.timestamp, readOptions);
-    prefixSameAsStart(this.prefixSameAsStart, readOptions);
-    readTier(this.readTier, readOptions);
-    totalOrderSeek(this.totalOrderSeek, readOptions);
-    tailing(this.tailing, readOptions);
-    pinData(this.pinData, readOptions);
-    maxSkippableInternalKeys(this.maxSkippableInternalKeys, readOptions);
-    optimizeMultiGetForIO(this.optimizeMultiGetForIO, readOptions);
-    rateLimiterPriority(this.rateLimiterPriority, readOptions);
-    iterateUpperBound(this.iterateUpperBound, readOptions);
-    iterateLowerBound(this.iterateLowerBound, readOptions);
-    ioActivity(this.ioActivity, readOptions);
-    ignoreRangeDeletions(this.ignoreRangeDeletions, readOptions);
-    ioTimeout(this.ioTimeout, readOptions);
-    deadline(this.deadline, readOptions);
-    backgroundPurgeOnIteratorCleanup(this.backgroundPurgeOnIteratorCleanup, readOptions);
-    asyncIO(this.asyncIO, readOptions);
-    fillCache(this.fillCache, readOptions);
-    managed(this.managed, readOptions);
-    //    tableFilter(this.tableFilter, readOptions);
-    autoPrefixMode(this.autoPrefixMode, readOptions);
-    adaptiveReadAhead(this.adaptiveReadAhead, readOptions);
-    return readOptions;
-  }
+    MemorySegment readOptionsPtr = create();
+    rocksdb_readoptions_set_verify_checksums(readOptionsPtr, boolean2Byte(verifyChecksums));
+    rocksdb_readoptions_set_auto_readahead_size(readOptionsPtr, boolean2Byte(autoReadAheadSize));
+    rocksdb_readoptions_set_async_io(readOptionsPtr, boolean2Byte(asyncIO));
+    rocksdb_readoptions_set_background_purge_on_iterator_cleanup(
+        readOptionsPtr, boolean2Byte(backgroundPurgeOnIteratorCleanup));
+    rocksdb_readoptions_set_deadline(readOptionsPtr, deadline);
+    rocksdb_readoptions_set_fill_cache(readOptionsPtr, boolean2Byte(fillCache));
+    rocksdb_readoptions_set_io_timeout(readOptionsPtr, ioTimeout);
+    rocksdb_readoptions_set_ignore_range_deletions(
+        readOptionsPtr, boolean2Byte(ignoreRangeDeletions));
+    rocksdb_readoptions_set_snapshot(readOptionsPtr, snapshot);
 
-  @Override
-  public MemoryLayout layout() {
-    return LAYOUT;
+    return readOptionsPtr;
   }
 
   public static String toString(MemorySegment readOptions) {
@@ -510,271 +372,6 @@ public final class ReadOptions implements Options, Serializable {
         ioActivity(readOptions));
   }
 
-  public static MemorySegment rateLimiterPriority(
-      @NonNull IOPriority ioPriority, @NonNull MemorySegment readOptions) {
-    RATE_LIMITER_PRIORITY.set(readOptions, ioPriority.ordinal());
-    return readOptions;
-  }
-
-  public static IOPriority rateLimiterPriority(@NonNull MemorySegment writeOptions) {
-    return enumType((int) RATE_LIMITER_PRIORITY.get(writeOptions), IOPriority.class);
-  }
-
-  public static MemorySegment prefixSameAsStart(
-      boolean prefixSameAsStart, @NonNull MemorySegment readOptions) {
-    PREFIX_SAME_AS_START.set(readOptions, prefixSameAsStart);
-    return readOptions;
-  }
-
-  public static boolean prefixSameAsStart(@NonNull MemorySegment readOptions) {
-    return (boolean) PREFIX_SAME_AS_START.get(readOptions);
-  }
-
-  public static MemorySegment pinData(boolean pinData, @NonNull MemorySegment readOptions) {
-    PIN_DATA.set(readOptions, pinData);
-    return readOptions;
-  }
-
-  public static boolean pinData(@NonNull MemorySegment readOptions) {
-    return (boolean) PIN_DATA.get(readOptions);
-  }
-
-  public static MemorySegment backgroundPurgeOnIteratorCleanup(
-      boolean backgroundPurgeOnIteratorCleanup, @NonNull MemorySegment readOptions) {
-    BACKGROUND_PURGE_ON_ITERATOR_CLEANUP.set(readOptions, backgroundPurgeOnIteratorCleanup);
-    return readOptions;
-  }
-
-  public static boolean backgroundPurgeOnIteratorCleanup(@NonNull MemorySegment readOptions) {
-    return (boolean) BACKGROUND_PURGE_ON_ITERATOR_CLEANUP.get(readOptions);
-  }
-
-  public static MemorySegment adaptiveReadAhead(
-      boolean adaptiveReadAhead, @NonNull MemorySegment readOptions) {
-    ADAPTIVE_READAHEAD.set(readOptions, adaptiveReadAhead);
-    return readOptions;
-  }
-
-  public static boolean adaptiveReadAhead(@NonNull MemorySegment readOptions) {
-    return (boolean) ADAPTIVE_READAHEAD.get(readOptions);
-  }
-
-  public static MemorySegment autoPrefixMode(
-      boolean autoPrefixMode, @NonNull MemorySegment readOptions) {
-    AUTO_PREFIX_MODE.set(readOptions, autoPrefixMode);
-    return readOptions;
-  }
-
-  public static boolean autoPrefixMode(@NonNull MemorySegment readOptions) {
-    return (boolean) AUTO_PREFIX_MODE.get(readOptions);
-  }
-
-  public static MemorySegment totalOrderSeek(
-      boolean totalOrderSeek, @NonNull MemorySegment readOptions) {
-    TOTAL_ORDER_SEEK.set(readOptions, totalOrderSeek);
-    return readOptions;
-  }
-
-  public static boolean totalOrderSeek(@NonNull MemorySegment readOptions) {
-    return (boolean) TOTAL_ORDER_SEEK.get(readOptions);
-  }
-
-  public static MemorySegment tailing(boolean tailing, @NonNull MemorySegment readOptions) {
-    TAILING.set(readOptions, tailing);
-    return readOptions;
-  }
-
-  public static boolean tailing(@NonNull MemorySegment readOptions) {
-    return (boolean) TAILING.get(readOptions);
-  }
-
-  public static MemorySegment maxSkippableInternalKeys(
-      long maxSkippableInternalKeys, @NonNull MemorySegment readOptions) {
-    MAX_SKIPPABLE_INTERNAL_KEYS.set(readOptions, maxSkippableInternalKeys);
-    return readOptions;
-  }
-
-  public static long maxSkippableInternalKeys(@NonNull MemorySegment readOptions) {
-    return (long) MAX_SKIPPABLE_INTERNAL_KEYS.get(readOptions);
-  }
-
-  public static MemorySegment readAheadSize(
-      long readAheadSize, @NonNull MemorySegment readOptions) {
-    READAHEAD_SIZE.set(readOptions, readAheadSize);
-    return readOptions;
-  }
-
-  public static long readAheadSize(@NonNull MemorySegment readOptions) {
-    return (long) READAHEAD_SIZE.get(readOptions);
-  }
-
-  public static MemorySegment optimizeMultiGetForIO(
-      boolean optimizeMultiGetForIO, @NonNull MemorySegment readOptions) {
-    OPTIMIZE_MULTIGET_FOR_IO.set(readOptions, optimizeMultiGetForIO);
-    return readOptions;
-  }
-
-  public static boolean optimizeMultiGetForIO(@NonNull MemorySegment readOptions) {
-    return (boolean) OPTIMIZE_MULTIGET_FOR_IO.get(readOptions);
-  }
-
-  public static MemorySegment asyncIO(boolean asyncIO, @NonNull MemorySegment readOptions) {
-    ASYNC_IO.set(readOptions, asyncIO);
-    return readOptions;
-  }
-
-  public static boolean asyncIO(@NonNull MemorySegment readOptions) {
-    return (boolean) ASYNC_IO.get(readOptions);
-  }
-
-  public static MemorySegment ignoreRangeDeletions(
-      boolean ignoreRangeDeletions, @NonNull MemorySegment readOptions) {
-    IGNORE_RANGE_DELETIONS.set(readOptions, ignoreRangeDeletions);
-    return readOptions;
-  }
-
-  public static boolean ignoreRangeDeletions(@NonNull MemorySegment readOptions) {
-    return (boolean) IGNORE_RANGE_DELETIONS.get(readOptions);
-  }
-
-  public static MemorySegment verifyChecksums(
-      boolean verifyChecksums, @NonNull MemorySegment readOptions) {
-    VERIFY_CHECKSUMS.set(readOptions, verifyChecksums);
-    return readOptions;
-  }
-
-  public static boolean verifyChecksums(@NonNull MemorySegment readOptions) {
-    return (boolean) VERIFY_CHECKSUMS.get(readOptions);
-  }
-
-  @Deprecated
-  public static MemorySegment managed(boolean managed, @NonNull MemorySegment readOptions) {
-    MANAGED.set(readOptions, managed);
-    return readOptions;
-  }
-
-  @Deprecated
-  public static boolean managed(@NonNull MemorySegment readOptions) {
-    return (boolean) MANAGED.get(readOptions);
-  }
-
-  public static MemorySegment fillCache(boolean fillCache, @NonNull MemorySegment readOptions) {
-    FILL_CACHE.set(readOptions, fillCache);
-    return readOptions;
-  }
-
-  public static boolean fillCache(@NonNull MemorySegment readOptions) {
-    return (boolean) FILL_CACHE.get(readOptions);
-  }
-
-  public static MemorySegment valueSizeSoftLimit(
-      long valueSizeSoftLimit, @NonNull MemorySegment readOptions) {
-    VALUE_SIZE_SOFT_LIMIT.set(readOptions, valueSizeSoftLimit);
-    return readOptions;
-  }
-
-  public static long valueSizeSoftLimit(@NonNull MemorySegment readOptions) {
-    return (long) VALUE_SIZE_SOFT_LIMIT.get(readOptions);
-  }
-
-  public static MemorySegment readTier(
-      @NonNull ReadTier readTier, @NonNull MemorySegment readOptions) {
-    READ_TIER.set(readOptions, readTier.ordinal());
-    return readOptions;
-  }
-
-  public static ReadTier readTier(@NonNull MemorySegment readOptions) {
-    return enumType((int) READ_TIER.get(readOptions), ReadTier.class);
-  }
-
-  public static MemorySegment ioTimeout(long ioTimeout, @NonNull MemorySegment readOptions) {
-    rocksdb_readoptions_set_io_timeout(readOptions, ioTimeout);
-    return readOptions;
-  }
-
-  public static long ioTimeout(@NonNull MemorySegment readOptions) {
-    return rocksdb_readoptions_get_io_timeout(readOptions);
-  }
-
-  public static MemorySegment deadline(long deadline, @NonNull MemorySegment readOptions) {
-    rocksdb_readoptions_set_deadline(readOptions, deadline);
-    return readOptions;
-  }
-
-  public static long deadline(@NonNull MemorySegment readOptions) {
-    return rocksdb_readoptions_get_deadline(readOptions);
-  }
-
-  public static MemorySegment iterStartTs(
-      @NonNull MemorySegment iterStartTs, @NonNull MemorySegment readOptions) {
-    ITER_START_TS.set(readOptions, iterStartTs);
-    return readOptions;
-  }
-
-  public static MemorySegment iterStartTs(@NonNull MemorySegment readOptions) {
-    return (MemorySegment) ITER_START_TS.get(readOptions);
-  }
-
-  public static MemorySegment snapshot(
-      @NonNull MemorySegment snapshot, @NonNull MemorySegment readOptions) {
-    SNAPSHOT.set(readOptions, snapshot);
-    return readOptions;
-  }
-
-  public static MemorySegment snapshot(@NonNull MemorySegment readOptions) {
-    return (MemorySegment) SNAPSHOT.get(readOptions);
-  }
-
-  public static MemorySegment timestamp(@NonNull MemorySegment readOptions) {
-    return (MemorySegment) TIMESTAMP.get(readOptions);
-  }
-
-  public static MemorySegment timestamp(
-      @NonNull MemorySegment timestamp, @NonNull MemorySegment readOptions) {
-    TIMESTAMP.set(readOptions, timestamp);
-    return readOptions;
-  }
-
-  public static MemorySegment iterateUpperBound(
-      @NonNull MemorySegment iterateUpperBound, @NonNull MemorySegment readOptions) {
-    ITERATE_UPPER_BOUND.set(readOptions, iterateUpperBound);
-    return readOptions;
-  }
-
-  public static MemorySegment iterateUpperBound(@NonNull MemorySegment readOptions) {
-    return (MemorySegment) ITERATE_UPPER_BOUND.get(readOptions);
-  }
-
-  public static MemorySegment iterateLowerBound(
-      @NonNull MemorySegment iterateLowerBound, @NonNull MemorySegment readOptions) {
-    ITERATE_LOWER_BOUND.set(readOptions, iterateLowerBound);
-    return readOptions;
-  }
-
-  public static MemorySegment iterateLowerBound(@NonNull MemorySegment readOptions) {
-    return (MemorySegment) ITERATE_LOWER_BOUND.get(readOptions);
-  }
-
-  //  public static MemorySegment tableFilter(
-  //      @NonNull MemorySegment tableFilter, @NonNull MemorySegment readOptions) {
-  //    TABLE_FILTER.set(readOptions, tableFilter);
-  //    return readOptions;
-  //  }
-
-  //  public static MemorySegment tableFilter(@NonNull MemorySegment readOptions) {
-  //    return (MemorySegment) TABLE_FILTER.get(readOptions);
-  //  }
-
-  public static MemorySegment ioActivity(
-      @NonNull IOActivity ioActivity, @NonNull MemorySegment readOptions) {
-    IO_ACTIVITY.set(readOptions, (byte) ioActivity.ordinal());
-    return readOptions;
-  }
-
-  public static IOActivity ioActivity(@NonNull MemorySegment readOptions) {
-    return enumType((int) IO_ACTIVITY.get(readOptions), IOActivity.class);
-  }
-
   /**
    * 创建native ReadOptions，需要自行释放资源
    *
@@ -787,7 +384,7 @@ public final class ReadOptions implements Options, Serializable {
   /**
    * 释放readOptions资源
    *
-   * @param readOptions native ReadOptions
+   * @param readOptions ReadOptions ptr
    */
   public static void destroy(@NonNull MemorySegment readOptions) {
     rocksdb_readoptions_destroy(readOptions);

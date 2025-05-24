@@ -42,16 +42,13 @@
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>
-            <artifactId>common-objects</artifactId>
+            <artifactId>rocksdb-ffm</artifactId>
             <version>1.0.0</version>
+            <classifier>${os.detected.classifier}</classifier>
         </dependency>
         <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -70,7 +67,20 @@
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+            </extension>
+        </extensions>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs>--enable-preview</compilerArgs>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>

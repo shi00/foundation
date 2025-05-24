@@ -57,7 +57,7 @@ public class RocksDbConfig implements Serializable {
           .getAbsolutePath();
 
   /** 列族配置 */
-  @Valid private List<ColumnFamilyConfig> columnFamilyConfigs;
+  @Valid private List<@NotNull @Valid ColumnFamilyConfig> columnFamilyConfigs;
 
   /** 日志级别 */
   @NotNull private InfoLogLevel infoLogLevel = INFO_LEVEL;
@@ -69,7 +69,7 @@ public class RocksDbConfig implements Serializable {
   private boolean enableStatistics;
 
   /** 默认列族TTL，单位：秒，在未指定列族TTL时使用，默认：0。当此值小于等于0时表示永不过期 */
-  private Duration defaultColumnFamilyTTL = Duration.ZERO;
+  @NotNull private Duration defaultColumnFamilyTTL = Duration.ZERO;
 
   /** 如果数据库不存在是否创建数据库，默认：true */
   private boolean createIfMissing = true;
