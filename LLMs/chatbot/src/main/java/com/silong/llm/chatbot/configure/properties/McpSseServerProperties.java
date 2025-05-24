@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
 import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties;
+import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties.SseParameters;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
@@ -49,6 +50,9 @@ public class McpSseServerProperties {
 
     /** 客户端忽略ssl认证, 默认：false */
     private boolean enabledInSecureClient;
+
+    /** MCP 服务端配置 */
+    private SseParameters sseParameters;
 
     /** 与MCP服务器交互的客户端日志配置 */
     @NestedConfigurationProperty @Valid

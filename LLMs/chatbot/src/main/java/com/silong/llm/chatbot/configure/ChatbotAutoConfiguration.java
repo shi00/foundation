@@ -47,14 +47,12 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
-import org.springframework.ai.mcp.client.autoconfigure.McpClientAutoConfiguration;
 import org.springframework.ai.mcp.client.autoconfigure.NamedClientMcpTransport;
 import org.springframework.ai.mcp.client.autoconfigure.properties.McpClientCommonProperties;
 import org.springframework.ai.mcp.client.autoconfigure.properties.McpSseClientProperties;
 import org.springframework.ai.model.azure.openai.autoconfigure.AzureOpenAIClientBuilderCustomizer;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -72,7 +70,6 @@ import reactor.netty.transport.ProxyProvider.Proxy;
  * @since 2025-05-19 20:21
  */
 @Configuration
-@AutoConfigureBefore(McpClientAutoConfiguration.class)
 @EnableConfigurationProperties({
   ChatbotProperties.class,
   McpClientCommonProperties.class,
