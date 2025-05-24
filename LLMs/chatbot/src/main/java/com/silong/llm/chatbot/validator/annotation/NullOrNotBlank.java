@@ -23,6 +23,7 @@ package com.silong.llm.chatbot.validator.annotation;
 
 import com.silong.llm.chatbot.validator.NullOrNotBlankValidator;
 import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -38,4 +39,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = NullOrNotBlankValidator.class)
-public @interface NullOrNotBlank {}
+public @interface NullOrNotBlank {
+
+  String message() default "field must be null or not blank";
+
+  Class<?>[] groups() default {};
+
+  Class<? extends Payload>[] payload() default {};
+}
