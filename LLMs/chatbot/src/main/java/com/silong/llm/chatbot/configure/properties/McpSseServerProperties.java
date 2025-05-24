@@ -43,6 +43,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = McpSseClientProperties.CONFIG_PREFIX)
 public class McpSseServerProperties {
 
+  /** MCP 服务器附加属性 */
   @Data
   public static class Config {
 
