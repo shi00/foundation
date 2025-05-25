@@ -111,10 +111,12 @@
                                 </exclude>
                             </excludes>
                             <image>
-                                <builder>paketobuildpacks/builder:tiny</builder>
+                                <builder>paketobuildpacks/builder-noble-java-tiny:latest</builder>
                                 <name>com.silong.llm/${project.artifactId}:${project.version}</name>
                                 <pullPolicy>IF_NOT_PRESENT</pullPolicy>
+                                <trustBuilder>true</trustBuilder>
                                 <publish>false</publish>
+                                <verboseLogging>true</verboseLogging>
                                 <env>
                                     <BPE_DELIM_JAVA_TOOL_OPTIONS xml:space="preserve"> </BPE_DELIM_JAVA_TOOL_OPTIONS>
                                     <BPE_APPEND_JAVA_TOOL_OPTIONS>
@@ -202,6 +204,20 @@
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>process-aot</id>
+                                <goals>
+                                    <goal>process-aot</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>build-image</id>
+                                <goals>
+                                    <goal>build-image-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                         <configuration>
                             <excludes>
                                 <exclude>
@@ -210,16 +226,17 @@
                                 </exclude>
                             </excludes>
                             <image>
-                                <builder>paketobuildpacks/builder:tiny</builder>
+                                <builder>paketobuildpacks/builder-jammy-java-tiny</builder>
                                 <name>com.silong.llm/${project.artifactId}:${project.version}</name>
                                 <pullPolicy>IF_NOT_PRESENT</pullPolicy>
+                                <trustBuilder>true</trustBuilder>
                                 <publish>false</publish>
                                 <env>
                                     <BP_BINARY_COMPRESSION_METHOD>upx</BP_BINARY_COMPRESSION_METHOD>
                                     <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
                                     <BP_JVM_TYPE>JRE</BP_JVM_TYPE>
                                     <BP_JVM_VERSION>${java.version}.*</BP_JVM_VERSION>
-                                    <!--                                    <SERVICE_BINDING_ROOT>/bindings</SERVICE_BINDING_ROOT>-->
+                                    <SERVICE_BINDING_ROOT>/bindings</SERVICE_BINDING_ROOT>
                                     <!--                                    <HTTPS_PROXY>http://127.0.0.1:8080</HTTPS_PROXY>-->
                                     <BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                         --verbose
@@ -232,11 +249,11 @@
                                         -H:IncludeResources="logback-spring.xml"
                                     </BP_NATIVE_IMAGE_BUILD_ARGUMENTS>
                                 </env>
-                                <!--                                <bindings>-->
-                                <!--                                    <binding>${basedir}/bindings/dependency-mapping:/bindings/dependency-mapping-->
-                                <!--                                    </binding>-->
-                                <!--                                    <binding>${basedir}/deps:/deps</binding>-->
-                                <!--                                </bindings>-->
+                                <bindings>
+                                    <binding>${basedir}/bindings/dependency-mapping:/bindings/dependency-mapping
+                                    </binding>
+                                    <binding>${basedir}/deps:/deps</binding>
+                                </bindings>
                             </image>
                         </configuration>
                     </plugin>
