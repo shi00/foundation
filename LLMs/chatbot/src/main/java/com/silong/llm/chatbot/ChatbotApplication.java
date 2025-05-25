@@ -34,6 +34,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(scanBasePackages = {"com.silong"})
 public class ChatbotApplication {
 
+  /**
+   * 程序入口
+   * @param args 参数
+   */
   public static void main(String[] args) {
     SpringApplication.run(ChatbotApplication.class, args);
   }
