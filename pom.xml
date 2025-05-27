@@ -94,6 +94,7 @@
         <module>voice-assistant</module>
         <module>LLMs/chatbot</module>
         <module>LLMs/crawler</module>
+        <module>LLMs/chatbot-desktop</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
         <module>spring-boot-starter-webflux-jwt</module>
         <module>spring-boot-starter-crypto</module>
