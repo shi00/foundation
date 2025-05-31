@@ -96,7 +96,7 @@
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
             </TextField>
-            <Button id="loginBtn" mnemonicParsing="false" prefHeight="34.0" prefWidth="114.0" stylesheets="@../styles/Login.css" text="%button.login" textAlignment="CENTER" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.rowIndex="3">
+            <Button id="loginBtn" fx:id="loginBtn" mnemonicParsing="false" onAction="#handleLogin" prefHeight="34.0" prefWidth="114.0" stylesheets="@../styles/Login.css" text="%button.login" textAlignment="CENTER" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.rowIndex="3">
                <font>
                   <Font size="14.0" />
                </font>

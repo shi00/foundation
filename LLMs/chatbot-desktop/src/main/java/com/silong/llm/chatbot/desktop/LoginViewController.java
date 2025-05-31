@@ -56,6 +56,8 @@ public class LoginViewController implements Initializable {
 
   @FXML private TextField portTextField;
 
+  private ResourceBundle resourceBundle;
+
   @FXML
   void closeLoginWindow(ActionEvent event) {
     primaryStage.close();
@@ -65,6 +67,7 @@ public class LoginViewController implements Initializable {
   void handleLogin(ActionEvent event) {
     var host = hostTextField.getText();
     if (host == null || (host = host.trim()).isEmpty()) {
+      showErrorDialog("input.host.error");
       hostTextField.clear();
     }
 
@@ -80,17 +83,16 @@ public class LoginViewController implements Initializable {
   @Override
   public void initialize(URL url, ResourceBundle resourceBundle) {
     log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
-    //    closeBtn.setOnAction(this::closeLoginWindow);
+    this.resourceBundle = resourceBundle;
   }
 
-  void showErrorDialog(String message) {
+  private void showErrorDialog(String messageKey) {
     Platform.runLater(
         () -> {
           Alert alert = new Alert(Alert.AlertType.ERROR);
-          alert.setTitle("Warning!");
-          alert.setHeaderText(message);
-          alert.setContentText(
-              "Please check for firewall issues and check if the server is running.");
+          alert.setTitle(resourceBundle.getString("dialog.error"));
+          alert.setHeaderText(resourceBundle.getString("input.error"));
+          alert.setContentText(resourceBundle.getString(messageKey));
           alert.showAndWait();
         });
   }

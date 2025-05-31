@@ -52,9 +52,6 @@ public class ChatbotDesktopApplication extends Application {
   /** 默认配置文件 */
   private static final String DEFAULT_CONFIG_FILE_PATH = "/config/configuration.json";
 
-  /** 多语言资源 */
-  public static final ResourceBundle RESOURCE_BUNDLE;
-
   /** 配置文件路径KEY */
   public static final String CONFIG_FILE = "CONFIG_FILE";
 
@@ -77,9 +74,6 @@ public class ChatbotDesktopApplication extends Application {
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
-
-    // 国际化资源
-    RESOURCE_BUNDLE = ResourceBundle.getBundle("/i18n/Messages", Locale.getDefault());
   }
 
   private static URL loadURL(String path) {
@@ -93,7 +87,8 @@ public class ChatbotDesktopApplication extends Application {
   @Override
   public void start(Stage primaryStage) throws IOException {
     ChatbotDesktopApplication.primaryStage = primaryStage;
-    FXMLLoader fxmlLoader = new FXMLLoader(loadURL(CONFIGURATION.loginView()), RESOURCE_BUNDLE);
+    ResourceBundle resourceBundle = ResourceBundle.getBundle("/i18n/Messages", Locale.getDefault());
+    FXMLLoader fxmlLoader = new FXMLLoader(loadURL(CONFIGURATION.loginView()), resourceBundle);
     Parent root = fxmlLoader.load();
     Scene scene =
         new Scene(
@@ -101,7 +96,7 @@ public class ChatbotDesktopApplication extends Application {
             CONFIGURATION.loginWindowSize().width(),
             CONFIGURATION.loginWindowSize().height());
     primaryStage.initStyle(UNDECORATED);
-    primaryStage.setTitle(RESOURCE_BUNDLE.getString("app.title"));
+    primaryStage.setTitle(resourceBundle.getString("app.title"));
     primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.icon())));
     primaryStage.setResizable(false);
     primaryStage.setScene(scene);
