@@ -64,7 +64,7 @@ public class LoginViewController implements Initializable {
   @FXML
   void handleLogin(ActionEvent event) {
     var host = hostTextField.getText();
-    if (host == null || host.trim().isEmpty()) {
+    if (host == null || (host = host.trim()).isEmpty()) {
       hostTextField.clear();
     }
 
@@ -83,10 +83,10 @@ public class LoginViewController implements Initializable {
     //    closeBtn.setOnAction(this::closeLoginWindow);
   }
 
-  static void showErrorDialog(String message) {
+  void showErrorDialog(String message) {
     Platform.runLater(
         () -> {
-          Alert alert = new Alert(Alert.AlertType.WARNING);
+          Alert alert = new Alert(Alert.AlertType.ERROR);
           alert.setTitle("Warning!");
           alert.setHeaderText(message);
           alert.setContentText(
