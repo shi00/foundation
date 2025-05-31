@@ -65,14 +65,26 @@ public class LoginViewController implements Initializable {
 
   @FXML
   void handleLogin(ActionEvent event) {
-    var host = hostTextField.getText();
+    String host = hostTextField.getText();
     if (host == null || (host = host.trim()).isEmpty()) {
       showErrorDialog("input.host.error");
       hostTextField.clear();
     }
 
-    var port = Integer.parseInt(portTextField.getText());
+    int port;
+    try {
+      port = Integer.parseInt(portTextField.getText());
+    } catch (NumberFormatException e) {
+      log.error("Invalid port number.", e);
+      showErrorDialog("input.port.error");
+      portTextField.clear();
+    }
+
     var credential = credentialTextField.getText();
+    if (credential == null || (credential = credential.trim()).isEmpty()) {
+      showErrorDialog("input.credential.error");
+      credentialTextField.clear();
+    }
   }
 
   @FXML
