@@ -10,7 +10,6 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
 <GridPane id="mainLayout" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="420.0" prefWidth="360.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.silong.llm.chatbot.desktop.LoginViewController">
@@ -42,62 +41,76 @@
                 <Image url="@../images/avatar.png" />
             </image>
         </ImageView>
-        <VBox alignment="TOP_CENTER" prefHeight="252.0" prefWidth="315.0" spacing="5.0" GridPane.columnSpan="3" GridPane.rowIndex="2">
-            <padding>
-                <Insets bottom="5.0" left="10.0" right="10.0" top="20.0" />
-            </padding>
-            <children>
-                <HBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
-                    <children>
-                        <Label alignment="CENTER_RIGHT" text="%label.host" textAlignment="CENTER">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </Label>
-                        <TextField fx:id="hostTextField" promptText="服务器地址">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </TextField>
-                    </children>
-                </HBox>
-                <HBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
-                    <children>
-                        <Label alignment="CENTER_RIGHT" text="%label.port" textAlignment="CENTER">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </Label>
-                        <TextField fx:id="portTextField" promptText="端口">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </TextField>
-                    </children>
-                </HBox>
-                <HBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
-                    <children>
-                        <Label alignment="CENTER_RIGHT" text="%label.credential">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                            <HBox.margin>
-                                <Insets left="12.0" />
-                            </HBox.margin>
-                        </Label>
-                        <TextField fx:id="credentialTextField" promptText="用户凭证">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </TextField>
-                    </children>
-                </HBox>
-                <Button id="loginBtn" fx:id="loginBtn" alignment="CENTER" mnemonicParsing="false" onAction="#handleLogin" stylesheets="@../styles/Login.css" text="%button.login" textAlignment="CENTER">
-                    <font>
-                        <Font size="14.0" />
-                    </font>
-                </Button>
-            </children>
-        </VBox>
+      <GridPane alignment="CENTER" GridPane.columnSpan="3" GridPane.rowIndex="2">
+        <columnConstraints>
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+        </columnConstraints>
+        <rowConstraints>
+          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            <Label alignment="CENTER_RIGHT" prefHeight="49.0" prefWidth="114.0" text="%label.host" textAlignment="CENTER" GridPane.columnSpan="2">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <TextField id="hostTextField" fx:id="hostTextField" prefHeight="35.0" prefWidth="175.0" promptText="%host.prompt" GridPane.columnIndex="2" GridPane.columnSpan="3">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </TextField>
+            <Label alignment="CENTER_RIGHT" prefHeight="49.0" prefWidth="114.0" text="%label.port" textAlignment="CENTER" GridPane.columnSpan="2" GridPane.rowIndex="1">
+               <font>
+                  <Font size="14.0" />
+               </font>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </Label>
+            <TextField id="portTextField" fx:id="portTextField" prefHeight="35.0" prefWidth="175.0" promptText="%port.prompt" GridPane.columnIndex="2" GridPane.columnSpan="3" GridPane.rowIndex="1">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </TextField>
+            <Label alignment="CENTER_RIGHT" prefHeight="49.0" prefWidth="114.0" text="%label.credential" textAlignment="CENTER" GridPane.columnSpan="2" GridPane.rowIndex="2">
+               <font>
+                  <Font size="14.0" />
+               </font>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </Label>
+            <TextField id="credentialTextField" fx:id="credentialTextField" prefHeight="35.0" prefWidth="175.0" promptText="%credential.prompt" GridPane.columnIndex="2" GridPane.columnSpan="3" GridPane.rowIndex="2">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </TextField>
+            <Button id="loginBtn" mnemonicParsing="false" prefHeight="34.0" prefWidth="114.0" stylesheets="@../styles/Login.css" text="%button.login" textAlignment="CENTER" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.rowIndex="3">
+               <font>
+                  <Font size="14.0" />
+               </font>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+            </Button>
+         </children>
+         <GridPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </GridPane.margin>
+         <padding>
+            <Insets bottom="8.0" left="5.0" right="5.0" top="8.0" />
+         </padding>
+      </GridPane>
     </children>
 </GridPane>
