@@ -19,25 +19,13 @@
  *
  */
 
-module chatbot.desktop {
-  requires javafx.controls;
-  requires javafx.fxml;
-  requires com.fasterxml.jackson.databind;
-  requires org.slf4j;
-  requires org.controlsfx.controls;
-  requires org.kordamp.bootstrapfx.core;
-  requires static lombok;
+package com.silong.llm.chatbot.desktop.config;
 
-  opens views to
-      javafx.fxml;
-  opens com.silong.llm.chatbot.desktop to
-      com.fasterxml.jackson.databind,
-      javafx.fxml,
-      javafx.graphics;
-  opens config to
-      com.fasterxml.jackson.databind;
-  opens com.silong.llm.chatbot.desktop.config to
-      com.fasterxml.jackson.databind,
-      javafx.fxml,
-      javafx.graphics;
-}
+/**
+ * 窗口尺寸
+ *
+ * @author louis sin
+ * @version 1.0.0
+ * @since 2025-05-31 17:28
+ */
+public record Size(int width, int height) {}

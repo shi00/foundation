@@ -25,7 +25,6 @@ import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primarySt
 
 import java.net.URL;
 import java.util.ResourceBundle;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -57,7 +56,7 @@ public class LoginViewController implements Initializable {
 
   @FXML
   void closeLoginWindow(ActionEvent event) {
-    primaryStage.setOnCloseRequest(windowEvent -> Platform.exit());
+    primaryStage.close();
   }
 
   @FXML

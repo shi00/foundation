@@ -21,9 +21,11 @@
 
 package com.silong.llm.chatbot.desktop;
 
-import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
 import static javafx.stage.StageStyle.UNDECORATED;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.silong.llm.chatbot.desktop.config.Configuration;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -34,6 +36,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 聊天助手程序入口
@@ -42,26 +45,55 @@ import javafx.stage.Stage;
  * @version 1.0.0
  * @since 2025-05-19 20:19
  */
+@Slf4j
 public class ChatbotDesktopApplication extends Application {
+  /** 配置文件路径KEY */
+  public static final String CONFIG_FILE = "CONFIG_FILE";
+
+  private static final String DEFAULT_CONFIG_FILE_PATH = "/config/configuration.json";
+
+  /** 全局配置 */
+  public static Configuration configuration;
 
   static Stage primaryStage;
 
-  private URL loadURL(String path) {
-    return getClass().getResource(path);
+  static {
+    String path = System.getProperty(CONFIG_FILE, DEFAULT_CONFIG_FILE_PATH);
+    log.debug("config path: {}", path);
+    var mapper = new ObjectMapper();
+    try {
+      if (DEFAULT_CONFIG_FILE_PATH.equals(path)) {
+        configuration = mapper.readValue(loadURL(path), Configuration.class);
+      } else {
+        configuration = mapper.readValue(new File(path), Configuration.class);
+      }
+      log.debug("config: {}", configuration);
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
-  private InputStream loadStream(String path) {
-    return getClass().getResourceAsStream(path);
+  private static URL loadURL(String path) {
+    return ChatbotDesktopApplication.class.getResource(path);
+  }
+
+  private static InputStream loadStream(String path) {
+    return ChatbotDesktopApplication.class.getResourceAsStream(path);
   }
 
   @Override
   public void start(Stage primaryStage) throws IOException {
     ChatbotDesktopApplication.primaryStage = primaryStage;
-    FXMLLoader fxmlLoader = new FXMLLoader(loadURL("/views/login-view.fxml"));
+    FXMLLoader fxmlLoader = new FXMLLoader(loadURL(configuration.loginView()));
     Parent root = fxmlLoader.load();
-    Scene scene = new Scene(root, 360, 420);
+    Scene scene =
+        new Scene(
+            root,
+            configuration.loginWindowSize().width(),
+            configuration.loginWindowSize().height());
     primaryStage.initStyle(UNDECORATED);
-    primaryStage.getIcons().add(new Image(loadStream("/images/icon.png")));
+    primaryStage.setTitle(configuration.title());
+    primaryStage.getIcons().add(new Image(loadStream(configuration.icon())));
     primaryStage.setResizable(false);
     primaryStage.setScene(scene);
     primaryStage.setOnCloseRequest(windowEvent -> Platform.exit());
