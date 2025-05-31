@@ -25,9 +25,11 @@
     <children>
         <HBox alignment="CENTER_RIGHT" prefHeight="41.0" prefWidth="100.0" spacing="10.0" GridPane.columnIndex="2">
             <children>
-                <Button id="minimizedBtn" alignment="CENTER" mnemonicParsing="false" prefHeight="21.0" prefWidth="43.0"
+                <Button id="minimizedBtn" fx:id="minimizedBtn" alignment="CENTER" mnemonicParsing="false"
+                        onAction="#minimizeLoginWindow" prefHeight="21.0" prefWidth="43.0"
                         stylesheets="@../styles/Login.css" textAlignment="CENTER"/>
-                <Button id="closeBtn" alignment="CENTER" mnemonicParsing="false" prefHeight="21.0" prefWidth="43.0"
+                <Button id="closeBtn" fx:id="closeBtn" alignment="CENTER" mnemonicParsing="false"
+                        onAction="#closeLoginWindow" prefHeight="21.0" prefWidth="43.0"
                         stylesheets="@../styles/Login.css" textAlignment="CENTER"/>
             </children>
             <padding>
@@ -53,7 +55,7 @@
                                 <Font size="14.0"/>
                             </font>
                         </Label>
-                        <TextField promptText="服务器地址">
+                        <TextField fx:id="hostTextField" promptText="服务器地址">
                             <font>
                                 <Font size="14.0"/>
                             </font>
@@ -67,7 +69,7 @@
                                 <Font size="14.0"/>
                             </font>
                         </Label>
-                        <TextField promptText="端口">
+                        <TextField fx:id="portTextField" promptText="端口">
                             <font>
                                 <Font size="14.0"/>
                             </font>
@@ -84,7 +86,7 @@
                                 <Insets left="10.0"/>
                             </HBox.margin>
                         </Label>
-                        <TextField promptText="用户凭证">
+                        <TextField fx:id="credentialTextField" promptText="用户凭证">
                             <font>
                                 <Font size="14.0"/>
                             </font>
@@ -92,7 +94,7 @@
                     </children>
                 </HBox>
                 <Button id="loginBtn" fx:id="loginBtn" alignment="CENTER" mnemonicParsing="false"
-                        stylesheets="@../styles/Login.css" text="登录" textAlignment="CENTER">
+                        onAction="#handleLogin" stylesheets="@../styles/Login.css" text="登录" textAlignment="CENTER">
                     <font>
                         <Font size="14.0"/>
                     </font>

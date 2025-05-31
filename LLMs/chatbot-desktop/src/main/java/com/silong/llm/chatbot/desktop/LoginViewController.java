@@ -21,8 +21,17 @@
 
 package com.silong.llm.chatbot.desktop;
 
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
+
+import java.net.URL;
+import java.util.ResourceBundle;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 登录界面控制器
@@ -31,6 +40,37 @@ import javafx.scene.control.Button;
  * @version 1.0.0
  * @since 2025-05-19 20:19
  */
-public class LoginViewController {
+@Slf4j
+public class LoginViewController implements Initializable {
+
+  @FXML private Button closeBtn;
+
+  @FXML private TextField credentialTextField;
+
+  @FXML private TextField hostTextField;
+
   @FXML private Button loginBtn;
+
+  @FXML private Button minimizedBtn;
+
+  @FXML private TextField portTextField;
+
+  @FXML
+  void closeLoginWindow(ActionEvent event) {
+    primaryStage.setOnCloseRequest(windowEvent -> Platform.exit());
+  }
+
+  @FXML
+  void handleLogin(ActionEvent event) {}
+
+  @FXML
+  void minimizeLoginWindow(ActionEvent event) {
+    primaryStage.setIconified(true);
+  }
+
+  @Override
+  public void initialize(URL url, ResourceBundle resourceBundle) {
+    log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
+    closeBtn.setOnAction(this::closeLoginWindow);
+  }
 }

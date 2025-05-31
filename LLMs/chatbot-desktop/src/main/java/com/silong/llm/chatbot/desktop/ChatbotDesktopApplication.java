@@ -21,14 +21,18 @@
 
 package com.silong.llm.chatbot.desktop;
 
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
 import static javafx.stage.StageStyle.UNDECORATED;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 /**
@@ -40,6 +44,8 @@ import javafx.stage.Stage;
  */
 public class ChatbotDesktopApplication extends Application {
 
+  static Stage primaryStage;
+
   private URL loadURL(String path) {
     return getClass().getResource(path);
   }
@@ -50,11 +56,15 @@ public class ChatbotDesktopApplication extends Application {
 
   @Override
   public void start(Stage primaryStage) throws IOException {
+    ChatbotDesktopApplication.primaryStage = primaryStage;
     FXMLLoader fxmlLoader = new FXMLLoader(loadURL("/views/login-view.fxml"));
-    Scene scene = new Scene(fxmlLoader.load(), 360, 420);
+    Parent root = fxmlLoader.load();
+    Scene scene = new Scene(root, 360, 420);
     primaryStage.initStyle(UNDECORATED);
+    primaryStage.getIcons().add(new Image(loadStream("/images/icon.png")));
     primaryStage.setResizable(false);
     primaryStage.setScene(scene);
+    primaryStage.setOnCloseRequest(windowEvent -> Platform.exit());
     primaryStage.centerOnScreen();
     primaryStage.show();
   }
