@@ -29,6 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -47,13 +49,17 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ChatbotDesktopApplication extends Application {
+  /** 默认配置文件 */
+  private static final String DEFAULT_CONFIG_FILE_PATH = "/config/configuration.json";
+
+  /** 多语言资源 */
+  public static final ResourceBundle RESOURCE_BUNDLE;
+
   /** 配置文件路径KEY */
   public static final String CONFIG_FILE = "CONFIG_FILE";
 
-  private static final String DEFAULT_CONFIG_FILE_PATH = "/config/configuration.json";
-
   /** 全局配置 */
-  public static Configuration configuration;
+  public static final Configuration CONFIGURATION;
 
   static Stage primaryStage;
 
@@ -63,14 +69,17 @@ public class ChatbotDesktopApplication extends Application {
     var mapper = new ObjectMapper();
     try {
       if (DEFAULT_CONFIG_FILE_PATH.equals(path)) {
-        configuration = mapper.readValue(loadURL(path), Configuration.class);
+        CONFIGURATION = mapper.readValue(loadURL(path), Configuration.class);
       } else {
-        configuration = mapper.readValue(new File(path), Configuration.class);
+        CONFIGURATION = mapper.readValue(new File(path), Configuration.class);
       }
-      log.debug("config: {}", configuration);
+      log.debug("config: {}", CONFIGURATION);
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
+
+    // 国际化资源
+    RESOURCE_BUNDLE = ResourceBundle.getBundle("/i18n/Messages", Locale.getDefault());
   }
 
   private static URL loadURL(String path) {
@@ -84,16 +93,16 @@ public class ChatbotDesktopApplication extends Application {
   @Override
   public void start(Stage primaryStage) throws IOException {
     ChatbotDesktopApplication.primaryStage = primaryStage;
-    FXMLLoader fxmlLoader = new FXMLLoader(loadURL(configuration.loginView()));
+    FXMLLoader fxmlLoader = new FXMLLoader(loadURL(CONFIGURATION.loginView()), RESOURCE_BUNDLE);
     Parent root = fxmlLoader.load();
     Scene scene =
         new Scene(
             root,
-            configuration.loginWindowSize().width(),
-            configuration.loginWindowSize().height());
+            CONFIGURATION.loginWindowSize().width(),
+            CONFIGURATION.loginWindowSize().height());
     primaryStage.initStyle(UNDECORATED);
-    primaryStage.setTitle(configuration.title());
-    primaryStage.getIcons().add(new Image(loadStream(configuration.icon())));
+    primaryStage.setTitle(RESOURCE_BUNDLE.getString("app.title"));
+    primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.icon())));
     primaryStage.setResizable(false);
     primaryStage.setScene(scene);
     primaryStage.setOnCloseRequest(windowEvent -> Platform.exit());

@@ -1,5 +1,4 @@
 {
-  "title": "Chatbot Desktop",
   "icon": "/images/icon.png",
   "loginView": "/views/login-view.fxml",
   "loginWindowSize": {

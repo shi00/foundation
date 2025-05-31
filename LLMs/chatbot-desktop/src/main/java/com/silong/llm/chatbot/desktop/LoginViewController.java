@@ -25,9 +25,11 @@ import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primarySt
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +62,15 @@ public class LoginViewController implements Initializable {
   }
 
   @FXML
-  void handleLogin(ActionEvent event) {}
+  void handleLogin(ActionEvent event) {
+    var host = hostTextField.getText();
+    if (host == null || host.trim().isEmpty()) {
+      hostTextField.clear();
+    }
+
+    var port = Integer.parseInt(portTextField.getText());
+    var credential = credentialTextField.getText();
+  }
 
   @FXML
   void minimizeLoginWindow(ActionEvent event) {
@@ -70,6 +80,18 @@ public class LoginViewController implements Initializable {
   @Override
   public void initialize(URL url, ResourceBundle resourceBundle) {
     log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
-    closeBtn.setOnAction(this::closeLoginWindow);
+    //    closeBtn.setOnAction(this::closeLoginWindow);
+  }
+
+  static void showErrorDialog(String message) {
+    Platform.runLater(
+        () -> {
+          Alert alert = new Alert(Alert.AlertType.WARNING);
+          alert.setTitle("Warning!");
+          alert.setHeaderText(message);
+          alert.setContentText(
+              "Please check for firewall issues and check if the server is running.");
+          alert.showAndWait();
+        });
   }
 }

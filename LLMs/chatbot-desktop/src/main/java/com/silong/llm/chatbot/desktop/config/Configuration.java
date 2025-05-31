@@ -32,9 +32,6 @@ public record Configuration(
     // 图标
     String icon,
 
-    // 程序标题
-    String title,
-
     // 登录窗口尺寸
     Size loginWindowSize,
 
