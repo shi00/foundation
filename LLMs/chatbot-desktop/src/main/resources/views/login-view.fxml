@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<GridPane id="mainLayout" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity"
+          minWidth="-Infinity" prefHeight="420.0" prefWidth="360.0" xmlns="http://javafx.com/javafx/23.0.1"
+          xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.silong.llm.chatbot.desktop.LoginViewController">
+    <columnConstraints>
+        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="50.0"/>
+        <ColumnConstraints hgrow="SOMETIMES" maxWidth="128.0" minWidth="128.0" prefWidth="128.0"/>
+        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="50.0"/>
+    </columnConstraints>
+    <rowConstraints>
+        <RowConstraints maxHeight="30.0" minHeight="10.0" prefHeight="10.0" vgrow="SOMETIMES"/>
+        <RowConstraints maxHeight="128.0" minHeight="128.0" prefHeight="128.0" vgrow="SOMETIMES"/>
+        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+    </rowConstraints>
+    <padding>
+        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+    </padding>
+    <children>
+        <HBox alignment="CENTER_RIGHT" prefHeight="41.0" prefWidth="100.0" spacing="10.0" GridPane.columnIndex="2">
+            <children>
+                <Button id="minimizedBtn" alignment="CENTER" mnemonicParsing="false" prefHeight="21.0" prefWidth="43.0"
+                        stylesheets="@../styles/Login.css" textAlignment="CENTER"/>
+                <Button id="closeBtn" alignment="CENTER" mnemonicParsing="false" prefHeight="21.0" prefWidth="43.0"
+                        stylesheets="@../styles/Login.css" textAlignment="CENTER"/>
+            </children>
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </padding>
+        </HBox>
+        <ImageView fitHeight="128.0" fitWidth="128.0" pickOnBounds="true" preserveRatio="true" GridPane.columnIndex="1"
+                   GridPane.rowIndex="1">
+            <image>
+                <Image url="@../images/avatar.png"/>
+            </image>
+        </ImageView>
+        <VBox alignment="TOP_CENTER" prefHeight="252.0" prefWidth="315.0" spacing="5.0" GridPane.columnSpan="3"
+              GridPane.rowIndex="2">
+            <padding>
+                <Insets bottom="5.0" left="10.0" right="10.0" top="20.0"/>
+            </padding>
+            <children>
+                <HBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
+                    <children>
+                        <Label alignment="CENTER_RIGHT" text="服务器：" textAlignment="CENTER">
+                            <font>
+                                <Font size="14.0"/>
+                            </font>
+                        </Label>
+                        <TextField promptText="服务器地址">
+                            <font>
+                                <Font size="14.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                </HBox>
+                <HBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
+                    <children>
+                        <Label alignment="CENTER_RIGHT" text="端口号：" textAlignment="CENTER">
+                            <font>
+                                <Font size="14.0"/>
+                            </font>
+                        </Label>
+                        <TextField promptText="端口">
+                            <font>
+                                <Font size="14.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                </HBox>
+                <HBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
+                    <children>
+                        <Label alignment="CENTER_RIGHT" text="凭证：">
+                            <font>
+                                <Font size="14.0"/>
+                            </font>
+                            <HBox.margin>
+                                <Insets left="10.0"/>
+                            </HBox.margin>
+                        </Label>
+                        <TextField promptText="用户凭证">
+                            <font>
+                                <Font size="14.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                </HBox>
+                <Button id="loginBtn" fx:id="loginBtn" alignment="CENTER" mnemonicParsing="false"
+                        stylesheets="@../styles/Login.css" text="登录" textAlignment="CENTER">
+                    <font>
+                        <Font size="14.0"/>
+                    </font>
+                </Button>
+            </children>
+        </VBox>
+    </children>
+</GridPane>
