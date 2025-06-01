@@ -22,6 +22,7 @@
 package com.silong.llm.chatbot.desktop;
 
 import static javafx.stage.StageStyle.UNDECORATED;
+import static org.kordamp.bootstrapfx.BootstrapFX.bootstrapFXStylesheet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.desktop.config.Configuration;
@@ -95,6 +96,7 @@ public class ChatbotDesktopApplication extends Application {
             root,
             CONFIGURATION.loginWindowSize().width(),
             CONFIGURATION.loginWindowSize().height());
+    scene.getStylesheets().add(bootstrapFXStylesheet()); // 加载bootstrapfx.css
     primaryStage.initStyle(UNDECORATED);
     primaryStage.setTitle(resourceBundle.getString("app.title"));
     primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.icon())));
