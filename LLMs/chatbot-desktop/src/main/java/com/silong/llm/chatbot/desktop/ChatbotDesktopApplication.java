@@ -39,6 +39,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -77,11 +78,23 @@ public class ChatbotDesktopApplication extends Application {
     }
   }
 
-  private static URL loadURL(String path) {
+  /**
+   * 加载classpath内的资源
+   *
+   * @param path 资源在classpath路径
+   * @return 资源URL
+   */
+  public static URL loadURL(@NonNull String path) {
     return ChatbotDesktopApplication.class.getResource(path);
   }
 
-  private static InputStream loadStream(String path) {
+  /**
+   * 加载classpath内的资源
+   *
+   * @param path 资源在classpath路径
+   * @return 资源流
+   */
+  public static InputStream loadStream(@NonNull String path) {
     return ChatbotDesktopApplication.class.getResourceAsStream(path);
   }
 
