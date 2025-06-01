@@ -29,9 +29,11 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Cursor;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -44,6 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LoginViewController implements Initializable {
 
+  @FXML private GridPane mainLayout;
+
   @FXML private Button closeBtn;
 
   @FXML private TextField credentialTextField;
@@ -55,6 +59,10 @@ public class LoginViewController implements Initializable {
   @FXML private Button minimizedBtn;
 
   @FXML private TextField portTextField;
+
+  private double xOffset;
+
+  private double yOffset;
 
   private ResourceBundle resourceBundle;
 
@@ -96,6 +104,26 @@ public class LoginViewController implements Initializable {
   public void initialize(URL url, ResourceBundle resourceBundle) {
     log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
     this.resourceBundle = resourceBundle;
+
+    loginWindowDragAndDrop();
+  }
+
+  private void loginWindowDragAndDrop() {
+    /* 支持登录窗口拖拉拽 */
+    mainLayout.setOnMousePressed(
+        event -> {
+          xOffset = primaryStage.getX() - event.getScreenX();
+          yOffset = primaryStage.getY() - event.getScreenY();
+          mainLayout.setCursor(Cursor.CLOSED_HAND);
+        });
+
+    mainLayout.setOnMouseDragged(
+        event -> {
+          primaryStage.setX(event.getScreenX() + xOffset);
+          primaryStage.setY(event.getScreenY() + yOffset);
+        });
+
+    mainLayout.setOnMouseReleased(event -> mainLayout.setCursor(Cursor.DEFAULT));
   }
 
   private void showErrorDialog(String messageKey) {
