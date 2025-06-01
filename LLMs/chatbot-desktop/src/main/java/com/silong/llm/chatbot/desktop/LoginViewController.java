@@ -104,7 +104,7 @@ public class LoginViewController implements Initializable {
   public void initialize(URL url, ResourceBundle resourceBundle) {
     log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
     this.resourceBundle = resourceBundle;
-
+    //    mainLayout.setStyle("-fx-background-color: transparent;");
     loginWindowDragAndDrop();
   }
 
