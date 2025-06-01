@@ -24,7 +24,8 @@
 }
 
 #loginBtn {
-    -fx-color: #ffffff;
+    -fx-color: #000000;
+    -fx-text-fill: #000000;
     -fx-padding: 5px 20px;
     -fx-background-color: linear-gradient(to bottom, #ffe49e 0%, #ffb700 3%, #ffad00 35%, #ff9000 97%, #e27f00 100%);
     -fx-font-family: 'Open Sans', sans-serif;
@@ -37,6 +38,7 @@
 #loginBtn:hover {
     -fx-cursor: hand;
     -fx-opacity: 0.5;
+    -fx-text-fill: #ffffff;
 }
 
 #loginBtn:pressed {
