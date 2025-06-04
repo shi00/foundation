@@ -21,7 +21,7 @@
 
 package com.silong.llm.chatbot.desktop;
 
-import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.*;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -50,13 +50,13 @@ public class LoginViewController implements Initializable {
 
   @FXML private Button closeBtn;
 
-  @FXML private TextField credentialTextField;
-
-  @FXML private TextField hostTextField;
-
   @FXML private Button loginBtn;
 
   @FXML private Button minimizedBtn;
+
+  @FXML private TextField credentialTextField;
+
+  @FXML private TextField hostTextField;
 
   @FXML private TextField portTextField;
 
@@ -72,11 +72,17 @@ public class LoginViewController implements Initializable {
   }
 
   @FXML
+  void minimizeLoginWindow(ActionEvent event) {
+    primaryStage.setIconified(true);
+  }
+
+  @FXML
   void handleLogin(ActionEvent event) {
     String host = hostTextField.getText();
     if (host == null || (host = host.trim()).isEmpty()) {
       showErrorDialog("input.host.error");
       hostTextField.clear();
+      return;
     }
 
     int port;
@@ -86,28 +92,25 @@ public class LoginViewController implements Initializable {
       log.error("Invalid port number.", e);
       showErrorDialog("input.port.error");
       portTextField.clear();
+      return;
     }
 
     var credential = credentialTextField.getText();
     if (credential == null || (credential = credential.trim()).isEmpty()) {
       showErrorDialog("input.credential.error");
       credentialTextField.clear();
+      return;
     }
-  }
-
-  @FXML
-  void minimizeLoginWindow(ActionEvent event) {
-    primaryStage.setIconified(true);
   }
 
   @Override
   public void initialize(URL url, ResourceBundle resourceBundle) {
     log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
     this.resourceBundle = resourceBundle;
-    //    mainLayout.setStyle("-fx-background-color: transparent;");
     loginWindowDragAndDrop();
   }
 
+  /** 设置登录窗口拖拉拽 */
   private void loginWindowDragAndDrop() {
     /* 支持登录窗口拖拉拽 */
     mainLayout.setOnMousePressed(
@@ -130,9 +133,11 @@ public class LoginViewController implements Initializable {
     Platform.runLater(
         () -> {
           Alert alert = new Alert(Alert.AlertType.ERROR);
+          //          alert.getDialogPane().getStyleClass().addAll("alert", "alert-warning");
           alert.setTitle(resourceBundle.getString("dialog.error"));
           alert.setHeaderText(resourceBundle.getString("input.error"));
           alert.setContentText(resourceBundle.getString(messageKey));
+          alert.getDialogPane().setPrefSize(300, 150);
           alert.showAndWait();
         });
   }
