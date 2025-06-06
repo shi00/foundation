@@ -24,9 +24,12 @@ module chatbot.desktop {
   requires javafx.fxml;
   requires com.fasterxml.jackson.databind;
   requires org.slf4j;
+  requires org.apache.httpcomponents.client5.httpclient5;
+  requires org.apache.httpcomponents.core5.httpcore5.h2;
   requires org.controlsfx.controls;
   requires org.kordamp.bootstrapfx.core;
   requires static lombok;
+  requires org.apache.httpcomponents.core5.httpcore5;
 
   opens views to
       javafx.fxml;
