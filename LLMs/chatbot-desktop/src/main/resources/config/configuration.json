@@ -1,5 +1,6 @@
 {
   "icon": "/images/icon.png",
+  "i18nPath": "/i18n/Messages",
   "loginView": "/views/login-view.fxml",
   "loginWindowSize": {
     "width": 360,

@@ -68,12 +68,12 @@ public class LoginViewController implements Initializable {
 
   @FXML
   void closeLoginWindow(ActionEvent event) {
-    primaryStage.close();
+    PRIMARY_STAGE.close();
   }
 
   @FXML
   void minimizeLoginWindow(ActionEvent event) {
-    primaryStage.setIconified(true);
+    PRIMARY_STAGE.setIconified(true);
   }
 
   @FXML
@@ -115,15 +115,15 @@ public class LoginViewController implements Initializable {
     /* 支持登录窗口拖拉拽 */
     mainLayout.setOnMousePressed(
         event -> {
-          xOffset = primaryStage.getX() - event.getScreenX();
-          yOffset = primaryStage.getY() - event.getScreenY();
+          xOffset = PRIMARY_STAGE.getX() - event.getScreenX();
+          yOffset = PRIMARY_STAGE.getY() - event.getScreenY();
           mainLayout.setCursor(Cursor.CLOSED_HAND);
         });
 
     mainLayout.setOnMouseDragged(
         event -> {
-          primaryStage.setX(event.getScreenX() + xOffset);
-          primaryStage.setY(event.getScreenY() + yOffset);
+          PRIMARY_STAGE.setX(event.getScreenX() + xOffset);
+          PRIMARY_STAGE.setY(event.getScreenY() + yOffset);
         });
 
     mainLayout.setOnMouseReleased(event -> mainLayout.setCursor(Cursor.DEFAULT));

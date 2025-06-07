@@ -60,7 +60,9 @@ public class ChatbotDesktopApplication extends Application {
   /** 全局配置 */
   public static final Configuration CONFIGURATION;
 
-  static Stage primaryStage;
+  static Stage PRIMARY_STAGE;
+
+  static ResourceBundle RESOURCE_BUNDLE;
 
   static {
     String path = System.getProperty(CONFIG_FILE, DEFAULT_CONFIG_FILE_PATH);
@@ -100,9 +102,9 @@ public class ChatbotDesktopApplication extends Application {
 
   @Override
   public void start(Stage primaryStage) throws IOException {
-    ChatbotDesktopApplication.primaryStage = primaryStage;
-    ResourceBundle resourceBundle = ResourceBundle.getBundle("/i18n/Messages", Locale.getDefault());
-    FXMLLoader fxmlLoader = new FXMLLoader(loadURL(CONFIGURATION.loginView()), resourceBundle);
+    ChatbotDesktopApplication.PRIMARY_STAGE = primaryStage;
+    RESOURCE_BUNDLE = ResourceBundle.getBundle(CONFIGURATION.i18nPath(), Locale.getDefault());
+    FXMLLoader fxmlLoader = new FXMLLoader(loadURL(CONFIGURATION.loginView()), RESOURCE_BUNDLE);
     Parent root = fxmlLoader.load();
     Scene scene =
         new Scene(
@@ -111,7 +113,7 @@ public class ChatbotDesktopApplication extends Application {
             CONFIGURATION.loginWindowSize().height());
     scene.getStylesheets().add(bootstrapFXStylesheet()); // 加载bootstrapfx.css
     primaryStage.initStyle(UNDECORATED);
-    primaryStage.setTitle(resourceBundle.getString("app.title"));
+    primaryStage.setTitle(RESOURCE_BUNDLE.getString("app.title"));
     primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.icon())));
     primaryStage.setResizable(false);
     primaryStage.setScene(scene);

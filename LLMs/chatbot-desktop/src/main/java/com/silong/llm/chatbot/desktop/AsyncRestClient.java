@@ -22,6 +22,7 @@
 package com.silong.llm.chatbot.desktop;
 
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.CONFIGURATION;
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.RESOURCE_BUNDLE;
 import static org.apache.hc.core5.http.ContentType.TEXT_EVENT_STREAM;
 import static org.apache.hc.core5.http.ContentType.TEXT_PLAIN;
 import static org.apache.hc.core5.http.HttpHeaders.ACCEPT;
@@ -244,7 +245,7 @@ public class AsyncRestClient implements Closeable {
             if (code == HttpStatus.SC_OK) {
               bodyText = response.getBodyText();
             } else {
-              bodyText = "";
+              bodyText = RESOURCE_BUNDLE.getString("server.internal.error");
             }
 
             responseCallbacks.forEach(responseCallback -> responseCallback.callback(bodyText, cid));
@@ -253,6 +254,10 @@ public class AsyncRestClient implements Closeable {
           @Override
           public void failed(Exception ex) {
             log.error("Failed to post the request[{}, {}] to server.", conversationId, query, ex);
+            responseCallbacks.forEach(
+                responseCallback ->
+                    responseCallback.callback(
+                        RESOURCE_BUNDLE.getString("server.internal.error"), null));
           }
 
           @Override
