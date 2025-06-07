@@ -19,10 +19,9 @@
  *
  */
 
-package com.silong.llm.chatbot.desktop;
+package com.silong.llm.chatbot.desktop.client;
 
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.CONFIGURATION;
-import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.RESOURCE_BUNDLE;
 import static org.apache.hc.core5.http.ContentType.TEXT_EVENT_STREAM;
 import static org.apache.hc.core5.http.ContentType.TEXT_PLAIN;
 import static org.apache.hc.core5.http.HttpHeaders.ACCEPT;
@@ -35,7 +34,6 @@ import com.silong.llm.chatbot.desktop.config.HttpClientConfig;
 import com.silong.llm.chatbot.desktop.config.HttpClientConnectionPoolConfig;
 import com.silong.llm.chatbot.desktop.config.HttpClientProxy;
 import com.silong.llm.chatbot.desktop.config.HttpClientRequestConfig;
-import jakarta.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
@@ -81,7 +79,7 @@ import org.apache.hc.core5.util.Timeout;
  * @since 2025-05-19 20:19
  */
 @Slf4j
-public class AsyncRestClient implements Closeable {
+class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
 
   private static final String CONVERSATION_ID = "Conversation-ID";
 
@@ -91,12 +89,6 @@ public class AsyncRestClient implements Closeable {
 
   private final List<ResponseCallback> responseCallbacks = new CopyOnWriteArrayList<>();
 
-  /** 响应消息回调接口 */
-  public interface ResponseCallback {
-
-    void callback(@Nullable String responseText, @Nullable String conversationId);
-  }
-
   /**
    * 构造方法
    *
@@ -104,7 +96,7 @@ public class AsyncRestClient implements Closeable {
    * @param port 端口
    * @param credential 用户凭证
    */
-  public AsyncRestClient(@NonNull String host, int port, @NonNull String credential) {
+  public DefaultAsyncRestClient(@NonNull String host, int port, @NonNull String credential) {
     this.requestUri =
         URI.create(
             String.format(
@@ -120,7 +112,8 @@ public class AsyncRestClient implements Closeable {
    *
    * @param callback 响应回调
    */
-  public void registerResponseCallback(@NonNull ResponseCallback callback) {
+  @Override
+  public void register(@NonNull ResponseCallback callback) {
     responseCallbacks.add(callback);
   }
 
@@ -229,7 +222,15 @@ public class AsyncRestClient implements Closeable {
     return httpAsyncClient;
   }
 
-  public Future<?> executeAsyncPost(@NonNull String query, @NonNull String conversationId) {
+  /**
+   * 发送用户输入的问题，与LLM交互
+   *
+   * @param query 用户输入
+   * @param conversationId 会话id
+   * @return 异步任务
+   */
+  @Override
+  public Future<?> ask(@NonNull String query, @NonNull String conversationId) {
     return httpAsyncClient.execute(
         SimpleRequestBuilder.post(requestUri)
             .addHeader(CONVERSATION_ID, conversationId)
@@ -240,15 +241,15 @@ public class AsyncRestClient implements Closeable {
           public void completed(SimpleHttpResponse response) {
             Header cidHeader = response.getFirstHeader(CONVERSATION_ID);
             String cid = cidHeader != null ? cidHeader.getValue() : null;
-            int code = response.getCode();
-            String bodyText;
-            if (code == HttpStatus.SC_OK) {
-              bodyText = response.getBodyText();
-            } else {
-              bodyText = RESOURCE_BUNDLE.getString("server.internal.error");
-            }
-
-            responseCallbacks.forEach(responseCallback -> responseCallback.callback(bodyText, cid));
+            String bodyText =
+                response.getCode() == HttpStatus.SC_OK ? response.getBodyText() : null;
+            responseCallbacks.forEach(
+                responseCallback ->
+                    responseCallback.callback(
+                        bodyText == null
+                            ? responseCallback.getMessage("server.internal.error")
+                            : bodyText,
+                        cid));
           }
 
           @Override
@@ -257,7 +258,7 @@ public class AsyncRestClient implements Closeable {
             responseCallbacks.forEach(
                 responseCallback ->
                     responseCallback.callback(
-                        RESOURCE_BUNDLE.getString("server.internal.error"), null));
+                        responseCallback.getMessage("server.internal.error"), null));
           }
 
           @Override
@@ -285,5 +286,6 @@ public class AsyncRestClient implements Closeable {
     if (httpAsyncClient != null) {
       httpAsyncClient.close();
     }
+    responseCallbacks.clear();
   }
 }

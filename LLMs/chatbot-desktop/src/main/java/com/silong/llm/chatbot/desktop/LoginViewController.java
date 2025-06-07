@@ -23,6 +23,7 @@ package com.silong.llm.chatbot.desktop;
 
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.*;
 
+import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
@@ -101,11 +102,15 @@ public class LoginViewController implements Initializable {
       credentialTextField.clear();
       return;
     }
+
+    var client = AsyncRestClient.create(host, port, credential);
   }
 
   @Override
   public void initialize(URL url, ResourceBundle resourceBundle) {
-    log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
+    if (log.isDebugEnabled()) {
+      log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
+    }
     this.resourceBundle = resourceBundle;
     loginWindowDragAndDrop();
   }
