@@ -21,22 +21,36 @@
 
 package com.silong.llm.chatbot.desktop.config;
 
+import org.apache.hc.core5.http.ssl.TLS;
+
 /**
- * 配置
+ * client连接池配置
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2025-05-31 16:55
+ * @since 2025-05-31 17:28
  */
-public record Configuration(
-    // 图标
-    String icon,
+public record HttpClientConnectionPoolConfig(
+    // 连接超时时间：单位：秒
+    int connectTimeout,
 
-    // 登录窗口尺寸
-    Size loginWindowSize,
+    // 连接池内连接最大空闲时长，单位：秒
+    int evictIdleTime,
 
-    // restful client配置
-    HttpClientConfig httpClientConfig,
+    // 连接池内连接存活的时间，单位：秒
+    int timeToLive,
 
-    // 登录界面配置
-    String loginView) {}
+    // 支持的TLS协议版本列表
+    TLS[] supportedTLSVersions,
+
+    // 支持的加密算法列表
+    String[] supportedCipherSuites,
+
+    // 握手超时时间，单位：秒
+    int handshakeTimeout,
+
+    // 表示连接在多长时间内未被使用后，再次使用时需要先验证其有效性，单位：秒
+    int validateAfterInactivity,
+
+    // 连接池大小
+    int connectionPoolSize) {}

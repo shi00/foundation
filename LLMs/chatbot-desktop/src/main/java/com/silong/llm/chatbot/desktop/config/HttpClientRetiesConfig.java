@@ -19,29 +19,18 @@
  *
  */
 
-module chatbot.desktop {
-  requires javafx.controls;
-  requires javafx.fxml;
-  requires com.fasterxml.jackson.databind;
-  requires org.slf4j;
-  requires org.apache.httpcomponents.client5.httpclient5;
-  requires org.apache.httpcomponents.core5.httpcore5.h2;
-  requires org.controlsfx.controls;
-  requires org.kordamp.bootstrapfx.core;
-  requires static lombok;
-  requires org.apache.httpcomponents.core5.httpcore5;
-  requires jakarta.annotation;
+package com.silong.llm.chatbot.desktop.config;
 
-  opens views to
-      javafx.fxml;
-  opens com.silong.llm.chatbot.desktop to
-      com.fasterxml.jackson.databind,
-      javafx.fxml,
-      javafx.graphics;
-  opens config to
-      com.fasterxml.jackson.databind;
-  opens com.silong.llm.chatbot.desktop.config to
-      com.fasterxml.jackson.databind,
-      javafx.fxml,
-      javafx.graphics;
-}
+/**
+ * client重试配置
+ *
+ * @author louis sin
+ * @version 1.0.0
+ * @since 2025-05-31 17:28
+ */
+public record HttpClientRetiesConfig(
+    // 重试时间间隔，单位：秒
+    int retryInterval,
+
+    // 最大重试次数
+    int maxRetries) {}
