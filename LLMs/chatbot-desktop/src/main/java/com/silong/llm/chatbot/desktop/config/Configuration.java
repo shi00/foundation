@@ -32,6 +32,9 @@ public record Configuration(
     // 图标
     String icon,
 
+    // 国际化资源路径
+    String i18nPath,
+
     // 登录窗口尺寸
     Size loginWindowSize,
 
