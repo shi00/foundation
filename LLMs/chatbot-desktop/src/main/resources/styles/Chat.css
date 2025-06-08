@@ -8,6 +8,12 @@
     -fx-pref-width: 2px; /* 分隔条宽度 */
 }
 
+.fold-button {
+    -fx-graphic: url("../images/fold-icon.png");
+    -fx-background-color: transparent;
+    -fx-opacity: 1;
+
+}
 
 /* 带阴影的高级边框 */
 .square-image-border-shadow {

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.image.Image?>
@@ -10,26 +11,34 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<SplitPane dividerPositions="0.2" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" styleClass="horizontal-no-drag" stylesheets="@../styles/Chat.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<SplitPane dividerPositions="0.26" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="768.0" prefWidth="1024.0" styleClass="horizontal-no-drag" stylesheets="@../styles/Chat.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.silong.llm.chatbot.desktop.ChatViewController">
    <items>
-      <VBox id="leftVBox" fx:id="leftVBox" alignment="TOP_CENTER" spacing="3.0">
+      <VBox id="leftVBox" fx:id="leftVBox" alignment="TOP_CENTER" spacing="3.0" style="-fx-background-color: #36454F;">
          <children>
-            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
                <children>
-                  <StackPane styleClass="square-image-border-shadow" stylesheets="@../styles/Chat.css">
+                  <StackPane styleClass="square-image-border-shadow" stylesheets="@../styles/Chat.css" HBox.hgrow="NEVER">
                      <children>
-                        <ImageView fitHeight="110.0" fitWidth="110.0" pickOnBounds="true" preserveRatio="true">
+                        <ImageView fitHeight="90.0" fitWidth="90.0" pickOnBounds="true" preserveRatio="true">
                            <image>
                               <Image url="@../images/evie/evie.png" />
                            </image>
                         </ImageView>
                      </children>
                   </StackPane>
-                  <Label alignment="CENTER" style="-fx-font-size: 16; -fx-font-weight: bold;" text="%beauty.name" textAlignment="CENTER">
+                  <Label alignment="CENTER" blendMode="SRC_ATOP" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #FF00FF;" text="%beauty.name" textAlignment="CENTER" textFill="#ff00ff08" HBox.hgrow="NEVER">
                      <font>
                         <Font size="14.0" />
                      </font>
                   </Label>
+                  <HBox alignment="CENTER_RIGHT" spacing="5.0" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Button fx:id="foldButton" mnemonicParsing="false" styleClass="fold-button" stylesheets="@../styles/Chat.css" textAlignment="CENTER" />
+                     </children>
+                     <padding>
+                        <Insets bottom="3.0" left="5.0" right="5.0" top="3.0" />
+                     </padding>
+                  </HBox>
                </children>
                <padding>
                   <Insets bottom="2.0" left="3.0" right="3.0" top="2.0" />

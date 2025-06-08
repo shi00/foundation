@@ -19,33 +19,36 @@
  *
  */
 
-package com.silong.llm.chatbot.desktop.config;
+package com.silong.llm.chatbot.desktop;
+
+import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
+import java.net.URL;
+import java.util.ResourceBundle;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.layout.VBox;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * 配置
+ * 聊天界面控制器
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2025-05-31 16:55
+ * @since 2025-05-19 20:19
  */
-public record Configuration(
-    // 图标
-    String iconPath,
+@Slf4j
+public class ChatViewController implements Initializable {
 
-    // 国际化资源路径
-    String i18nPath,
+  @FXML private Button foldButton;
 
-    // 登录窗口尺寸
-    Size loginWindowSize,
+  @FXML private VBox leftVBox;
 
-    // 聊天窗口尺寸
-    Size chatWindowSize,
+  @FXML private VBox rightVBox;
 
-    // restful client配置
-    HttpClientConfig httpClientConfig,
+  @Setter private AsyncRestClient restClient;
 
-    // 登录界面配置
-    String chatViewPath,
-
-    // 登录界面配置
-    String loginViewPath) {}
+  @Override
+  public void initialize(URL location, ResourceBundle resources) {}
+}

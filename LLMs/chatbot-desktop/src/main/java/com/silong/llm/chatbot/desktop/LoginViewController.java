@@ -24,17 +24,25 @@ package com.silong.llm.chatbot.desktop;
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.*;
 
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
+import com.silong.llm.chatbot.desktop.utils.ResizeHelper;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -69,12 +77,12 @@ public class LoginViewController implements Initializable {
 
   @FXML
   void closeLoginWindow(ActionEvent event) {
-    PRIMARY_STAGE.close();
+    primaryStage.close();
   }
 
   @FXML
   void minimizeLoginWindow(ActionEvent event) {
-    PRIMARY_STAGE.setIconified(true);
+    primaryStage.setIconified(true);
   }
 
   @FXML
@@ -104,6 +112,33 @@ public class LoginViewController implements Initializable {
     }
 
     var client = AsyncRestClient.create(host, port, credential);
+    Platform.runLater(() -> showChatScene(client));
+  }
+
+  @SneakyThrows(IOException.class)
+  private void showChatScene(AsyncRestClient client) {
+    FXMLLoader loader = new FXMLLoader(loadURL(CONFIGURATION.chatViewPath()));
+    Parent window = loader.load();
+    var controller = loader.<ChatViewController>getController();
+    controller.setRestClient(client);
+    var scene = new Scene(window);
+
+    Stage stage = (Stage) closeBtn.getScene().getWindow();
+    stage.setResizable(true);
+    stage.setWidth(CONFIGURATION.chatWindowSize().width());
+    stage.setHeight(CONFIGURATION.chatWindowSize().height());
+
+    stage.setOnCloseRequest(
+        (WindowEvent e) -> {
+          client.close();
+          Platform.exit();
+          System.exit(0);
+        });
+    stage.setScene(scene);
+    stage.setMinWidth(CONFIGURATION.chatWindowSize().width());
+    stage.setMinHeight(CONFIGURATION.chatWindowSize().height());
+    ResizeHelper.addResizeListener(stage);
+    stage.centerOnScreen();
   }
 
   @Override
@@ -120,15 +155,15 @@ public class LoginViewController implements Initializable {
     /* 支持登录窗口拖拉拽 */
     mainLayout.setOnMousePressed(
         event -> {
-          xOffset = PRIMARY_STAGE.getX() - event.getScreenX();
-          yOffset = PRIMARY_STAGE.getY() - event.getScreenY();
+          xOffset = primaryStage.getX() - event.getScreenX();
+          yOffset = primaryStage.getY() - event.getScreenY();
           mainLayout.setCursor(Cursor.CLOSED_HAND);
         });
 
     mainLayout.setOnMouseDragged(
         event -> {
-          PRIMARY_STAGE.setX(event.getScreenX() + xOffset);
-          PRIMARY_STAGE.setY(event.getScreenY() + yOffset);
+          primaryStage.setX(event.getScreenX() + xOffset);
+          primaryStage.setY(event.getScreenY() + yOffset);
         });
 
     mainLayout.setOnMouseReleased(event -> mainLayout.setCursor(Cursor.DEFAULT));

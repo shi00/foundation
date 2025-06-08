@@ -54,6 +54,10 @@ public interface AsyncRestClient extends Closeable {
    */
   Future<?> ask(String query, String conversationId);
 
+  /** 关闭，释放资源 */
+  @Override
+  void close();
+
   /**
    * 注册消息回调
    *

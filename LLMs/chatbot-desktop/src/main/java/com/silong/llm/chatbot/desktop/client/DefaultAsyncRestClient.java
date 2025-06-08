@@ -282,7 +282,8 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
   }
 
   @Override
-  public void close() throws IOException {
+  @SneakyThrows(IOException.class)
+  public void close() {
     if (httpAsyncClient != null) {
       httpAsyncClient.close();
     }
