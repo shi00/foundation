@@ -204,7 +204,9 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
                     httpClientConfig.httpClientRetiesConfig().maxRetries(),
                     Timeout.ofSeconds(httpClientConfig.httpClientRetiesConfig().retryInterval())));
 
-    if (httpClientProxy.host() != null && !httpClientProxy.host().isEmpty()) {
+    if (httpClientProxy != null
+        && httpClientProxy.host() != null
+        && !httpClientProxy.host().isEmpty()) {
       httpClientBuilder.setProxy(new HttpHost(httpClientProxy.host(), httpClientProxy.port()));
 
       if (httpClientProxy.username() != null && !httpClientProxy.username().isEmpty()) {
