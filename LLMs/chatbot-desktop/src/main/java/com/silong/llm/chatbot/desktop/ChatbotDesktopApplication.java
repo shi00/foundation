@@ -21,6 +21,8 @@
 
 package com.silong.llm.chatbot.desktop;
 
+import static com.silong.llm.chatbot.desktop.utils.ResourceLoader.loadStream;
+import static com.silong.llm.chatbot.desktop.utils.ResourceLoader.loadURL;
 import static javafx.stage.StageStyle.UNDECORATED;
 import static org.kordamp.bootstrapfx.BootstrapFX.bootstrapFXStylesheet;
 
@@ -28,8 +30,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.desktop.config.Configuration;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import javafx.application.Application;
@@ -39,7 +39,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -76,26 +75,6 @@ public class ChatbotDesktopApplication extends Application {
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
-  }
-
-  /**
-   * 加载classpath内的资源
-   *
-   * @param path 资源在classpath路径
-   * @return 资源URL
-   */
-  public static URL loadURL(@NonNull String path) {
-    return ChatbotDesktopApplication.class.getResource(path);
-  }
-
-  /**
-   * 加载classpath内的资源
-   *
-   * @param path 资源在classpath路径
-   * @return 资源流
-   */
-  public static InputStream loadStream(@NonNull String path) {
-    return ChatbotDesktopApplication.class.getResourceAsStream(path);
   }
 
   @Override
