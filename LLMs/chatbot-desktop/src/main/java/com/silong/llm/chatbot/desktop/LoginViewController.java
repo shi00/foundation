@@ -21,12 +21,17 @@
 
 package com.silong.llm.chatbot.desktop;
 
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.CONFIGURATION;
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
 import static javafx.scene.Cursor.CLOSED_HAND;
 import static javafx.scene.Cursor.DEFAULT;
 
 import java.net.URL;
+import java.security.SecureRandom;
 import java.util.ResourceBundle;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -34,6 +39,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.controlsfx.control.textfield.CustomPasswordField;
 import org.controlsfx.control.textfield.CustomTextField;
@@ -104,6 +112,12 @@ public class LoginViewController implements Initializable {
     portLabel.setGraphic(FontIcon.of(FontAwesomeSolid.ETHERNET, 64));
 
     credentialsLabel.setGraphic(FontIcon.of(FontAwesomeSolid.KEY, 64));
+
+    int numberOfSquares = 20;
+    while (numberOfSquares > 0) {
+      generateAnimation();
+      numberOfSquares--;
+    }
   }
 
   /** 配置登录窗口支持拖拉拽 */
@@ -122,5 +136,69 @@ public class LoginViewController implements Initializable {
         });
 
     mainLayout.setOnMouseReleased(event -> mainLayout.setCursor(DEFAULT));
+  }
+
+  /* This method is used to generate the animation on the login window, It will generate random ints to determine
+   * the size, speed, starting points and direction of each square.
+   */
+  public void generateAnimation() {
+    int heightBound = CONFIGURATION.loginWindowSize().height();
+    int widthBound = CONFIGURATION.loginWindowSize().width();
+    SecureRandom rand = new SecureRandom();
+    int sizeOfSqaure = rand.nextInt(50) + 1;
+    int speedOfSqaure = rand.nextInt(10) + 5;
+    int startXPoint = rand.nextInt(heightBound);
+    int startYPoint = rand.nextInt(widthBound);
+    int direction = rand.nextInt(5) + 1;
+
+    KeyValue moveXAxis = null;
+    KeyValue moveYAxis = null;
+    Rectangle r1 = null;
+
+    switch (direction) {
+      case 1:
+        // MOVE LEFT TO RIGHT
+        r1 = new Rectangle(0, startYPoint, sizeOfSqaure, sizeOfSqaure);
+        moveXAxis = new KeyValue(r1.xProperty(), widthBound - sizeOfSqaure);
+        break;
+      case 2:
+        // MOVE TOP TO BOTTOM
+        r1 = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
+        moveYAxis = new KeyValue(r1.yProperty(), heightBound - sizeOfSqaure);
+        break;
+      case 3:
+        // MOVE LEFT TO RIGHT, TOP TO BOTTOM
+        r1 = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
+        moveXAxis = new KeyValue(r1.xProperty(), widthBound - sizeOfSqaure);
+        moveYAxis = new KeyValue(r1.yProperty(), heightBound - sizeOfSqaure);
+        break;
+      case 4:
+        // MOVE BOTTOM TO TOP
+        r1 = new Rectangle(startXPoint, heightBound - sizeOfSqaure, sizeOfSqaure, sizeOfSqaure);
+        moveYAxis = new KeyValue(r1.xProperty(), 0);
+        break;
+      case 5:
+        // MOVE RIGHT TO LEFT
+        r1 = new Rectangle(heightBound - sizeOfSqaure, startYPoint, sizeOfSqaure, sizeOfSqaure);
+        moveXAxis = new KeyValue(r1.xProperty(), 0);
+        break;
+      case 6:
+        // MOVE RIGHT TO LEFT, BOTTOM TO TOP
+        r1 = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
+        moveXAxis = new KeyValue(r1.xProperty(), widthBound - sizeOfSqaure);
+        moveYAxis = new KeyValue(r1.yProperty(), heightBound - sizeOfSqaure);
+        break;
+    }
+
+    r1.setFill(Color.CHARTREUSE);
+    r1.setOpacity(0.1);
+
+    KeyFrame keyFrame = new KeyFrame(Duration.millis(speedOfSqaure * 1000), moveXAxis, moveYAxis);
+    Timeline timeline = new Timeline();
+    timeline.setCycleCount(Timeline.INDEFINITE);
+    timeline.setAutoReverse(true);
+    timeline.getKeyFrames().add(keyFrame);
+    timeline.play();
+    mainLayout.getChildren().add(mainLayout.getChildren().size() - 1, r1);
   }
 }
