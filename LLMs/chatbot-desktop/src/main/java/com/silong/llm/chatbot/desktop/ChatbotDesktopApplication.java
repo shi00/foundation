@@ -24,7 +24,6 @@ package com.silong.llm.chatbot.desktop;
 import static com.silong.llm.chatbot.desktop.utils.ResourceLoader.loadStream;
 import static com.silong.llm.chatbot.desktop.utils.ResourceLoader.loadURL;
 import static javafx.stage.StageStyle.UNDECORATED;
-import static org.kordamp.bootstrapfx.BootstrapFX.bootstrapFXStylesheet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.desktop.config.Configuration;
@@ -54,7 +53,7 @@ public class ChatbotDesktopApplication extends Application {
   private static final String DEFAULT_CONFIG_FILE_PATH = "/config/configuration.json";
 
   /** 配置文件路径KEY */
-  public static final String CONFIG_FILE = "CONFIG_FILE";
+  public static final String CONFIG_FILE = "config.file";
 
   /** 全局配置 */
   public static final Configuration CONFIGURATION;
@@ -89,7 +88,6 @@ public class ChatbotDesktopApplication extends Application {
             root,
             CONFIGURATION.loginWindowSize().width(),
             CONFIGURATION.loginWindowSize().height());
-    scene.getStylesheets().add(bootstrapFXStylesheet()); // 加载bootstrapfx.css
     primaryStage.initStyle(UNDECORATED);
     primaryStage.setTitle(resourceBundle.getString("app.title"));
     primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.iconPath())));
