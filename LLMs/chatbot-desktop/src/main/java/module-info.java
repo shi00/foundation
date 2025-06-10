@@ -29,6 +29,7 @@ module chatbot.desktop {
   requires org.controlsfx.controls;
   requires org.apache.httpcomponents.core5.httpcore5;
   requires jakarta.annotation;
+  requires atlantafx.base;
   requires static lombok;
 
   opens views to
