@@ -21,29 +21,25 @@
 
 package com.silong.llm.chatbot.desktop;
 
-import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.*;
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
+import static javafx.scene.Cursor.CLOSED_HAND;
+import static javafx.scene.Cursor.DEFAULT;
 
-import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
-import com.silong.llm.chatbot.desktop.utils.ResizeHelper;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Cursor;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-import lombok.SneakyThrows;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
+import org.controlsfx.control.textfield.CustomPasswordField;
+import org.controlsfx.control.textfield.CustomTextField;
+import org.kordamp.ikonli.bootstrapicons.BootstrapIcons;
+import org.kordamp.ikonli.fontawesome6.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 /**
  * 登录界面控制器
@@ -55,109 +51,68 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LoginViewController implements Initializable {
 
-  @FXML private GridPane mainLayout;
-
-  @FXML private Button closeBtn;
-
-  @FXML private Button loginBtn;
+  @FXML private BorderPane mainLayout;
 
   @FXML private Button minimizedBtn;
 
-  @FXML private TextField credentialTextField;
+  @FXML private Button closeBtn;
 
-  @FXML private TextField hostTextField;
+  @FXML private Label hostLabel;
 
-  @FXML private TextField portTextField;
+  @FXML private Label portLabel;
+
+  @FXML private Label credentialsLabel;
+
+  @FXML private Button loginBtn;
+
+  @FXML private CustomPasswordField credentialsTextField;
+
+  @FXML private CustomTextField hostTextField;
+
+  @FXML private CustomTextField portTextField;
 
   private double xOffset;
-
   private double yOffset;
 
-  private ResourceBundle resourceBundle;
+  @FXML
+  void handleLoginAction(ActionEvent event) {}
 
   @FXML
-  void closeLoginWindow(ActionEvent event) {
-    primaryStage.close();
+  void handleCloseAction(ActionEvent event) {
+    Platform.exit();
+    System.exit(0);
   }
 
   @FXML
-  void minimizeLoginWindow(ActionEvent event) {
+  void handleMinimizedAction(ActionEvent event) {
     primaryStage.setIconified(true);
   }
 
-  @FXML
-  void handleLogin(ActionEvent event) {
-    String host = hostTextField.getText();
-    if (host == null || (host = host.trim()).isEmpty()) {
-      showErrorDialog("input.host.error");
-      hostTextField.clear();
-      return;
-    }
-
-    int port;
-    try {
-      port = Integer.parseInt(portTextField.getText());
-    } catch (NumberFormatException e) {
-      log.error("Invalid port number.", e);
-      showErrorDialog("input.port.error");
-      portTextField.clear();
-      return;
-    }
-
-    var credential = credentialTextField.getText();
-    if (credential == null || (credential = credential.trim()).isEmpty()) {
-      showErrorDialog("input.credential.error");
-      credentialTextField.clear();
-      return;
-    }
-
-    var client = AsyncRestClient.create(host, port, credential);
-    Platform.runLater(() -> showChatScene(client));
-  }
-
-  @SneakyThrows(IOException.class)
-  private void showChatScene(AsyncRestClient client) {
-    FXMLLoader loader = new FXMLLoader(loadURL(CONFIGURATION.chatViewPath()));
-    Parent window = loader.load();
-    var controller = loader.<ChatViewController>getController();
-    controller.setRestClient(client);
-    var scene = new Scene(window);
-
-    Stage stage = (Stage) closeBtn.getScene().getWindow();
-    stage.setResizable(true);
-    stage.setWidth(CONFIGURATION.chatWindowSize().width());
-    stage.setHeight(CONFIGURATION.chatWindowSize().height());
-
-    stage.setOnCloseRequest(
-        (WindowEvent e) -> {
-          client.close();
-          Platform.exit();
-          System.exit(0);
-        });
-    stage.setScene(scene);
-    stage.setMinWidth(CONFIGURATION.chatWindowSize().width());
-    stage.setMinHeight(CONFIGURATION.chatWindowSize().height());
-    ResizeHelper.addResizeListener(stage);
-    stage.centerOnScreen();
-  }
-
   @Override
-  public void initialize(URL url, ResourceBundle resourceBundle) {
-    if (log.isDebugEnabled()) {
-      log.debug("Initializing url:{}, resourceBundle:{}", url, resourceBundle);
-    }
-    this.resourceBundle = resourceBundle;
-    loginWindowDragAndDrop();
+  public void initialize(URL location, ResourceBundle resources) {
+    /* Drag and Drop */
+    configureLoginWindowsDragAndDrop();
+
+    // 图标大小 16px
+    minimizedBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
+
+    // 图标大小 16px
+    closeBtn.setGraphic(FontIcon.of(BootstrapIcons.X_CIRCLE, 16));
+
+    hostLabel.setGraphic(FontIcon.of(BootstrapIcons.CLOUD_ARROW_UP, 64));
+
+    portLabel.setGraphic(FontIcon.of(FontAwesomeSolid.ETHERNET, 64));
+
+    credentialsLabel.setGraphic(FontIcon.of(FontAwesomeSolid.KEY, 64));
   }
 
-  /** 设置登录窗口拖拉拽 */
-  private void loginWindowDragAndDrop() {
-    /* 支持登录窗口拖拉拽 */
+  /** 配置登录窗口支持拖拉拽 */
+  private void configureLoginWindowsDragAndDrop() {
     mainLayout.setOnMousePressed(
         event -> {
           xOffset = primaryStage.getX() - event.getScreenX();
           yOffset = primaryStage.getY() - event.getScreenY();
-          mainLayout.setCursor(Cursor.CLOSED_HAND);
+          mainLayout.setCursor(CLOSED_HAND);
         });
 
     mainLayout.setOnMouseDragged(
@@ -166,19 +121,6 @@ public class LoginViewController implements Initializable {
           primaryStage.setY(event.getScreenY() + yOffset);
         });
 
-    mainLayout.setOnMouseReleased(event -> mainLayout.setCursor(Cursor.DEFAULT));
-  }
-
-  private void showErrorDialog(String messageKey) {
-    Platform.runLater(
-        () -> {
-          Alert alert = new Alert(Alert.AlertType.ERROR);
-          //          alert.getDialogPane().getStyleClass().addAll("alert", "alert-warning");
-          alert.setTitle(resourceBundle.getString("dialog.error"));
-          alert.setHeaderText(resourceBundle.getString("input.error"));
-          alert.setContentText(resourceBundle.getString(messageKey));
-          alert.getDialogPane().setPrefSize(300, 150);
-          alert.showAndWait();
-        });
+    mainLayout.setOnMouseReleased(event -> mainLayout.setCursor(DEFAULT));
   }
 }

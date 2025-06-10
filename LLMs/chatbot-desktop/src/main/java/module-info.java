@@ -30,6 +30,10 @@ module chatbot.desktop {
   requires org.apache.httpcomponents.core5.httpcore5;
   requires jakarta.annotation;
   requires atlantafx.base;
+  requires org.kordamp.ikonli.core;
+  requires org.kordamp.ikonli.javafx;
+  requires org.kordamp.ikonli.bootstrapicons;
+  requires org.kordamp.ikonli.fontawesome6;
   requires static lombok;
 
   opens views to

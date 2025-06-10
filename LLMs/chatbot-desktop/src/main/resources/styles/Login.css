@@ -1,5 +1,5 @@
 .close-button {
-    -fx-graphic: url("../images/cross.png");
+    /*-fx-graphic: url("../images/cross.png");*/
     -fx-background-color: transparent;
     -fx-opacity: 1;
 }
@@ -13,7 +13,7 @@
 }
 
 .minimized-button {
-    -fx-graphic: url("../images/line.png");
+    /*-fx-graphic: url("../images/line.png");*/
     -fx-background-color: transparent;
     -fx-opacity: 1;
 }

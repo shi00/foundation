@@ -27,7 +27,11 @@ import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.TextAlignment;
+import javafx.util.Duration;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,8 +51,33 @@ public class ChatViewController implements Initializable {
 
   @FXML private VBox rightVBox;
 
+  @FXML private SplitPane mainLayout;
+
   @Setter private AsyncRestClient restClient;
 
   @Override
-  public void initialize(URL location, ResourceBundle resources) {}
+  public void initialize(URL location, ResourceBundle resources) {
+    // 禁用所有分割线的拖动
+    //    for (SplitPane.Divider divider : mainLayout.getDividers()) {
+    //      divider
+    //          .positionProperty()
+    //          .addListener(
+    //              (observable, oldValue, newValue) -> {
+    //                // 阻止分割线位置改变
+    //                divider.setPosition(oldValue.doubleValue());
+    //              });
+    //    }
+
+    // 可选：阻止鼠标事件传播到分割线
+    //    mainLayout.addEventFilter(MouseEvent.MOUSE_PRESSED, Event::consume);
+
+    // 创建Tooltip并设置属性
+    Tooltip tooltip = new Tooltip();
+    tooltip.setTextAlignment(TextAlignment.CENTER);
+    tooltip.setText(resources.getString("foldbtn.tooltip"));
+    tooltip.setShowDelay(Duration.millis(100)); // 鼠标悬停200ms后显示
+    tooltip.setHideDelay(Duration.millis(100)); // 鼠标移开1000ms后隐藏
+    tooltip.setShowDuration(Duration.INDEFINITE); // 永久显示，直到鼠标移开
+    foldButton.setTooltip(tooltip);
+  }
 }
