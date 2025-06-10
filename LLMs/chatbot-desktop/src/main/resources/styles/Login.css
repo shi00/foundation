@@ -1,29 +1,32 @@
-#closeBtn {
+.close-button {
     -fx-graphic: url("../images/cross.png");
     -fx-background-color: transparent;
     -fx-opacity: 1;
 }
 
-#closeBtn:hover {
+.close-button:hover {
     -fx-opacity: 0.5;
 }
 
-#closeBtn:pressed {
+.close-button:pressed {
     -fx-opacity: 0.2;
 }
 
-#minimizedBtn {
+.minimized-button {
     -fx-graphic: url("../images/line.png");
     -fx-background-color: transparent;
     -fx-opacity: 1;
-
 }
 
-#minimizedBtn:hover {
+.minimized-button:hover {
     -fx-opacity: 0.5;
 }
 
-#loginBtn {
+.minimized-button:pressed {
+    -fx-opacity: 0.2;
+}
+
+.login-button {
     -fx-color: #000000;
     -fx-text-fill: #000000;
     -fx-padding: 5px 20px;
@@ -35,13 +38,13 @@
     -fx-opacity: 1;
 }
 
-#loginBtn:hover {
+.login-button:hover {
     -fx-cursor: hand;
     -fx-opacity: 0.5;
     -fx-text-fill: #ffffff;
 }
 
-#loginBtn:pressed {
+.login-button:pressed {
     -fx-opacity: 1;
     -fx-padding: 5px 20px;
     -fx-spacing: 10px;
