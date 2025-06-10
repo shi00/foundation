@@ -25,6 +25,7 @@ import static com.silong.llm.chatbot.desktop.utils.ResourceLoader.loadStream;
 import static com.silong.llm.chatbot.desktop.utils.ResourceLoader.loadURL;
 import static javafx.stage.StageStyle.UNDECORATED;
 
+import atlantafx.base.theme.Dracula;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.desktop.config.Configuration;
 import java.io.File;
@@ -88,6 +89,7 @@ public class ChatbotDesktopApplication extends Application {
             root,
             CONFIGURATION.loginWindowSize().width(),
             CONFIGURATION.loginWindowSize().height());
+    scene.getStylesheets().add(new Dracula().getUserAgentStylesheet());
     primaryStage.initStyle(UNDECORATED);
     primaryStage.setTitle(resourceBundle.getString("app.title"));
     primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.iconPath())));
