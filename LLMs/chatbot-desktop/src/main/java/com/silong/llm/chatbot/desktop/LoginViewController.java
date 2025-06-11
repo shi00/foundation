@@ -27,6 +27,7 @@ import static javafx.scene.Cursor.CLOSED_HAND;
 import static javafx.scene.Cursor.DEFAULT;
 import static javafx.scene.input.KeyCode.TAB;
 
+import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ResourceBundle;
@@ -38,6 +39,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -83,11 +85,51 @@ public class LoginViewController implements Initializable {
 
   @FXML private CustomTextField portTextField;
 
+  private ResourceBundle resourceBundle;
+
   private double xOffset;
   private double yOffset;
 
   @FXML
-  void handleLoginAction(ActionEvent event) {}
+  void handleLoginAction(ActionEvent event) {
+    String host = hostTextField.getText();
+    if (host == null || (host = host.trim()).isEmpty()) {
+      showErrorDialog("input.host.error");
+      hostTextField.clear();
+      return;
+    }
+
+    int port;
+    try {
+      port = Integer.parseInt(portTextField.getText());
+    } catch (NumberFormatException e) {
+      log.error("Invalid port number.", e);
+      showErrorDialog("input.port.error");
+      portTextField.clear();
+      return;
+    }
+
+    var credential = credentialsTextField.getText();
+    if (credential == null || (credential = credential.trim()).isEmpty()) {
+      showErrorDialog("input.credential.error");
+      credentialsTextField.clear();
+      return;
+    }
+
+    var client = AsyncRestClient.create(host, port, credential);
+  }
+
+  private void showErrorDialog(String messageKey) {
+    Platform.runLater(
+        () -> {
+          var alert = new Alert(Alert.AlertType.ERROR);
+          alert.setTitle(resourceBundle.getString("dialog.error"));
+          alert.setHeaderText(null);
+          alert.setContentText(resourceBundle.getString(messageKey));
+          alert.initOwner(primaryStage.getScene().getWindow());
+          alert.showAndWait();
+        });
+  }
 
   @FXML
   void handleCloseAction(ActionEvent event) {
@@ -102,6 +144,8 @@ public class LoginViewController implements Initializable {
 
   @Override
   public void initialize(URL location, ResourceBundle resources) {
+    this.resourceBundle = resources;
+
     /* Drag and Drop */
     configureLoginWindowsDragAndDrop();
 
@@ -263,6 +307,7 @@ public class LoginViewController implements Initializable {
 
     shape.setFill(Color.CHARTREUSE);
     shape.setOpacity(0.1);
+    shape.setFocusTraversable(false);
 
     KeyFrame keyFrame = new KeyFrame(Duration.millis(speedOfShape * 1000), moveXAxis, moveYAxis);
     Timeline timeline = new Timeline();
