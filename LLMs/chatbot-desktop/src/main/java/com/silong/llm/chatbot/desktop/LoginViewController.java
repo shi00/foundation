@@ -25,6 +25,7 @@ import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.CONFIGURA
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
 import static javafx.scene.Cursor.CLOSED_HAND;
 import static javafx.scene.Cursor.DEFAULT;
+import static javafx.scene.input.KeyCode.TAB;
 
 import java.net.URL;
 import java.security.SecureRandom;
@@ -36,6 +37,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -101,6 +103,12 @@ public class LoginViewController implements Initializable {
     /* Drag and Drop */
     configureLoginWindowsDragAndDrop();
 
+    // 初始焦点
+    primaryStage.setOnShown(e -> hostTextField.requestFocus());
+
+    // 配置焦点转移顺序
+    configureFocusTraversalOrder();
+
     // 图标大小 16px
     minimizedBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
 
@@ -117,6 +125,24 @@ public class LoginViewController implements Initializable {
     while (numberOfSquares > 0) {
       generateAnimation();
       numberOfSquares--;
+    }
+  }
+
+  /** 配置焦点转移顺序 */
+  private void configureFocusTraversalOrder() {
+    Node[] nodes = {
+      hostTextField, portTextField, credentialsTextField, loginBtn, minimizedBtn, closeBtn
+    };
+
+    for (int i = 0; i < nodes.length; i++) {
+      int index = i;
+      nodes[index].setOnKeyPressed(
+          e -> {
+            if (e.getCode() == TAB && !e.isShiftDown()) {
+              e.consume();
+              nodes[(index + 1) % nodes.length].requestFocus();
+            }
+          });
     }
   }
 
