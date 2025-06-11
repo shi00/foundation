@@ -182,8 +182,8 @@ public class LoginViewController implements Initializable {
     int heightBound = CONFIGURATION.loginWindowSize().height();
     int widthBound = CONFIGURATION.loginWindowSize().width();
     SecureRandom rand = new SecureRandom();
-    int sizeOfSqaure = rand.nextInt(50) + 1;
-    int speedOfSqaure = rand.nextInt(10) + 5;
+    int sizeOfShape = rand.nextInt(50) + 1;
+    int speedOfShape = rand.nextInt(10) + 5;
     int startXPoint = rand.nextInt(heightBound);
     int startYPoint = rand.nextInt(widthBound);
     Direction direction = Direction.values()[rand.nextInt(Direction.values().length)];
@@ -196,50 +196,37 @@ public class LoginViewController implements Initializable {
       case LEFT2RIGHT:
         // MOVE LEFT TO RIGHT
         if (rand.nextInt() % 2 == 0) {
-          var rectangle = new Rectangle(0, startYPoint, sizeOfSqaure, sizeOfSqaure);
-          moveXAxis = new KeyValue(rectangle.xProperty(), widthBound - sizeOfSqaure);
+          var rectangle = new Rectangle(0, startYPoint, sizeOfShape, sizeOfShape);
+          moveXAxis = new KeyValue(rectangle.xProperty(), widthBound - sizeOfShape);
           shape = rectangle;
         } else {
-          var circle = new Circle(startXPoint, startYPoint, sizeOfSqaure);
-          moveXAxis = new KeyValue(circle.centerXProperty(), widthBound - sizeOfSqaure);
+          var circle = new Circle(startXPoint, startYPoint, sizeOfShape);
+          moveXAxis = new KeyValue(circle.centerXProperty(), widthBound - sizeOfShape);
           shape = circle;
         }
         break;
       case TOP2BOTTOM:
         // MOVE TOP TO BOTTOM
         if (rand.nextInt() % 2 == 0) {
-          var rectangle = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
-          moveXAxis = new KeyValue(rectangle.yProperty(), heightBound - sizeOfSqaure);
+          var rectangle = new Rectangle(startXPoint, 0, sizeOfShape, sizeOfShape);
+          moveYAxis = new KeyValue(rectangle.yProperty(), heightBound - sizeOfShape);
           shape = rectangle;
         } else {
-          var circle = new Circle(startXPoint, startYPoint, sizeOfSqaure);
-          moveXAxis = new KeyValue(circle.centerYProperty(), heightBound - sizeOfSqaure);
+          var circle = new Circle(startXPoint, startYPoint, sizeOfShape);
+          moveYAxis = new KeyValue(circle.centerYProperty(), heightBound - sizeOfShape);
           shape = circle;
         }
         break;
-      case LEFT2RIGHT_TOP2BOTTOM:
-        // MOVE LEFT TO RIGHT, TOP TO BOTTOM
-        if (rand.nextInt() % 2 == 0) {
-          var rectangle = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
-          moveXAxis = new KeyValue(rectangle.xProperty(), widthBound - sizeOfSqaure);
-          moveYAxis = new KeyValue(rectangle.yProperty(), heightBound - sizeOfSqaure);
-          shape = rectangle;
-        } else {
-          var circle = new Circle(startXPoint, startYPoint, sizeOfSqaure);
-          moveXAxis = new KeyValue(circle.centerXProperty(), widthBound - sizeOfSqaure);
-          moveYAxis = new KeyValue(circle.centerYProperty(), heightBound - sizeOfSqaure);
-          shape = circle;
-        }
-        break;
+
       case BOTTOM2TOP:
         // MOVE BOTTOM TO TOP
         if (rand.nextInt() % 2 == 0) {
           var rectangle =
-              new Rectangle(startXPoint, heightBound - sizeOfSqaure, sizeOfSqaure, sizeOfSqaure);
+              new Rectangle(startXPoint, heightBound - sizeOfShape, sizeOfShape, sizeOfShape);
           moveYAxis = new KeyValue(rectangle.xProperty(), 0);
           shape = rectangle;
         } else {
-          var circle = new Circle(startXPoint, startYPoint, sizeOfSqaure);
+          var circle = new Circle(startXPoint, startYPoint, sizeOfShape);
           moveYAxis = new KeyValue(circle.centerXProperty(), 0);
           shape = circle;
         }
@@ -248,26 +235,27 @@ public class LoginViewController implements Initializable {
         // MOVE RIGHT TO LEFT
         if (rand.nextInt() % 2 == 0) {
           var rectangle =
-              new Rectangle(heightBound - sizeOfSqaure, startYPoint, sizeOfSqaure, sizeOfSqaure);
+              new Rectangle(heightBound - sizeOfShape, startYPoint, sizeOfShape, sizeOfShape);
           moveXAxis = new KeyValue(rectangle.xProperty(), 0);
           shape = rectangle;
         } else {
-          var circle = new Circle(startXPoint, startYPoint, sizeOfSqaure);
+          var circle = new Circle(startXPoint, startYPoint, sizeOfShape);
           moveXAxis = new KeyValue(circle.centerXProperty(), 0);
           shape = circle;
         }
         break;
+      case LEFT2RIGHT_TOP2BOTTOM:
       case RIGHT2LEFT_BOTTOM2TOP:
         // MOVE RIGHT TO LEFT, BOTTOM TO TOP
         if (rand.nextInt() % 2 == 0) {
-          var rectangle = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
-          moveXAxis = new KeyValue(rectangle.xProperty(), widthBound - sizeOfSqaure);
-          moveYAxis = new KeyValue(rectangle.yProperty(), heightBound - sizeOfSqaure);
+          var rectangle = new Rectangle(startXPoint, 0, sizeOfShape, sizeOfShape);
+          moveXAxis = new KeyValue(rectangle.xProperty(), widthBound - sizeOfShape);
+          moveYAxis = new KeyValue(rectangle.yProperty(), heightBound - sizeOfShape);
           shape = rectangle;
         } else {
-          var circle = new Circle(startXPoint, startYPoint, sizeOfSqaure);
-          moveXAxis = new KeyValue(circle.centerXProperty(), widthBound - sizeOfSqaure);
-          moveYAxis = new KeyValue(circle.centerXProperty(), heightBound - sizeOfSqaure);
+          var circle = new Circle(startXPoint, startYPoint, sizeOfShape);
+          moveXAxis = new KeyValue(circle.centerXProperty(), widthBound - sizeOfShape);
+          moveYAxis = new KeyValue(circle.centerYProperty(), heightBound - sizeOfShape);
           shape = circle;
         }
         break;
@@ -276,7 +264,7 @@ public class LoginViewController implements Initializable {
     shape.setFill(Color.CHARTREUSE);
     shape.setOpacity(0.1);
 
-    KeyFrame keyFrame = new KeyFrame(Duration.millis(speedOfSqaure * 1000), moveXAxis, moveYAxis);
+    KeyFrame keyFrame = new KeyFrame(Duration.millis(speedOfShape * 1000), moveXAxis, moveYAxis);
     Timeline timeline = new Timeline();
     timeline.setCycleCount(Timeline.INDEFINITE);
     timeline.setAutoReverse(true);
