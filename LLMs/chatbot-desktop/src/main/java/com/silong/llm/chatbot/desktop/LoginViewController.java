@@ -161,7 +161,7 @@ public class LoginViewController implements Initializable {
     // 图标大小 16px
     closeBtn.setGraphic(FontIcon.of(BootstrapIcons.X_CIRCLE, 16));
 
-    hostLabel.setGraphic(FontIcon.of(BootstrapIcons.CLOUD_ARROW_UP, 64));
+    hostLabel.setGraphic(FontIcon.of(FontAwesomeSolid.SERVER, 64));
 
     portLabel.setGraphic(FontIcon.of(FontAwesomeSolid.ETHERNET, 64));
 
