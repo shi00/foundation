@@ -164,6 +164,15 @@ public class LoginViewController implements Initializable {
     mainLayout.setOnMouseReleased(event -> mainLayout.setCursor(DEFAULT));
   }
 
+  private enum Direction {
+    LEFT2RIGHT,
+    TOP2BOTTOM,
+    LEFT2RIGHT_TOP2BOTTOM,
+    BOTTOM2TOP,
+    RIGHT2LEFT,
+    RIGHT2LEFT_BOTTOM2TOP
+  }
+
   /* This method is used to generate the animation on the login window, It will generate random ints to determine
    * the size, speed, starting points and direction of each square.
    */
@@ -175,40 +184,40 @@ public class LoginViewController implements Initializable {
     int speedOfSqaure = rand.nextInt(10) + 5;
     int startXPoint = rand.nextInt(heightBound);
     int startYPoint = rand.nextInt(widthBound);
-    int direction = rand.nextInt(5) + 1;
+    Direction direction = Direction.values()[rand.nextInt(Direction.values().length)];
 
     KeyValue moveXAxis = null;
     KeyValue moveYAxis = null;
     Rectangle r1 = null;
 
     switch (direction) {
-      case 1:
+      case LEFT2RIGHT:
         // MOVE LEFT TO RIGHT
         r1 = new Rectangle(0, startYPoint, sizeOfSqaure, sizeOfSqaure);
         moveXAxis = new KeyValue(r1.xProperty(), widthBound - sizeOfSqaure);
         break;
-      case 2:
+      case TOP2BOTTOM:
         // MOVE TOP TO BOTTOM
         r1 = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
         moveYAxis = new KeyValue(r1.yProperty(), heightBound - sizeOfSqaure);
         break;
-      case 3:
+      case LEFT2RIGHT_TOP2BOTTOM:
         // MOVE LEFT TO RIGHT, TOP TO BOTTOM
         r1 = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
         moveXAxis = new KeyValue(r1.xProperty(), widthBound - sizeOfSqaure);
         moveYAxis = new KeyValue(r1.yProperty(), heightBound - sizeOfSqaure);
         break;
-      case 4:
+      case BOTTOM2TOP:
         // MOVE BOTTOM TO TOP
         r1 = new Rectangle(startXPoint, heightBound - sizeOfSqaure, sizeOfSqaure, sizeOfSqaure);
         moveYAxis = new KeyValue(r1.xProperty(), 0);
         break;
-      case 5:
+      case RIGHT2LEFT:
         // MOVE RIGHT TO LEFT
         r1 = new Rectangle(heightBound - sizeOfSqaure, startYPoint, sizeOfSqaure, sizeOfSqaure);
         moveXAxis = new KeyValue(r1.xProperty(), 0);
         break;
-      case 6:
+      case RIGHT2LEFT_BOTTOM2TOP:
         // MOVE RIGHT TO LEFT, BOTTOM TO TOP
         r1 = new Rectangle(startXPoint, 0, sizeOfSqaure, sizeOfSqaure);
         moveXAxis = new KeyValue(r1.xProperty(), widthBound - sizeOfSqaure);
