@@ -111,7 +111,7 @@ public class LoginViewController implements Initializable {
 
     var credential = credentialsTextField.getText();
     if (credential == null || (credential = credential.trim()).isEmpty()) {
-      showErrorDialog("input.credential.error");
+      showErrorDialog("input.credentials.error");
       credentialsTextField.clear();
       return;
     }
