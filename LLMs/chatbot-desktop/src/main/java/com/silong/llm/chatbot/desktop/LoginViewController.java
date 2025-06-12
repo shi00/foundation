@@ -43,6 +43,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -130,9 +131,10 @@ public class LoginViewController implements Initializable {
 
     FXMLLoader loader =
         new FXMLLoader(getClass().getResource(CONFIGURATION.chatViewPath()), resourceBundle);
+    Parent parent = loader.load();
     ChatViewController controller = loader.getController();
     controller.setRestClient(AsyncRestClient.create(host, port, credential));
-    var scene = new Scene(loader.load());
+    var scene = new Scene(parent);
     scene.getStylesheets().add(new Dracula().getUserAgentStylesheet());
     var stage = (Stage) primaryStage.getScene().getWindow();
     stage.setResizable(true);
