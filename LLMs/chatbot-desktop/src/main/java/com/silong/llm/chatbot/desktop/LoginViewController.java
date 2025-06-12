@@ -43,7 +43,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -129,14 +128,11 @@ public class LoginViewController implements Initializable {
       return;
     }
 
-    var client = AsyncRestClient.create(host, port, credential);
-
     FXMLLoader loader =
         new FXMLLoader(getClass().getResource(CONFIGURATION.chatViewPath()), resourceBundle);
-    Parent window = loader.load();
     ChatViewController controller = loader.getController();
-    controller.setRestClient(client);
-    var scene = new Scene(window);
+    controller.setRestClient(AsyncRestClient.create(host, port, credential));
+    var scene = new Scene(loader.load());
     scene.getStylesheets().add(new Dracula().getUserAgentStylesheet());
     var stage = (Stage) primaryStage.getScene().getWindow();
     stage.setResizable(true);
@@ -144,7 +140,6 @@ public class LoginViewController implements Initializable {
     stage.setHeight(CONFIGURATION.chatWindowSize().height());
     stage.setMinWidth(CONFIGURATION.chatWindowSize().width() / 2.0);
     stage.setMinHeight(CONFIGURATION.chatWindowSize().height() / 2.0);
-
     stage.setOnCloseRequest(
         (WindowEvent e) -> {
           Platform.exit();
