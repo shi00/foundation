@@ -31,13 +31,16 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.controlsfx.control.HiddenSidesPane;
+import org.controlsfx.tools.Borders;
 import org.kordamp.ikonli.bootstrapicons.BootstrapIcons;
 import org.kordamp.ikonli.javafx.FontIcon;
 
@@ -82,14 +85,19 @@ public class ChatViewController extends ViewController implements Initializable 
     newConversation.setGraphic(FontIcon.of(BootstrapIcons.PERSON_PLUS_FILL, 16));
 
     // 1. 创建主内容区域
-    Label centerLabel = new Label("主内容区域");
-    VBox centerContent = new VBox(centerLabel);
-    centerContent.setStyle("-fx-background-color: #E0E0E0; -fx-padding: 20;");
-
-    // 2. 创建边缘滑出内容（顶部、底部、左侧、右侧）
-    Button topButton = new Button("顶部工具栏");
-    VBox topContent = new VBox(topButton);
-    topContent.setStyle("-fx-background-color: #FFCC80; -fx-padding: 10;");
+    var chatArea = new TextArea();
+    chatArea.setPromptText("Chat Area");
+    var stackPane = new StackPane(chatArea);
+//    stackPane.setStyle("-fx-background-color: #E0E0E0; -fx-padding: 20;");
+    var centerContent =
+        Borders.wrap(stackPane)
+            .etchedBorder()
+            .outerPadding(2)
+            .innerPadding(1)
+            .radius(2)
+            .highlight(Color.DARKSEAGREEN)
+            .build()
+            .build();
 
     Button leftButton = new Button("左侧菜单");
     VBox leftContent = new VBox(leftButton);
@@ -97,7 +105,6 @@ public class ChatViewController extends ViewController implements Initializable 
 
     // 3. 创建HiddenSidesPane并添加内容
     hiddenSidesPane.setContent(centerContent); // 设置主内容
-    hiddenSidesPane.setTop(topContent); // 设置顶部内容
     hiddenSidesPane.setLeft(leftContent); // 设置左侧内容
 
     // 4. 配置触发行为（默认鼠标悬停触发）
