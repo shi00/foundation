@@ -308,6 +308,7 @@ public class LoginViewController implements Initializable {
     shape.setFill(Color.CHARTREUSE);
     shape.setOpacity(0.1);
     shape.setFocusTraversable(false);
+    shape.setMouseTransparent(true);
 
     KeyFrame keyFrame = new KeyFrame(Duration.millis(speedOfShape * 1000), moveXAxis, moveYAxis);
     Timeline timeline = new Timeline();
