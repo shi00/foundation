@@ -23,8 +23,6 @@ package com.silong.llm.chatbot.desktop;
 
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.CONFIGURATION;
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
-import static javafx.scene.Cursor.CLOSED_HAND;
-import static javafx.scene.Cursor.DEFAULT;
 import static javafx.scene.input.KeyCode.TAB;
 
 import atlantafx.base.theme.Dracula;
@@ -72,7 +70,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
  * @since 2025-05-19 20:19
  */
 @Slf4j
-public class LoginViewController implements Initializable {
+public class LoginViewController extends ViewController implements Initializable {
 
   @FXML private BorderPane mainLayout;
 
@@ -95,9 +93,6 @@ public class LoginViewController implements Initializable {
   @FXML private CustomTextField portTextField;
 
   private ResourceBundle resourceBundle;
-
-  private double xOffset;
-  private double yOffset;
 
   @FXML
   @SneakyThrows(IOException.class)
@@ -171,13 +166,12 @@ public class LoginViewController implements Initializable {
 
   @FXML
   void handleCloseAction(ActionEvent event) {
-    Platform.exit();
-    System.exit(0);
+    exit();
   }
 
   @FXML
   void handleMinimizedAction(ActionEvent event) {
-    primaryStage.setIconified(true);
+    minimize(primaryStage);
   }
 
   @Override
@@ -185,7 +179,7 @@ public class LoginViewController implements Initializable {
     this.resourceBundle = resources;
 
     /* Drag and Drop */
-    configureLoginWindowsDragAndDrop();
+    configureLoginWindowsDragAndDrop(mainLayout);
 
     // 初始焦点
     primaryStage.setOnShown(e -> hostTextField.requestFocus());
@@ -228,24 +222,6 @@ public class LoginViewController implements Initializable {
             }
           });
     }
-  }
-
-  /** 配置登录窗口支持拖拉拽 */
-  private void configureLoginWindowsDragAndDrop() {
-    mainLayout.setOnMousePressed(
-        event -> {
-          xOffset = primaryStage.getX() - event.getScreenX();
-          yOffset = primaryStage.getY() - event.getScreenY();
-          mainLayout.setCursor(CLOSED_HAND);
-        });
-
-    mainLayout.setOnMouseDragged(
-        event -> {
-          primaryStage.setX(event.getScreenX() + xOffset);
-          primaryStage.setY(event.getScreenY() + yOffset);
-        });
-
-    mainLayout.setOnMouseReleased(event -> mainLayout.setCursor(DEFAULT));
   }
 
   private enum Direction {
