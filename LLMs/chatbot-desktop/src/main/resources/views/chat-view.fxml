@@ -16,7 +16,7 @@
    <center>
       <StackPane BorderPane.alignment="CENTER">
          <children>
-            <HiddenSidesPane fx:id="leftSideBar" />
+            <HiddenSidesPane fx:id="hiddenSidesPane" />
          </children>
       </StackPane>
    </center>

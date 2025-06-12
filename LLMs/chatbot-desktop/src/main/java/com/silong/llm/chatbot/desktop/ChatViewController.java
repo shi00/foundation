@@ -26,6 +26,7 @@ import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primarySt
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.UUID;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -56,11 +57,13 @@ public class ChatViewController extends ViewController implements Initializable 
 
   @FXML private Button newConversation;
 
-  @FXML private HiddenSidesPane leftSideBar;
+  @FXML private HiddenSidesPane hiddenSidesPane;
 
   @FXML private BorderPane mainLayout;
 
   @Setter private AsyncRestClient restClient;
+
+  private String conversationId;
 
   private ResourceBundle resourceBundle;
 
@@ -93,7 +96,6 @@ public class ChatViewController extends ViewController implements Initializable 
     leftContent.setStyle("-fx-background-color: #81D4FA; -fx-padding: 10;");
 
     // 3. 创建HiddenSidesPane并添加内容
-    HiddenSidesPane hiddenSidesPane = leftSideBar;
     hiddenSidesPane.setContent(centerContent); // 设置主内容
     hiddenSidesPane.setTop(topContent); // 设置顶部内容
     hiddenSidesPane.setLeft(leftContent); // 设置左侧内容
@@ -123,5 +125,7 @@ public class ChatViewController extends ViewController implements Initializable 
   }
 
   @FXML
-  void handleNewConversationAction(ActionEvent event) {}
+  void handleNewConversationAction(ActionEvent event) {
+    this.conversationId = UUID.randomUUID().toString().replace("-", "");
+  }
 }
