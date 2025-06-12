@@ -112,10 +112,13 @@ public class LoginViewController implements Initializable {
     int port;
     try {
       port = Integer.parseInt(portTextField.getText());
+      if (port < 1 || port > 65535) {
+        showPortErrorDialog();
+        return;
+      }
     } catch (NumberFormatException e) {
       log.error("Invalid port number.", e);
-      showErrorDialog("input.port.error");
-      portTextField.clear();
+      showPortErrorDialog();
       return;
     }
 
@@ -150,6 +153,11 @@ public class LoginViewController implements Initializable {
     stage.setScene(scene);
     ResizeHelper.addResizeListener(stage);
     stage.centerOnScreen();
+  }
+
+  private void showPortErrorDialog() {
+    showErrorDialog("input.port.error");
+    portTextField.clear();
   }
 
   private void showErrorDialog(String messageKey) {
