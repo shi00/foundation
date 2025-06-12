@@ -27,7 +27,10 @@ import static javafx.scene.Cursor.CLOSED_HAND;
 import static javafx.scene.Cursor.DEFAULT;
 import static javafx.scene.input.KeyCode.TAB;
 
+import atlantafx.base.theme.Dracula;
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
+import com.silong.llm.chatbot.desktop.utils.ResizeHelper;
+import java.io.IOException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ResourceBundle;
@@ -37,8 +40,11 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -47,7 +53,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.controlsfx.control.textfield.CustomPasswordField;
 import org.controlsfx.control.textfield.CustomTextField;
@@ -91,6 +100,7 @@ public class LoginViewController implements Initializable {
   private double yOffset;
 
   @FXML
+  @SneakyThrows(IOException.class)
   void handleLoginAction(ActionEvent event) {
     String host = hostTextField.getText();
     if (host == null || (host = host.trim()).isEmpty()) {
@@ -117,6 +127,29 @@ public class LoginViewController implements Initializable {
     }
 
     var client = AsyncRestClient.create(host, port, credential);
+
+    FXMLLoader loader =
+        new FXMLLoader(getClass().getResource(CONFIGURATION.chatViewPath()), resourceBundle);
+    Parent window = loader.load();
+    ChatViewController controller = loader.getController();
+    controller.setRestClient(client);
+    var scene = new Scene(window);
+    scene.getStylesheets().add(new Dracula().getUserAgentStylesheet());
+    var stage = (Stage) primaryStage.getScene().getWindow();
+    stage.setResizable(true);
+    stage.setWidth(CONFIGURATION.chatWindowSize().width());
+    stage.setHeight(CONFIGURATION.chatWindowSize().height());
+    stage.setMinWidth(CONFIGURATION.chatWindowSize().width() / 2.0);
+    stage.setMinHeight(CONFIGURATION.chatWindowSize().height() / 2.0);
+
+    stage.setOnCloseRequest(
+        (WindowEvent e) -> {
+          Platform.exit();
+          System.exit(0);
+        });
+    stage.setScene(scene);
+    ResizeHelper.addResizeListener(stage);
+    stage.centerOnScreen();
   }
 
   private void showErrorDialog(String messageKey) {
