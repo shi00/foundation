@@ -89,7 +89,9 @@ public class ChatbotDesktopApplication extends Application {
             root,
             CONFIGURATION.loginWindowSize().width(),
             CONFIGURATION.loginWindowSize().height());
-    scene.getStylesheets().add(new Dracula().getUserAgentStylesheet());
+    String stylesheet = new Dracula().getUserAgentStylesheet();
+    scene.getStylesheets().add(stylesheet);
+    Application.setUserAgentStylesheet(stylesheet);
     primaryStage.initStyle(UNDECORATED);
     primaryStage.setTitle(resourceBundle.getString("app.title"));
     primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.iconPath())));
