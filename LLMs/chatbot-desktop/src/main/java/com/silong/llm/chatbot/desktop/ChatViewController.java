@@ -42,7 +42,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.controlsfx.control.HiddenSidesPane;
 import org.controlsfx.tools.Borders;
 import org.kordamp.ikonli.bootstrapicons.BootstrapIcons;
-import org.kordamp.ikonli.javafx.FontIcon;
 
 /**
  * 聊天界面控制器
@@ -58,7 +57,7 @@ public class ChatViewController extends ViewController implements Initializable 
 
   @FXML private Button minimizedBtn;
 
-  @FXML private Button newConversation;
+  @FXML private Button newConversationBtn;
 
   @FXML private HiddenSidesPane hiddenSidesPane;
 
@@ -85,8 +84,12 @@ public class ChatViewController extends ViewController implements Initializable 
     configureButton(
         closeBtn, BootstrapIcons.X_CIRCLE, 16, null, resources.getString("closeBtn.tooltip"));
 
-    // 图标大小 16px
-    newConversation.setGraphic(FontIcon.of(BootstrapIcons.PERSON_PLUS_FILL, 16));
+    configureButton(
+        newConversationBtn,
+        BootstrapIcons.PERSON_PLUS_FILL,
+        16,
+        null,
+        resources.getString("newConversationBtn.tooltip"));
 
     // 1. 创建主内容区域
     var chatArea = new TextArea();
