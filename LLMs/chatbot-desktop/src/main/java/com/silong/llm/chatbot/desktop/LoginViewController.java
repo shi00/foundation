@@ -187,11 +187,15 @@ public class LoginViewController extends ViewController implements Initializable
     // 配置焦点转移顺序
     configureFocusTraversalOrder();
 
-    // 图标大小 16px
-    minimizedBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
+    configureButton(
+        minimizedBtn,
+        BootstrapIcons.DASH_CIRCLE,
+        16,
+        null,
+        resources.getString("minimizedBtn.tooltip"));
 
-    // 图标大小 16px
-    closeBtn.setGraphic(FontIcon.of(BootstrapIcons.X_CIRCLE, 16));
+    configureButton(
+        closeBtn, BootstrapIcons.X_CIRCLE, 16, null, resources.getString("closeBtn.tooltip"));
 
     hostLabel.setGraphic(FontIcon.of(FontAwesomeSolid.SERVER, 64));
 

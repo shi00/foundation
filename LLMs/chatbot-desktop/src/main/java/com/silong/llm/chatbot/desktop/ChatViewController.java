@@ -75,11 +75,15 @@ public class ChatViewController extends ViewController implements Initializable 
     this.resourceBundle = resources;
     this.configureLoginWindowsDragAndDrop(mainLayout);
 
-    // 图标大小 16px
-    minimizedBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
+    configureButton(
+        minimizedBtn,
+        BootstrapIcons.DASH_CIRCLE,
+        16,
+        null,
+        resources.getString("minimizedBtn.tooltip"));
 
-    // 图标大小 16px
-    closeBtn.setGraphic(FontIcon.of(BootstrapIcons.X_CIRCLE, 16));
+    configureButton(
+        closeBtn, BootstrapIcons.X_CIRCLE, 16, null, resources.getString("closeBtn.tooltip"));
 
     // 图标大小 16px
     newConversation.setGraphic(FontIcon.of(BootstrapIcons.PERSON_PLUS_FILL, 16));
@@ -88,7 +92,7 @@ public class ChatViewController extends ViewController implements Initializable 
     var chatArea = new TextArea();
     chatArea.setPromptText("Chat Area");
     var stackPane = new StackPane(chatArea);
-//    stackPane.setStyle("-fx-background-color: #E0E0E0; -fx-padding: 20;");
+    //    stackPane.setStyle("-fx-background-color: #E0E0E0; -fx-padding: 20;");
     var centerContent =
         Borders.wrap(stackPane)
             .etchedBorder()
@@ -110,15 +114,6 @@ public class ChatViewController extends ViewController implements Initializable 
     // 4. 配置触发行为（默认鼠标悬停触发）
     hiddenSidesPane.setTriggerDistance(30); // 边缘触发距离（像素）
     hiddenSidesPane.setAnimationDelay(Duration.millis(200)); // 动画延迟（毫秒）
-
-    // 创建Tooltip并设置属性
-    //    Tooltip tooltip = new Tooltip();
-    //    tooltip.setTextAlignment(TextAlignment.CENTER);
-    //    tooltip.setText(resources.getString("foldbtn.tooltip"));
-    //    tooltip.setShowDelay(Duration.millis(100)); // 鼠标悬停200ms后显示
-    //    tooltip.setHideDelay(Duration.millis(100)); // 鼠标移开1000ms后隐藏
-    //    tooltip.setShowDuration(Duration.INDEFINITE); // 永久显示，直到鼠标移开
-    //    foldBtn.setTooltip(tooltip);
   }
 
   @FXML
