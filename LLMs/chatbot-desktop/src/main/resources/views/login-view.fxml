@@ -88,7 +88,7 @@
                 </HBox>
                 <HBox alignment="CENTER" GridPane.columnSpan="6" GridPane.rowIndex="6">
                     <children>
-                        <Button fx:id="loginBtn" alignment="CENTER" mnemonicParsing="false" onAction="#handleLoginAction" prefHeight="25.0" prefWidth="80.0" styleClass="button-outlined" textAlignment="CENTER">
+                        <Button fx:id="loginBtn" alignment="CENTER" mnemonicParsing="false" onAction="#handleLoginAction" prefHeight="25.0" prefWidth="80.0" styleClass="button-outlined" text="%loginBtn.tooltip" textAlignment="CENTER">
                             <font>
                                 <Font size="14.0" />
                             </font>

@@ -195,13 +195,6 @@ public class LoginViewController extends ViewController implements Initializable
         resources.getString("minimizedBtn.tooltip"));
 
     configureButton(
-        loginBtn,
-        BootstrapIcons.DOOR_OPEN_FILL,
-        128,
-        null,
-        resources.getString("loginBtn.tooltip"));
-
-    configureButton(
         closeBtn, BootstrapIcons.X_CIRCLE, 16, null, resources.getString("closeBtn.tooltip"));
 
     hostLabel.setGraphic(FontIcon.of(FontAwesomeSolid.SERVER, 64));
