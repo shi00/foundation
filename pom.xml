@@ -208,7 +208,7 @@
         <java-jwt.version>4.5.0</java-jwt.version>
         <oshi-core.version>6.8.1</oshi-core.version>
         <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
-        <redisson-spring-boot-starter.version>3.46.0</redisson-spring-boot-starter.version>
+        <redisson-spring-boot-starter.version>3.49.0</redisson-spring-boot-starter.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
         <langchain4j.version>1.0.0</langchain4j.version>
         <k8s-client.version>23.0.0</k8s-client.version>
