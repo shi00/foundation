@@ -21,8 +21,6 @@
 
 package com.silong.foundation.springboot.starter.jwt;
 
-import static com.redis.testcontainers.RedisContainer.DEFAULT_IMAGE_NAME;
-import static com.redis.testcontainers.RedisContainer.DEFAULT_TAG;
 import static com.silong.foundation.springboot.starter.jwt.TestUser.SAM;
 import static com.silong.foundation.springboot.starter.jwt.TestUser.TOM;
 import static com.silong.foundation.springboot.starter.jwt.common.Constants.ACCESS_TOKEN;
@@ -32,7 +30,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.util.StringUtils.hasLength;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redis.testcontainers.RedisContainer;
 import com.silong.foundation.springboot.starter.jwt.TestService.User;
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
@@ -41,6 +38,7 @@ import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider
 import com.silong.foundation.webclient.reactive.WebClients;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
 import com.silong.foundation.webclient.reactive.config.WebClientSslConfig;
+import java.time.Duration;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
@@ -57,8 +55,11 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -71,7 +72,7 @@ import reactor.test.StepVerifier;
  */
 @Slf4j
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@Testcontainers(disabledWithoutDocker = true)
+@Testcontainers
 @SpringBootTest(classes = JwtAuthTestApp.class, webEnvironment = RANDOM_PORT)
 @TestPropertySource(locations = "classpath:application.properties")
 @ExtendWith(SpringExtension.class)
@@ -83,8 +84,11 @@ public class JwtAuthTests {
   static final Faker FAKER = new Faker();
 
   @Container
-  private static final RedisContainer REDIS_CONTAINER =
-      new RedisContainer(DEFAULT_IMAGE_NAME.withTag(DEFAULT_TAG)).withExposedPorts(6379);
+  public static GenericContainer<?> REDIS_CONTAINER =
+      new GenericContainer<>(DockerImageName.parse("redis:6.2.6"))
+          .withExposedPorts(6379)
+          .waitingFor(new HostPortWaitStrategy().forPorts(6379))
+          .withStartupTimeout(Duration.ofMinutes(1));
 
   public final WebClientConfig WEB_CLIENT_CONFIG = new WebClientConfig();
 
@@ -104,6 +108,11 @@ public class JwtAuthTests {
   static void configureProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
     registry.add("spring.data.redis.port", () -> REDIS_CONTAINER.getMappedPort(6379).toString());
+  }
+
+  @AfterAll
+  static void afterAll() {
+    REDIS_CONTAINER.close();
   }
 
   @BeforeEach
