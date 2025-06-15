@@ -33,8 +33,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.jwt.TestService.User;
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
-import com.silong.foundation.springboot.starter.jwt.provider.DefaultUserDetailsProvider;
-import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.DefaultUserAuthenticationProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import com.silong.foundation.webclient.reactive.WebClients;
 import com.silong.foundation.webclient.reactive.config.WebClientConfig;
 import com.silong.foundation.webclient.reactive.config.WebClientSslConfig;
@@ -94,7 +94,7 @@ public class JwtAuthTests {
 
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  @Autowired private UserDetailsProvider userDetailsProvider;
+  @Autowired private UserAuthenticationProvider userAuthenticationProvider;
 
   @LocalServerPort private int port;
 
@@ -117,7 +117,8 @@ public class JwtAuthTests {
 
   @BeforeEach
   void init() {
-    DefaultUserDetailsProvider provider = (DefaultUserDetailsProvider) userDetailsProvider;
+    DefaultUserAuthenticationProvider provider =
+        (DefaultUserAuthenticationProvider) userAuthenticationProvider;
     provider.addUser(SAM);
     provider.addUser(TOM);
     WEB_CLIENT_CONFIG.baseUrl("https://127.0.0.1:" + port);
