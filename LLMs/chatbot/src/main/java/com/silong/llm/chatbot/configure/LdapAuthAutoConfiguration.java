@@ -27,10 +27,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
-import org.springframework.ldap.pool2.factory.PoolConfig;
-import org.springframework.ldap.pool2.factory.PooledContextSource;
-import org.springframework.ldap.pool2.validation.DefaultDirContextValidator;
-import org.springframework.ldap.transaction.compensating.manager.TransactionAwareContextSourceProxy;
 
 /**
  * 配置ldap鉴权
@@ -60,29 +56,29 @@ public class LdapAuthAutoConfiguration {
     return contextSource;
   }
 
-  @Bean(destroyMethod = "destroy")
-  public PooledContextSource poolingContextSource() {
-    // 连接池配置
-    PoolConfig config = new PoolConfig();
-    config.setMaxTotal(20);
-    config.setFairness(true);
-    config.setLifo(true);
-    config.setBlockWhenExhausted(false);
-    config.setEvictionPolicyClassName("org.apache.commons.pool2.impl.DefaultEvictionPolicy");
-    config.setMaxWaitMillis(5000);
-    config.setTestOnBorrow(true);
-    config.setTestWhileIdle(true);
-    config.setTimeBetweenEvictionRunsMillis(30000);
-    PooledContextSource pooledContextSource = new PooledContextSource(config);
-    pooledContextSource.setContextSource(contextSource());
-    pooledContextSource.setDirContextValidator(new DefaultDirContextValidator());
-    return pooledContextSource;
-  }
-
-  @Bean
-  public TransactionAwareContextSourceProxy transactionAwareContextSourceProxy() {
-    return new TransactionAwareContextSourceProxy(poolingContextSource());
-  }
+  //  @Bean(destroyMethod = "destroy")
+  //  public PooledContextSource poolingContextSource() {
+  //    // 连接池配置
+  //    PoolConfig config = new PoolConfig();
+  //    config.setMaxTotal(20);
+  //    config.setFairness(true);
+  //    config.setLifo(true);
+  //    config.setBlockWhenExhausted(false);
+  //    config.setEvictionPolicyClassName("org.apache.commons.pool2.impl.DefaultEvictionPolicy");
+  //    config.setMaxWaitMillis(5000);
+  //    config.setTestOnBorrow(true);
+  //    config.setTestWhileIdle(true);
+  //    config.setTimeBetweenEvictionRunsMillis(30000);
+  //    PooledContextSource pooledContextSource = new PooledContextSource(config);
+  //    pooledContextSource.setContextSource(contextSource());
+  //    pooledContextSource.setDirContextValidator(new DefaultDirContextValidator());
+  //    return pooledContextSource;
+  //  }
+  //
+  //  @Bean
+  //  public TransactionAwareContextSourceProxy transactionAwareContextSourceProxy() {
+  //    return new TransactionAwareContextSourceProxy(poolingContextSource());
+  //  }
 
   @Bean
   public LdapTemplate ldapTemplate() {
