@@ -7,18 +7,18 @@ objectClass: inetOrgPerson
 uid: tom
 cn: Tom User
 sn: User
-userPassword: {SSHA}BoklLfsdrP9/J0oC25qikB+zdSxod7wA  # 123456 的哈希
+userPassword: 123456
 
 dn: uid=messi,ou=people,dc=test,dc=com
 objectClass: inetOrgPerson
 uid: messi
 cn: Lionel Messi
 sn: Messi
-userPassword: {SSHA}TAVIgtmvP5RTyYhwALm62sktbhfXiYjq  # abcdef 的哈希
+userPassword: abcdef
 
 dn: uid=jone,ou=people,dc=test,dc=com
 objectClass: inetOrgPerson
 uid: jone
 cn: Jone Smith
 sn: Smith
-userPassword: {SSHA}Nmv7Lzns8n1THkyR/LewZJT0Ub62F9r0  # Jone@123 的哈希
+userPassword: Jone@123
