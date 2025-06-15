@@ -29,15 +29,13 @@ import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProp
 import com.silong.foundation.springboot.starter.jwt.exception.AccessTokenExpiredException;
 import com.silong.foundation.springboot.starter.jwt.exception.IdentityNotFoundException;
 import com.silong.foundation.springboot.starter.jwt.exception.IllegalAccessTokenException;
-import com.silong.foundation.springboot.starter.jwt.exception.IllegalUserException;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
-import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import reactor.core.publisher.Mono;
 
 /**
@@ -56,7 +54,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
 
   private final JWTProvider jwtProvider;
 
-  private final UserDetailsProvider userDetailsProvider;
+  private final UserAuthenticationProvider userAuthenticationProvider;
 
   private final String appName;
 
@@ -66,19 +64,19 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
    * @param appName 服务名
    * @param tokenCache token内存缓存
    * @param jwtProvider jwt provider
-   * @param userDetailsProvider user details provider
+   * @param userAuthenticationProvider user details provider
    * @param authProperties 配置
    */
   public SimpleReactiveAuthenticationManager(
       String appName,
       ConcurrentMap<String, String> tokenCache,
       JWTProvider jwtProvider,
-      UserDetailsProvider userDetailsProvider,
+      UserAuthenticationProvider userAuthenticationProvider,
       JWTAuthProperties authProperties) {
     this.appName = appName;
     this.tokenCache = tokenCache;
     this.jwtProvider = jwtProvider;
-    this.userDetailsProvider = userDetailsProvider;
+    this.userAuthenticationProvider = userAuthenticationProvider;
     this.authProperties = authProperties;
   }
 
@@ -118,12 +116,8 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
       throw new IdentityNotFoundException("Illegal Access Token.");
     }
 
-    // 查找用户
-    UserDetails userDetails = userDetailsProvider.findByUserName(userName);
-    if (userDetails == null) {
-      log.error("{} could not be found.", userName);
-      throw new IllegalUserException("Illegal Access Token.");
-    }
+    // 检查用户存在性
+    userAuthenticationProvider.checkUserExists(userName);
 
     // 查询缓存，确认token是否由服务发放
     String tokenRecord = tokenCache.get(generateTokenKey(userName, appName, token));

@@ -25,8 +25,8 @@ import static org.springframework.boot.autoconfigure.condition.ConditionalOnWebA
 import static org.springframework.security.crypto.password.Pbkdf2PasswordEncoder.SecretKeyFactoryAlgorithm.PBKDF2WithHmacSHA256;
 
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
-import com.silong.foundation.springboot.starter.jwt.provider.DefaultUserDetailsProvider;
-import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.DefaultUserAuthenticationProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,7 +34,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 
 /**
@@ -48,21 +47,16 @@ import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 @EnableConfigurationProperties(JWTAuthProperties.class)
 @ConditionalOnProperty(prefix = "jwt-auth", value = "auth-path")
 @ConditionalOnWebApplication(type = REACTIVE)
-public class UserProviderAutoConfiguration {
+public class UserAuthenticationProviderAutoConfiguration {
 
   private JWTAuthProperties jwtAuthProperties;
 
   @Bean
   @ConditionalOnMissingBean
-  PasswordEncoder passwordEncoder() {
-    return new Pbkdf2PasswordEncoder(
-        jwtAuthProperties.getSignKey(), 16, 310000, PBKDF2WithHmacSHA256);
-  }
-
-  @Bean
-  @ConditionalOnMissingBean
-  UserDetailsProvider defaultUserDetailsProvider() {
-    return new DefaultUserDetailsProvider();
+  UserAuthenticationProvider defaultUserAuthenticationProvider() {
+    return new DefaultUserAuthenticationProvider(
+        new Pbkdf2PasswordEncoder(
+            jwtAuthProperties.getSignKey(), 16, 310000, PBKDF2WithHmacSHA256));
   }
 
   @Autowired

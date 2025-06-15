@@ -32,7 +32,7 @@ import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import com.silong.foundation.springboot.starter.jwt.handler.AuthTokenHandler;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
-import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -50,7 +50,6 @@ import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfigurat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.function.server.RequestPredicates;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -77,12 +76,10 @@ public class RoutesAutoConfiguration {
   @Bean
   AuthTokenHandler registerAuthTokenHandler(
       @Value("${spring.application.name}") String appName,
-      UserDetailsProvider userDetailsProvider,
-      PasswordEncoder passwordEncoder,
+      UserAuthenticationProvider userAuthenticationProvider,
       JWTProvider jwtProvider,
       Map<String, String> tokenCache) {
-    return new AuthTokenHandler(
-        appName, userDetailsProvider, passwordEncoder, jwtProvider, tokenCache);
+    return new AuthTokenHandler(appName, userAuthenticationProvider, jwtProvider, tokenCache);
   }
 
   @Bean

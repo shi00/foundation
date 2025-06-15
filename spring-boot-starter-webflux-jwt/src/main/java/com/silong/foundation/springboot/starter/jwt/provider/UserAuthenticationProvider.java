@@ -21,35 +21,29 @@
 
 package com.silong.foundation.springboot.starter.jwt.provider;
 
-import java.util.Set;
-import javax.annotation.Nullable;
+import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import org.springframework.lang.NonNull;
-import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * 用户详情提供者接口
+ * 用户鉴权提供者接口
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2024-05-08 14:02
  */
-public interface UserDetailsProvider {
+public interface UserAuthenticationProvider {
 
   /**
-   * 根据用户名查询用户详情
+   * 检查用户是否存在
    *
    * @param userName 用户名
-   * @return 用户详情
    */
-  @Nullable
-  UserDetails findByUserName(@NonNull String userName);
+  void checkUserExists(@NonNull String userName);
 
   /**
-   * 根据用户名获取用户角色列表
+   * 用户鉴权
    *
-   * @param userName 用户名
-   * @return 角色列表
+   * @param credentials 用户凭证
    */
-  @NonNull
-  Set<String> findUserRoles(@NonNull String userName);
+  void authenticate(@NonNull Credentials credentials);
 }

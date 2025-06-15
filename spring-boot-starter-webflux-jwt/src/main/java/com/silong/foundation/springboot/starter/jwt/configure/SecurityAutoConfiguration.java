@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.jwt.configure.config.JWTAuthProperties;
 import com.silong.foundation.springboot.starter.jwt.provider.DefaultJwtProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
-import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleReactiveAuthenticationManager;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAccessDeniedHandler;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleServerAuthenticationConverter;
@@ -81,7 +81,7 @@ public class SecurityAutoConfiguration {
   private ConcurrentMap<String, String> tokenCache;
 
   /** 用户信息提供者 */
-  private UserDetailsProvider userDetailsProvider;
+  private UserAuthenticationProvider userAuthenticationProvider;
 
   /** 配置 */
   private JWTAuthProperties JWTAuthProperties;
@@ -192,7 +192,7 @@ public class SecurityAutoConfiguration {
     AuthenticationWebFilter authenticationWebFilter =
         new AuthenticationWebFilter(
             new SimpleReactiveAuthenticationManager(
-                appName, tokenCache, jwtProvider, userDetailsProvider, JWTAuthProperties));
+                appName, tokenCache, jwtProvider, userAuthenticationProvider, JWTAuthProperties));
     authenticationWebFilter.setServerAuthenticationConverter(
         new SimpleServerAuthenticationConverter(JWTAuthProperties));
     authenticationWebFilter.setAuthenticationSuccessHandler(
@@ -208,8 +208,8 @@ public class SecurityAutoConfiguration {
   }
 
   @Autowired
-  public void setUserDetailsProvider(UserDetailsProvider userDetailsProvider) {
-    this.userDetailsProvider = userDetailsProvider;
+  public void setUserAuthenticationProvider(UserAuthenticationProvider userAuthenticationProvider) {
+    this.userAuthenticationProvider = userAuthenticationProvider;
   }
 
   @Autowired
