@@ -127,6 +127,11 @@ public class ChatbotApplicationTests {
   }
 
   @Test
+  void searchUser() {
+    assertDoesNotThrow(() -> openLdapUserProvider.checkUserExists("tom"));
+  }
+
+  @Test
   @Order(2)
   void testImportUsers() {
     Credentials credentials = new Credentials();

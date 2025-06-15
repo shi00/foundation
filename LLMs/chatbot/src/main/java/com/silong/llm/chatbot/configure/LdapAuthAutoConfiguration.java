@@ -86,6 +86,6 @@ public class LdapAuthAutoConfiguration {
 
   @Bean
   public LdapTemplate ldapTemplate() {
-    return new LdapTemplate(transactionAwareContextSourceProxy());
+    return new LdapTemplate(contextSource());
   }
 }

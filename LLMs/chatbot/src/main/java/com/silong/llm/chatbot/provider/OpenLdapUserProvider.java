@@ -62,7 +62,8 @@ public class OpenLdapUserProvider implements UserAuthenticationProvider {
     filter.and(new EqualsFilter("objectClass", "inetOrgPerson")); // 根据实际对象类调整
     filter.and(new EqualsFilter("uid", userName)); // 用户名属性可能是 uid、cn、sAMAccountName 等
     List<?> results =
-        ldapTemplate.search("", filter.encode(), (ContextMapper<Boolean>) ctx -> true);
+        ldapTemplate.search(
+            LdapUtils.emptyLdapName(), filter.encode(), (ContextMapper<Boolean>) ctx -> true);
     if (results.isEmpty()) {
       log.warn("{} does not exist.", userName);
       throw new IllegalUserException(String.format("%s does not exist.", userName));
@@ -76,9 +77,7 @@ public class OpenLdapUserProvider implements UserAuthenticationProvider {
             .and(new EqualsFilter("objectClass", "inetOrgPerson"))
             .and(new EqualsFilter("uid", credentials.getUserName()));
     if (!ldapTemplate.authenticate(
-        LdapUtils.newLdapName("ou=people,dc=test,dc=com"),
-        filter.encode(),
-        credentials.getPassword())) {
+        LdapUtils.emptyLdapName(), filter.encode(), credentials.getPassword())) {
       log.warn("{} authentication failed.", credentials.getUserName());
       throw new IllegalUserException(
           String.format("%s authentication failed.", credentials.getUserName()));
