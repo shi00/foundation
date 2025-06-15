@@ -106,7 +106,7 @@ public class CryptoEncryptPropertiesPostProcessor implements EnvironmentPostProc
       String key = e.getKey().toString();
       return new SimpleEntry<>(key, AesGcmToolkit.decrypt(environment.getProperty(key), workKey));
     } catch (Exception ex) {
-      log.error(String.format("Failed to covert %s to decrypt property.", e), ex);
+      log.error("Failed to covert {} to decrypt property.", e, ex);
       return null;
     }
   }
