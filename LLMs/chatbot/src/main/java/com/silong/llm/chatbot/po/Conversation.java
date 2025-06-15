@@ -19,22 +19,31 @@
  *
  */
 
-package com.silong.llm.chatbot.desktop.config;
+package com.silong.llm.chatbot.po;
+
+import java.util.Date;
+import java.util.List;
+import lombok.Data;
 
 /**
- * restful client请求配置
+ * 会话记录
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2025-05-31 17:28
+ * @since 2025-05-19 20:50
  */
-public record HttpClientRequestConfig(
+@Data
+public class Conversation {
 
-    // 流式聊天请求路径
-    String chatStreamRequestPath,
+  /** 会话id */
+  private String conversationId;
 
-    // 对话历史请求路径
-    String conversationHistoryRequestPath,
+  /** 会话创建时间 */
+  private Date createdTime;
 
-    // 响应超时时间，单位：秒
-    int responseTimeout) {}
+  /** 会话摘要 */
+  private String conversationDigest;
+
+  /** 聊天记录 */
+  private List<ChatRound> records;
+}

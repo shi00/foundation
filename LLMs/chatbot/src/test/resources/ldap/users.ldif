@@ -7,18 +7,18 @@ objectClass: inetOrgPerson
 uid: tom
 cn: Tom User
 sn: User
-userPassword: 123456
+userPassword: {SSHA}hpNNPnQe/Jhfo5DCHGMIKhigQi/yLAPH
 
 dn: uid=messi,ou=people,dc=test,dc=com
 objectClass: inetOrgPerson
 uid: messi
 cn: Lionel Messi
 sn: Messi
-userPassword: abcdef
+userPassword: {SSHA}8CogfpyPeG3g7oUjar3HloG4L3kd2Cfz
 
 dn: uid=jone,ou=people,dc=test,dc=com
 objectClass: inetOrgPerson
 uid: jone
 cn: Jone Smith
 sn: Smith
-userPassword: Jone@123
+userPassword: {SSHA}fA2uwUHD/O8VIfQ0Xqueb0kWtJvGIwTN

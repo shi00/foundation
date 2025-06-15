@@ -85,7 +85,9 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
 
   private final CloseableHttpAsyncClient httpAsyncClient;
 
-  private final URI requestUri;
+  private final URI chatStreamRequestUri;
+
+  private final URI chatHistoryRequestUri;
 
   private final List<ResponseCallback> responseCallbacks = new CopyOnWriteArrayList<>();
 
@@ -97,13 +99,26 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
    * @param credential 用户凭证
    */
   public DefaultAsyncRestClient(@NonNull String host, int port, @NonNull String credential) {
-    this.requestUri =
+    this.chatStreamRequestUri =
         URI.create(
             String.format(
                 "https://%s:%d%s",
                 host,
                 port,
-                CONFIGURATION.httpClientConfig().httpClientRequestConfig().requestPath()));
+                CONFIGURATION
+                    .httpClientConfig()
+                    .httpClientRequestConfig()
+                    .chatStreamRequestPath()));
+    this.chatHistoryRequestUri =
+        URI.create(
+            String.format(
+                "https://%s:%d%s",
+                host,
+                port,
+                CONFIGURATION
+                    .httpClientConfig()
+                    .httpClientRequestConfig()
+                    .conversationHistoryRequestPath()));
     this.httpAsyncClient = createHttpClient(credential);
   }
 
@@ -234,7 +249,7 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
   @Override
   public Future<?> ask(@NonNull String query, @NonNull String conversationId) {
     return httpAsyncClient.execute(
-        SimpleRequestBuilder.post(requestUri)
+        SimpleRequestBuilder.post(chatStreamRequestUri)
             .addHeader(CONVERSATION_ID, conversationId)
             .setBody(query, TEXT_PLAIN)
             .build(),

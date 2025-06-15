@@ -17,7 +17,8 @@
       "maxRetries": 3
     },
     "httpClientRequestConfig": {
-      "requestPath": "/chat/stream",
+      "chatStreamRequestPath": "/chat/stream",
+      "conversationHistoryRequestPath": "/chat/history",
       "responseTimeout": 30
     },
     "httpClientConnectionPoolConfig": {

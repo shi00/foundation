@@ -25,16 +25,15 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.util.StringUtils.hasLength;
 
+import com.silong.llm.chatbot.po.Conversation;
+import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 
@@ -61,6 +60,19 @@ public class ChatbotController {
    */
   public ChatbotController(@NonNull ChatClient chatClient) {
     this.chatClient = chatClient;
+  }
+
+  /**
+   * 查询会话列表
+   *
+   * @param pageIndex 页码
+   * @param sizePerPage 每页包含的记录数
+   * @return 会话列表
+   */
+  @GetMapping(value = "/chat/history", produces = MediaType.APPLICATION_JSON_VALUE)
+  public List<Conversation> listConversations(
+      @RequestParam int pageIndex, @RequestParam int sizePerPage) {
+    return List.of();
   }
 
   /**

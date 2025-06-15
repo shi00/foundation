@@ -21,12 +21,14 @@
 
 package com.silong.llm.chatbot;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
+import com.silong.llm.chatbot.provider.OpenLdapUserProvider;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
@@ -35,8 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.filter.EqualsFilter;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -90,7 +90,7 @@ public class ChatbotApplicationTests {
   @Value("${jwt-auth.auth-path}")
   private String loginPath;
 
-  @Autowired private LdapTemplate ldapTemplate;
+  @Autowired private OpenLdapUserProvider openLdapUserProvider;
 
   @BeforeAll
   static void initUser() throws Exception {
@@ -102,6 +102,22 @@ public class ChatbotApplicationTests {
             "-D", "cn=admin,dc=test,dc=com",
             "-w", ADMIN_PASSWORD,
             "-f", "/tmp/users.ldif"));
+
+    System.out.println(
+        LDAP_CONTAINER.execInContainer(
+            "ldapsearch",
+            "-x",
+            "-H",
+            "ldap://localhost:389",
+            "-D",
+            "cn=admin,dc=test,dc=com",
+            "-w",
+            ADMIN_PASSWORD,
+            "-b",
+            "dc=test,dc=com",
+            "(objectClass=*)"));
+
+    //    System.out.println(LDAP_CONTAINER.execInContainer("slappasswd", "-s", "Jone@123"));
   }
 
   @Test
@@ -113,21 +129,25 @@ public class ChatbotApplicationTests {
   @Test
   @Order(2)
   void testImportUsers() {
-    EqualsFilter filter = new EqualsFilter("uid", "tom");
-    assertTrue(ldapTemplate.authenticate("", filter.encode(), "123456"));
+    Credentials credentials = new Credentials();
+    credentials.setUserName("tom");
+    credentials.setPassword("123456");
+    assertDoesNotThrow(() -> openLdapUserProvider.authenticate(credentials));
 
-    filter = new EqualsFilter("uid", "messi");
-    assertTrue(ldapTemplate.authenticate("", filter.encode(), "abcdef"));
+    credentials.setUserName("messi");
+    credentials.setPassword("abcdef");
+    assertDoesNotThrow(() -> openLdapUserProvider.authenticate(credentials));
 
-    filter = new EqualsFilter("uid", "jone");
-    assertTrue(ldapTemplate.authenticate("", filter.encode(), "Jone@123"));
+    credentials.setUserName("jone");
+    credentials.setPassword("Jone@123");
+    assertDoesNotThrow(() -> openLdapUserProvider.authenticate(credentials));
   }
 
   @Test
   void testLogin() {
     Credentials credentials = new Credentials();
-    credentials.setPassword("mypassword");
-    credentials.setUserName("sam");
+    credentials.setPassword("123456");
+    credentials.setUserName("tom");
 
     TokenBody responseBody =
         webTestClient
