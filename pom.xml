@@ -210,7 +210,6 @@
         <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
         <redisson-spring-boot-starter.version>3.49.0</redisson-spring-boot-starter.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
-        <langchain4j.version>1.0.0</langchain4j.version>
         <k8s-client.version>23.0.0</k8s-client.version>
         <!--开源组件-->
 
@@ -274,19 +273,6 @@
                 <version>${k8s-client.version}</version>
             </dependency>
             <!-- k8s client -->
-
-            <!-- LLM AI -->
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j</artifactId>
-                <version>${langchain4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
-                <version>${langchain4j.version}</version>
-            </dependency>
-            <!-- LLM AI -->
 
             <!-- protobuf -->
             <dependency>
