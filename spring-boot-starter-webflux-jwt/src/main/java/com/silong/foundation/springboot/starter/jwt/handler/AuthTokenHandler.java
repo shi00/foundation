@@ -27,19 +27,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.ErrorDetail;
 import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
-import com.silong.foundation.springboot.starter.jwt.exception.IllegalUserException;
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
-import com.silong.foundation.springboot.starter.jwt.provider.UserDetailsProvider;
+import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
-import org.springframework.security.authentication.AccountExpiredException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.CredentialsExpiredException;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.HandlerFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -62,28 +55,23 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
 
   private final JWTProvider jwtProvider;
 
-  private final UserDetailsProvider userDetailsProvider;
-
-  private final PasswordEncoder passwordEncoder;
+  private final UserAuthenticationProvider userAuthenticationProvider;
 
   /**
    * 构造方法
    *
    * @param appName 应用名
-   * @param userDetailsProvider 用户详情供应者
-   * @param passwordEncoder 密码校验
+   * @param userAuthenticationProvider 用户详情供应者
    * @param jwtProvider jwt供应者
    * @param tokenCache token缓存
    */
   public AuthTokenHandler(
       @NonNull String appName,
-      @NonNull UserDetailsProvider userDetailsProvider,
-      @NonNull PasswordEncoder passwordEncoder,
+      @NonNull UserAuthenticationProvider userAuthenticationProvider,
       @NonNull JWTProvider jwtProvider,
       @NonNull Map<String, String> tokenCache) {
     this.appName = appName;
-    this.userDetailsProvider = userDetailsProvider;
-    this.passwordEncoder = passwordEncoder;
+    this.userAuthenticationProvider = userAuthenticationProvider;
     this.tokenCache = tokenCache;
     this.jwtProvider = jwtProvider;
   }
@@ -121,39 +109,7 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
    * @param credentials 用户凭证
    */
   private void authenticate(Credentials credentials) {
-    String userName = credentials.getUserName();
-    UserDetails userDetails = userDetailsProvider.findByUserName(userName);
-    if (userDetails == null) {
-      log.warn("userDetails can't be found by userName: {}", userName);
-      throw new IllegalUserException("Illegal user: " + userName);
-    }
-
-    if (!userDetails.isEnabled()) {
-      log.warn("user account is not available. {}", userDetails);
-      throw new IllegalUserException("Illegal user: " + userName);
-    }
-
-    if (!userDetails.isAccountNonExpired()) {
-      log.warn("user's account has expired. {}", userDetails);
-      throw new AccountExpiredException("user's account has expired. userName: " + userName);
-    }
-
-    // 密码过期校验
-    if (!userDetails.isCredentialsNonExpired()) {
-      log.warn("user's password has expired. {}", userDetails);
-      throw new CredentialsExpiredException("user's password has expired. userName: " + userName);
-    }
-
-    if (!userDetails.isAccountNonLocked()) {
-      log.warn("user's account has locked. {}", userDetails);
-      throw new LockedException("user's account has locked. userName: " + userName);
-    }
-
-    // 密码校验
-    if (!passwordEncoder.matches(credentials.getPassword(), userDetails.getPassword())) {
-      log.warn("user has an incorrect password. userName: {}", userName);
-      throw new BadCredentialsException("Incorrect password.");
-    }
+    userAuthenticationProvider.authenticate(credentials);
   }
 
   @Override
