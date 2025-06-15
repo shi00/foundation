@@ -96,35 +96,31 @@ public class ChatbotApplicationTests {
   static void initUser() throws Exception {
     // 导入 LDIF 文件
     System.out.println(
-        LDAP_CONTAINER
-            .execInContainer(
-                "ldapadd", "-x",
-                "-H", "ldap://localhost:389",
-                "-D", "cn=admin,dc=test,dc=com",
-                "-w", ADMIN_PASSWORD,
-                "-f", "/tmp/users.ldif")
-            .toString());
-
-    System.out.println(
-        LDAP_CONTAINER.execInContainer("slappasswd", "-h", "{SSHA}", "-s", "123456").toString());
-
-    System.out.println(
-        LDAP_CONTAINER.execInContainer("slappasswd", "-h", "{SSHA}", "-s", "abcdef").toString());
-
-    System.out.println(
-        LDAP_CONTAINER.execInContainer("slappasswd", "-h", "{SSHA}", "-s", "Jone@123").toString());
-  }
-
-  @Test
-  void testUserAuth() {
-    EqualsFilter filter = new EqualsFilter("uid", "tom");
-    assertTrue(ldapTemplate.authenticate("", filter.encode(), "123456"));
+        LDAP_CONTAINER.execInContainer(
+            "ldapadd", "-x",
+            "-H", "ldap://localhost:389",
+            "-D", "cn=admin,dc=test,dc=com",
+            "-w", ADMIN_PASSWORD,
+            "-f", "/tmp/users.ldif"));
   }
 
   @Test
   @Order(1)
   void testRedisConnected() {
     assertTrue(REDIS_CONTAINER.isRunning());
+  }
+
+  @Test
+  @Order(2)
+  void testImportUsers() {
+    EqualsFilter filter = new EqualsFilter("uid", "tom");
+    assertTrue(ldapTemplate.authenticate("", filter.encode(), "123456"));
+
+    filter = new EqualsFilter("uid", "messi");
+    assertTrue(ldapTemplate.authenticate("", filter.encode(), "abcdef"));
+
+    filter = new EqualsFilter("uid", "jone");
+    assertTrue(ldapTemplate.authenticate("", filter.encode(), "Jone@123"));
   }
 
   @Test
