@@ -54,6 +54,9 @@ public class McpSseServerProperties {
     /** MCP 服务端配置 */
     private SseParameters sseParameters;
 
+    /** sse key */
+    private String sseKey;
+
     /** 与MCP服务器交互的客户端日志配置 */
     @NestedConfigurationProperty @Valid
     private LogProperties mcpClientLogConfig = new LogProperties();
