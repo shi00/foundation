@@ -30,6 +30,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.desktop.config.Configuration;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import javafx.application.Application;
@@ -50,6 +53,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ChatbotDesktopApplication extends Application {
+
+  /** 返回示例：Windows: "C:\Users\用户名", Linux: "/home/用户名" */
+  private static final Path USER_HOME = Paths.get(System.getProperty("user.home"));
+
   /** 默认配置文件 */
   private static final String DEFAULT_CONFIG_FILE_PATH = "/config/configuration.json";
 
@@ -59,6 +66,10 @@ public class ChatbotDesktopApplication extends Application {
   /** 全局配置 */
   public static final Configuration CONFIGURATION;
 
+  /** 应用数据存储目录 */
+  static Path appHome;
+
+  /** 主窗口 */
   static Stage primaryStage;
 
   static {
@@ -92,14 +103,22 @@ public class ChatbotDesktopApplication extends Application {
     String stylesheet = new Dracula().getUserAgentStylesheet();
     scene.getStylesheets().add(stylesheet);
     Application.setUserAgentStylesheet(stylesheet);
+
+    String appName = resourceBundle.getString("app.title");
+    createAppDir(appName);
+    primaryStage.setTitle(appName);
     primaryStage.initStyle(UNDECORATED);
-    primaryStage.setTitle(resourceBundle.getString("app.title"));
     primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.iconPath())));
     primaryStage.setResizable(false);
     primaryStage.setScene(scene);
     primaryStage.setOnCloseRequest(windowEvent -> Platform.exit());
     primaryStage.centerOnScreen();
     primaryStage.show();
+  }
+
+  private void createAppDir(String dir) throws IOException {
+    appHome = USER_HOME.resolve(dir);
+    Files.createDirectories(appHome);
   }
 
   /**
