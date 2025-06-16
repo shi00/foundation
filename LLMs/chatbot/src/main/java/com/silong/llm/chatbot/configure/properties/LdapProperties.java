@@ -21,12 +21,14 @@
 
 package com.silong.llm.chatbot.configure.properties;
 
+import static java.util.Locale.ROOT;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Locale;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -118,6 +120,18 @@ public class LdapProperties {
     if (urls == null || urls.length == 0) {
       throw new IllegalArgumentException("urls is null or empty.");
     }
-    return Arrays.stream(urls).allMatch(url -> url.toLowerCase(Locale.ROOT).startsWith("ldaps"));
+    boolean ldap = Arrays.stream(urls).allMatch(url -> url.toLowerCase(ROOT).startsWith("ldap"));
+    if (!ldap) {
+      long count =
+          Arrays.stream(urls).filter(url -> url.toLowerCase(ROOT).startsWith("ldap")).count();
+      if (count == 0) {
+        return true;
+      } else {
+        throw new IllegalArgumentException(
+            "It is not allowed to include both ldap and ldaps in urls. urls: "
+                + Arrays.stream(urls).collect(Collectors.joining(", ", "[", "]")));
+      }
+    }
+    return false;
   }
 }
