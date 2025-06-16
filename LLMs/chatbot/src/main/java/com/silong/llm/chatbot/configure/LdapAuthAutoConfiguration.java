@@ -21,12 +21,20 @@
 
 package com.silong.llm.chatbot.configure;
 
-import org.springframework.boot.autoconfigure.ldap.LdapProperties;
+import com.silong.llm.chatbot.configure.properties.LdapProperties;
+import com.silong.llm.chatbot.provider.LdapUserProvider;
+import com.unboundid.ldap.sdk.*;
+import com.unboundid.util.ssl.SSLUtil;
+import com.unboundid.util.ssl.TrustAllTrustManager;
+import java.security.GeneralSecurityException;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+import lombok.NonNull;
+import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.core.support.LdapContextSource;
 
 /**
  * 配置ldap鉴权
@@ -37,51 +45,101 @@ import org.springframework.ldap.core.support.LdapContextSource;
  */
 @Configuration
 @EnableConfigurationProperties(LdapProperties.class)
-// @ConditionalOnProperty()
+@ConditionalOnProperty(
+    prefix = "ldap",
+    value = {"urls"})
 public class LdapAuthAutoConfiguration {
 
   private final LdapProperties ldapProperties;
 
-  public LdapAuthAutoConfiguration(LdapProperties ldapProperties) {
+  /**
+   * 构造方法
+   *
+   * @param ldapProperties 配置
+   */
+  public LdapAuthAutoConfiguration(@NonNull LdapProperties ldapProperties) {
     this.ldapProperties = ldapProperties;
   }
 
   @Bean
-  public LdapContextSource contextSource() {
-    LdapContextSource contextSource = new LdapContextSource();
-    contextSource.setUrls(ldapProperties.getUrls());
-    contextSource.setBase(ldapProperties.getBase());
-    contextSource.setUserDn(ldapProperties.getUsername());
-    contextSource.setPassword(ldapProperties.getPassword());
-    return contextSource;
+  LdapUserProvider ldapUserProvider(LDAPConnectionPool ldapConnectionPool) {
+    return new LdapUserProvider(ldapProperties, ldapConnectionPool);
   }
 
-  //  @Bean(destroyMethod = "destroy")
-  //  public PooledContextSource poolingContextSource() {
-  //    // 连接池配置
-  //    PoolConfig config = new PoolConfig();
-  //    config.setMaxTotal(20);
-  //    config.setFairness(true);
-  //    config.setLifo(true);
-  //    config.setBlockWhenExhausted(false);
-  //    config.setEvictionPolicyClassName("org.apache.commons.pool2.impl.DefaultEvictionPolicy");
-  //    config.setMaxWaitMillis(5000);
-  //    config.setTestOnBorrow(true);
-  //    config.setTestWhileIdle(true);
-  //    config.setTimeBetweenEvictionRunsMillis(30000);
-  //    PooledContextSource pooledContextSource = new PooledContextSource(config);
-  //    pooledContextSource.setContextSource(contextSource());
-  //    pooledContextSource.setDirContextValidator(new DefaultDirContextValidator());
-  //    return pooledContextSource;
-  //  }
-  //
-  //  @Bean
-  //  public TransactionAwareContextSourceProxy transactionAwareContextSourceProxy() {
-  //    return new TransactionAwareContextSourceProxy(poolingContextSource());
-  //  }
+  @Bean(destroyMethod = "close")
+  LDAPConnectionPool ldapConnectionPool() throws LDAPException, GeneralSecurityException {
+    ServerSet serverSet = buildServerSet();
 
-  @Bean
-  public LdapTemplate ldapTemplate() {
-    return new LdapTemplate(contextSource());
+    // 创建连接池
+    return new LDAPConnectionPool(
+        serverSet,
+        new SimpleBindRequest(ldapProperties.getUsername(), ldapProperties.getPassword()),
+        ldapProperties.getPool().getMinConnections(),
+        ldapProperties.getPool().getMaxConnections());
+  }
+
+  private ServerSet buildServerSet() throws GeneralSecurityException, LDAPException {
+    LDAPConnectionOptions options = buildLdapConnectionOptions();
+    String[] urls = ldapProperties.getUrls();
+    boolean secure = ldapProperties.isSecure();
+
+    if (urls.length == 1) {
+      if (secure) {
+        SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager()); // 测试环境跳过证书验证
+        SSLSocketFactory socketFactory = sslUtil.createSSLSocketFactory();
+        return buildSingleServerSet(urls, socketFactory, options);
+      } else {
+        return buildSingleServerSet(urls, null, options);
+      }
+    } else {
+      if (secure) {
+        SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager()); // 测试环境跳过证书验证
+        SSLSocketFactory socketFactory = sslUtil.createSSLSocketFactory();
+        return buildServerSet(urls, socketFactory, options);
+      } else {
+        return buildServerSet(urls, null, options);
+      }
+    }
+  }
+
+  private SingleServerSet buildSingleServerSet(
+      String[] urls, SocketFactory socketFactory, LDAPConnectionOptions options)
+      throws LDAPException {
+    LDAPURL ldapurl = new LDAPURL(urls[0]);
+    if (socketFactory == null) {
+      return new SingleServerSet(ldapurl.getHost(), ldapurl.getPort(), options);
+    } else {
+      return new SingleServerSet(ldapurl.getHost(), ldapurl.getPort(), socketFactory, options);
+    }
+  }
+
+  private ServerSet buildServerSet(
+      String[] urls, SocketFactory socketFactory, LDAPConnectionOptions options)
+      throws LDAPException {
+    String[] hosts = new String[urls.length];
+    int[] ports = new int[urls.length];
+    for (int i = 0; i < urls.length; i++) {
+      LDAPURL ldapurl = new LDAPURL(urls[i]);
+      hosts[i] = ldapurl.getHost();
+      ports[i] = ldapurl.getPort();
+    }
+    if (socketFactory == null) {
+      return new FastestConnectServerSet(hosts, ports, options);
+    } else {
+      return new FastestConnectServerSet(hosts, ports, socketFactory, options);
+    }
+  }
+
+  private LDAPConnectionOptions buildLdapConnectionOptions() {
+    LDAPConnectionOptions options = new LDAPConnectionOptions();
+    options.setUseTCPNoDelay(true);
+    options.setAbandonOnTimeout(true);
+    options.setConnectionLogger(
+        new JSONLDAPConnectionLogger(
+            new SLF4JBridgeHandler(), new JSONLDAPConnectionLoggerProperties()));
+    options.setResponseTimeoutMillis(ldapProperties.getPool().getResponseTimeout().toMillis());
+    options.setConnectTimeoutMillis(
+        (int) ldapProperties.getPool().getConnectionTimeout().toMillis());
+    return options;
   }
 }

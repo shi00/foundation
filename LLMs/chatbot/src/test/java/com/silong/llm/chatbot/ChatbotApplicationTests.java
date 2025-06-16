@@ -28,7 +28,7 @@ import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
-import com.silong.llm.chatbot.provider.OpenLdapUserProvider;
+import com.silong.llm.chatbot.provider.LdapUserProvider;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
@@ -90,7 +90,7 @@ public class ChatbotApplicationTests {
   @Value("${jwt-auth.auth-path}")
   private String loginPath;
 
-  @Autowired private OpenLdapUserProvider openLdapUserProvider;
+  @Autowired private LdapUserProvider ldapUserProvider;
 
   @BeforeAll
   static void initUser() throws Exception {
@@ -128,7 +128,7 @@ public class ChatbotApplicationTests {
 
   @Test
   void searchUser() {
-    assertDoesNotThrow(() -> openLdapUserProvider.checkUserExists("tom"));
+    assertDoesNotThrow(() -> ldapUserProvider.checkUserExists("tom"));
   }
 
   @Test
@@ -137,15 +137,15 @@ public class ChatbotApplicationTests {
     Credentials credentials = new Credentials();
     credentials.setUserName("tom");
     credentials.setPassword("123456");
-    assertDoesNotThrow(() -> openLdapUserProvider.authenticate(credentials));
+    assertDoesNotThrow(() -> ldapUserProvider.authenticate(credentials));
 
     credentials.setUserName("messi");
     credentials.setPassword("abcdef");
-    assertDoesNotThrow(() -> openLdapUserProvider.authenticate(credentials));
+    assertDoesNotThrow(() -> ldapUserProvider.authenticate(credentials));
 
     credentials.setUserName("jone");
     credentials.setPassword("Jone@123");
-    assertDoesNotThrow(() -> openLdapUserProvider.authenticate(credentials));
+    assertDoesNotThrow(() -> ldapUserProvider.authenticate(credentials));
   }
 
   @Test
