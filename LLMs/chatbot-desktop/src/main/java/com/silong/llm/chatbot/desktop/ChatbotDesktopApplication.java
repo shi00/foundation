@@ -93,6 +93,8 @@ public class ChatbotDesktopApplication extends Application {
     ChatbotDesktopApplication.primaryStage = primaryStage;
     ResourceBundle resourceBundle =
         ResourceBundle.getBundle(CONFIGURATION.i18nPath(), Locale.getDefault());
+    String appName = resourceBundle.getString("app.title");
+    createAppDir(appName);
     FXMLLoader fxmlLoader = new FXMLLoader(loadURL(CONFIGURATION.loginViewPath()), resourceBundle);
     Parent root = fxmlLoader.load();
     Scene scene =
@@ -104,8 +106,6 @@ public class ChatbotDesktopApplication extends Application {
     scene.getStylesheets().add(stylesheet);
     Application.setUserAgentStylesheet(stylesheet);
 
-    String appName = resourceBundle.getString("app.title");
-    createAppDir(appName);
     primaryStage.setTitle(appName);
     primaryStage.initStyle(UNDECORATED);
     primaryStage.getIcons().add(new Image(loadStream(CONFIGURATION.iconPath())));
