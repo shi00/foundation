@@ -77,7 +77,7 @@ public class ChatbotApplicationTests {
     registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
     registry.add("spring.data.redis.port", () -> REDIS_CONTAINER.getMappedPort(6379));
     registry.add(
-        "spring.ldap.urls",
+        "ldap.urls",
         () ->
             new String[] {
               String.format(
