@@ -68,11 +68,9 @@ public class LdapAuthAutoConfiguration {
 
   @Bean(destroyMethod = "close")
   LDAPConnectionPool ldapConnectionPool() throws LDAPException, GeneralSecurityException {
-    ServerSet serverSet = buildServerSet();
-
     // 创建连接池
     return new LDAPConnectionPool(
-        serverSet,
+        buildServerSet(),
         new SimpleBindRequest(ldapProperties.getUsername(), ldapProperties.getPassword()),
         ldapProperties.getPool().getMinConnections(),
         ldapProperties.getPool().getMaxConnections());
@@ -82,7 +80,6 @@ public class LdapAuthAutoConfiguration {
     LDAPConnectionOptions options = buildLdapConnectionOptions();
     String[] urls = ldapProperties.getUrls();
     boolean secure = ldapProperties.isSecure();
-
     if (urls.length == 1) {
       if (secure) {
         SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager()); // 测试环境跳过证书验证
