@@ -4,8 +4,8 @@
   "loginViewPath": "/views/login-view.fxml",
   "chatViewPath": "/views/chat-view.fxml",
   "loginWindowSize": {
-    "width": 360,
-    "height": 420
+    "width": 380,
+    "height": 440
   },
   "chatWindowSize": {
     "width": 1024,
