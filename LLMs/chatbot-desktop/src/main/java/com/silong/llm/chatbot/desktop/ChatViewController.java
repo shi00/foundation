@@ -26,6 +26,7 @@ import static javafx.geometry.Pos.*;
 
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.UUID;
 import javafx.collections.FXCollections;
@@ -121,6 +122,8 @@ public class ChatViewController extends ViewController implements Initializable 
   private ListView<String> createPage(int pageIndex) {
     int fromIndex = pageIndex * 5;
     int toIndex = Math.min(fromIndex + 5, 20);
+
+    var allData = new ArrayList<String>();
 
     ObservableList<String> pageData =
         FXCollections.observableArrayList(allData.subList(fromIndex, toIndex));
