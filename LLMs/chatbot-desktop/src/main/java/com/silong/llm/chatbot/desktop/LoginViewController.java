@@ -25,7 +25,12 @@ import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
 import static javafx.collections.FXCollections.observableArrayList;
+import static javafx.geometry.Pos.CENTER_LEFT;
+import static javafx.geometry.Pos.CENTER_RIGHT;
 import static javafx.scene.input.KeyCode.TAB;
+import static javafx.scene.layout.Priority.ALWAYS;
+import static javafx.scene.layout.Priority.NEVER;
+import static javafx.scene.text.TextAlignment.CENTER;
 
 import atlantafx.base.theme.Dracula;
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
@@ -46,20 +51,24 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.Callback;
 import javafx.util.Duration;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.CustomPasswordField;
 import org.controlsfx.control.textfield.CustomTextField;
 import org.controlsfx.control.textfield.TextFields;
@@ -92,8 +101,6 @@ public class LoginViewController extends ViewController implements Initializable
   @FXML private Button loginBtn;
 
   @FXML private Button addHostBtn;
-
-  @FXML private Button deleteHostBtn;
 
   @FXML private Label userNameLabel;
 
@@ -139,7 +146,7 @@ public class LoginViewController extends ViewController implements Initializable
     ChatViewController controller = loader.getController();
     String[] parts = host.split(":", 2);
     controller.setRestClient(
-        AsyncRestClient.create(parts[0], Integer.parseInt(parts[1]), "credential"));
+        AsyncRestClient.create(parts[0].trim(), Integer.parseInt(parts[1].trim()), "credential"));
     var scene = new Scene(parent);
     scene.getStylesheets().add(new Dracula().getUserAgentStylesheet());
     var stage = (Stage) primaryStage.getScene().getWindow();
@@ -203,8 +210,70 @@ public class LoginViewController extends ViewController implements Initializable
 
     // 创建一个ObservableList作为数据源
     hostComboBox.setItems(hostItems);
+
     // 添加自动完成支持
-    TextFields.bindAutoCompletion(hostComboBox.getEditor(), hostComboBox.getItems());
+    AutoCompletionBinding<String> autoCompletionBinding =
+        TextFields.bindAutoCompletion(hostComboBox.getEditor(), hostComboBox.getItems());
+    autoCompletionBinding.setDelay((long) Duration.millis(100).toMillis());
+    hostComboBox.setCellFactory(
+        new Callback<>() {
+
+          @Override
+          public ListCell<String> call(ListView<String> param) {
+            return new ListCell<>() {
+              private final HBox container;
+              private final HBox rightContainer;
+              private final Label hostLabel;
+              private final Button deleteBtn;
+
+              {
+                container = new HBox();
+                container.setAlignment(CENTER_LEFT);
+                container.setPadding(new Insets(2));
+                container.setSpacing(2);
+
+                rightContainer = new HBox();
+                rightContainer.setAlignment(CENTER_RIGHT);
+                rightContainer.setPadding(new Insets(2));
+                rightContainer.setSpacing(2);
+
+                hostLabel = new Label();
+                hostLabel.setTextAlignment(CENTER);
+                //                hostLabel.setStyle("-fx-font-size: 14px;");
+
+                container.getChildren().addAll(hostLabel, rightContainer);
+                HBox.setHgrow(hostLabel, NEVER);
+                HBox.setHgrow(rightContainer, ALWAYS);
+
+                deleteBtn = new Button();
+                deleteBtn.getStyleClass().addAll("flat", "small");
+                deleteBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
+                rightContainer.getChildren().add(deleteBtn);
+                deleteBtn.setOnAction(LoginViewController.this::handleDeleteHostBtnAction);
+              }
+
+              @Override
+              protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                  setGraphic(null);
+                  setText(null);
+                } else {
+                  // 设置单元格文本
+                  hostLabel.setText(item);
+
+                  // 仅在下拉列表中显示删除按钮
+                  if (getListView().getItems().contains(item)) {
+                    setGraphic(container);
+                  } else {
+                    setGraphic(null);
+                  }
+                }
+              }
+            };
+          }
+        });
 
     // 初始焦点
     primaryStage.setOnShown(e -> userNameTextField.requestFocus());
@@ -230,12 +299,21 @@ public class LoginViewController extends ViewController implements Initializable
 
     addHostBtn.setGraphic(FontIcon.of(FontAwesomeSolid.PLUS_CIRCLE, 64));
 
-    deleteHostBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 64));
-
     int numberOfSquares = 20;
     while (numberOfSquares > 0) {
       generateAnimation();
       numberOfSquares--;
+    }
+  }
+
+  @SneakyThrows(IOException.class)
+  void handleDeleteHostBtnAction(ActionEvent event) {
+    String text = hostComboBox.getEditor().getText();
+    if (text != null && !text.isEmpty() && hostItems.contains(text)) {
+      hostItems.remove(text);
+      hostComboBox.hide();
+      Files.write(hostCnfPath, hostItems, UTF_8, CREATE, TRUNCATE_EXISTING);
+      log.info("Deleted host: {}", text);
     }
   }
 
@@ -247,17 +325,7 @@ public class LoginViewController extends ViewController implements Initializable
       hostItems.addFirst(text);
       hostComboBox.setValue(text);
       Files.write(hostCnfPath, hostItems, UTF_8, TRUNCATE_EXISTING, CREATE);
-    }
-  }
-
-  @FXML
-  @SneakyThrows(IOException.class)
-  void handleDeleteHostBtnAction(ActionEvent event) {
-    String text = hostComboBox.getEditor().getText();
-    if (text != null && !text.isEmpty() && hostItems.contains(text)) {
-      hostItems.remove(text);
-      hostComboBox.setValue(hostItems.getFirst());
-      Files.write(hostCnfPath, hostItems, UTF_8, CREATE, TRUNCATE_EXISTING);
+      log.info("Added host: {}", text);
     }
   }
 
