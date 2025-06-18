@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
@@ -66,10 +67,15 @@
                                 <ComboBox fx:id="hostComboBox" editable="true" prefWidth="185.0" promptText="%host.prompt" styleClass="host-combo-box" stylesheets="@../styles/Login.css" />
                             </children>
                         </HBox>
-                          <Button fx:id="addHostBtn" alignment="CENTER" mnemonicParsing="false" onAction="#handleAddHostBtnAction" textAlignment="CENTER" StackPane.alignment="CENTER_RIGHT" />
+                          <Button fx:id="addHostBtn" alignment="CENTER" mnemonicParsing="false" onAction="#handleAddHostBtnAction" textAlignment="CENTER" StackPane.alignment="CENTER_RIGHT">
+                     <styleClass>
+                        <String fx:value="small" />
+                        <String fx:value="flat" />
+                     </styleClass>
+                  </Button>
                     </children>
                <padding>
-                  <Insets left="20.0" right="20.0" />
+                  <Insets left="28.0" right="28.0" />
                </padding>
                 </StackPane>
                 <HBox alignment="CENTER" spacing="20.0" GridPane.columnSpan="6" GridPane.rowIndex="3">
