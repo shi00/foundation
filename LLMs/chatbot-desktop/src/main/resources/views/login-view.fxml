@@ -66,7 +66,7 @@
                                 <ComboBox fx:id="hostComboBox" editable="true" prefWidth="185.0" promptText="%host.prompt" styleClass="host-combo-box" stylesheets="@../styles/Login.css" />
                             </children>
                         </HBox>
-                          <Button fx:id="addHostBtn" alignment="CENTER" layoutX="150.0" mnemonicParsing="false" textAlignment="CENTER" StackPane.alignment="CENTER_RIGHT" />
+                          <Button fx:id="addHostBtn" alignment="CENTER" mnemonicParsing="false" onAction="#handleAddHostBtnAction" textAlignment="CENTER" StackPane.alignment="CENTER_RIGHT" />
                     </children>
                <padding>
                   <Insets left="20.0" right="20.0" />
