@@ -222,9 +222,7 @@ public class LoginViewController extends ViewController implements Initializable
           public ListCell<String> call(ListView<String> param) {
             return new ListCell<>() {
               private final HBox container;
-              private final HBox rightContainer;
               private final Label hostLabel;
-              private final Button deleteBtn;
 
               {
                 container = new HBox();
@@ -232,7 +230,7 @@ public class LoginViewController extends ViewController implements Initializable
                 container.setPadding(new Insets(2));
                 container.setSpacing(2);
 
-                rightContainer = new HBox();
+                var rightContainer = new HBox();
                 rightContainer.setAlignment(CENTER_RIGHT);
                 rightContainer.setPadding(new Insets(2));
                 rightContainer.setSpacing(2);
@@ -245,7 +243,7 @@ public class LoginViewController extends ViewController implements Initializable
                 HBox.setHgrow(hostLabel, NEVER);
                 HBox.setHgrow(rightContainer, ALWAYS);
 
-                deleteBtn = new Button();
+                var deleteBtn = new Button();
                 deleteBtn.getStyleClass().addAll("flat", "small");
                 deleteBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
                 rightContainer.getChildren().add(deleteBtn);
