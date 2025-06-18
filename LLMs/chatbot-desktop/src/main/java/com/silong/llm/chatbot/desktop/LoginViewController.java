@@ -64,7 +64,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import javafx.util.Callback;
 import javafx.util.Duration;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -198,6 +197,57 @@ public class LoginViewController extends ViewController implements Initializable
     }
   }
 
+  private class DeleteButtonListCell extends ListCell<String> {
+    private final HBox container;
+    private final Label hostLabel;
+
+    public DeleteButtonListCell() {
+      container = new HBox();
+      container.setAlignment(CENTER_LEFT);
+      container.setPadding(new Insets(2));
+      container.setSpacing(2);
+
+      var rightContainer = new HBox();
+      rightContainer.setAlignment(CENTER_RIGHT);
+      rightContainer.setPadding(new Insets(2));
+      rightContainer.setSpacing(2);
+
+      hostLabel = new Label();
+      hostLabel.setTextAlignment(CENTER);
+
+      container.getChildren().addAll(hostLabel, rightContainer);
+      HBox.setHgrow(hostLabel, NEVER);
+      HBox.setHgrow(rightContainer, ALWAYS);
+
+      var deleteBtn = new Button();
+      deleteBtn.getStyleClass().addAll("flat", "small");
+      deleteBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
+      deleteBtn.setOnAction(LoginViewController.this::handleDeleteHostBtnAction);
+      deleteBtn.setOnMouseEntered(e -> {});
+      rightContainer.getChildren().add(deleteBtn);
+    }
+
+    @Override
+    protected void updateItem(String item, boolean empty) {
+      super.updateItem(item, empty);
+
+      if (empty || item == null) {
+        setGraphic(null);
+        setText(null);
+      } else {
+        // 设置单元格文本
+        hostLabel.setText(item);
+
+        // 仅在下拉列表中显示删除按钮
+        if (getListView().getItems().contains(item)) {
+          setGraphic(container);
+        } else {
+          setGraphic(null);
+        }
+      }
+    }
+  }
+
   @Override
   public void initialize(URL location, ResourceBundle resources) {
     this.resourceBundle = resources;
@@ -215,63 +265,7 @@ public class LoginViewController extends ViewController implements Initializable
     AutoCompletionBinding<String> autoCompletionBinding =
         TextFields.bindAutoCompletion(hostComboBox.getEditor(), hostComboBox.getItems());
     autoCompletionBinding.setDelay((long) Duration.millis(100).toMillis());
-    hostComboBox.setCellFactory(
-        new Callback<>() {
-
-          @Override
-          public ListCell<String> call(ListView<String> param) {
-            return new ListCell<>() {
-              private final HBox container;
-              private final Label hostLabel;
-
-              {
-                container = new HBox();
-                container.setAlignment(CENTER_LEFT);
-                container.setPadding(new Insets(2));
-                container.setSpacing(2);
-
-                var rightContainer = new HBox();
-                rightContainer.setAlignment(CENTER_RIGHT);
-                rightContainer.setPadding(new Insets(2));
-                rightContainer.setSpacing(2);
-
-                hostLabel = new Label();
-                hostLabel.setTextAlignment(CENTER);
-                //                hostLabel.setStyle("-fx-font-size: 14px;");
-
-                container.getChildren().addAll(hostLabel, rightContainer);
-                HBox.setHgrow(hostLabel, NEVER);
-                HBox.setHgrow(rightContainer, ALWAYS);
-
-                var deleteBtn = new Button();
-                deleteBtn.getStyleClass().addAll("flat", "small");
-                deleteBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
-                rightContainer.getChildren().add(deleteBtn);
-                deleteBtn.setOnAction(LoginViewController.this::handleDeleteHostBtnAction);
-              }
-
-              @Override
-              protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-
-                if (empty || item == null) {
-                  setGraphic(null);
-                  setText(null);
-                } else {
-                  // 设置单元格文本
-                  hostLabel.setText(item);
-
-                  // 仅在下拉列表中显示删除按钮
-                  if (getListView().getItems().contains(item)) {
-                    setGraphic(container);
-                  } else {
-                    setGraphic(null);
-                  }
-                }
-              }
-            };
-          }
-        });
+    hostComboBox.setCellFactory(param -> new DeleteButtonListCell());
 
     // 初始焦点
     primaryStage.setOnShown(e -> userNameTextField.requestFocus());
@@ -310,6 +304,7 @@ public class LoginViewController extends ViewController implements Initializable
     if (text != null && !text.isEmpty() && hostItems.contains(text)) {
       hostItems.remove(text);
       hostComboBox.hide();
+      hostComboBox.setValue(null);
       Files.write(hostCnfPath, hostItems, UTF_8, CREATE, TRUNCATE_EXISTING);
       log.info("Deleted host: {}", text);
     }
