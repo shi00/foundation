@@ -223,7 +223,7 @@ public class LoginViewController extends ViewController implements Initializable
       deleteBtn.getStyleClass().addAll("flat", "small");
       deleteBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
       deleteBtn.setOnAction(LoginViewController.this::handleDeleteHostBtnAction);
-      deleteBtn.setOnMouseEntered(e -> {});
+
       rightContainer.getChildren().add(deleteBtn);
     }
 
