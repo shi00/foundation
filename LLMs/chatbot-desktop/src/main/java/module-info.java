@@ -35,6 +35,7 @@ module chatbot.desktop {
   requires org.kordamp.ikonli.bootstrapicons;
   requires org.kordamp.ikonli.fontawesome6;
   requires static lombok;
+  requires passay;
 
   opens views to
       javafx.fxml;
