@@ -56,6 +56,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
@@ -67,10 +68,8 @@ import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.CustomPasswordField;
 import org.controlsfx.control.textfield.CustomTextField;
-import org.controlsfx.control.textfield.TextFields;
 import org.kordamp.ikonli.bootstrapicons.BootstrapIcons;
 import org.kordamp.ikonli.fontawesome6.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -200,8 +199,9 @@ public class LoginViewController extends ViewController implements Initializable
   private class DeleteButtonListCell extends ListCell<String> {
     private final HBox container;
     private final Label hostLabel;
+    ;
 
-    public DeleteButtonListCell() {
+    public DeleteButtonListCell(ListView<String> listView) {
       container = new HBox();
       container.setAlignment(CENTER_LEFT);
       container.setPadding(new Insets(2));
@@ -222,7 +222,14 @@ public class LoginViewController extends ViewController implements Initializable
       var deleteBtn = new Button();
       deleteBtn.getStyleClass().addAll("flat", "small");
       deleteBtn.setGraphic(FontIcon.of(BootstrapIcons.DASH_CIRCLE, 16));
-      deleteBtn.setOnAction(LoginViewController.this::handleDeleteHostBtnAction);
+      deleteBtn.setOnKeyPressed(
+          event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+              LoginViewController.this.handleDeleteHostBtnAction(hostLabel.getText());
+            }
+          });
+      deleteBtn.setOnMousePressed(
+          event -> LoginViewController.this.handleDeleteHostBtnAction(hostLabel.getText()));
 
       rightContainer.getChildren().add(deleteBtn);
     }
@@ -252,20 +259,20 @@ public class LoginViewController extends ViewController implements Initializable
   public void initialize(URL location, ResourceBundle resources) {
     this.resourceBundle = resources;
 
-    hostCnfPath = appHome.resolve(HOST_CNF);
-    hostItems = observableArrayList(loadHosts(hostCnfPath));
-
     /* Drag and Drop */
     configureLoginWindowsDragAndDrop(mainLayout);
+
+    hostCnfPath = appHome.resolve(HOST_CNF);
+    hostItems = observableArrayList(loadHosts(hostCnfPath));
 
     // 创建一个ObservableList作为数据源
     hostComboBox.setItems(hostItems);
 
     // 添加自动完成支持
-    AutoCompletionBinding<String> autoCompletionBinding =
-        TextFields.bindAutoCompletion(hostComboBox.getEditor(), hostComboBox.getItems());
-    autoCompletionBinding.setDelay((long) Duration.millis(100).toMillis());
-    hostComboBox.setCellFactory(param -> new DeleteButtonListCell());
+    //    AutoCompletionBinding<String> autoCompletionBinding =
+    //        TextFields.bindAutoCompletion(hostComboBox.getEditor(), hostComboBox.getItems());
+    //    autoCompletionBinding.setDelay((long) Duration.millis(100).toMillis());
+    hostComboBox.setCellFactory(DeleteButtonListCell::new);
 
     // 初始焦点
     primaryStage.setOnShown(e -> userNameTextField.requestFocus());
@@ -283,13 +290,18 @@ public class LoginViewController extends ViewController implements Initializable
     configureButton(
         closeBtn, BootstrapIcons.X_CIRCLE, 16, null, resources.getString("closeBtn.tooltip"));
 
+    configureButton(
+        addHostBtn,
+        BootstrapIcons.PLUS_CIRCLE,
+        64,
+        null,
+        resources.getString("addHostBtn.tooltip"));
+
     hostLabel.setGraphic(FontIcon.of(FontAwesomeSolid.SERVER, 64));
 
     userNameLabel.setGraphic(FontIcon.of(BootstrapIcons.PERSON_BOUNDING_BOX, 64));
 
     passwordLabel.setGraphic(FontIcon.of(FontAwesomeSolid.KEY, 64));
-
-    addHostBtn.setGraphic(FontIcon.of(FontAwesomeSolid.PLUS_CIRCLE, 64));
 
     int numberOfSquares = 20;
     while (numberOfSquares > 0) {
@@ -299,8 +311,7 @@ public class LoginViewController extends ViewController implements Initializable
   }
 
   @SneakyThrows(IOException.class)
-  void handleDeleteHostBtnAction(ActionEvent event) {
-    String text = hostComboBox.getEditor().getText();
+  void handleDeleteHostBtnAction(String text) {
     if (text != null && !text.isEmpty() && hostItems.contains(text)) {
       hostItems.remove(text);
       hostComboBox.hide();
