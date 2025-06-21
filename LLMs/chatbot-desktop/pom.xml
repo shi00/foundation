@@ -37,6 +37,10 @@
             <version>${javafx.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.passay</groupId>
+            <artifactId>passay</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.fxmisc.richtext</groupId>
             <artifactId>richtextfx</artifactId>
             <version>${richtextfx.version}</version>
