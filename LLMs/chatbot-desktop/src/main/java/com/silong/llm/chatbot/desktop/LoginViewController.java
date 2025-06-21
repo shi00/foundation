@@ -36,6 +36,7 @@ import atlantafx.base.theme.Dracula;
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
 import com.silong.llm.chatbot.desktop.utils.ResizeHelper;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -348,10 +349,26 @@ public class LoginViewController extends ViewController implements Initializable
             Validator.<String>createPredicateValidator(
                 p -> passwordValidator.validate(new PasswordData(p)).isValid(), passwordErrorMsg)));
 
+    String hostErrorMsg = resourceBundle.getString("input.host.error");
     validation.registerValidator(
         hostComboBox,
         true,
-        Validator.createEmptyValidator(resourceBundle.getString("input.host.error")));
+        Validator.combine(
+            Validator.createEmptyValidator(hostErrorMsg),
+            Validator.createPredicateValidator(LoginViewController::isValidHost, hostErrorMsg)));
+  }
+
+  private static boolean isValidHost(String s) {
+    if (s == null || s.isEmpty()) {
+      return true;
+    }
+    try {
+      var host = URI.create(s).toURL();
+      return true;
+    } catch (Exception e) {
+      log.error("Malformed URL: {}", s, e);
+      return false;
+    }
   }
 
   @SneakyThrows(IOException.class)
@@ -370,6 +387,13 @@ public class LoginViewController extends ViewController implements Initializable
   void handleAddHostBtnAction(ActionEvent event) {
     String text = hostComboBox.getEditor().getText();
     if (text != null && !text.isEmpty() && !hostItems.contains(text)) {
+
+      if (!isValidHost(text)) {
+        showErrorDialog(resourceBundle.getString("input.addHostBtn.error"));
+        hostComboBox.setValue(null);
+        return;
+      }
+
       hostItems.addFirst(text);
       hostComboBox.setValue(text);
       Files.write(hostCnfPath, hostItems, UTF_8, TRUNCATE_EXISTING, CREATE);
