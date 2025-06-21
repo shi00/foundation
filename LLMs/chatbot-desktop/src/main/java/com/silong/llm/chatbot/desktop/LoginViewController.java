@@ -69,6 +69,7 @@ import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.controlsfx.control.textfield.CustomPasswordField;
 import org.controlsfx.control.textfield.CustomTextField;
@@ -369,9 +370,10 @@ public class LoginViewController extends ViewController implements Initializable
       if (port < 0 || port > 65535) {
         throw new IllegalArgumentException("Invalid port: " + port);
       }
-      return InetAddressValidator.getInstance().isValid(host);
+      return InetAddressValidator.getInstance().isValid(host)
+          || DomainValidator.getInstance().isValid(host);
     } catch (Exception e) {
-      log.error("Malformed URL: {}", s, e);
+      log.error("Invalid host: {}", s, e);
       return false;
     }
   }
