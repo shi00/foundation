@@ -40,6 +40,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import javafx.animation.KeyFrame;
@@ -70,9 +71,12 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.controlsfx.control.textfield.CustomPasswordField;
 import org.controlsfx.control.textfield.CustomTextField;
+import org.controlsfx.validation.ValidationSupport;
+import org.controlsfx.validation.Validator;
 import org.kordamp.ikonli.bootstrapicons.BootstrapIcons;
 import org.kordamp.ikonli.fontawesome6.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.passay.*;
 
 /**
  * 登录界面控制器
@@ -85,10 +89,6 @@ import org.kordamp.ikonli.javafx.FontIcon;
 public class LoginViewController extends ViewController implements Initializable {
 
   private static final String HOST_CNF = "host.cnf";
-
-  private Path hostCnfPath;
-
-  private ObservableList<String> hostItems;
 
   @FXML private BorderPane mainLayout;
 
@@ -112,31 +112,31 @@ public class LoginViewController extends ViewController implements Initializable
 
   @FXML private CustomPasswordField passwordTextField;
 
+  private final ValidationSupport validation = new ValidationSupport();
+
   private ResourceBundle resourceBundle;
+
+  private Path hostCnfPath;
+
+  private ObservableList<String> hostItems;
 
   @FXML
   @SneakyThrows(IOException.class)
   void handleLoginAction(ActionEvent event) {
-    String userName = userNameTextField.getText();
-    if (userName == null || (userName = userName.trim()).isEmpty()) {
-      showErrorDialog("input.username.error");
-      userNameTextField.clear();
+    var result = validation.getValidationResult();
+    var errors = result.getErrors();
+    errors.stream()
+        .findFirst()
+        .ifPresent(validationMessage -> showErrorDialog(validationMessage.getText()));
+    if (!errors.isEmpty()) {
       return;
     }
+
+    String userName = userNameTextField.getText();
 
     String password = passwordTextField.getText();
-    if (password == null || (password = password.trim()).isEmpty()) {
-      showErrorDialog("input.password.error");
-      passwordTextField.clear();
-      return;
-    }
 
-    var host = hostComboBox.getEditor().getSelectedText();
-    if (host == null || (host = host.trim()).isEmpty()) {
-      showErrorDialog("input.host.error");
-      hostComboBox.setValue(null);
-      return;
-    }
+    var host = hostComboBox.getEditor().getText();
 
     FXMLLoader loader =
         new FXMLLoader(getClass().getResource(CONFIGURATION.chatViewPath()), resourceBundle);
@@ -163,13 +163,13 @@ public class LoginViewController extends ViewController implements Initializable
     stage.centerOnScreen();
   }
 
-  private void showErrorDialog(String messageKey) {
+  private void showErrorDialog(String message) {
     Platform.runLater(
         () -> {
           var alert = new Alert(Alert.AlertType.ERROR);
           alert.setTitle(resourceBundle.getString("dialog.error"));
           alert.setHeaderText(null);
-          alert.setContentText(resourceBundle.getString(messageKey));
+          alert.setContentText(message);
           alert.initOwner(primaryStage.getScene().getWindow());
           alert.showAndWait();
         });
@@ -190,7 +190,7 @@ public class LoginViewController extends ViewController implements Initializable
     if (Files.exists(configPath)) {
       return Files.readAllLines(appHome.resolve(HOST_CNF));
     } else {
-      List<String> lines = List.of("127.0.0.1:8080", "192.168.1.100:8080");
+      List<String> lines = List.of("127.0.0.1:8080");
       Files.write(configPath, lines, UTF_8, CREATE, WRITE, TRUNCATE_EXISTING);
       return lines;
     }
@@ -262,17 +262,10 @@ public class LoginViewController extends ViewController implements Initializable
     /* Drag and Drop */
     configureLoginWindowsDragAndDrop(mainLayout);
 
-    hostCnfPath = appHome.resolve(HOST_CNF);
-    hostItems = observableArrayList(loadHosts(hostCnfPath));
+    // 创建验证支持
+    configureValidation();
 
-    // 创建一个ObservableList作为数据源
-    hostComboBox.setItems(hostItems);
-
-    // 添加自动完成支持
-    //    AutoCompletionBinding<String> autoCompletionBinding =
-    //        TextFields.bindAutoCompletion(hostComboBox.getEditor(), hostComboBox.getItems());
-    //    autoCompletionBinding.setDelay((long) Duration.millis(100).toMillis());
-    hostComboBox.setCellFactory(DeleteButtonListCell::new);
+    configureHostComboBox();
 
     // 初始焦点
     primaryStage.setOnShown(e -> userNameTextField.requestFocus());
@@ -308,6 +301,57 @@ public class LoginViewController extends ViewController implements Initializable
       generateAnimation();
       numberOfSquares--;
     }
+  }
+
+  private void configureHostComboBox() {
+    hostCnfPath = appHome.resolve(HOST_CNF);
+    hostItems = observableArrayList(loadHosts(hostCnfPath));
+
+    // 创建一个ObservableList作为数据源
+    hostComboBox.setItems(hostItems);
+
+    // 添加自动完成支持
+    //    AutoCompletionBinding<String> autoCompletionBinding =
+    //        TextFields.bindAutoCompletion(hostComboBox.getEditor(), hostComboBox.getItems());
+    //    autoCompletionBinding.setDelay((long) Duration.millis(100).toMillis());
+    hostComboBox.setCellFactory(DeleteButtonListCell::new);
+  }
+
+  private PasswordValidator buildPasswordValidator() {
+    List<Rule> rules = new ArrayList<>();
+    rules.add(new LengthRule(8, 16)); // 长度8-16
+    rules.add(
+        new CharacterCharacteristicsRule(
+            3,
+            new CharacterRule(EnglishCharacterData.Alphabetical, 1), // 字母
+            new CharacterRule(EnglishCharacterData.Digit, 1), // 数字
+            new CharacterRule(EnglishCharacterData.Special, 1) // 符号
+            ));
+    rules.add(new WhitespaceRule()); // 禁止空格
+
+    return new PasswordValidator(rules);
+  }
+
+  private void configureValidation() {
+    validation.registerValidator(
+        userNameTextField,
+        true,
+        Validator.createEmptyValidator(resourceBundle.getString("input.username.error")));
+
+    PasswordValidator passwordValidator = buildPasswordValidator();
+    var passwordErrorMsg = resourceBundle.getString("input.password.error");
+    validation.registerValidator(
+        passwordTextField,
+        true,
+        Validator.combine(
+            Validator.createEmptyValidator(passwordErrorMsg),
+            Validator.<String>createPredicateValidator(
+                p -> passwordValidator.validate(new PasswordData(p)).isValid(), passwordErrorMsg)));
+
+    validation.registerValidator(
+        hostComboBox,
+        true,
+        Validator.createEmptyValidator(resourceBundle.getString("input.host.error")));
   }
 
   @SneakyThrows(IOException.class)
