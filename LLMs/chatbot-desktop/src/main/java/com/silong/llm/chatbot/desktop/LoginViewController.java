@@ -36,7 +36,6 @@ import atlantafx.base.theme.Dracula;
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
 import com.silong.llm.chatbot.desktop.utils.ResizeHelper;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,6 +69,7 @@ import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.InetAddressValidator;
 import org.controlsfx.control.textfield.CustomPasswordField;
 import org.controlsfx.control.textfield.CustomTextField;
 import org.controlsfx.validation.ValidationSupport;
@@ -363,8 +363,13 @@ public class LoginViewController extends ViewController implements Initializable
       return true;
     }
     try {
-      var host = URI.create(s).toURL();
-      return true;
+      String[] split = s.split(":", 2);
+      String host = split[0].trim();
+      int port = Integer.parseInt(split[1].trim());
+      if (port < 0 || port > 65535) {
+        throw new IllegalArgumentException("Invalid port: " + port);
+      }
+      return InetAddressValidator.getInstance().isValid(host);
     } catch (Exception e) {
       log.error("Malformed URL: {}", s, e);
       return false;

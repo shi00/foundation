@@ -36,6 +36,7 @@ module chatbot.desktop {
   requires org.kordamp.ikonli.fontawesome6;
   requires static lombok;
   requires passay;
+  requires org.apache.commons.validator;
 
   opens views to
       javafx.fxml;

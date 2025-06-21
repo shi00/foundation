@@ -210,6 +210,7 @@
         <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
         <redisson-spring-boot-starter.version>3.49.0</redisson-spring-boot-starter.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
+        <commons-validator.version>1.9.0</commons-validator.version>
         <k8s-client.version>23.0.0</k8s-client.version>
         <!--开源组件-->
 
@@ -467,6 +468,12 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>${commons-collections4.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-validator</groupId>
+                <artifactId>commons-validator</artifactId>
+                <version>${commons-validator.version}</version>
             </dependency>
 
             <!-- OpenAPI -->
