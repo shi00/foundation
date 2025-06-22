@@ -19,7 +19,7 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
         <mysql.database>test-db</mysql.database>
         <mysql.user>root</mysql.user>
-        <mysql.version>8.0.31</mysql.version>
+        <mysql.version>8.4.0</mysql.version>
         <mysql.password>Test@12345</mysql.password>
         <mysql.jdbc-driver>com.mysql.cj.jdbc.Driver</mysql.jdbc-driver>
     </properties>
@@ -51,6 +51,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -392,7 +393,7 @@
                     <dependency>
                         <groupId>com.mysql</groupId>
                         <artifactId>mysql-connector-j</artifactId>
-                        <version>8.4.0</version>
+                        <version>${mysql.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>

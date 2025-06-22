@@ -1,11 +1,12 @@
 databaseChangeLog:
   - changeSet:
       id: V1__create_chat-conversation_table
-      author: silong
-      comment: 创建会话表
+      author: "silong"
+      comment: "20250622"
       changes:
         - createTable:
             tableName: chat-conversation
+            remarks: "聊天会话表"
             columns:
               - column:
                   name: order
@@ -17,7 +18,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: id
-                  type: varchar(50)
+                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
                     unique: true
                     primaryKey: true
@@ -59,3 +60,14 @@ databaseChangeLog:
                   defaultValueComputed: CURRENT_TIMESTAMP
                   constraints:
                     nullable: false
+        - createIndex:
+            indexName: idx_id_order
+            tableName: chat-conversation
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+              - column:
+                  name: order
+                  type: int
+            unique: true
