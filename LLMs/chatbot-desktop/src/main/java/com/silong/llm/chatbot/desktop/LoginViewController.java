@@ -34,13 +34,13 @@ import static javafx.scene.text.TextAlignment.CENTER;
 
 import atlantafx.base.theme.Dracula;
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
+import com.silong.llm.chatbot.desktop.utils.PasswordValidator;
 import com.silong.llm.chatbot.desktop.utils.ResizeHelper;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import javafx.animation.KeyFrame;
@@ -58,6 +58,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
@@ -67,6 +68,8 @@ import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -78,7 +81,6 @@ import org.controlsfx.validation.Validator;
 import org.kordamp.ikonli.bootstrapicons.BootstrapIcons;
 import org.kordamp.ikonli.fontawesome6.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
-import org.passay.*;
 
 /**
  * 登录界面控制器
@@ -91,6 +93,10 @@ import org.passay.*;
 public class LoginViewController extends ViewController implements Initializable {
 
   private static final String HOST_CNF = "host.cnf";
+
+  private static final HostInfoConverter HOST_INFO_CONVERTER = new HostInfoConverter();
+
+  private final ValidationSupport validation = new ValidationSupport();
 
   @FXML private BorderPane mainLayout;
 
@@ -108,19 +114,17 @@ public class LoginViewController extends ViewController implements Initializable
 
   @FXML private Label hostLabel;
 
-  @FXML private ComboBox<String> hostComboBox;
+  @FXML private ComboBox<HostInfo> hostComboBox;
 
   @FXML private CustomTextField userNameTextField;
 
   @FXML private CustomPasswordField passwordTextField;
 
-  private final ValidationSupport validation = new ValidationSupport();
-
   private ResourceBundle resourceBundle;
 
   private Path hostCnfPath;
 
-  private ObservableList<String> hostItems;
+  private ObservableList<HostInfo> hostItems;
 
   @FXML
   @SneakyThrows(IOException.class)
@@ -188,22 +192,56 @@ public class LoginViewController extends ViewController implements Initializable
   }
 
   @SneakyThrows(IOException.class)
-  private static List<String> loadHosts(Path configPath) {
+  private static List<HostInfo> loadHosts(Path configPath) {
     if (Files.exists(configPath)) {
-      return Files.readAllLines(appHome.resolve(HOST_CNF));
+      return Files.readAllLines(appHome.resolve(HOST_CNF)).stream()
+          .filter(s -> !s.isEmpty())
+          .map(HOST_INFO_CONVERTER::fromString)
+          .filter(LoginViewController::isValidHost)
+          .toList();
     } else {
       List<String> lines = List.of("127.0.0.1:8080");
       Files.write(configPath, lines, UTF_8, CREATE, WRITE, TRUNCATE_EXISTING);
-      return lines;
+      return lines.stream().map(HOST_INFO_CONVERTER::fromString).toList();
     }
   }
 
-  private class DeleteButtonListCell extends ListCell<String> {
+  private record HostInfo(@NonNull String host, @NonNull Integer port)
+      implements Comparable<HostInfo> {
+    @Override
+    public int compareTo(@NonNull HostInfo o) {
+      int compare = host.compareTo(o.host);
+      return compare == 0 ? port.compareTo(o.port) : compare;
+    }
+  }
+
+  private static class HostInfoConverter extends StringConverter<HostInfo> {
+
+    private HostInfoConverter() {}
+
+    @Override
+    public String toString(HostInfo object) {
+      return object == null ? null : String.format("%s:%d", object.host, object.port);
+    }
+
+    @Override
+    public HostInfo fromString(String hostInfo) {
+      if (hostInfo == null || hostInfo.isEmpty()) {
+        return null;
+      }
+
+      String[] split = hostInfo.split(":", 2);
+      String host = split[0].trim();
+      int port = Integer.parseInt(split[1].trim());
+      return new HostInfo(host, port);
+    }
+  }
+
+  private class DeleteButtonListCell extends ListCell<HostInfo> {
     private final HBox container;
     private final Label hostLabel;
-    ;
 
-    public DeleteButtonListCell(ListView<String> listView) {
+    public DeleteButtonListCell(ListView<HostInfo> listView) {
       container = new HBox();
       container.setAlignment(CENTER_LEFT);
       container.setPadding(new Insets(2));
@@ -231,13 +269,17 @@ public class LoginViewController extends ViewController implements Initializable
             }
           });
       deleteBtn.setOnMousePressed(
-          event -> LoginViewController.this.handleDeleteHostBtnAction(hostLabel.getText()));
+          event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+              LoginViewController.this.handleDeleteHostBtnAction(hostLabel.getText());
+            }
+          });
 
       rightContainer.getChildren().add(deleteBtn);
     }
 
     @Override
-    protected void updateItem(String item, boolean empty) {
+    protected void updateItem(HostInfo item, boolean empty) {
       super.updateItem(item, empty);
 
       if (empty || item == null) {
@@ -245,7 +287,7 @@ public class LoginViewController extends ViewController implements Initializable
         setText(null);
       } else {
         // 设置单元格文本
-        hostLabel.setText(item);
+        hostLabel.setText(HOST_INFO_CONVERTER.toString(item));
 
         // 仅在下拉列表中显示删除按钮
         if (getListView().getItems().contains(item)) {
@@ -311,6 +353,7 @@ public class LoginViewController extends ViewController implements Initializable
 
     // 创建一个ObservableList作为数据源
     hostComboBox.setItems(hostItems);
+    hostComboBox.setConverter(HOST_INFO_CONVERTER);
 
     // 添加自动完成支持
     //    AutoCompletionBinding<String> autoCompletionBinding =
@@ -319,36 +362,19 @@ public class LoginViewController extends ViewController implements Initializable
     hostComboBox.setCellFactory(DeleteButtonListCell::new);
   }
 
-  private PasswordValidator buildPasswordValidator() {
-    List<Rule> rules = new ArrayList<>();
-    rules.add(new LengthRule(8, 16)); // 长度8-16
-    rules.add(
-        new CharacterCharacteristicsRule(
-            3,
-            new CharacterRule(EnglishCharacterData.Alphabetical, 1), // 字母
-            new CharacterRule(EnglishCharacterData.Digit, 1), // 数字
-            new CharacterRule(EnglishCharacterData.Special, 1) // 符号
-            ));
-    rules.add(new WhitespaceRule()); // 禁止空格
-
-    return new PasswordValidator(rules);
-  }
-
   private void configureValidation() {
     validation.registerValidator(
         userNameTextField,
         true,
         Validator.createEmptyValidator(resourceBundle.getString("input.username.error")));
 
-    PasswordValidator passwordValidator = buildPasswordValidator();
     var passwordErrorMsg = resourceBundle.getString("input.password.error");
     validation.registerValidator(
         passwordTextField,
         true,
         Validator.combine(
             Validator.createEmptyValidator(passwordErrorMsg),
-            Validator.<String>createPredicateValidator(
-                p -> passwordValidator.validate(new PasswordData(p)).isValid(), passwordErrorMsg)));
+            Validator.createPredicateValidator(PasswordValidator::validate, passwordErrorMsg)));
 
     String hostErrorMsg = resourceBundle.getString("input.host.error");
     validation.registerValidator(
@@ -359,32 +385,42 @@ public class LoginViewController extends ViewController implements Initializable
             Validator.createPredicateValidator(LoginViewController::isValidHost, hostErrorMsg)));
   }
 
-  private static boolean isValidHost(String s) {
-    if (s == null || s.isEmpty()) {
-      return true;
-    }
-    try {
-      String[] split = s.split(":", 2);
-      String host = split[0].trim();
-      int port = Integer.parseInt(split[1].trim());
-      if (port < 0 || port > 65535) {
-        throw new IllegalArgumentException("Invalid port: " + port);
-      }
-      return InetAddressValidator.getInstance().isValid(host)
-          || DomainValidator.getInstance().isValid(host);
-    } catch (Exception e) {
-      log.error("Invalid host: {}", s, e);
+  private static boolean isValidHost(HostInfo hostInfo) {
+    if (hostInfo == null) {
       return false;
     }
+    int port = hostInfo.port;
+    if (port < 0 || port > 65535) {
+      log.error("Invalid port: {}", port);
+      return false;
+    }
+
+    String host = hostInfo.host;
+    boolean result =
+        InetAddressValidator.getInstance().isValid(host)
+            || DomainValidator.getInstance().isValid(host);
+    if (!result) {
+      log.error("Invalid host: {}", host);
+      return false;
+    }
+    return true;
   }
 
   @SneakyThrows(IOException.class)
   void handleDeleteHostBtnAction(String text) {
-    if (text != null && !text.isEmpty() && hostItems.contains(text)) {
-      hostItems.remove(text);
+    HostInfo hostInfo;
+    if (text != null
+        && !text.isEmpty()
+        && hostItems.contains(hostInfo = HOST_INFO_CONVERTER.fromString(text))) {
+      hostItems.remove(hostInfo);
       hostComboBox.hide();
       hostComboBox.setValue(null);
-      Files.write(hostCnfPath, hostItems, UTF_8, CREATE, TRUNCATE_EXISTING);
+      Files.write(
+          hostCnfPath,
+          hostItems.stream().map(HOST_INFO_CONVERTER::toString).toList(),
+          UTF_8,
+          CREATE,
+          TRUNCATE_EXISTING);
       log.info("Deleted host: {}", text);
     }
   }
@@ -393,17 +429,25 @@ public class LoginViewController extends ViewController implements Initializable
   @SneakyThrows(IOException.class)
   void handleAddHostBtnAction(ActionEvent event) {
     String text = hostComboBox.getEditor().getText();
-    if (text != null && !text.isEmpty() && !hostItems.contains(text)) {
+    HostInfo hostInfo;
+    if (text != null
+        && !text.isEmpty()
+        && !hostItems.contains(hostInfo = HOST_INFO_CONVERTER.fromString(text))) {
 
-      if (!isValidHost(text)) {
+      if (!isValidHost(hostInfo)) {
         showErrorDialog(resourceBundle.getString("input.addHostBtn.error"));
         hostComboBox.setValue(null);
         return;
       }
 
-      hostItems.addFirst(text);
-      hostComboBox.setValue(text);
-      Files.write(hostCnfPath, hostItems, UTF_8, TRUNCATE_EXISTING, CREATE);
+      hostItems.addFirst(hostInfo);
+      hostComboBox.setValue(hostInfo);
+      Files.write(
+          hostCnfPath,
+          hostItems.stream().map(HOST_INFO_CONVERTER::toString).toList(),
+          UTF_8,
+          TRUNCATE_EXISTING,
+          CREATE);
       log.info("Added host: {}", text);
     }
   }
