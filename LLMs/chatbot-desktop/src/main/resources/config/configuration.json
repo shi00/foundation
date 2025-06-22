@@ -18,6 +18,7 @@
     },
     "httpClientRequestConfig": {
       "chatStreamRequestPath": "/chat/stream",
+      "loginRequestPath": "/login",
       "conversationHistoryRequestPath": "/chat/history",
       "responseTimeout": 30
     },
