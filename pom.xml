@@ -173,7 +173,7 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.5.0</spring-boot.version>
+        <spring-boot.version>3.5.3</spring-boot.version>
         <spring-ai.version>1.0.0</spring-ai.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
         <guava.version>33.4.8-jre</guava.version>
@@ -185,11 +185,10 @@
         <jave.version>3.5.0</jave.version>
         <jetcd.version>0.8.5</jetcd.version>
         <jmh.version>1.37</jmh.version>
-        <jooq.version>3.19.22</jooq.version>
+        <jooq.version>3.19.24</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
-        <testcontainers.version>1.21.0</testcontainers.version>
-        <springdoc.version>2.8.8</springdoc.version>
-        <libphonenumber.version>9.0.5</libphonenumber.version>
+        <springdoc.version>2.8.9</springdoc.version>
+        <libphonenumber.version>9.0.7</libphonenumber.version>
         <datafaker.version>2.4.3</datafaker.version>
         <commons-io.version>2.19.0</commons-io.version>
         <commons-rng-simple.version>1.6</commons-rng-simple.version>
@@ -240,13 +239,6 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
