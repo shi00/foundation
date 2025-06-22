@@ -21,6 +21,7 @@
 
 package com.silong.llm.chatbot.desktop.client;
 
+import com.silong.llm.chatbot.desktop.utils.HostInfoConverter.HostInfo;
 import java.io.Closeable;
 import java.util.concurrent.Future;
 
@@ -34,15 +35,15 @@ import java.util.concurrent.Future;
 public interface AsyncRestClient extends Closeable {
 
   /**
-   * 创建客户端
+   * 登录
    *
-   * @param host 主机地址
-   * @param port 端口
-   * @param credential 用户凭证
-   * @return 客户端
+   * @param username 用户
+   * @param password 密码
+   * @param hostInfo 主机信息
+   * @return 用户凭证
    */
-  static AsyncRestClient create(String host, int port, String credential) {
-    return new DefaultAsyncRestClient(host, port, credential);
+  static AsyncRestClient login(String username, String password, HostInfo hostInfo) {
+    return new DefaultAsyncRestClient(username, password, hostInfo);
   }
 
   /**
