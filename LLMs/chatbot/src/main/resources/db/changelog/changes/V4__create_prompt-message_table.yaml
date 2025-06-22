@@ -1,11 +1,12 @@
 databaseChangeLog:
   - changeSet:
       id: V4__create_prompt-message_table
-      author: silong
-      comment: 创建提示词消息表
+      author: "silong"
+      comment: "20250622"
       changes:
         - createTable:
             tableName: prompt-message
+            remarks: "提示词信息表"
             columns:
               - column:
                   name: id
@@ -17,6 +18,18 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: message
-                  type: text
+                  type: text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
                     nullable: false
+              - column:
+                  name: signature
+                  type: varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_prompt_message_signature
+            tableName: prompt-message
+            columns:
+              - column:
+                  name: signature
+                  type: varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci

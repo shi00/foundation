@@ -1,11 +1,12 @@
 databaseChangeLog:
   - changeSet:
       id: V5__create_user-message_table
-      author: silong
-      comment: 创建用户消息表
+      author: "silong"
+      comment: "20250622"
       changes:
         - createTable:
             tableName: user-message
+            remarks: "用户信息表"
             columns:
               - column:
                   name: id
@@ -17,6 +18,18 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: message
-                  type: text
+                  type: text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
                     nullable: false
+              - column:
+                  name: signature
+                  type: varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_user_message_signature
+            tableName: user-message
+            columns:
+              - column:
+                  name: signature
+                  type: varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci

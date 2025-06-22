@@ -1,11 +1,12 @@
 databaseChangeLog:
   - changeSet:
       id: V2__create_system-message_table
-      author: silong
-      comment: 创建系统消息表
+      author: "silong"
+      comment: "20250622"
       changes:
         - createTable:
             tableName: system-message
+            remarks: "系统信息表"
             columns:
               - column:
                   name: id
@@ -20,3 +21,15 @@ databaseChangeLog:
                   type: text
                   constraints:
                     nullable: false
+              - column:
+                  name: signature
+                  type: varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_system_message_signature
+            tableName: system-message
+            columns:
+              - column:
+                  name: signature
+                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci

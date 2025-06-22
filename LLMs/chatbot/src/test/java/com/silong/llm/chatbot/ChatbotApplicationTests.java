@@ -55,6 +55,7 @@ public class ChatbotApplicationTests {
 
   private static final String DOMAIN = "test.com";
   private static final String ADMIN_PASSWORD = "Secret@123";
+  private static final String TEST_DB = "test_db";
 
   @Container
   private static final GenericContainer<?> REDIS_CONTAINER =
@@ -65,8 +66,8 @@ public class ChatbotApplicationTests {
 
   @Container
   private static final GenericContainer<?> MYSQL_CONTAINER =
-      new GenericContainer<>("mysql:8.0.31")
-          .withEnv("MYSQL_DATABASE", "test_db")
+      new GenericContainer<>("mysql:8.0.33")
+          .withEnv("MYSQL_DATABASE", TEST_DB)
           .withEnv("MYSQL_ROOT_PASSWORD", ADMIN_PASSWORD)
           .withExposedPorts(3306)
           .withCommand("--default-authentication-plugin=mysql_native_password")
@@ -90,8 +91,8 @@ public class ChatbotApplicationTests {
         "spring.datasource.url",
         () ->
             String.format(
-                "jdbc:mysql://%s:%d/test_db",
-                MYSQL_CONTAINER.getHost(), MYSQL_CONTAINER.getMappedPort(3306)));
+                "jdbc:mysql://%s:%d/%s",
+                MYSQL_CONTAINER.getHost(), MYSQL_CONTAINER.getMappedPort(3306), TEST_DB));
     registry.add("spring.datasource.username", () -> "root");
     registry.add("spring.datasource.password", () -> ADMIN_PASSWORD);
     registry.add(
