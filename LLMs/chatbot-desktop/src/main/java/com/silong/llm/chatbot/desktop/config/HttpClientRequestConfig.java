@@ -33,6 +33,9 @@ public record HttpClientRequestConfig(
     // 流式聊天请求路径
     String chatStreamRequestPath,
 
+    // 登录请求路径
+    String loginRequestPath,
+
     // 对话历史请求路径
     String conversationHistoryRequestPath,
 
