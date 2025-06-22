@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.llm.chatbot.desktop;
+package com.silong.llm.chatbot.desktop.controllers;
 
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.*;
 import static java.nio.charset.StandardCharsets.UTF_8;

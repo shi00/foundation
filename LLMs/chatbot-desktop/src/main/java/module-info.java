@@ -34,15 +34,17 @@ module chatbot.desktop {
   requires org.kordamp.ikonli.javafx;
   requires org.kordamp.ikonli.bootstrapicons;
   requires org.kordamp.ikonli.fontawesome6;
-  requires static lombok;
   requires passay;
   requires org.apache.commons.validator;
+  requires static lombok;
 
   opens views to
       javafx.fxml;
-  opens com.silong.llm.chatbot.desktop to
+  opens com.silong.llm.chatbot.desktop.controllers to
       com.fasterxml.jackson.databind,
       javafx.fxml,
+      javafx.graphics;
+  opens com.silong.llm.chatbot.desktop to
       javafx.graphics;
   opens config to
       com.fasterxml.jackson.databind;

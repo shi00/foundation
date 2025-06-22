@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.llm.chatbot.desktop;
+package com.silong.llm.chatbot.desktop.controllers;
 
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
 import static javafx.scene.Cursor.CLOSED_HAND;

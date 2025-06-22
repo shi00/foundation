@@ -67,10 +67,10 @@ public class ChatbotDesktopApplication extends Application {
   public static final Configuration CONFIGURATION;
 
   /** 应用数据存储目录 */
-  static Path appHome;
+  public static Path appHome;
 
   /** 主窗口 */
-  static Stage primaryStage;
+  public static Stage primaryStage;
 
   static {
     String path = System.getProperty(CONFIG_FILE, DEFAULT_CONFIG_FILE_PATH);
