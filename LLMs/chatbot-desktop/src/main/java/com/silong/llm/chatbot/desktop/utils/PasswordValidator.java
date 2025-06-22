@@ -67,7 +67,6 @@ public class PasswordValidator {
             new CharacterRule(EnglishCharacterData.Special, 1) // 符号
             ));
     rules.add(new WhitespaceRule()); // 禁止空格
-
     return new org.passay.PasswordValidator(rules);
   }
 }
