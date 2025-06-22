@@ -34,6 +34,8 @@ import static javafx.scene.text.TextAlignment.CENTER;
 
 import atlantafx.base.theme.Dracula;
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
+import com.silong.llm.chatbot.desktop.utils.HostInfoConverter;
+import com.silong.llm.chatbot.desktop.utils.HostInfoConverter.HostInfo;
 import com.silong.llm.chatbot.desktop.utils.PasswordValidator;
 import com.silong.llm.chatbot.desktop.utils.ResizeHelper;
 import java.io.IOException;
@@ -68,8 +70,6 @@ import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
-import javafx.util.StringConverter;
-import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -93,8 +93,6 @@ import org.kordamp.ikonli.javafx.FontIcon;
 public class LoginViewController extends ViewController implements Initializable {
 
   private static final String HOST_CNF = "host.cnf";
-
-  private static final HostInfoConverter HOST_INFO_CONVERTER = new HostInfoConverter();
 
   private final ValidationSupport validation = new ValidationSupport();
 
@@ -196,44 +194,13 @@ public class LoginViewController extends ViewController implements Initializable
     if (Files.exists(configPath)) {
       return Files.readAllLines(appHome.resolve(HOST_CNF)).stream()
           .filter(s -> !s.isEmpty())
-          .map(HOST_INFO_CONVERTER::fromString)
+          .map(HostInfoConverter.getInstance()::fromString)
           .filter(LoginViewController::isValidHost)
           .toList();
     } else {
       List<String> lines = List.of("127.0.0.1:8080");
       Files.write(configPath, lines, UTF_8, CREATE, WRITE, TRUNCATE_EXISTING);
-      return lines.stream().map(HOST_INFO_CONVERTER::fromString).toList();
-    }
-  }
-
-  private record HostInfo(@NonNull String host, @NonNull Integer port)
-      implements Comparable<HostInfo> {
-    @Override
-    public int compareTo(@NonNull HostInfo o) {
-      int compare = host.compareTo(o.host);
-      return compare == 0 ? port.compareTo(o.port) : compare;
-    }
-  }
-
-  private static class HostInfoConverter extends StringConverter<HostInfo> {
-
-    private HostInfoConverter() {}
-
-    @Override
-    public String toString(HostInfo object) {
-      return object == null ? null : String.format("%s:%d", object.host, object.port);
-    }
-
-    @Override
-    public HostInfo fromString(String hostInfo) {
-      if (hostInfo == null || hostInfo.isEmpty()) {
-        return null;
-      }
-
-      String[] split = hostInfo.split(":", 2);
-      String host = split[0].trim();
-      int port = Integer.parseInt(split[1].trim());
-      return new HostInfo(host, port);
+      return lines.stream().map(HostInfoConverter.getInstance()::fromString).toList();
     }
   }
 
@@ -287,7 +254,7 @@ public class LoginViewController extends ViewController implements Initializable
         setText(null);
       } else {
         // 设置单元格文本
-        hostLabel.setText(HOST_INFO_CONVERTER.toString(item));
+        hostLabel.setText(HostInfoConverter.getInstance().toString(item));
 
         // 仅在下拉列表中显示删除按钮
         if (getListView().getItems().contains(item)) {
@@ -353,7 +320,7 @@ public class LoginViewController extends ViewController implements Initializable
 
     // 创建一个ObservableList作为数据源
     hostComboBox.setItems(hostItems);
-    hostComboBox.setConverter(HOST_INFO_CONVERTER);
+    hostComboBox.setConverter(HostInfoConverter.getInstance());
 
     // 添加自动完成支持
     //    AutoCompletionBinding<String> autoCompletionBinding =
@@ -389,13 +356,13 @@ public class LoginViewController extends ViewController implements Initializable
     if (hostInfo == null) {
       return false;
     }
-    int port = hostInfo.port;
+    int port = hostInfo.port();
     if (port < 0 || port > 65535) {
       log.error("Invalid port: {}", port);
       return false;
     }
 
-    String host = hostInfo.host;
+    String host = hostInfo.host();
     boolean result =
         InetAddressValidator.getInstance().isValid(host)
             || DomainValidator.getInstance().isValid(host);
@@ -411,13 +378,13 @@ public class LoginViewController extends ViewController implements Initializable
     HostInfo hostInfo;
     if (text != null
         && !text.isEmpty()
-        && hostItems.contains(hostInfo = HOST_INFO_CONVERTER.fromString(text))) {
+        && hostItems.contains(hostInfo = HostInfoConverter.getInstance().fromString(text))) {
       hostItems.remove(hostInfo);
       hostComboBox.hide();
       hostComboBox.setValue(null);
       Files.write(
           hostCnfPath,
-          hostItems.stream().map(HOST_INFO_CONVERTER::toString).toList(),
+          hostItems.stream().map(HostInfoConverter.getInstance()::toString).toList(),
           UTF_8,
           CREATE,
           TRUNCATE_EXISTING);
@@ -432,7 +399,7 @@ public class LoginViewController extends ViewController implements Initializable
     HostInfo hostInfo;
     if (text != null
         && !text.isEmpty()
-        && !hostItems.contains(hostInfo = HOST_INFO_CONVERTER.fromString(text))) {
+        && !hostItems.contains(hostInfo = HostInfoConverter.getInstance().fromString(text))) {
 
       if (!isValidHost(hostInfo)) {
         showErrorDialog(resourceBundle.getString("input.addHostBtn.error"));
@@ -444,7 +411,7 @@ public class LoginViewController extends ViewController implements Initializable
       hostComboBox.setValue(hostInfo);
       Files.write(
           hostCnfPath,
-          hostItems.stream().map(HOST_INFO_CONVERTER::toString).toList(),
+          hostItems.stream().map(HostInfoConverter.getInstance()::toString).toList(),
           UTF_8,
           TRUNCATE_EXISTING,
           CREATE);
