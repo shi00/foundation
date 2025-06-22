@@ -30,6 +30,7 @@ import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
 import com.silong.llm.chatbot.provider.LdapUserProvider;
 import java.time.Duration;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -59,11 +60,18 @@ public class ChatbotApplicationTests {
           .waitingFor(Wait.forListeningPort())
           .withStartupTimeout(Duration.ofMinutes(1));
 
+  @Container
+  private static final GenericContainer<?> MYSQL_CONTAINER =
+      new GenericContainer<>("mysql:8.0.31")
+          .withExposedPorts(3306)
+          .waitingFor(Wait.forListeningPort())
+          .withStartupTimeout(Duration.ofMinutes(1));
+
   private static final String DOMAIN = "test.com";
   private static final String ADMIN_PASSWORD = "Secret@123";
 
   @Container
-  private static GenericContainer<?> LDAP_CONTAINER =
+  private static final GenericContainer<?> LDAP_CONTAINER =
       new GenericContainer<>("osixia/openldap:1.5.0")
           .withEnv("LDAP_DOMAIN", DOMAIN)
           .withEnv("LDAP_ADMIN_PASSWORD", ADMIN_PASSWORD)
@@ -76,6 +84,12 @@ public class ChatbotApplicationTests {
   static void redisProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
     registry.add("spring.data.redis.port", () -> REDIS_CONTAINER.getMappedPort(6379));
+    registry.add(
+        "spring.datasource.url",
+        () ->
+            String.format(
+                "jdbc:mysql://%s:%d/test_db",
+                MYSQL_CONTAINER.getHost(), MYSQL_CONTAINER.getMappedPort(3306)));
     registry.add(
         "ldap.urls",
         () ->
@@ -91,6 +105,13 @@ public class ChatbotApplicationTests {
   private String loginPath;
 
   @Autowired private LdapUserProvider ldapUserProvider;
+
+  @AfterAll
+  static void cleanup() {
+    REDIS_CONTAINER.stop();
+    MYSQL_CONTAINER.stop();
+    LDAP_CONTAINER.stop();
+  }
 
   @BeforeAll
   static void initUser() throws Exception {
