@@ -17,6 +17,11 @@
     <properties>
         <java.version>21</java.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <mysql.database>test-db</mysql.database>
+        <mysql.user>root</mysql.user>
+        <mysql.version>8.0.31</mysql.version>
+        <mysql.password>Test@12345</mysql.password>
+        <mysql.jdbc-driver>com.mysql.cj.jdbc.Driver</mysql.jdbc-driver>
     </properties>
 
     <dependencies>
@@ -39,6 +44,11 @@
             <artifactId>jcl-over-slf4j</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>com.microsoft.azure</groupId>
             <artifactId>msal4j</artifactId>
             <version>1.19.1</version>
@@ -52,6 +62,10 @@
             <groupId>com.silong</groupId>
             <artifactId>spring-boot-starter-crypto</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jooq</artifactId>
         </dependency>
         <dependency>
             <groupId>com.unboundid</groupId>
@@ -311,6 +325,145 @@
                             <artifactId>lombok</artifactId>
                         </path>
                     </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.silong</groupId>
+                <artifactId>mysql-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <image>mysql:${mysql.version}</image>
+                    <database>${mysql.database}</database>
+                    <jdbcUrl>jdbc-url</jdbcUrl>
+                    <userName>${mysql.user}</userName>
+                    <password>${mysql.password}</password>
+                    <jdbcDriver>${mysql.jdbc-driver}</jdbcDriver>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>pre-jooq-complie</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>post-jooq-compile</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>sql-maven-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>mysql</groupId>
+                        <artifactId>mysql-connector-java</artifactId>
+                        <version>${mysql.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <!-- 定义数据库连接参数 -->
+                    <driver>${mysql.jdbc-driver}</driver>
+                    <url>${jdbc-url}</url>
+                    <username>${mysql.user}</username>
+                    <password>${mysql.password}</password>
+                    <!-- 指定要执行的sql脚本 'sql'文件夹为脚本所在文件夹下的子文件夹 -->
+                    <srcFiles>
+                        <srcFile>${project.basedir}/src/main/resources/db/mysql-init.sql</srcFile>
+                    </srcFiles>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>create-table</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <executions>
+                    <execution>
+                        <id>jooq-codegen</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <jdbc>
+                        <driver>${mysql.jdbc-driver}</driver>
+                        <url>${jdbc-url}</url>
+                        <user>${mysql.user}</user>
+                        <password>${mysql.password}</password>
+                    </jdbc>
+
+                    <!-- Log at WARN level by default -->
+                    <logging>INFO</logging>
+                    <generator>
+                        <name>org.jooq.codegen.JavaGenerator</name>
+                        <generate>
+                            <!-- Never generate deprecated code -->
+                            <deprecated>false</deprecated>
+                        </generate>
+                        <database>
+
+                            <!-- The database type. The format here is:
+                                 org.jooq.meta.[database].[database]Database -->
+                            <name>org.jooq.meta.mysql.MySQLDatabase</name>
+
+                            <!-- The database schema (or in the absence of schema support, in your RDBMS this
+                                 can be the owner, user, database name) to be generated -->
+                            <!-- 数据库名 -->
+                            <inputSchema>${mysql.database}</inputSchema>
+                            <outputSchemaToDefault>true</outputSchemaToDefault>
+
+                            <!-- All elements that are generated from your schema
+                                 (A Java regular expression. Use the pipe to separate several expressions)
+                                 Watch out for case-sensitivity. Depending on your database, this might be important! -->
+                            <!-- 包含哪些表 -->
+                            <includes>.*</includes>
+
+                            <!-- All elements that are excluded from your schema
+                                 (A Java regular expression. Use the pipe to separate several expressions).
+                                 Excludes match before includes, i.e. excludes have a higher priority -->
+                            <!-- 排除哪些表，这里支持正则表达式 ，多个条件可以用 | 连接符连接-->
+                            <!-- 例如：TEST | OTHERS 生成代码时就不会把叫做TEST和OTHERS的表包括进去了-->
+                            <!--                            <excludes></excludes>-->
+                        </database>
+
+                        <target>
+                            <!-- The destination package of your generated classes (within the destination directory) -->
+                            <!-- 生成的代码存放的包名 -->
+                            <packageName>com.silong.llm.chatbot.mysql.model</packageName>
+
+                            <!-- The destination directory of your generated classes. Using Maven directory layout here -->
+                            <!-- 存放的路径 -->
+                            <directory>${project.basedir}/target/generated-sources</directory>
+                        </target>
+                    </generator>
                 </configuration>
             </plugin>
         </plugins>
