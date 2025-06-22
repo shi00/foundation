@@ -53,6 +53,9 @@ import org.testcontainers.utility.MountableFile;
 @AutoConfigureWebTestClient
 public class ChatbotApplicationTests {
 
+  private static final String DOMAIN = "test.com";
+  private static final String ADMIN_PASSWORD = "Secret@123";
+
   @Container
   private static final GenericContainer<?> REDIS_CONTAINER =
       new GenericContainer<>("redis:6.2.6")
@@ -63,12 +66,11 @@ public class ChatbotApplicationTests {
   @Container
   private static final GenericContainer<?> MYSQL_CONTAINER =
       new GenericContainer<>("mysql:8.0.31")
+          .withEnv("MYSQL_DATABASE", "test_db")
+          .withEnv("MYSQL_ROOT_PASSWORD", ADMIN_PASSWORD)
           .withExposedPorts(3306)
-          .waitingFor(Wait.forListeningPort())
-          .withStartupTimeout(Duration.ofMinutes(1));
-
-  private static final String DOMAIN = "test.com";
-  private static final String ADMIN_PASSWORD = "Secret@123";
+          .withCommand("--default-authentication-plugin=mysql_native_password")
+          .waitingFor(Wait.forLogMessage(".*port: 3306  MySQL Community Server - GPL.*\\n", 1));
 
   @Container
   private static final GenericContainer<?> LDAP_CONTAINER =
@@ -90,6 +92,8 @@ public class ChatbotApplicationTests {
             String.format(
                 "jdbc:mysql://%s:%d/test_db",
                 MYSQL_CONTAINER.getHost(), MYSQL_CONTAINER.getMappedPort(3306)));
+    registry.add("spring.datasource.username", () -> "root");
+    registry.add("spring.datasource.password", () -> ADMIN_PASSWORD);
     registry.add(
         "ldap.urls",
         () ->

@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - include:
+      file: changes/V1__create_chat-conversation_table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/V2__create_system-message_table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/V3__create_tool-message_table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/V4__create_prompt-message_table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/V5__create_user-message_table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/V6__create_assistant-message_table.yaml
+      relativeToChangelogFile: true

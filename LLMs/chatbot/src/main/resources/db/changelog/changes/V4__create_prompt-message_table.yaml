@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: V4__create_prompt-message_table
+      author: silong
+      comment: 创建提示词消息表
+      changes:
+        - createTable:
+            tableName: prompt-message
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    unique: true
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: message
+                  type: text
+                  constraints:
+                    nullable: false

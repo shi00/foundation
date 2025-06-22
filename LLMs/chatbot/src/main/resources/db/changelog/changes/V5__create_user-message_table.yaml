@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: V5__create_user-message_table
+      author: silong
+      comment: 创建用户消息表
+      changes:
+        - createTable:
+            tableName: user-message
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    unique: true
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: message
+                  type: text
+                  constraints:
+                    nullable: false

@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: V3__create_tool-message_table
+      author: silong
+      comment: 创建工具消息表
+      changes:
+        - createTable:
+            tableName: tool-message
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    unique: true
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: message
+                  type: text
+                  constraints:
+                    nullable: false
