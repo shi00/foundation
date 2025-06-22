@@ -39,7 +39,7 @@ public class DataSourceAutoConfiguration {
 
   @Bean
   @ConfigurationProperties(prefix = "spring.datasource.hikari")
-  public HikariDataSource dataSource(DataSourceProperties properties) {
+  HikariDataSource dataSource(DataSourceProperties properties) {
     return properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
   }
 }
