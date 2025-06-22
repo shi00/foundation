@@ -24,6 +24,7 @@ package com.silong.llm.chatbot.desktop.client;
 import com.silong.llm.chatbot.desktop.utils.HostInfoConverter.HostInfo;
 import java.io.Closeable;
 import java.util.concurrent.Future;
+import javax.security.auth.login.LoginException;
 
 /**
  * 异步客户端
@@ -42,7 +43,8 @@ public interface AsyncRestClient extends Closeable {
    * @param hostInfo 主机信息
    * @return 用户凭证
    */
-  static AsyncRestClient login(String username, String password, HostInfo hostInfo) {
+  static AsyncRestClient login(String username, String password, HostInfo hostInfo)
+      throws LoginException {
     return new DefaultAsyncRestClient(username, password, hostInfo);
   }
 

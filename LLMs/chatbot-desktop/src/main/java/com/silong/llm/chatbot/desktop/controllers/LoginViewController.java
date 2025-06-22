@@ -70,6 +70,7 @@ import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
+import javax.security.auth.login.LoginException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -125,7 +126,7 @@ public class LoginViewController extends ViewController implements Initializable
   private ObservableList<HostInfo> hostItems;
 
   @FXML
-  @SneakyThrows(IOException.class)
+  @SneakyThrows({IOException.class})
   void handleLoginAction(ActionEvent event) {
 
     // 检查参数是否都正常输入
@@ -143,12 +144,19 @@ public class LoginViewController extends ViewController implements Initializable
     String password = passwordTextField.getText();
 
     var hostInfo = hostComboBox.getSelectionModel().getSelectedItem();
+    AsyncRestClient restClient;
+    try {
+      restClient = AsyncRestClient.login(userName, password, hostInfo);
+    } catch (LoginException e) {
+      showErrorDialog(resourceBundle.getString("login.failed.error"));
+      return;
+    }
 
     FXMLLoader loader =
         new FXMLLoader(getClass().getResource(CONFIGURATION.chatViewPath()), resourceBundle);
     Parent parent = loader.load();
     ChatViewController controller = loader.getController();
-    controller.setRestClient(AsyncRestClient.login(userName, password, hostInfo));
+    controller.setRestClient(restClient);
     var scene = new Scene(parent);
     var primaryStage = getPrimaryStage();
     var stage = (Stage) primaryStage.getScene().getWindow();
@@ -204,6 +212,7 @@ public class LoginViewController extends ViewController implements Initializable
     }
   }
 
+  /** 含删除按钮的ListCell */
   private class DeleteButtonListCell extends ListCell<HostInfo> {
     private final HBox container;
     private final Label hostLabel;

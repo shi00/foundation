@@ -172,9 +172,9 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
    * @param password 密码
    * @param hostInfo 主机信息
    */
-  @SneakyThrows({LoginException.class})
   public DefaultAsyncRestClient(
-      @NonNull String userName, @NonNull String password, @NonNull HostInfo hostInfo) {
+      @NonNull String userName, @NonNull String password, @NonNull HostInfo hostInfo)
+      throws LoginException {
     this.chatStreamRequestUri =
         URI.create(
             String.format(
