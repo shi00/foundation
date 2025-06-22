@@ -24,16 +24,18 @@ package com.silong.llm.chatbot.desktop.client;
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.CONFIGURATION;
 import static org.apache.hc.core5.http.ContentType.TEXT_EVENT_STREAM;
 import static org.apache.hc.core5.http.ContentType.TEXT_PLAIN;
-import static org.apache.hc.core5.http.HttpHeaders.ACCEPT;
-import static org.apache.hc.core5.http.HttpHeaders.AUTHORIZATION;
+import static org.apache.hc.core5.http.HttpHeaders.*;
+import static org.apache.hc.core5.http.HttpStatus.SC_OK;
 import static org.apache.hc.core5.http2.HttpVersionPolicy.NEGOTIATE;
 import static org.apache.hc.core5.pool.PoolConcurrencyPolicy.LAX;
 import static org.apache.hc.core5.pool.PoolReusePolicy.LIFO;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.desktop.config.HttpClientConfig;
 import com.silong.llm.chatbot.desktop.config.HttpClientConnectionPoolConfig;
 import com.silong.llm.chatbot.desktop.config.HttpClientProxy;
 import com.silong.llm.chatbot.desktop.config.HttpClientRequestConfig;
+import com.silong.llm.chatbot.desktop.utils.HostInfoConverter.HostInfo;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
@@ -41,9 +43,11 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import javax.net.ssl.SSLContext;
+import javax.security.auth.login.LoginException;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +56,7 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.config.TlsConfig;
@@ -60,11 +65,12 @@ import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpHost;
-import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http.nio.ssl.BasicClientTlsStrategy;
 import org.apache.hc.core5.ssl.SSLContexts;
@@ -81,7 +87,22 @@ import org.apache.hc.core5.util.Timeout;
 @Slf4j
 class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
 
+  private static final String LOGIN_REQUEST_TEMPLATE =
+"""
+{"user_name":"%s","password":"%s"}
+""";
+
+  private static final String LOGIN_RESPONSE_TEMPLATE =
+"""
+{"token":"%s"}
+""";
+
   private static final String CONVERSATION_ID = "Conversation-ID";
+
+  /** 访问token */
+  private static final String ACCESS_TOKEN = "Access-Token";
+
+  private final ObjectMapper mapper = new ObjectMapper();
 
   private final CloseableHttpAsyncClient httpAsyncClient;
 
@@ -89,22 +110,77 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
 
   private final URI chatHistoryRequestUri;
 
+  private final URI loginRequestUri;
+
   private final List<ResponseCallback> responseCallbacks = new CopyOnWriteArrayList<>();
+
+  /**
+   * 用户登录
+   *
+   * @param userName 用户名
+   * @param password 密码
+   * @return 用户凭证
+   * @throws LoginException 登录异常
+   */
+  private String login(String userName, String password) throws LoginException {
+    try (var client = HttpClients.createDefault()) {
+      // 创建 HTTP POST 请求
+      var httpPost = new HttpPost(loginRequestUri);
+
+      // 设置请求参数
+      httpPost.setEntity(
+          new StringEntity(
+              String.format(LOGIN_REQUEST_TEMPLATE, userName, password),
+              ContentType.APPLICATION_JSON));
+
+      var token =
+          client.execute(
+              httpPost,
+              response -> {
+                // 获取响应实体
+                var entity = response.getEntity();
+
+                // 处理响应内容
+                String responseBody = EntityUtils.toString(entity);
+                if (response.getCode() == SC_OK) {
+                  // 将 JSON 字符串解析为 Map
+                  Map<String, String> map = mapper.readValue(responseBody, Map.class);
+                  return map.get("token");
+                } else {
+                  String msg =
+                      String.format(
+                          "Failed to login with userName:%s and password:%s, statusCode:%s, reason:%s.",
+                          userName, "******", response.getCode(), responseBody);
+                  log.error(msg);
+                  return null;
+                }
+              });
+      if (token == null || token.isEmpty()) {
+        throw new LoginException(
+            String.format("Failed to login with userName:%s and password:%s", userName, password));
+      }
+      return token;
+    } catch (IOException e) {
+      throw new LoginException(e.getMessage());
+    }
+  }
 
   /**
    * 构造方法
    *
-   * @param host 主机
-   * @param port 端口
-   * @param credential 用户凭证
+   * @param userName 用户
+   * @param password 密码
+   * @param hostInfo 主机信息
    */
-  public DefaultAsyncRestClient(@NonNull String host, int port, @NonNull String credential) {
+  @SneakyThrows({LoginException.class})
+  public DefaultAsyncRestClient(
+      @NonNull String userName, @NonNull String password, @NonNull HostInfo hostInfo) {
     this.chatStreamRequestUri =
         URI.create(
             String.format(
                 "https://%s:%d%s",
-                host,
-                port,
+                hostInfo.host(),
+                hostInfo.port(),
                 CONFIGURATION
                     .httpClientConfig()
                     .httpClientRequestConfig()
@@ -113,13 +189,20 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
         URI.create(
             String.format(
                 "https://%s:%d%s",
-                host,
-                port,
+                hostInfo.host(),
+                hostInfo.port(),
                 CONFIGURATION
                     .httpClientConfig()
                     .httpClientRequestConfig()
                     .conversationHistoryRequestPath()));
-    this.httpAsyncClient = createHttpClient(credential);
+    this.loginRequestUri =
+        URI.create(
+            String.format(
+                "https://%s:%d%s",
+                hostInfo.host(),
+                hostInfo.port(),
+                CONFIGURATION.httpClientConfig().httpClientRequestConfig().loginRequestPath()));
+    this.httpAsyncClient = createHttpClient(login(userName, password));
   }
 
   /**
@@ -135,7 +218,7 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
   /**
    * 创建默认的HttpClient实例，使用连接池和线程安全配置
    *
-   * @param credential 用户凭证
+   * @param accessToken 用户凭证
    * @return CloseableHttpClient实例
    */
   @SneakyThrows({
@@ -143,7 +226,7 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
     KeyStoreException.class,
     KeyManagementException.class
   })
-  private CloseableHttpAsyncClient createHttpClient(String credential) {
+  private CloseableHttpAsyncClient createHttpClient(String accessToken) {
     HttpClientConfig httpClientConfig = CONFIGURATION.httpClientConfig();
     HttpClientConnectionPoolConfig connectionPoolConfig =
         httpClientConfig.httpClientConnectionPoolConfig();
@@ -193,7 +276,7 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
         HttpAsyncClients.custom()
             .setDefaultHeaders(
                 List.of(
-                    new BasicHeader(AUTHORIZATION, credential),
+                    new BasicHeader(ACCESS_TOKEN, accessToken),
                     new BasicHeader(ACCEPT, TEXT_EVENT_STREAM)))
             .setKeepAliveStrategy(DefaultConnectionKeepAliveStrategy.INSTANCE)
             .setConnectionManager(connectionManager)
@@ -258,8 +341,7 @@ class DefaultAsyncRestClient implements AsyncRestClient, Closeable {
           public void completed(SimpleHttpResponse response) {
             Header cidHeader = response.getFirstHeader(CONVERSATION_ID);
             String cid = cidHeader != null ? cidHeader.getValue() : null;
-            String bodyText =
-                response.getCode() == HttpStatus.SC_OK ? response.getBodyText() : null;
+            String bodyText = response.getCode() == SC_OK ? response.getBodyText() : null;
             responseCallbacks.forEach(
                 responseCallback ->
                     responseCallback.callback(

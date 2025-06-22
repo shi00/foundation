@@ -32,7 +32,6 @@ import static javafx.scene.layout.Priority.ALWAYS;
 import static javafx.scene.layout.Priority.NEVER;
 import static javafx.scene.text.TextAlignment.CENTER;
 
-import atlantafx.base.theme.Dracula;
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
 import com.silong.llm.chatbot.desktop.utils.HostInfoConverter;
 import com.silong.llm.chatbot.desktop.utils.HostInfoConverter.HostInfo;
@@ -127,6 +126,8 @@ public class LoginViewController extends ViewController implements Initializable
   @FXML
   @SneakyThrows(IOException.class)
   void handleLoginAction(ActionEvent event) {
+
+    // 检查参数是否都正常输入
     var result = validation.getValidationResult();
     var errors = result.getErrors();
     errors.stream()
@@ -140,17 +141,14 @@ public class LoginViewController extends ViewController implements Initializable
 
     String password = passwordTextField.getText();
 
-    var host = hostComboBox.getEditor().getText();
+    var hostInfo = hostComboBox.getSelectionModel().getSelectedItem();
 
     FXMLLoader loader =
         new FXMLLoader(getClass().getResource(CONFIGURATION.chatViewPath()), resourceBundle);
     Parent parent = loader.load();
     ChatViewController controller = loader.getController();
-    String[] parts = host.split(":", 2);
-    controller.setRestClient(
-        AsyncRestClient.create(parts[0].trim(), Integer.parseInt(parts[1].trim()), "credential"));
+    controller.setRestClient(AsyncRestClient.login(userName, password, hostInfo));
     var scene = new Scene(parent);
-    scene.getStylesheets().add(new Dracula().getUserAgentStylesheet());
     var stage = (Stage) primaryStage.getScene().getWindow();
     stage.setResizable(true);
     stage.setWidth(CONFIGURATION.chatWindowSize().width());
