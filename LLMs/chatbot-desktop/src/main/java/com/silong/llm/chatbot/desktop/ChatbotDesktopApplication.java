@@ -42,6 +42,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -67,10 +68,10 @@ public class ChatbotDesktopApplication extends Application {
   public static final Configuration CONFIGURATION;
 
   /** 应用数据存储目录 */
-  public static Path appHome;
+  private static Path appHome;
 
   /** 主窗口 */
-  public static Stage primaryStage;
+  private static Stage primaryStage;
 
   static {
     String path = System.getProperty(CONFIG_FILE, DEFAULT_CONFIG_FILE_PATH);
@@ -86,6 +87,16 @@ public class ChatbotDesktopApplication extends Application {
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  @NonNull
+  public static Path getAppHome() {
+    return appHome;
+  }
+
+  @NonNull
+  public static Stage getPrimaryStage() {
+    return primaryStage;
   }
 
   @Override

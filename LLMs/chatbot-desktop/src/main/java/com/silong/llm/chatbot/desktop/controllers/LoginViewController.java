@@ -22,6 +22,7 @@
 package com.silong.llm.chatbot.desktop.controllers;
 
 import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.*;
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.getAppHome;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
 import static javafx.collections.FXCollections.observableArrayList;
@@ -149,6 +150,7 @@ public class LoginViewController extends ViewController implements Initializable
     ChatViewController controller = loader.getController();
     controller.setRestClient(AsyncRestClient.login(userName, password, hostInfo));
     var scene = new Scene(parent);
+    var primaryStage = getPrimaryStage();
     var stage = (Stage) primaryStage.getScene().getWindow();
     stage.setResizable(true);
     stage.setWidth(CONFIGURATION.chatWindowSize().width());
@@ -172,7 +174,7 @@ public class LoginViewController extends ViewController implements Initializable
           alert.setTitle(resourceBundle.getString("dialog.error"));
           alert.setHeaderText(null);
           alert.setContentText(message);
-          alert.initOwner(primaryStage.getScene().getWindow());
+          alert.initOwner(getPrimaryStage().getScene().getWindow());
           alert.showAndWait();
         });
   }
@@ -184,13 +186,13 @@ public class LoginViewController extends ViewController implements Initializable
 
   @FXML
   void handleMinimizedAction(ActionEvent event) {
-    minimize(primaryStage);
+    minimize(getPrimaryStage());
   }
 
   @SneakyThrows(IOException.class)
   private static List<HostInfo> loadHosts(Path configPath) {
     if (Files.exists(configPath)) {
-      return Files.readAllLines(appHome.resolve(HOST_CNF)).stream()
+      return Files.readAllLines(getAppHome().resolve(HOST_CNF)).stream()
           .filter(s -> !s.isEmpty())
           .map(HostInfoConverter.getInstance()::fromString)
           .filter(LoginViewController::isValidHost)
@@ -277,7 +279,7 @@ public class LoginViewController extends ViewController implements Initializable
     configureHostComboBox();
 
     // 初始焦点
-    primaryStage.setOnShown(e -> userNameTextField.requestFocus());
+    getPrimaryStage().setOnShown(e -> userNameTextField.requestFocus());
 
     // 配置焦点转移顺序
     configureFocusTraversalOrder();
@@ -313,7 +315,7 @@ public class LoginViewController extends ViewController implements Initializable
   }
 
   private void configureHostComboBox() {
-    hostCnfPath = appHome.resolve(HOST_CNF);
+    hostCnfPath = getAppHome().resolve(HOST_CNF);
     hostItems = observableArrayList(loadHosts(hostCnfPath));
 
     // 创建一个ObservableList作为数据源

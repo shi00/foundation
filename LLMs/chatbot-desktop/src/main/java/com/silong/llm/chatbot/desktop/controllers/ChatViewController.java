@@ -21,7 +21,7 @@
 
 package com.silong.llm.chatbot.desktop.controllers;
 
-import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.getPrimaryStage;
 import static javafx.geometry.Pos.*;
 
 import com.silong.llm.chatbot.desktop.client.AsyncRestClient;
@@ -224,7 +224,7 @@ public class ChatViewController extends ViewController implements Initializable 
 
   @FXML
   void handleMinimizedAction(ActionEvent event) {
-    minimize(primaryStage);
+    minimize(getPrimaryStage());
   }
 
   @FXML

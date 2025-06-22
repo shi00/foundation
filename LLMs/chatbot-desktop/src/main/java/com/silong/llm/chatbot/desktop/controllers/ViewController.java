@@ -21,7 +21,7 @@
 
 package com.silong.llm.chatbot.desktop.controllers;
 
-import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.primaryStage;
+import static com.silong.llm.chatbot.desktop.ChatbotDesktopApplication.getPrimaryStage;
 import static javafx.scene.Cursor.CLOSED_HAND;
 import static javafx.scene.Cursor.DEFAULT;
 import static javafx.scene.text.TextAlignment.CENTER;
@@ -58,6 +58,7 @@ abstract class ViewController {
   protected void configureLoginWindowsDragAndDrop(@NonNull Pane pane) {
     pane.setOnMousePressed(
         event -> {
+          var primaryStage = getPrimaryStage();
           xOffset = primaryStage.getX() - event.getScreenX();
           yOffset = primaryStage.getY() - event.getScreenY();
           pane.setCursor(CLOSED_HAND);
@@ -65,6 +66,7 @@ abstract class ViewController {
 
     pane.setOnMouseDragged(
         event -> {
+          var primaryStage = getPrimaryStage();
           primaryStage.setX(event.getScreenX() + xOffset);
           primaryStage.setY(event.getScreenY() + yOffset);
         });
