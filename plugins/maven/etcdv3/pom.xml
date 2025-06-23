@@ -33,6 +33,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <java.version>11</java.version>
     </properties>
 
     <dependencies>
@@ -96,7 +97,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <release>11</release>
+                    <release>${java.version}</release>
                 </configuration>
             </plugin>
             <plugin>
