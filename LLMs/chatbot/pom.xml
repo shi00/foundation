@@ -22,6 +22,7 @@
         <mysql.version>8.0.33</mysql.version>
         <mysql.password>Test@12345</mysql.password>
         <mysql.jdbc-driver>com.mysql.cj.jdbc.Driver</mysql.jdbc-driver>
+        <oci.image.builder.version>0.0.43</oci.image.builder.version>  <!-- paketobuildpacks/builder-noble-java-tiny -->
     </properties>
 
     <dependencies>
@@ -165,7 +166,7 @@
                                 </exclude>
                             </excludes>
                             <image>
-                                <builder>paketobuildpacks/builder-noble-java-tiny:0.0.43</builder>
+                                <builder>paketobuildpacks/builder-noble-java-tiny:${oci.image.builder.version}</builder>
                                 <name>com.silong.llm/${project.artifactId}:${project.version}</name>
                                 <pullPolicy>IF_NOT_PRESENT</pullPolicy>
                                 <trustBuilder>true</trustBuilder>
