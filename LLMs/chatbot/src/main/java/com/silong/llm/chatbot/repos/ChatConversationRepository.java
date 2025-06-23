@@ -21,9 +21,9 @@
 
 package com.silong.llm.chatbot.repos;
 
-import static com.silong.llm.chatbot.mysql.model.Tables.CHAT_CONVERSATION;
+import static com.silong.llm.chatbot.mysql.model.Tables.*;
 
-import com.silong.llm.chatbot.mysql.model.tables.records.ChatConversationRecord;
+import com.silong.llm.chatbot.po.ChatRound;
 import java.util.List;
 import lombok.NonNull;
 import org.jooq.DSLContext;
@@ -52,8 +52,29 @@ public class ChatConversationRepository {
   }
 
   @Transactional(readOnly = true)
-  public List<ChatConversationRecord> getConversationById(@NonNull String id) {
-    return dslContext.selectFrom(CHAT_CONVERSATION).where(CHAT_CONVERSATION.ID.eq(id)).stream()
-        .toList();
+  public List<ChatRound> getConversationById(@NonNull String id) {
+    return dslContext
+        .select(
+            CHAT_CONVERSATION.ID,
+            CHAT_CONVERSATION.ORDER,
+            SYSTEM_MESSAGE.MESSAGE,
+            PROMPT_MESSAGE.MESSAGE,
+            USER_MESSAGE.MESSAGE,
+            TOOL_MESSAGE.MESSAGE,
+            ASSISTANT_MESSAGE.MESSAGE,
+            CHAT_CONVERSATION.CREATED_AT)
+        .from(CHAT_CONVERSATION)
+        .innerJoin(SYSTEM_MESSAGE)
+        .on(CHAT_CONVERSATION.SYSTEM_MSG_ID.eq(SYSTEM_MESSAGE.ID))
+        .innerJoin(PROMPT_MESSAGE)
+        .on(CHAT_CONVERSATION.PROMPT_MSG_ID.eq(PROMPT_MESSAGE.ID))
+        .innerJoin(TOOL_MESSAGE)
+        .on(CHAT_CONVERSATION.TOOL_MSG_ID.eq(TOOL_MESSAGE.ID))
+        .innerJoin(ASSISTANT_MESSAGE)
+        .on(CHAT_CONVERSATION.ASSISTANT_MSG_ID.eq(ASSISTANT_MESSAGE.ID))
+        .innerJoin(USER_MESSAGE)
+        .on(CHAT_CONVERSATION.USER_MSG_ID.eq(USER_MESSAGE.ID))
+        .where(CHAT_CONVERSATION.ID.eq(id))
+        .fetchInto(ChatRound.class);
   }
 }

@@ -33,6 +33,11 @@ import lombok.Data;
  */
 @Data
 public class ChatRound {
+
+  private String conversationId;
+
+  private int order;
+
   /** 用户消息 */
   private String userMessage;
 
