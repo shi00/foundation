@@ -16,6 +16,7 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <java.version>11</java.version>
     </properties>
 
     <dependencies>
@@ -75,7 +76,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <release>11</release>
+                    <release>${java.version}</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
