@@ -1,4 +1,4 @@
-FROM kuyoh/vcpkg:latest AS base
+FROM kuyoh/vcpkg:2022.02.23-ubuntu22.04 AS base
 
 LABEL maintainer="louis sin"
 
