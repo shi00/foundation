@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.silong.llm</groupId>
     <artifactId>chatbot</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0</version>
     <name>chatbot</name>
     <description>The chatbot developed based on the Azure OpenAI large model.</description>
 
@@ -86,7 +86,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.13.0</version>
         </dependency>
         <dependency>
             <groupId>com.unboundid</groupId>
@@ -166,7 +165,7 @@
                                 </exclude>
                             </excludes>
                             <image>
-                                <builder>paketobuildpacks/builder-noble-java-tiny:latest</builder>
+                                <builder>paketobuildpacks/builder-noble-java-tiny:0.0.43</builder>
                                 <name>com.silong.llm/${project.artifactId}:${project.version}</name>
                                 <pullPolicy>IF_NOT_PRESENT</pullPolicy>
                                 <trustBuilder>true</trustBuilder>
@@ -175,12 +174,20 @@
                                 <env>
                                     <BPE_DELIM_JAVA_TOOL_OPTIONS xml:space="preserve"> </BPE_DELIM_JAVA_TOOL_OPTIONS>
                                     <BPE_APPEND_JAVA_TOOL_OPTIONS>
-                                        -Dreactor.netty.http.server.accessLogEnabled=true -XX:MinRAMPercentage=50.0
-                                        -XX:MaxRAMPercentage=80.0 -XX:+UseZGC -XX:+DisableExplicitGC
-                                        -XX:ReservedCodeCacheSize=64m -XX:InitialCodeCacheSize=64m -XX:ConcGCThreads=2
-                                        -XX:ParallelGCThreads=6 -XX:ZCollectionInterval=120
-                                        -XX:ZAllocationSpikeTolerance=5 -XX:ZUncommitDelay=600
-                                        -XX:+UnlockDiagnosticVMOptions -XX:-ZProactive
+                                        -Dreactor.netty.http.server.accessLogEnabled=true
+                                        -XX:MinRAMPercentage=50.0
+                                        -XX:MaxRAMPercentage=80.0
+                                        -XX:+UseZGC
+                                        -XX:+DisableExplicitGC
+                                        -XX:ReservedCodeCacheSize=128m
+                                        -XX:InitialCodeCacheSize=128m
+                                        -XX:ConcGCThreads=2
+                                        -XX:ParallelGCThreads=4
+                                        -XX:ZCollectionInterval=120
+                                        -XX:ZAllocationSpikeTolerance=5
+                                        -XX:ZUncommitDelay=600
+                                        -XX:+UnlockDiagnosticVMOptions
+                                        -XX:-ZProactive
                                         -Xlog:safepoint,classhisto*=trace,age*,gc*=info:file=/var/log/app/gc/gc-%t.log:time,tid,tags:filecount=5,filesize=50m
                                         -XX:+HeapDumpOnOutOfMemoryError
                                     </BPE_APPEND_JAVA_TOOL_OPTIONS>
@@ -463,7 +470,9 @@
                                  Watch out for case-sensitivity. Depending on your database, this might be important! -->
                             <!-- 包含哪些表 -->
                             <includes>.*</includes>
-
+                            <excludes>
+                                databasechangelog|databasechangeloglock
+                            </excludes>
                             <!-- All elements that are excluded from your schema
                                  (A Java regular expression. Use the pipe to separate several expressions).
                                  Excludes match before includes, i.e. excludes have a higher priority -->
