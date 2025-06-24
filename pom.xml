@@ -100,6 +100,7 @@
         <module>spring-boot-starter-crypto</module>
         <module>spring-boot-starter-raft-k8s</module>
         <module>plugins/maven/etcdv3</module>
+        <module>plugins/maven/cert-generator</module>
         <module>plugins/maven/mysql</module>
         <module>plugins/maven/props-writer</module>
         <module>plugins/maven/video-frame-capture</module>
