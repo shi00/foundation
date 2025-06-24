@@ -25,7 +25,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.util.StringUtils.hasLength;
 
-import com.silong.llm.chatbot.po.Conversation;
+import com.silong.llm.chatbot.po.ChatRound;
 import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;
@@ -70,7 +70,7 @@ public class ChatbotController {
    * @return 会话列表
    */
   @GetMapping(value = "/chat/history", produces = MediaType.APPLICATION_JSON_VALUE)
-  public List<Conversation> listConversations(
+  public List<ChatRound> listConversations(
       @RequestParam int pageIndex, @RequestParam int sizePerPage) {
     return List.of();
   }
