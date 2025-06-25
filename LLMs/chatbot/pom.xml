@@ -345,6 +345,24 @@
         </extensions>
         <plugins>
             <plugin>
+                <groupId>com.silong</groupId>
+                <artifactId>certificate-generator-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <password>change@it123</password>
+                    <certName>mycert.p12</certName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-cert</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>generate-cert</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
