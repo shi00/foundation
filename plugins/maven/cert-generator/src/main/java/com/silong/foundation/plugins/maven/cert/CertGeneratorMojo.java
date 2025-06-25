@@ -24,6 +24,7 @@ package com.silong.foundation.plugins.maven.cert;
 import static java.nio.file.StandardOpenOption.*;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_TEST_RESOURCES;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -57,6 +58,9 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
  */
 @ToString
 @Mojo(name = "generate-cert", defaultPhase = GENERATE_TEST_RESOURCES, threadSafe = true)
+@SuppressFBWarnings(
+    value = {"PATH_TRAVERSAL_IN", "HARD_CODE_PASSWORD"},
+    justification = "读取的maven配置")
 public class CertGeneratorMojo extends AbstractMojo {
 
   /**
@@ -147,7 +151,11 @@ public class CertGeneratorMojo extends AbstractMojo {
   private Path prepareOutputDir() throws IOException {
     if (outputDir == null) {
       if (project != null) {
-        outputDir = Paths.get(project.getBuild().getTestOutputDirectory()).toFile();
+        outputDir =
+            Paths.get(project.getBuild().getTestOutputDirectory())
+                .resolve("resources")
+                .resolve("certs")
+                .toFile();
       } else {
         outputDir = new File("target/test-classes/resources/certs");
       }
