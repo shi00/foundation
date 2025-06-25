@@ -137,12 +137,12 @@
         <serviceloader-maven-plugin.version>1.4.0</serviceloader-maven-plugin.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-        <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
+        <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <maven-pmd-plugin.version>3.26.0</maven-pmd-plugin.version>
-        <pmd.version>7.13.0</pmd.version>
+        <pmd.version>7.14.0</pmd.version>
         <maven-failsafe-plugin.version>3.5.3</maven-failsafe-plugin.version>
-        <checkstyle.version>10.23.1</checkstyle.version>
+        <checkstyle.version>10.26.0</checkstyle.version>
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.6.0</maven-jxr-plugin.version>
@@ -151,11 +151,11 @@
         <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
         <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
         <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
-        <maven-plugin-api.version>3.9.9</maven-plugin-api.version>
+        <maven-plugin-api.version>3.9.10</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.15.1</maven-plugin-annotations.version>
         <maven-plugin-plugin.version>3.15.1</maven-plugin-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
-        <maven-clean-plugin.version>3.4.1</maven-clean-plugin.version>
+        <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
         <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
         <sql-maven-plugin.version>3.0.0</sql-maven-plugin.version>
         <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
