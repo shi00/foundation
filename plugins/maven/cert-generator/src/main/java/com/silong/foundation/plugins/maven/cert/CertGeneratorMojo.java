@@ -74,11 +74,11 @@ public class CertGeneratorMojo extends AbstractMojo {
   @Parameter(property = "cert.skip", defaultValue = "false")
   protected boolean skip;
 
-  /** 生成证书输出路径，默认：${project.testOutputDirectory}/resources/certs */
+  /** 生成证书输出路径，默认：${project.build.testOutputDirectory}/resources/certs */
   @Getter
   @Parameter(
       property = "cert.outputDir",
-      defaultValue = "${project.testOutputDirectory}/resources/certs")
+      defaultValue = "${project.build.testOutputDirectory}/resources/certs")
   private File outputDir;
 
   /** 证书别名，默认：test-cert */
@@ -151,11 +151,9 @@ public class CertGeneratorMojo extends AbstractMojo {
   private Path prepareOutputDir() throws IOException {
     if (outputDir == null) {
       if (project != null) {
-        outputDir =
-            Paths.get(project.getBuild().getTestOutputDirectory())
-                .resolve("resources")
-                .resolve("certs")
-                .toFile();
+        String testOutputDirectory = project.getBuild().getTestOutputDirectory();
+        getLog().info("project.build.testOutputDirectory: " + testOutputDirectory);
+        outputDir = Paths.get(testOutputDirectory).resolve("resources").resolve("certs").toFile();
       } else {
         outputDir = new File("target/test-classes/resources/certs");
       }
