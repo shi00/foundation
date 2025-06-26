@@ -65,33 +65,17 @@ public class LdapProperties {
   /** 是否启用startTLS，默认：false */
   private boolean useStartTls;
 
-  /** 连接池配置 */
-  @Valid @NestedConfigurationProperty private Pool pool = new Pool();
-
-  /**
-   * Whether read-only operations should use an anonymous environment. Disabled by default unless a
-   * username is set.
-   */
-  private boolean anonymousReadOnly;
-
   /**
    * Specify how referrals encountered by the service provider are to be processed. If not
-   * specified, the default is determined by the provider.
+   * specified, the default is true.
    */
-  private Referral referral;
+  private boolean referralFollow = true;
 
-  /** Define the methods to handle referrals. */
-  public enum Referral {
+  /** referrals follow 跳转最大次数，默认：3 */
+  private int referralFollowLimit = 3;
 
-    /** Follow referrals automatically. */
-    FOLLOW,
-
-    /** Ignore referrals. */
-    IGNORE,
-
-    /** Throw when a referral is encountered. */
-    THROW
-  }
+  /** 连接池配置 */
+  @Valid @NestedConfigurationProperty private Pool pool = new Pool();
 
   public enum Type {
     ACTIVE_DIRECTORY,
