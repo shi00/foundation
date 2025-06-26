@@ -64,6 +64,8 @@ public class LdapAuthAutoConfiguration {
    */
   public LdapAuthAutoConfiguration(@NonNull LdapProperties ldapProperties) {
     this.ldapProperties = ldapProperties;
+    SSLUtil.setEnabledSSLProtocols(Arrays.asList(ldapProperties.getTlsProtocols()));
+    SSLUtil.setEnabledSSLCipherSuites(Arrays.asList(ldapProperties.getTlsCipherSuites()));
   }
 
   @Bean
@@ -72,10 +74,8 @@ public class LdapAuthAutoConfiguration {
   }
 
   @Bean(destroyMethod = "close")
-  LDAPConnectionPool ldapConnectionPool() throws LDAPException, GeneralSecurityException {
+  LDAPConnectionPool ldapConnectionPool() throws GeneralSecurityException, LDAPException {
     LdapProperties.Pool pool = ldapProperties.getPool();
-    SSLUtil.setEnabledSSLProtocols(Arrays.asList(ldapProperties.getTlsProtocols()));
-    SSLUtil.setEnabledSSLCipherSuites(Arrays.asList(ldapProperties.getTlsCipherSuites()));
 
     // 是否启用StartTLS
     if (ldapProperties.isUseStartTls()) {
@@ -93,8 +93,8 @@ public class LdapAuthAutoConfiguration {
 
       // 寻找可用的服务器地址建立连接
       for (var url : urls) {
-        LDAPURL ldapurl = new LDAPURL(url);
         try {
+          LDAPURL ldapurl = new LDAPURL(url);
           LDAPConnection connection =
               new LDAPConnection(connectionOptions, ldapurl.getHost(), ldapurl.getPort());
 
@@ -102,18 +102,16 @@ public class LdapAuthAutoConfiguration {
           var startTLSResult =
               connection.processExtendedOperation(new StartTLSExtendedRequest(sslContext));
           if (startTLSResult.getResultCode() != ResultCode.SUCCESS) {
-            throw new LDAPException(
-                ResultCode.LOCAL_ERROR,
-                "StartTLS operation failed: " + startTLSResult.getDiagnosticMessage());
+            log.error("StartTLS operation failed: {}", startTLSResult.getDiagnosticMessage());
+            continue;
           }
 
           // Create a connection pool that will secure its connections with StartTLS.
           var bindResult =
               connection.bind(ldapProperties.getUsername(), ldapProperties.getPassword());
           if (bindResult.getResultCode() != ResultCode.SUCCESS) {
-            throw new LDAPException(
-                ResultCode.LOCAL_ERROR,
-                "Bind operation failed: " + bindResult.getDiagnosticMessage());
+            log.error("Bind operation failed: {}", bindResult.getDiagnosticMessage());
+            continue;
           }
 
           return new LDAPConnectionPool(
@@ -122,7 +120,7 @@ public class LdapAuthAutoConfiguration {
               pool.getMaxConnections(),
               new StartTLSPostConnectProcessor(sslContext));
         } catch (LDAPException e) {
-          log.error("LDAP exception: ", e);
+          log.error("Failed to create LDAPConnectionPool with {}.", url, e);
         }
       }
 
