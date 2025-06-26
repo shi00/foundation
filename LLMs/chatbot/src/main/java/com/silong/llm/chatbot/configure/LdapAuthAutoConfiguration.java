@@ -33,6 +33,7 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -46,6 +47,7 @@ import org.springframework.context.annotation.Configuration;
  * @version 1.0.0
  * @since 2025-05-19 20:21
  */
+@Slf4j
 @Configuration
 @EnableConfigurationProperties(LdapProperties.class)
 @ConditionalOnProperty(
@@ -72,48 +74,61 @@ public class LdapAuthAutoConfiguration {
   @Bean(destroyMethod = "close")
   LDAPConnectionPool ldapConnectionPool() throws LDAPException, GeneralSecurityException {
     LdapProperties.Pool pool = ldapProperties.getPool();
+    SSLUtil.setEnabledSSLProtocols(Arrays.asList(ldapProperties.getTlsProtocols()));
+    SSLUtil.setEnabledSSLCipherSuites(Arrays.asList(ldapProperties.getTlsCipherSuites()));
 
     // 是否启用StartTLS
     if (ldapProperties.isUseStartTls()) {
+      String[] urls = ldapProperties.getUrls();
       if (ldapProperties.isSecure()) {
         throw new IllegalArgumentException(
             String.format(
-                "Failed to use startTLS, invalid ldap.urls: [%s].",
-                String.join(", ", ldapProperties.getUrls())));
+                "Failed to use startTLS, invalid ldap.urls: [%s].", String.join(", ", urls)));
       }
 
       // Configure an SSLUtil instance and use it to obtain an SSLContext.
-      SSLUtil.setEnabledSSLProtocols(Arrays.asList(ldapProperties.getTlsProtocols()));
-      SSLUtil.setEnabledSSLCipherSuites(Arrays.asList(ldapProperties.getTlsCipherSuites()));
       SSLUtil sslUtil = getTrustAllSslUtil();
       SSLContext sslContext = sslUtil.createSSLContext();
+      LDAPConnectionOptions connectionOptions = buildLdapConnectionOptions();
 
-      String url = ldapProperties.getUrls()[0];
-      LDAPURL ldapurl = new LDAPURL(url);
+      // 寻找可用的服务器地址建立连接
+      for (var url : urls) {
+        LDAPURL ldapurl = new LDAPURL(url);
+        try {
+          LDAPConnection connection =
+              new LDAPConnection(connectionOptions, ldapurl.getHost(), ldapurl.getPort());
 
-      LDAPConnection connection =
-          new LDAPConnection(buildLdapConnectionOptions(), ldapurl.getHost(), ldapurl.getPort());
+          // Use the StartTLS extended operation to secure the connection.
+          var startTLSResult =
+              connection.processExtendedOperation(new StartTLSExtendedRequest(sslContext));
+          if (startTLSResult.getResultCode() != ResultCode.SUCCESS) {
+            throw new LDAPException(
+                ResultCode.LOCAL_ERROR,
+                "StartTLS operation failed: " + startTLSResult.getDiagnosticMessage());
+          }
 
-      // Use the StartTLS extended operation to secure the connection.
-      var startTLSResult =
-          connection.processExtendedOperation(new StartTLSExtendedRequest(sslContext));
-      if (startTLSResult.getResultCode() != ResultCode.SUCCESS) {
-        throw new LDAPException(
-            ResultCode.LOCAL_ERROR,
-            "StartTLS operation failed: " + startTLSResult.getDiagnosticMessage());
+          // Create a connection pool that will secure its connections with StartTLS.
+          var bindResult =
+              connection.bind(ldapProperties.getUsername(), ldapProperties.getPassword());
+          if (bindResult.getResultCode() != ResultCode.SUCCESS) {
+            throw new LDAPException(
+                ResultCode.LOCAL_ERROR,
+                "Bind operation failed: " + bindResult.getDiagnosticMessage());
+          }
+
+          return new LDAPConnectionPool(
+              connection,
+              pool.getMinConnections(),
+              pool.getMaxConnections(),
+              new StartTLSPostConnectProcessor(sslContext));
+        } catch (LDAPException e) {
+          log.error("LDAP exception: ", e);
+        }
       }
 
-      // Create a connection pool that will secure its connections with StartTLS.
-      var bindResult = connection.bind(ldapProperties.getUsername(), ldapProperties.getPassword());
-      if (bindResult.getResultCode() != ResultCode.SUCCESS) {
-        throw new LDAPException(
-            ResultCode.LOCAL_ERROR, "Bind operation failed: " + bindResult.getDiagnosticMessage());
-      }
-
-      StartTLSPostConnectProcessor startTLSProcessor = new StartTLSPostConnectProcessor(sslContext);
-
-      return new LDAPConnectionPool(
-          connection, pool.getMinConnections(), pool.getMaxConnections(), startTLSProcessor);
+      throw new LDAPException(
+          ResultCode.LOCAL_ERROR,
+          String.format("Failed to connect to [%s] by using startTLS.", String.join(", ", urls)));
     }
 
     // 创建连接池
