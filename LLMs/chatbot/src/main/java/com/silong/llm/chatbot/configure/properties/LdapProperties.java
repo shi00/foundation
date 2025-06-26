@@ -62,6 +62,9 @@ public class LdapProperties {
   /** Login password of the server. */
   @NotEmpty private String password;
 
+  /** 是否启用startTLS，默认：false */
+  private boolean useStartTls;
+
   /** 连接池配置 */
   @Valid @NestedConfigurationProperty private Pool pool = new Pool();
 
