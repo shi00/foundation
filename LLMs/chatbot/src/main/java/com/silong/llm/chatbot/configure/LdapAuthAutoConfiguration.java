@@ -24,10 +24,13 @@ package com.silong.llm.chatbot.configure;
 import com.silong.llm.chatbot.configure.properties.LdapProperties;
 import com.silong.llm.chatbot.provider.LdapUserProvider;
 import com.unboundid.ldap.sdk.*;
+import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import lombok.NonNull;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -68,12 +71,61 @@ public class LdapAuthAutoConfiguration {
 
   @Bean(destroyMethod = "close")
   LDAPConnectionPool ldapConnectionPool() throws LDAPException, GeneralSecurityException {
+    LdapProperties.Pool pool = ldapProperties.getPool();
+
+    // 是否启用StartTLS
+    if (ldapProperties.isUseStartTls()) {
+      if (ldapProperties.isSecure()) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Failed to use startTLS, invalid ldap.urls: [%s].",
+                String.join(", ", ldapProperties.getUrls())));
+      }
+
+      // Configure an SSLUtil instance and use it to obtain an SSLContext.
+      SSLUtil.setEnabledSSLProtocols(Arrays.asList(ldapProperties.getTlsProtocols()));
+      SSLUtil.setEnabledSSLCipherSuites(Arrays.asList(ldapProperties.getTlsCipherSuites()));
+      SSLUtil sslUtil = getTrustAllSslUtil();
+      SSLContext sslContext = sslUtil.createSSLContext();
+
+      String url = ldapProperties.getUrls()[0];
+      LDAPURL ldapurl = new LDAPURL(url);
+
+      LDAPConnection connection =
+          new LDAPConnection(buildLdapConnectionOptions(), ldapurl.getHost(), ldapurl.getPort());
+
+      // Use the StartTLS extended operation to secure the connection.
+      var startTLSResult =
+          connection.processExtendedOperation(new StartTLSExtendedRequest(sslContext));
+      if (startTLSResult.getResultCode() != ResultCode.SUCCESS) {
+        throw new LDAPException(
+            ResultCode.LOCAL_ERROR,
+            "StartTLS operation failed: " + startTLSResult.getDiagnosticMessage());
+      }
+
+      // Create a connection pool that will secure its connections with StartTLS.
+      var bindResult = connection.bind(ldapProperties.getUsername(), ldapProperties.getPassword());
+      if (bindResult.getResultCode() != ResultCode.SUCCESS) {
+        throw new LDAPException(
+            ResultCode.LOCAL_ERROR, "Bind operation failed: " + bindResult.getDiagnosticMessage());
+      }
+
+      StartTLSPostConnectProcessor startTLSProcessor = new StartTLSPostConnectProcessor(sslContext);
+
+      return new LDAPConnectionPool(
+          connection, pool.getMinConnections(), pool.getMaxConnections(), startTLSProcessor);
+    }
+
     // 创建连接池
     return new LDAPConnectionPool(
         buildServerSet(),
         new SimpleBindRequest(ldapProperties.getUsername(), ldapProperties.getPassword()),
-        ldapProperties.getPool().getMinConnections(),
-        ldapProperties.getPool().getMaxConnections());
+        pool.getMinConnections(),
+        pool.getMaxConnections());
+  }
+
+  private static SSLUtil getTrustAllSslUtil() {
+    return new SSLUtil(new TrustAllTrustManager());
   }
 
   private ServerSet buildServerSet() throws GeneralSecurityException, LDAPException {
@@ -82,7 +134,7 @@ public class LdapAuthAutoConfiguration {
     boolean secure = ldapProperties.isSecure();
     if (urls.length == 1) {
       if (secure) {
-        SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager()); // 测试环境跳过证书验证
+        SSLUtil sslUtil = getTrustAllSslUtil(); // 测试环境跳过证书验证
         SSLSocketFactory socketFactory = sslUtil.createSSLSocketFactory();
         return buildSingleServerSet(urls, socketFactory, options);
       } else {
@@ -90,7 +142,7 @@ public class LdapAuthAutoConfiguration {
       }
     } else {
       if (secure) {
-        SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager()); // 测试环境跳过证书验证
+        SSLUtil sslUtil = getTrustAllSslUtil(); // 测试环境跳过证书验证
         SSLSocketFactory socketFactory = sslUtil.createSSLSocketFactory();
         return buildServerSet(urls, socketFactory, options);
       } else {
@@ -130,13 +182,17 @@ public class LdapAuthAutoConfiguration {
   private LDAPConnectionOptions buildLdapConnectionOptions() {
     LDAPConnectionOptions options = new LDAPConnectionOptions();
     options.setUseTCPNoDelay(true);
+    if (ldapProperties.isReferralFollow()) {
+      options.setFollowReferrals(true);
+      options.setReferralHopLimit(ldapProperties.getReferralFollowLimit());
+    }
     options.setAbandonOnTimeout(true);
     options.setConnectionLogger(
         new JSONLDAPConnectionLogger(
             new SLF4JBridgeHandler(), new JSONLDAPConnectionLoggerProperties()));
-    options.setResponseTimeoutMillis(ldapProperties.getPool().getResponseTimeout().toMillis());
-    options.setConnectTimeoutMillis(
-        (int) ldapProperties.getPool().getConnectionTimeout().toMillis());
+    LdapProperties.Pool pool = ldapProperties.getPool();
+    options.setResponseTimeoutMillis(pool.getResponseTimeout().toMillis());
+    options.setConnectTimeoutMillis((int) pool.getConnectionTimeout().toMillis());
     return options;
   }
 }

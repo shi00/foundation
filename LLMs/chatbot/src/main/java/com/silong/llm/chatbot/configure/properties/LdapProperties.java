@@ -72,7 +72,30 @@ public class LdapProperties {
   private boolean referralFollow = true;
 
   /** referrals follow 跳转最大次数，默认：3 */
-  private int referralFollowLimit = 3;
+  @Positive private int referralFollowLimit = 3;
+
+  /** 开启StartTLS或LDAPS时启用的协议，默认：TLSv1.3, TLSv1.2 */
+  @NotNull private String[] tlsProtocols = {"TLSv1.3", "TLSv1.2"};
+
+  /**
+   * 开启StartTLS或LDAPS时启用的加密算法， 默认：TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256,
+   * TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+   * TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+   * TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+   */
+  @NotNull
+  private String[] tlsCipherSuites = {
+    // TLS 1.3 套件（优先使用）
+    "TLS_AES_256_GCM_SHA384",
+    "TLS_AES_128_GCM_SHA256",
+    "TLS_CHACHA20_POLY1305_SHA256",
+
+    // TLS 1.2 套件（向后兼容）
+    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+  };
 
   /** 连接池配置 */
   @Valid @NestedConfigurationProperty private Pool pool = new Pool();
