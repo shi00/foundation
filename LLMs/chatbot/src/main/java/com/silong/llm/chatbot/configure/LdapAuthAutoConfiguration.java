@@ -99,8 +99,9 @@ public class LdapAuthAutoConfiguration {
               new LDAPConnection(connectionOptions, ldapurl.getHost(), ldapurl.getPort());
 
           // Use the StartTLS extended operation to secure the connection.
-          var startTLSResult =
-              connection.processExtendedOperation(new StartTLSExtendedRequest(sslContext));
+          StartTLSExtendedRequest startTLSExtendedRequest = new StartTLSExtendedRequest(sslContext);
+          startTLSExtendedRequest.setResponseTimeoutMillis(pool.getResponseTimeout().toMillis());
+          var startTLSResult = connection.processExtendedOperation(startTLSExtendedRequest);
           if (startTLSResult.getResultCode() != ResultCode.SUCCESS) {
             log.error("StartTLS operation failed: {}", startTLSResult.getDiagnosticMessage());
             continue;
