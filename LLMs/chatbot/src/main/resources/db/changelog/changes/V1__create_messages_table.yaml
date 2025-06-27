@@ -1,15 +1,16 @@
 databaseChangeLog:
   - changeSet:
-      id: V1__create_chat-conversation_table
-      author: "silong"
+      id: V1__create_chatbot_messages_table
+      author: "louis sin"
       comment: "20250622"
+      context: "mysql"
       changes:
         - createTable:
-            tableName: chat-conversation
-            remarks: "聊天会话表"
+            tableName: chatbot-messages
+            remarks: "聊天消息表"
             columns:
               - column:
-                  name: order
+                  name: id                                   #  消息id
                   type: int
                   autoIncrement: true
                   constraints:
@@ -17,37 +18,35 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: id
-                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  name: conversation_id                     #   会话id
+                  type: int
                   constraints:
-                    unique: true
-                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: LLM_id  # 大模型id
+                  type: int
+                  constraints:
                     nullable: false
               - column:
                   name: system_msg_id
                   type: int
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
                   name: prompt_msg_id
                   type: int
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
-                  name: tool_msg_id
-                  type: int
-                  constraints:
-                    nullable: true
-              - column:
-                  name: user_msg_id
-                  type: int
+                  name: valid
+                  type: bool
                   constraints:
                     nullable: false
               - column:
-                  name: assistant_msg_id
-                  type: int
+                  name: type                     #   消息类型：用户发送或AI响应
+                  type: "ENUM('assistant', 'user')"
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
                   name: created_at
                   type: timestamp
@@ -60,14 +59,17 @@ databaseChangeLog:
                   defaultValueComputed: CURRENT_TIMESTAMP
                   constraints:
                     nullable: false
+              - column:
+                  name: content
+                  type: text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
         - createIndex:
-            indexName: idx_id_order
-            tableName: chat-conversation
+            indexName: idx_chatbot-messages_id
+            tableName: chatbot-messages
             columns:
               - column:
                   name: id
-                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-              - column:
-                  name: order
                   type: int
             unique: true
+

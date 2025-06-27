@@ -1,0 +1,60 @@
+databaseChangeLog:
+  - changeSet:
+      id: V1__create_system_messages_table
+      author: "louis sin"
+      comment: "20250622"
+      context: "mysql"
+      changes:
+        - createTable:
+            tableName: system-messages
+            remarks: "系统信息表"
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    unique: true
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: content
+                  type: text  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+              - column:
+                  name: signature
+                  type: varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid
+                  type: bool
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_system-messages_signature
+            tableName: system-messages
+            columns:
+              - column:
+                  name: signature
+                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        - createIndex:
+            indexName: idx_system-messages_id
+            tableName: system-messages
+            columns:
+              - column:
+                  name: id
+                  type: int

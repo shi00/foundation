@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: V1__create_LLMs_table
+      author: "louis sin"
+      comment: "20250622"
+      context: "mysql"
+      changes:
+        - createTable:
+            tableName: LLMs
+            remarks: "模型表"
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    unique: true
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: deployment_name    # 模型部署名
+                  type: varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+              - column:
+                  name: display_name    # 模型显示名
+                  type: varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+              - column:
+                  name: apikey   # 模型api  key
+                  type: varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+              - column:
+                  name: endpoint   # 模型访问端点
+                  type: varchar(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+              - column:
+                  name: max_tokens   # 模型最大token数量
+                  type: int
+                  defaultValue: "10240"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: temperature   # 模型温度
+                  type: double
+                  defaultValue: "0.7"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid   # 逻辑删除
+                  type: bool
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_LLMs_id
+            tableName: LLMs
+            columns:
+              - column:
+                  name: id
+                  type: int

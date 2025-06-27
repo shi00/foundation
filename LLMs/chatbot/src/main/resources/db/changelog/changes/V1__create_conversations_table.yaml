@@ -1,0 +1,58 @@
+databaseChangeLog:
+  - changeSet:
+      id: V1__create_chatbot_conversations_table
+      author: "louis sin"
+      comment: "20250622"
+      context: "mysql"
+      changes:
+        - createTable:
+            tableName: chatbot-conversations
+            remarks: "聊天会话表"
+            columns:
+              - column:
+                  name: seq
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    unique: true
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: id
+                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    unique: true
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: "ENUM('active', 'inactive')"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid
+                  type: bool
+                  constraints:
+                    nullable: false
