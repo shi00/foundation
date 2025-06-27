@@ -12,8 +12,11 @@ databaseChangeLog:
       file: changes/mysql/V1__create_prompt_messages_table.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/mysql/V1__create_LLMs_table.yaml
+      file: changes/mysql/V1__create_ai_models_table.yaml
       relativeToChangelogFile: true
   - include:
       file: changes/mysql/V1__create_roles_table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/mysql/V1__insert_init_system_data.yaml
       relativeToChangelogFile: true

@@ -26,12 +26,18 @@ databaseChangeLog:
                   name: user_ids
                   type: json
                   constraints:
-                    nullable: false
+                    nullable: true
               - column:
                   name: valid
                   type: bool
+                  defaultValue: "true"
                   constraints:
                     nullable: false
+              - column:
+                  name: desc
+                  type: varchar(1024)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints:
+                    nullable: true
               - column:
                   name: created_at
                   type: timestamp

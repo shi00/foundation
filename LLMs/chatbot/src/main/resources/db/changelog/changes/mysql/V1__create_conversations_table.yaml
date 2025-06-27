@@ -54,5 +54,6 @@ databaseChangeLog:
               - column:
                   name: valid
                   type: bool
+                  defaultValue: "true"
                   constraints:
                     nullable: false

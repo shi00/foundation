@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: V1__insert_init_system_data   # 变更集唯一标识（必填）
+      author: "louis sin"
+      context: "prod"
+      changes:
+        - insert:
+            tableName: chatbot-roles
+            columns: # 列数据定义
+              - column:
+                  name: name
+                  value: "Administrator"
+              - column:
+                  name: desc
+                  value: "系统管理员"
+        - insert:
+            tableName: chatbot-roles
+            columns: # 列数据定义
+              - column:
+                  name: name
+                  value: "User"
+              - column:
+                  name: desc
+                  value: "普通用户"
+        - insert:
+            tableName: ai_models
+            columns: # 列数据定义
+              - column:
+                  name: deployment_name
+                  value: "gpt-4o-EastUS2"
+              - column:
+                  name: apikey
+                  value: "security:VjRBwKk/tOXJYQzEfYrX8ZsOVjfCYPm7EPpdeOnouuL/wuQSVaao6fWObPucfyr1G+6XxEtEmKUR/T7i"
+              - column:
+                  name: display_name
+                  value: "ChatGPT-4o"
+              - column:
+                  name: desc
+                  value: "Azure OpenAI Services"
+              - column:
+                  name: type
+                  value: "LLM"
+              - column:
+                  name: endpoint
+                  value: "https://eastus2-xray-jh.openai.azure.com/"
