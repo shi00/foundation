@@ -1,19 +1,19 @@
 databaseChangeLog:
   - include:
-      file: changes/V1__create_users_table.yaml
+      file: changes/mysql/V1__create_users_table.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/V1__create_conversations_table.yaml
+      file: changes/mysql/V1__create_conversations_table.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/V1__create_system_messages_table.yaml
+      file: changes/mysql/V1__create_system_messages_table.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/V1__create_prompt_messages_table.yaml
+      file: changes/mysql/V1__create_prompt_messages_table.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/V1__create_LLMs_table.yaml
+      file: changes/mysql/V1__create_LLMs_table.yaml
       relativeToChangelogFile: true
   - include:
-      file: changes/V1__create_roles_table.yaml
+      file: changes/mysql/V1__create_roles_table.yaml
       relativeToChangelogFile: true
