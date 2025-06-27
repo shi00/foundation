@@ -45,7 +45,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: type                     #   消息类型：用户发送或AI响应
-                  type: "ENUM('assistant', 'user')"
+                  type: "ENUM('ASSISTANT', 'USER')"
                   constraints:
                     nullable: false
               - column:

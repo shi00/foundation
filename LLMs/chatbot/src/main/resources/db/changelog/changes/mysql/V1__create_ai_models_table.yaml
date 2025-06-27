@@ -39,7 +39,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: type   # 模型类型
-                  type: "ENUM('Embedding', 'reRank', 'LLM', 'Speech2Text', 'Text2Speech')"
+                  type: "ENUM('EMBEDDING', 'RERANK', 'LLM', 'SPEECH2TEXT', 'TEXT2SPEECH')"
                   constraints:
                     nullable: false
               - column:
