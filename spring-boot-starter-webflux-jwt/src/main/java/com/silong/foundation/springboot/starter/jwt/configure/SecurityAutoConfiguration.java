@@ -55,7 +55,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity.*;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler;
-import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+import org.springframework.security.web.server.context.WebSessionServerSecurityContextRepository;
 import org.springframework.security.web.server.savedrequest.NoOpServerRequestCache;
 
 /**
@@ -140,7 +140,7 @@ public class SecurityAutoConfiguration {
             requestCacheSpec -> requestCacheSpec.requestCache(NoOpServerRequestCache.getInstance()))
 
         // 无安全上下文缓存
-        .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+        .securityContextRepository(getSecurityContextRepository())
         // 定制权限不足异常处理
         // 定制鉴权失败异常处理
         .exceptionHandling(
@@ -183,6 +183,10 @@ public class SecurityAutoConfiguration {
         .addFilterAt(
             authenticationWebFilter(JWTAuthProperties, jwtProvider, authenticationEntryPoint),
             HTTP_BASIC); // 定制鉴权过滤器
+  }
+
+  private static WebSessionServerSecurityContextRepository getSecurityContextRepository() {
+    return new WebSessionServerSecurityContextRepository();
   }
 
   AuthenticationWebFilter authenticationWebFilter(
