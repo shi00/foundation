@@ -58,3 +58,11 @@ databaseChangeLog:
               - column:
                   name: name
                   type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        - createIndex:
+            indexName: idx_chatbot-roles_user_ids
+            tableName: chatbot-roles
+            columns:
+              - column:
+                  name: "(CAST(user_ids->'$' AS CHAR(32) ARRAY))"
+                  type: json
+#
