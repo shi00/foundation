@@ -35,7 +35,7 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class PageableResult<T> {
+public class PagedResult<T> {
 
   /** 记录总数 */
   private int totalCount;
