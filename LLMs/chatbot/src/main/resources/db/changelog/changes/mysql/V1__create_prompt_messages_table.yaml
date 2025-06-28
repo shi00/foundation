@@ -3,10 +3,10 @@ databaseChangeLog:
       id: V1__create_prompt_messages_table
       author: "louis sin"
       comment: "20250622"
-      context: "mysql"
+      dbms: mysql
       changes:
         - createTable:
-            tableName: prompt-messages
+            tableName: prompt_messages
             remarks: "提示词信息表"
             columns:
               - column:
@@ -51,16 +51,27 @@ databaseChangeLog:
                   constraints:
                     nullable: false
         - createIndex:
-            indexName: idx_prompt-messages_signature
-            tableName: prompt-messages
+            indexName: idx_prompt_messages_signature
+            tableName: prompt_messages
             columns:
               - column:
                   name: signature
                   type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
         - createIndex:
-            indexName: idx_prompt-messages_id
-            tableName: prompt-messages
+            indexName: idx_prompt_messages_id
+            tableName: prompt_messages
             columns:
               - column:
                   name: id
                   type: int
+  - changeSet:
+      id: V1__add_on_update_to_updated_at_prompt_messages_table
+      author: "louis sin"
+      dbms: mysql
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE prompt_messages 
+              MODIFY COLUMN updated_at TIMESTAMP 
+              DEFAULT CURRENT_TIMESTAMP 
+              ON UPDATE CURRENT_TIMESTAMP;

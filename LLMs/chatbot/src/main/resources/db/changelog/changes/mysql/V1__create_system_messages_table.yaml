@@ -3,10 +3,10 @@ databaseChangeLog:
       id: V1__create_system_messages_table
       author: "louis sin"
       comment: "20250622"
-      context: "mysql"
+      dbms: mysql
       changes:
         - createTable:
-            tableName: system-messages
+            tableName: system_messages
             remarks: "系统信息表"
             columns:
               - column:
@@ -51,16 +51,27 @@ databaseChangeLog:
                   constraints:
                     nullable: false
         - createIndex:
-            indexName: idx_system-messages_signature
-            tableName: system-messages
+            indexName: idx_system_messages_signature
+            tableName: system_messages
             columns:
               - column:
                   name: signature
                   type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
         - createIndex:
-            indexName: idx_system-messages_id
-            tableName: system-messages
+            indexName: idx_system_messages_id
+            tableName: system_messages
             columns:
               - column:
                   name: id
                   type: int
+  - changeSet:
+      id: V1__add_on_update_to_updated_at_system_messages_table
+      author: "louis sin"
+      dbms: mysql
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE system_messages 
+              MODIFY COLUMN updated_at TIMESTAMP 
+              DEFAULT CURRENT_TIMESTAMP 
+              ON UPDATE CURRENT_TIMESTAMP;

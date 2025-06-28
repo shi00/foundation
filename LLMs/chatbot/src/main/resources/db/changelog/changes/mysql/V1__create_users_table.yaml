@@ -3,10 +3,10 @@ databaseChangeLog:
       id: V1__create_chatbot_users_table
       author: "louis sin"
       comment: "20250622"
-      context: "mysql"
+      dbms: mysql
       changes:
         - createTable:
-            tableName: chatbot-users
+            tableName: chatbot_users
             remarks: "用户表"
             columns:
               - column:
@@ -46,9 +46,20 @@ databaseChangeLog:
                   constraints:
                     nullable: true
         - createIndex:
-            indexName: idx_chatbot-users_name
-            tableName: chatbot-users
+            indexName: idx_chatbot_users_name
+            tableName: chatbot_users
             columns:
               - column:
                   name: name
                   type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+  - changeSet:
+      id: V1__add_on_update_to_updated_at_chatbot_users_table
+      author: "louis sin"
+      dbms: mysql
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE chatbot_users 
+              MODIFY COLUMN updated_at TIMESTAMP 
+              DEFAULT CURRENT_TIMESTAMP 
+              ON UPDATE CURRENT_TIMESTAMP;

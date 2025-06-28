@@ -3,7 +3,7 @@ databaseChangeLog:
       id: V1__create_ai_models_table
       author: "louis sin"
       comment: "20250622"
-      context: "mysql"
+      dbms: mysql
       changes:
         - createTable:
             tableName: ai_models
@@ -78,9 +78,18 @@ databaseChangeLog:
                   constraints:
                     nullable: true
         - createIndex:
-            indexName: idx_ai-models_id
+            indexName: idx_ai_models_id
             tableName: ai_models
             columns:
               - column:
                   name: id
                   type: int
+  - changeSet:
+      id: V1__add_on_update_to_updated_at_ai_models_table
+      author: "louis sin"
+      dbms: mysql
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE ai_models 
+              MODIFY COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;

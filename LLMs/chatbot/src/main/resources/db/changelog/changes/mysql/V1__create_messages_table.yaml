@@ -3,10 +3,10 @@ databaseChangeLog:
       id: V1__create_chatbot_messages_table
       author: "louis sin"
       comment: "20250622"
-      context: "mysql"
+      dbms: mysql
       changes:
         - createTable:
-            tableName: chatbot-messages
+            tableName: chatbot_messages
             remarks: "聊天消息表"
             columns:
               - column:
@@ -66,11 +66,22 @@ databaseChangeLog:
                   constraints:
                     nullable: false
         - createIndex:
-            indexName: idx_chatbot-messages_id
-            tableName: chatbot-messages
+            indexName: idx_chatbot_messages_id
+            tableName: chatbot_messages
             columns:
               - column:
                   name: id
                   type: int
             unique: true
+  - changeSet:
+      id: V1__add_on_update_to_updated_at_chatbot_messages_table
+      author: "louis sin"
+      dbms: mysql
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE chatbot_messages 
+              MODIFY COLUMN updated_at TIMESTAMP 
+              DEFAULT CURRENT_TIMESTAMP 
+              ON UPDATE CURRENT_TIMESTAMP;
 

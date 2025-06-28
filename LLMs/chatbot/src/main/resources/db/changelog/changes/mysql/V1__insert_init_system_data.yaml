@@ -5,20 +5,20 @@ databaseChangeLog:
       context: "prod"
       changes:
         - insert:
-            tableName: chatbot-roles
+            tableName: chatbot_roles
             columns: # 列数据定义
               - column:
                   name: name
-                  value: "Administrator"
+                  value: "ADMINISTRATOR"
               - column:
                   name: desc
                   value: "系统管理员"
         - insert:
-            tableName: chatbot-roles
+            tableName: chatbot_roles
             columns: # 列数据定义
               - column:
                   name: name
-                  value: "User"
+                  value: "USER"
               - column:
                   name: desc
                   value: "普通用户"

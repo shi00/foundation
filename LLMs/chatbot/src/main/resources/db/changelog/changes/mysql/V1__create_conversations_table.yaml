@@ -3,10 +3,10 @@ databaseChangeLog:
       id: V1__create_chatbot_conversations_table
       author: "louis sin"
       comment: "20250622"
-      context: "mysql"
+      dbms: mysql
       changes:
         - createTable:
-            tableName: chatbot-conversations
+            tableName: chatbot_conversations
             remarks: "聊天会话表"
             columns:
               - column:
@@ -36,7 +36,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: status
-                  type: "ENUM('active', 'inactive')"
+                  type: "ENUM('ACTIVE', 'INACTIVE')"
                   constraints:
                     nullable: false
               - column:
@@ -57,3 +57,14 @@ databaseChangeLog:
                   defaultValue: "true"
                   constraints:
                     nullable: false
+  - changeSet:
+      id: V1__add_on_update_to_updated_at_chatbot_conversations_table
+      author: "louis sin"
+      dbms: mysql
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE chatbot_conversations 
+              MODIFY COLUMN updated_at TIMESTAMP 
+              DEFAULT CURRENT_TIMESTAMP 
+              ON UPDATE CURRENT_TIMESTAMP;
