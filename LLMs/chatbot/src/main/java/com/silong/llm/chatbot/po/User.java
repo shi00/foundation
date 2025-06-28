@@ -21,6 +21,8 @@
 
 package com.silong.llm.chatbot.po;
 
+import com.silong.llm.chatbot.repos.Constants.Role;
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -31,12 +33,16 @@ import lombok.Data;
  * @since 2025-05-19 20:50
  */
 @Data
+@Builder
 public class User {
   /** 用户id */
   private int id;
 
   /** 用户名 */
   private String name;
+
+  /** 用户角色 */
+  private Role role;
 
   /** 用户描述 */
   private String desc;
