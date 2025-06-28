@@ -26,6 +26,9 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.llm.chatbot.po.ChatRound;
+import com.silong.llm.chatbot.po.User;
+import com.silong.llm.chatbot.repos.ChatbotUserRepository;
+import com.silong.llm.chatbot.repos.Constants.Role;
 import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;
@@ -33,9 +36,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * 聊天机器人控制器
@@ -53,13 +60,18 @@ public class ChatbotController {
   /** 聊天客户端 */
   private final ChatClient chatClient;
 
+  private final ChatbotUserRepository chatbotUserRepository;
+
   /**
    * 构造方法
    *
    * @param chatClient 聊天客户端
+   * @param chatbotUserRepository 数据库服务
    */
-  public ChatbotController(@NonNull ChatClient chatClient) {
+  public ChatbotController(
+      @NonNull ChatClient chatClient, @NonNull ChatbotUserRepository chatbotUserRepository) {
     this.chatClient = chatClient;
+    this.chatbotUserRepository = chatbotUserRepository;
   }
 
   /**
@@ -88,7 +100,19 @@ public class ChatbotController {
       @RequestBody String query,
       @RequestHeader(name = CONVERSATION_ID, required = false) String conversationId,
       ServerWebExchange exchange) {
-    return Flux.just(query)
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication) // 提取Authentication对象
+        .map(Authentication::getName)
+        .publishOn(Schedulers.boundedElastic())
+        .doOnNext(
+            username -> {
+              if (!chatbotUserRepository.exist(username)) {
+                User user = User.builder().name(username).role(Role.USER).build();
+                chatbotUserRepository.insert(user);
+                log.info("User {} created", user);
+              }
+            })
+        .flatMapMany(username -> Flux.just(query))
         .doOnNext(
             q -> {
               if (hasLength(q)) {
