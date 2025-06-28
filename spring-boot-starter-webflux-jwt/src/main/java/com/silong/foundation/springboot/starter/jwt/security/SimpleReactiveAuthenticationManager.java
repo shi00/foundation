@@ -118,6 +118,7 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
 
     // 检查用户存在性
     userAuthenticationProvider.checkUserExists(userName);
+    simpleTokenAuthentication.setUserName(userName);
 
     // 查询缓存，确认token是否由服务发放
     String tokenRecord = tokenCache.get(generateTokenKey(userName, appName, token));

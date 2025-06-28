@@ -26,7 +26,7 @@ import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_USERS;
 import static com.silong.llm.chatbot.repos.Constants.INVALID;
 import static com.silong.llm.chatbot.repos.Constants.VALID;
 
-import com.silong.llm.chatbot.po.PageableResult;
+import com.silong.llm.chatbot.po.PagedResult;
 import com.silong.llm.chatbot.po.User;
 import com.silong.llm.chatbot.repos.Constants.Role;
 import jakarta.annotation.Nullable;
@@ -255,7 +255,7 @@ public class ChatbotUserRepository {
    * @return 用户列表
    */
   @Transactional(readOnly = true)
-  public PageableResult<User> listAll() {
+  public PagedResult<User> listAll() {
     int total = dslContext.selectCount().from(CHATBOT_USERS).where(VALID_USER_CONDITION).execute();
 
     List<User> users =
@@ -265,7 +265,7 @@ public class ChatbotUserRepository {
             .where(VALID_USER_CONDITION.and(USER_ID_IN_ROLES_CONDITION).and(VALID_ROLE_CONDITION))
             .orderBy(CHATBOT_USERS.ID.asc())
             .fetch(USER_RECORD_MAPPER);
-    return PageableResult.<User>builder().pageResults(users).totalCount(total).build();
+    return PagedResult.<User>builder().pageResults(users).totalCount(total).build();
   }
 
   /**
@@ -278,7 +278,7 @@ public class ChatbotUserRepository {
    * @return 分页结果
    */
   @Transactional(readOnly = true)
-  public PageableResult<User> list(
+  public PagedResult<User> list(
       int pageSize,
       int pageNumber,
       @Nullable Condition usersCondition,
@@ -310,6 +310,6 @@ public class ChatbotUserRepository {
             .limit(pageSize)
             .offset((pageNumber - 1) * pageSize)
             .fetch(USER_RECORD_MAPPER);
-    return PageableResult.<User>builder().pageResults(users).totalCount(total).build();
+    return PagedResult.<User>builder().pageResults(users).totalCount(total).build();
   }
 }

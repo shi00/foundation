@@ -47,6 +47,9 @@ public class SimpleTokenAuthentication implements Authentication {
   /** 请求token */
   private String token;
 
+  /** 用户名 */
+  private String userName;
+
   @Override
   public String getCredentials() {
     return token;
@@ -64,6 +67,6 @@ public class SimpleTokenAuthentication implements Authentication {
 
   @Override
   public String getName() {
-    throw new UnsupportedOperationException();
+    return userName;
   }
 }
