@@ -26,6 +26,7 @@ databaseChangeLog:
                   name: signature
                   type: varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
+                    unique: true
                     nullable: false
               - column:
                   name: valid
@@ -56,7 +57,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: signature
-                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  type: varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
         - createIndex:
             indexName: idx_system_messages_id
             tableName: system_messages
