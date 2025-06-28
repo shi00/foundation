@@ -19,7 +19,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: name   #角色名称
-                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  type: "ENUM('ADMINISTRATOR', 'USER')"
                   constraints:
                     nullable: false
               - column:
@@ -69,6 +69,6 @@ databaseChangeLog:
             tableName: chatbot-roles
             columns:
               - column:
-                  name: "(CAST(user_ids->'$' AS CHAR(32) ARRAY))"
+                  name: "(CAST(user_ids->'$' AS UNSIGNED ARRAY))"
                   type: json
 #
