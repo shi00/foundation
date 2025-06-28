@@ -22,6 +22,7 @@
 package com.silong.llm.chatbot.po;
 
 import java.util.List;
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -33,6 +34,7 @@ import lombok.Data;
  * @param <T> 分页查询结果
  */
 @Data
+@Builder
 public class PageableResult<T> {
 
   /** 记录总数 */
