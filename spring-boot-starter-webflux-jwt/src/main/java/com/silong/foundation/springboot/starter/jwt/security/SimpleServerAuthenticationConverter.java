@@ -52,7 +52,7 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
 
   /** 用户访问白名单列表内的url时使用GUEST鉴权进行访问，无需鉴权 */
   private static final Authentication GUEST =
-      new SimpleTokenAuthentication(createAuthorityList("guest"), true, null);
+      new SimpleTokenAuthentication(createAuthorityList("guest"), true, null, "guest");
 
   private final ServerWebExchangeMatcher noAuthServerWebExchangeMatcher;
 
@@ -117,6 +117,6 @@ public class SimpleServerAuthenticationConverter implements ServerAuthentication
     if (!hasLength(at)) {
       throw new AccessTokenNotFoundException("AccessToken is not exist in request headers.");
     }
-    return new SimpleTokenAuthentication(null, false, at);
+    return new SimpleTokenAuthentication(null, false, at, null);
   }
 }
