@@ -43,11 +43,11 @@ public class User {
   /** 显示名 */
   private String displayName;
 
-  /** 邮箱 */
-  private String mail;
+  /** 邮箱地址 */
+  private String[] mails;
 
-  /** 电话号码 */
-  private String telephone;
+  /** 移动电话号码 */
+  private String[] mobiles;
 
   /** 用户角色 */
   private String[] roles;
