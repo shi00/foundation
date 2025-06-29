@@ -25,10 +25,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.util.StringUtils.hasLength;
 
-import com.silong.llm.chatbot.daos.ChatbotUserRepository;
-import com.silong.llm.chatbot.daos.Constants.Role;
+import com.silong.foundation.springboot.starter.jwt.security.SimpleTokenAuthentication;
 import com.silong.llm.chatbot.pos.ChatRound;
-import com.silong.llm.chatbot.pos.User;
+import com.silong.llm.chatbot.services.ChatbotService;
 import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;
@@ -36,13 +35,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * 聊天机器人控制器
@@ -60,18 +57,17 @@ public class ChatbotController {
   /** 聊天客户端 */
   private final ChatClient chatClient;
 
-  private final ChatbotUserRepository chatbotUserRepository;
+  private final ChatbotService chatbotService;
 
   /**
    * 构造方法
    *
    * @param chatClient 聊天客户端
-   * @param chatbotUserRepository 数据库服务
+   * @param chatbotService 聊天机器人服务
    */
-  public ChatbotController(
-      @NonNull ChatClient chatClient, @NonNull ChatbotUserRepository chatbotUserRepository) {
+  public ChatbotController(@NonNull ChatClient chatClient, @NonNull ChatbotService chatbotService) {
     this.chatClient = chatClient;
-    this.chatbotUserRepository = chatbotUserRepository;
+    this.chatbotService = chatbotService;
   }
 
   /**
@@ -101,18 +97,10 @@ public class ChatbotController {
       @RequestHeader(name = CONVERSATION_ID, required = false) String conversationId,
       ServerWebExchange exchange) {
     return ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication) // 提取Authentication对象
-        .map(Authentication::getName)
-        .publishOn(Schedulers.boundedElastic())
-        .doOnNext(
-            username -> {
-              if (!chatbotUserRepository.exist(username)) {
-                User user = User.builder().name(username).role(Role.USER).build();
-                chatbotUserRepository.insert(user);
-                log.info("User {} created", user);
-              }
-            })
-        .flatMapMany(username -> Flux.just(query))
+        .map(SecurityContext::getAuthentication)
+        .cast(SimpleTokenAuthentication.class) // 提取Authentication对象
+        .map(chatbotService::syncUser)
+        .flatMapMany(nothing -> Flux.just(query))
         .doOnNext(
             q -> {
               if (hasLength(q)) {

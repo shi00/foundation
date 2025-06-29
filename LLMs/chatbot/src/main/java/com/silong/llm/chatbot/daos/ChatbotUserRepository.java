@@ -26,12 +26,13 @@ import static com.silong.llm.chatbot.daos.Constants.VALID;
 import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_ROLES;
 import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_USERS;
 
-import com.silong.llm.chatbot.daos.Constants.Role;
 import com.silong.llm.chatbot.pos.PagedResult;
 import com.silong.llm.chatbot.pos.User;
 import jakarta.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.*;
@@ -50,14 +51,27 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ChatbotUserRepository {
 
-  private static final RecordMapper<Record4<Integer, String, String, String>, User>
+  /** 多值分隔符 */
+  private static final String DELIMITER = "\\u001D";
+
+  private static final RecordMapper<
+          Record7<Integer, String, String, String, String, String, String>, User>
       USER_RECORD_MAPPER =
           record ->
               User.builder()
                   .id(record.get(CHATBOT_USERS.ID))
-                  .desc(record.get(CHATBOT_USERS.DESC))
                   .name(record.get(CHATBOT_USERS.NAME))
-                  .role(Role.fromString(record.get(CHATBOT_ROLES.NAME)))
+                  .desc(record.get(CHATBOT_USERS.DESC))
+                  .displayName(record.get(CHATBOT_USERS.DISPLAY_NAME))
+                  .roles(new String[] {record.get(CHATBOT_ROLES.NAME)})
+                  .mails(
+                      record.get(CHATBOT_USERS.MAILS) == null
+                          ? null
+                          : record.get(CHATBOT_USERS.MAILS).split(DELIMITER))
+                  .mobiles(
+                      record.get(CHATBOT_USERS.MOBILES) == null
+                          ? null
+                          : record.get(CHATBOT_USERS.MOBILES).split(DELIMITER))
                   .build();
 
   private static final Condition USER_ID_IN_ROLES_CONDITION =
@@ -78,24 +92,57 @@ public class ChatbotUserRepository {
     this.dslContext = dslContext;
   }
 
+  private static void validateUserName(String userName) {
+    if (userName == null || userName.isEmpty()) {
+      throw new IllegalArgumentException("userName must not be null or empty.");
+    }
+  }
+
+  private static void validateUserId(int userId) {
+    if (userId <= 0) {
+      throw new IllegalArgumentException("userId must be greater than 0.");
+    }
+  }
+
+  private static void validateUser(User user) {
+    if (user == null) {
+      throw new IllegalArgumentException("user must not be null.");
+    }
+    validateUserName(user.getName());
+    if (user.getRoles() == null
+        || user.getRoles().length == 0
+        || Arrays.stream(user.getRoles()).anyMatch(role -> role == null || role.isEmpty())) {
+      throw new IllegalArgumentException("userRoles must not be null or empty.");
+    }
+  }
+
   /**
    * 插入用户记录
    *
    * @param user 用户
-   * @return 用户id
    */
   @Transactional
-  public Integer insert(User user) {
-    if (user == null) {
-      throw new IllegalArgumentException("user must not be null.");
-    }
+  public void insertOrUpdate(User user) {
+    validateUser(user);
+
+    String mobiles = user.getMobiles() == null ? null : String.join(DELIMITER, user.getMobiles());
+    String mails = user.getMails() == null ? null : String.join(DELIMITER, user.getMails());
     Integer id =
         dslContext
             .insertInto(CHATBOT_USERS)
             .set(CHATBOT_USERS.NAME, user.getName())
+            .set(CHATBOT_USERS.MOBILES, mobiles)
             .set(CHATBOT_USERS.DESC, user.getDesc())
+            .set(CHATBOT_USERS.MAILS, mails)
+            .set(CHATBOT_USERS.DISPLAY_NAME, user.getDisplayName())
+            .onDuplicateKeyUpdate()
+            .set(CHATBOT_USERS.DISPLAY_NAME, user.getDisplayName())
+            .set(CHATBOT_USERS.MOBILES, mobiles)
+            .set(CHATBOT_USERS.DESC, user.getDesc())
+            .set(CHATBOT_USERS.MAILS, mails)
             .returning(CHATBOT_USERS.ID) // 指定返回的字段
             .fetchOne(CHATBOT_USERS.ID);
+
     dslContext
         .update(CHATBOT_ROLES)
         .set(
@@ -104,10 +151,9 @@ public class ChatbotUserRepository {
                 "JSON_ARRAY_APPEND({0}, '$', {1})",
                 CHATBOT_ROLES.USER_IDS.getDataType(), // 保持类型安全
                 DSL.val(id)))
-        .where(CHATBOT_ROLES.NAME.eq(user.getRole().getValue()))
+        .where(CHATBOT_ROLES.NAME.in(user.getRoles()))
         .execute();
     user.setId(Objects.requireNonNull(id));
-    return id;
   }
 
   /**
@@ -117,9 +163,7 @@ public class ChatbotUserRepository {
    */
   @Transactional
   public void delete(int id) {
-    if (id <= 0) {
-      throw new IllegalArgumentException("id must be greater than 0.");
-    }
+    validateUserId(id);
     dslContext
         .update(CHATBOT_USERS)
         .set(CHATBOT_USERS.VALID, INVALID)
@@ -147,9 +191,7 @@ public class ChatbotUserRepository {
    */
   @Transactional
   public void delete(String name) {
-    if (name == null || name.isEmpty()) {
-      throw new IllegalArgumentException("name must not be null or empty.");
-    }
+    validateUserName(name);
     Integer id =
         dslContext
             .update(CHATBOT_USERS)
@@ -180,9 +222,7 @@ public class ChatbotUserRepository {
    */
   @Transactional(readOnly = true)
   public boolean exist(int id) {
-    if (id <= 0) {
-      throw new IllegalArgumentException("id must be greater than 0.");
-    }
+    validateUserId(id);
     return dslContext.fetchExists(CHATBOT_USERS, CHATBOT_USERS.ID.eq(id).and(VALID_USER_CONDITION));
   }
 
@@ -194,9 +234,7 @@ public class ChatbotUserRepository {
    */
   @Transactional(readOnly = true)
   public boolean exist(String name) {
-    if (name == null || name.isEmpty()) {
-      throw new IllegalArgumentException("name must not be null or empty.");
-    }
+    validateUserName(name);
     return dslContext.fetchExists(
         CHATBOT_USERS, CHATBOT_USERS.NAME.eq(name).and(VALID_USER_CONDITION));
   }
@@ -207,13 +245,19 @@ public class ChatbotUserRepository {
    * @param name 用户名
    * @return 用户列表
    */
+  @Nullable
   @Transactional(readOnly = true)
   public User get(String name) {
-    if (name == null || name.isEmpty()) {
-      throw new IllegalArgumentException("name must not be null or empty.");
-    }
+    validateUserName(name);
     return dslContext
-        .select(CHATBOT_USERS.ID, CHATBOT_USERS.NAME, CHATBOT_ROLES.NAME, CHATBOT_USERS.DESC)
+        .select(
+            CHATBOT_USERS.ID,
+            CHATBOT_USERS.NAME,
+            CHATBOT_USERS.MOBILES,
+            CHATBOT_USERS.MAILS,
+            CHATBOT_USERS.DISPLAY_NAME,
+            CHATBOT_ROLES.NAME,
+            CHATBOT_USERS.DESC)
         .from(CHATBOT_USERS, CHATBOT_ROLES)
         .where(
             CHATBOT_USERS
@@ -222,7 +266,10 @@ public class ChatbotUserRepository {
                 .and(CHATBOT_USERS.VALID.eq(VALID))
                 .and(USER_ID_IN_ROLES_CONDITION)
                 .and(CHATBOT_ROLES.VALID.eq(VALID)))
-        .fetchOne(USER_RECORD_MAPPER);
+        .fetch(USER_RECORD_MAPPER)
+        .stream()
+        .reduce(ChatbotUserRepository::mergeUser)
+        .orElse(null);
   }
 
   /**
@@ -231,13 +278,19 @@ public class ChatbotUserRepository {
    * @param id 用户id
    * @return 用户列表
    */
+  @Nullable
   @Transactional(readOnly = true)
   public User get(int id) {
-    if (id <= 0) {
-      throw new IllegalArgumentException("id must be greater than 0.");
-    }
+    validateUserId(id);
     return dslContext
-        .select(CHATBOT_USERS.ID, CHATBOT_USERS.NAME, CHATBOT_ROLES.NAME, CHATBOT_USERS.DESC)
+        .select(
+            CHATBOT_USERS.ID,
+            CHATBOT_USERS.NAME,
+            CHATBOT_USERS.MOBILES,
+            CHATBOT_USERS.MAILS,
+            CHATBOT_USERS.DISPLAY_NAME,
+            CHATBOT_ROLES.NAME,
+            CHATBOT_USERS.DESC)
         .from(CHATBOT_USERS, CHATBOT_ROLES)
         .where(
             CHATBOT_USERS
@@ -246,7 +299,19 @@ public class ChatbotUserRepository {
                 .and(VALID_USER_CONDITION)
                 .and(DSL.condition("? MEMBER OF({0})", DSL.val(id), CHATBOT_ROLES.USER_IDS))
                 .and(VALID_ROLE_CONDITION))
-        .fetchOne(USER_RECORD_MAPPER);
+        .fetch(USER_RECORD_MAPPER)
+        .stream()
+        .reduce(ChatbotUserRepository::mergeUser)
+        .orElse(null);
+  }
+
+  private static User mergeUser(User a, User b) {
+    assert a.getId() == b.getId()
+        : String.format("Invalid user record. userA: %s, userB: %s", a, b);
+    a.setRoles(
+        Stream.concat(Arrays.stream(a.getRoles()), Arrays.stream(b.getRoles()))
+            .toArray(String[]::new));
+    return a;
   }
 
   /**
@@ -257,14 +322,29 @@ public class ChatbotUserRepository {
   @Transactional(readOnly = true)
   public PagedResult<User> listAll() {
     int total = dslContext.selectCount().from(CHATBOT_USERS).where(VALID_USER_CONDITION).execute();
-
     List<User> users =
         dslContext
-            .select(CHATBOT_USERS.ID, CHATBOT_USERS.NAME, CHATBOT_ROLES.NAME, CHATBOT_USERS.DESC)
+            .select(
+                CHATBOT_USERS.ID,
+                CHATBOT_USERS.NAME,
+                CHATBOT_USERS.MOBILES,
+                CHATBOT_USERS.MAILS,
+                CHATBOT_USERS.DISPLAY_NAME,
+                CHATBOT_ROLES.NAME,
+                CHATBOT_USERS.DESC)
             .from(CHATBOT_USERS, CHATBOT_ROLES)
             .where(VALID_USER_CONDITION.and(USER_ID_IN_ROLES_CONDITION).and(VALID_ROLE_CONDITION))
+            .groupBy(CHATBOT_USERS.ID)
             .orderBy(CHATBOT_USERS.ID.asc())
-            .fetch(USER_RECORD_MAPPER);
+            .fetchGroups(CHATBOT_USERS.ID, USER_RECORD_MAPPER)
+            .values()
+            .stream()
+            .map(
+                userList ->
+                    userList.stream()
+                        .reduce(ChatbotUserRepository::mergeUser)
+                        .orElseThrow(() -> new RuntimeException("Invalid users: " + userList)))
+            .toList();
     return PagedResult.<User>builder().pageResults(users).totalCount(total).build();
   }
 
@@ -303,7 +383,14 @@ public class ChatbotUserRepository {
 
     List<User> users =
         dslContext
-            .select(CHATBOT_USERS.ID, CHATBOT_USERS.NAME, CHATBOT_ROLES.NAME, CHATBOT_USERS.DESC)
+            .select(
+                CHATBOT_USERS.ID,
+                CHATBOT_USERS.NAME,
+                CHATBOT_USERS.MOBILES,
+                CHATBOT_USERS.MAILS,
+                CHATBOT_USERS.DISPLAY_NAME,
+                CHATBOT_ROLES.NAME,
+                CHATBOT_USERS.DESC)
             .from(CHATBOT_USERS, CHATBOT_ROLES)
             .where(usersCondition.and(USER_ID_IN_ROLES_CONDITION).and(rolesCondition))
             .orderBy(CHATBOT_USERS.ID.asc())

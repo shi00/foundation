@@ -26,16 +26,11 @@ import static com.silong.llm.chatbot.daos.Constants.VALID;
 import static com.silong.llm.chatbot.mysql.model.Tables.*;
 
 import com.silong.foundation.crypto.digest.HmacToolkit;
-import com.silong.llm.chatbot.pos.PagedResult;
 import com.silong.llm.chatbot.pos.SystemMessage;
-import com.silong.llm.chatbot.pos.User;
-import jakarta.annotation.Nullable;
-import java.util.List;
 import java.util.Objects;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.*;
-import org.jooq.impl.DSL;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -192,117 +187,5 @@ public class SystemMessagesRepository {
     }
     return dslContext.fetchExists(
         SYSTEM_MESSAGES, SYSTEM_MESSAGES.SIGNATURE.eq(sign(content)).and(VALID_SYS_MSG_CONDITION));
-  }
-
-  /**
-   * 根据消息内容查询消息
-   *
-   * @param name 用户名
-   * @return 用户列表
-   */
-  @Transactional(readOnly = true)
-  public SystemMessage get(String name) {
-    if (name == null || name.isEmpty()) {
-      throw new IllegalArgumentException("name must not be null or empty.");
-    }
-    return dslContext
-        .select(CHATBOT_USERS.ID, CHATBOT_USERS.NAME, CHATBOT_ROLES.NAME, CHATBOT_USERS.DESC)
-        .from(CHATBOT_USERS, CHATBOT_ROLES)
-        .where(
-            CHATBOT_USERS
-                .NAME
-                .eq(name)
-                .and(CHATBOT_USERS.VALID.eq(VALID))
-                .and(USER_ID_IN_ROLES_CONDITION)
-                .and(CHATBOT_ROLES.VALID.eq(VALID)))
-        .fetchOne(USER_RECORD_MAPPER);
-  }
-
-  /**
-   * 查询当前系统中的所有用户
-   *
-   * @param id 用户id
-   * @return 用户列表
-   */
-  @Transactional(readOnly = true)
-  public User get(int id) {
-    if (id <= 0) {
-      throw new IllegalArgumentException("id must be greater than 0.");
-    }
-    return dslContext
-        .select(CHATBOT_USERS.ID, CHATBOT_USERS.NAME, CHATBOT_ROLES.NAME, CHATBOT_USERS.DESC)
-        .from(CHATBOT_USERS, CHATBOT_ROLES)
-        .where(
-            CHATBOT_USERS
-                .ID
-                .eq(id)
-                .and(VALID_USER_CONDITION)
-                .and(DSL.condition("? MEMBER OF({0})", DSL.val(id), CHATBOT_ROLES.USER_IDS))
-                .and(VALID_ROLE_CONDITION))
-        .fetchOne(USER_RECORD_MAPPER);
-  }
-
-  /**
-   * 查询当前系统中的所有有效用户
-   *
-   * @return 用户列表
-   */
-  @Transactional(readOnly = true)
-  public PagedResult<User> listAll() {
-    int total = dslContext.selectCount().from(CHATBOT_USERS).where(VALID_USER_CONDITION).execute();
-
-    List<User> users =
-        dslContext
-            .select(CHATBOT_USERS.ID, CHATBOT_USERS.NAME, CHATBOT_ROLES.NAME, CHATBOT_USERS.DESC)
-            .from(CHATBOT_USERS, CHATBOT_ROLES)
-            .where(VALID_USER_CONDITION.and(USER_ID_IN_ROLES_CONDITION).and(VALID_ROLE_CONDITION))
-            .orderBy(CHATBOT_USERS.ID.asc())
-            .fetch(USER_RECORD_MAPPER);
-    return PagedResult.<User>builder().pageResults(users).totalCount(total).build();
-  }
-
-  /**
-   * 分页查询用户
-   *
-   * @param pageSize 每页结果数量
-   * @param pageNumber 页码
-   * @param usersCondition 用户查询条件
-   * @param rolesCondition 角色查询条件
-   * @return 分页结果
-   */
-  @Transactional(readOnly = true)
-  public PagedResult<User> list(
-      int pageSize,
-      int pageNumber,
-      @Nullable Condition usersCondition,
-      @Nullable Condition rolesCondition) {
-    if (pageSize <= 0) {
-      throw new IllegalArgumentException("pageSize must be greater than 0.");
-    }
-
-    if (pageNumber <= 0) {
-      throw new IllegalArgumentException("pageNumber must be greater than 0.");
-    }
-
-    if (usersCondition == null) {
-      usersCondition = VALID_USER_CONDITION;
-    }
-
-    if (rolesCondition == null) {
-      rolesCondition = VALID_ROLE_CONDITION;
-    }
-
-    int total = dslContext.selectCount().from(CHATBOT_USERS).where(usersCondition).execute();
-
-    List<User> users =
-        dslContext
-            .select(CHATBOT_USERS.ID, CHATBOT_USERS.NAME, CHATBOT_ROLES.NAME, CHATBOT_USERS.DESC)
-            .from(CHATBOT_USERS, CHATBOT_ROLES)
-            .where(usersCondition.and(USER_ID_IN_ROLES_CONDITION).and(rolesCondition))
-            .orderBy(CHATBOT_USERS.ID.asc())
-            .limit(pageSize)
-            .offset((pageNumber - 1) * pageSize)
-            .fetch(USER_RECORD_MAPPER);
-    return PagedResult.<User>builder().pageResults(users).totalCount(total).build();
   }
 }
