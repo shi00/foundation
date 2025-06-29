@@ -44,8 +44,22 @@ import reactor.util.function.Tuples;
 @Slf4j
 public class LdapUserProvider implements UserAuthenticationProvider {
 
+  /** 邮箱地址属性 */
+  public static final String MAIL_ATTRIBUTION = "mail";
+
+  /** 电话号码属性 */
+  public static final String TELEPHONE_NUMBER_ATTRIBUTION = "telephoneNumber";
+
+  /** 显示名属性 */
+  public static final String DISPLAY_NAME_ATTRIBUTION = "displayName";
+
+  /** 归属属性 */
+  public static final String MEMBER_OF_ATTRIBUTION = "memberOf";
+
   /** 用户属性名，用于查询 */
-  private static final String[] USER_ATTRS = {"mail", "telephoneNumber", "displayName", "memberOf"};
+  private static final String[] USER_ATTRS = {
+    MAIL_ATTRIBUTION, TELEPHONE_NUMBER_ATTRIBUTION, DISPLAY_NAME_ATTRIBUTION, MEMBER_OF_ATTRIBUTION
+  };
 
   private final LdapProperties ldapProperties;
 
