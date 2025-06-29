@@ -15,13 +15,14 @@ databaseChangeLog:
                   autoIncrement: true
                   constraints:
                     unique: true
-                    primaryKey: true
                     nullable: false
               - column:
                   name: name   #角色名称
                   type: varchar(50)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
                     nullable: false
+                    primaryKey: true
+                    unique: true
               - column:
                   name: user_ids
                   type: json
