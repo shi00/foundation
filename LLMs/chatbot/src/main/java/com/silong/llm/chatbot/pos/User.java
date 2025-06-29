@@ -34,9 +34,6 @@ import lombok.Data;
 @Data
 @Builder
 public class User {
-  /** 用户id */
-  private int id;
-
   /** 用户名 */
   private String name;
 
