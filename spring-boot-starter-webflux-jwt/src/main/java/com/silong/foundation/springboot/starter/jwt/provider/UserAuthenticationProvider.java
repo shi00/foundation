@@ -22,7 +22,6 @@
 package com.silong.foundation.springboot.starter.jwt.provider;
 
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
-import org.springframework.lang.NonNull;
 
 /**
  * 用户鉴权提供者接口
@@ -38,12 +37,12 @@ public interface UserAuthenticationProvider {
    *
    * @param userName 用户名
    */
-  void checkUserExists(@NonNull String userName);
+  void checkUserExists(String userName);
 
   /**
    * 用户鉴权
    *
    * @param credentials 用户凭证
    */
-  void authenticate(@NonNull Credentials credentials);
+  void authenticate(Credentials credentials);
 }
