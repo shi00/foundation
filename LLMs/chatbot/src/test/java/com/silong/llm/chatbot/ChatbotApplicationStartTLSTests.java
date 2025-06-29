@@ -28,7 +28,7 @@ import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
-import com.silong.llm.chatbot.provider.LdapUserProvider;
+import com.silong.llm.chatbot.providers.LdapUserProvider;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Order;

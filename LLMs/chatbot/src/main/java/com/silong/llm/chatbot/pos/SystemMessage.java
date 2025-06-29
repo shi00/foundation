@@ -19,14 +19,13 @@
  *
  */
 
-package com.silong.llm.chatbot.po;
+package com.silong.llm.chatbot.pos;
 
-import com.silong.llm.chatbot.repos.Constants.Role;
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * 用户
+ * 系统消息
  *
  * @author louis sin
  * @version 1.0.0
@@ -34,16 +33,16 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class User {
-  /** 用户id */
+public class SystemMessage {
+  /** 消息id */
   private int id;
 
-  /** 用户名 */
+  /** 系统消息名称 */
   private String name;
 
-  /** 用户角色 */
-  private Role role;
+  /** 内容 */
+  private String content;
 
-  /** 用户描述 */
+  /** 描述 */
   private String desc;
 }

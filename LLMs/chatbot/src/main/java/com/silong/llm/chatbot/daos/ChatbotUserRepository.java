@@ -19,16 +19,16 @@
  *
  */
 
-package com.silong.llm.chatbot.repos;
+package com.silong.llm.chatbot.daos;
 
+import static com.silong.llm.chatbot.daos.Constants.INVALID;
+import static com.silong.llm.chatbot.daos.Constants.VALID;
 import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_ROLES;
 import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_USERS;
-import static com.silong.llm.chatbot.repos.Constants.INVALID;
-import static com.silong.llm.chatbot.repos.Constants.VALID;
 
-import com.silong.llm.chatbot.po.PagedResult;
-import com.silong.llm.chatbot.po.User;
-import com.silong.llm.chatbot.repos.Constants.Role;
+import com.silong.llm.chatbot.daos.Constants.Role;
+import com.silong.llm.chatbot.pos.PagedResult;
+import com.silong.llm.chatbot.pos.User;
 import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;

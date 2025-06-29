@@ -24,6 +24,7 @@ package com.silong.foundation.springboot.starter.jwt.common;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * 用户凭证
@@ -42,5 +43,6 @@ public class Credentials {
   /** 密码 */
   @JsonProperty("password")
   @NotEmpty
+  @ToString.Exclude
   private String password;
 }

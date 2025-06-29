@@ -38,6 +38,7 @@ import org.springframework.web.reactive.function.server.HandlerFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 
 /**
  * 鉴权处理器，生成token
@@ -80,11 +81,13 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
    * 根据用户凭证生成token
    *
    * @param credentials 用户凭证
+   * @param attributes 用户属性
    * @return token
    */
-  private Mono<ServerResponse> generateToken(Credentials credentials) {
+  private Mono<ServerResponse> generateToken(
+      Credentials credentials, Map<String, Object> attributes) {
     String userName = credentials.getUserName();
-    String token = jwtProvider.generate(userName, Map.of());
+    String token = jwtProvider.generate(userName, attributes);
     tokenCache.put(generateTokenKey(userName, appName, token), "ok"); // 缓存起来
     return ServerResponse.ok()
         .contentType(APPLICATION_JSON)
@@ -107,9 +110,10 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
    * 用户凭证鉴权
    *
    * @param credentials 用户凭证
+   * @return 鉴权结果
    */
-  private void authenticate(Credentials credentials) {
-    userAuthenticationProvider.authenticate(credentials);
+  private Map<String, Object> authenticate(Credentials credentials) {
+    return userAuthenticationProvider.authenticate(credentials);
   }
 
   @Override
@@ -117,10 +121,14 @@ public class AuthTokenHandler implements HandlerFunction<ServerResponse> {
   public Mono<ServerResponse> handle(@NonNull ServerRequest request) {
     return request
         .bodyToMono(Credentials.class)
-        .doOnNext(this::authenticate)
+        .map(credentials -> Tuples.of(credentials, authenticate(credentials)))
         .doOnSuccess(
-            credentials -> log.info("{} authentication is successful.", credentials.getUserName()))
-        .flatMap(this::generateToken)
+            t2 ->
+                log.info(
+                    "{} authentication is successful. attributions: {}.",
+                    t2.getT1().getUserName(),
+                    t2.getT2()))
+        .flatMap(t2 -> generateToken(t2.getT1(), t2.getT2()))
         .onErrorResume(
             t -> {
               log.error("Failed to login.", t);

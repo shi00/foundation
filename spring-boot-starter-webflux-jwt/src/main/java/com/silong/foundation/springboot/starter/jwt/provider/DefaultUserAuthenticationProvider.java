@@ -113,7 +113,7 @@ public class DefaultUserAuthenticationProvider implements UserAuthenticationProv
   }
 
   @Override
-  public void authenticate(@NonNull Credentials credentials) {
+  public Map<String, Object> authenticate(@NonNull Credentials credentials) {
     String userName = credentials.getUserName();
     UserDetails userDetails = findByUserName(userName);
     if (userDetails == null) {
@@ -147,5 +147,8 @@ public class DefaultUserAuthenticationProvider implements UserAuthenticationProv
       log.warn("user has an incorrect password. userName: {}", userName);
       throw new BadCredentialsException("Incorrect password.");
     }
+    return Map.of(
+        "authorities",
+        userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList());
   }
 }

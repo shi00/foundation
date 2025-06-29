@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.llm.chatbot.repos;
+package com.silong.llm.chatbot.daos;
 
 import lombok.Getter;
 

@@ -22,7 +22,7 @@
 package com.silong.llm.chatbot.configure;
 
 import com.silong.llm.chatbot.configure.properties.LdapProperties;
-import com.silong.llm.chatbot.provider.LdapUserProvider;
+import com.silong.llm.chatbot.providers.LdapUserProvider;
 import com.unboundid.ldap.sdk.*;
 import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest;
 import com.unboundid.util.ssl.SSLUtil;

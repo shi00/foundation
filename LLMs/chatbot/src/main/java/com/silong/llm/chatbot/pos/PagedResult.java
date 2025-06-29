@@ -19,30 +19,27 @@
  *
  */
 
-package com.silong.llm.chatbot.po;
+package com.silong.llm.chatbot.pos;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * 系统消息
+ * 分页查询结果
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2025-05-19 20:50
+ * @param <T> 分页查询结果
  */
 @Data
 @Builder
-public class SystemMessage {
-  /** 消息id */
-  private int id;
+public class PagedResult<T> {
 
-  /** 系统消息名称 */
-  private String name;
+  /** 记录总数 */
+  private int totalCount;
 
-  /** 内容 */
-  private String content;
-
-  /** 描述 */
-  private String desc;
+  /** 分页查询结果 */
+  private List<T> pageResults;
 }

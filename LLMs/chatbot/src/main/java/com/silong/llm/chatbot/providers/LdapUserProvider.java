@@ -19,15 +19,20 @@
  *
  */
 
-package com.silong.llm.chatbot.provider;
+package com.silong.llm.chatbot.providers;
 
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.exception.IllegalUserException;
 import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import com.silong.llm.chatbot.configure.properties.LdapProperties;
 import com.unboundid.ldap.sdk.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 /**
  * 基于LDAP实现的用户提供者
@@ -39,7 +44,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LdapUserProvider implements UserAuthenticationProvider {
 
+  /** 用户属性名，用于查询 */
+  private static final String[] USER_ATTRS = {"mail", "telephoneNumber", "displayName", "memberOf"};
+
   private final LdapProperties ldapProperties;
+
   private final LDAPConnectionPool connectionPool;
 
   /**
@@ -58,15 +67,9 @@ public class LdapUserProvider implements UserAuthenticationProvider {
   public void checkUserExists(@NonNull String userName) {
     try (var conn = connectionPool.getConnection()) {
       if (ldapProperties.getType() == LdapProperties.Type.ACTIVE_DIRECTORY) {
-
+        throw new UnsupportedOperationException();
       } else {
-        Filter filter = Filter.createEqualityFilter("uid", Filter.encodeValue(userName));
-        SearchResultEntry entry =
-            conn.searchForEntry(ldapProperties.getBaseDn(), SearchScope.SUB, filter);
-        if (entry == null) {
-          log.warn("User {} does not exist.", userName);
-          throw new IllegalUserException(String.format("%s authentication failed.", userName));
-        }
+        searchResultEntry(userName, conn);
       }
     } catch (LDAPException e) {
       log.error("User {} does not exist.", userName);
@@ -75,28 +78,39 @@ public class LdapUserProvider implements UserAuthenticationProvider {
   }
 
   @Override
-  public void authenticate(@NonNull Credentials credentials) {
+  public Map<String, Object> authenticate(@NonNull Credentials credentials) {
     String userName = credentials.getUserName();
     try (LDAPConnection conn = connectionPool.getConnection()) {
       if (ldapProperties.getType() == LdapProperties.Type.ACTIVE_DIRECTORY) {
-
+        throw new UnsupportedOperationException();
       } else {
-        Filter filter = Filter.createEqualityFilter("uid", Filter.encodeValue(userName));
-        SearchResultEntry entry =
-            conn.searchForEntry(ldapProperties.getBaseDn(), SearchScope.SUB, filter);
-        if (entry == null) {
-          log.warn("User {} does not exist.", userName);
-          throw new IllegalUserException(String.format("%s authentication failed.", userName));
-        }
+        SearchResultEntry entry = searchResultEntry(userName, conn);
         BindResult result = conn.bind(entry.getDN(), credentials.getPassword());
         if (result.getResultCode() != ResultCode.SUCCESS) {
           log.warn("Failed to bind user {}.", userName);
           throw new IllegalUserException(String.format("%s authentication failed.", userName));
         }
+        log.info("User {} authenticated.", userName);
+        return Arrays.stream(USER_ATTRS)
+            .map(attr -> Tuples.of(attr, entry.getAttribute(attr)))
+            .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2));
       }
     } catch (LDAPException e) {
       log.error("Failed to authenticate user {}.", userName, e);
       throw new IllegalUserException(String.format("%s authentication failed.", userName));
     }
+  }
+
+  private SearchResultEntry searchResultEntry(String userName, LDAPConnection conn)
+      throws LDAPSearchException {
+    Filter filter = Filter.createEqualityFilter("uid", Filter.encodeValue(userName));
+    SearchResultEntry entry =
+        conn.searchForEntry(ldapProperties.getBaseDn(), SearchScope.SUB, filter, USER_ATTRS);
+    if (entry == null) {
+      log.warn("User {} does not exist.", userName);
+      throw new IllegalUserException(String.format("%s authentication failed.", userName));
+    }
+    log.info("User {} found.", userName);
+    return entry;
   }
 }

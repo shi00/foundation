@@ -19,27 +19,31 @@
  *
  */
 
-package com.silong.llm.chatbot.po;
+package com.silong.llm.chatbot.pos;
 
-import java.util.List;
+import com.silong.llm.chatbot.daos.Constants.Role;
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * 分页查询结果
+ * 用户
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2025-05-19 20:50
- * @param <T> 分页查询结果
  */
 @Data
 @Builder
-public class PagedResult<T> {
+public class User {
+  /** 用户id */
+  private int id;
 
-  /** 记录总数 */
-  private int totalCount;
+  /** 用户名 */
+  private String name;
 
-  /** 分页查询结果 */
-  private List<T> pageResults;
+  /** 用户角色 */
+  private Role role;
+
+  /** 用户描述 */
+  private String desc;
 }

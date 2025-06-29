@@ -19,16 +19,16 @@
  *
  */
 
-package com.silong.llm.chatbot.controller;
+package com.silong.llm.chatbot.controllers;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.util.StringUtils.hasLength;
 
-import com.silong.llm.chatbot.po.ChatRound;
-import com.silong.llm.chatbot.po.User;
-import com.silong.llm.chatbot.repos.ChatbotUserRepository;
-import com.silong.llm.chatbot.repos.Constants.Role;
+import com.silong.llm.chatbot.daos.ChatbotUserRepository;
+import com.silong.llm.chatbot.daos.Constants.Role;
+import com.silong.llm.chatbot.pos.ChatRound;
+import com.silong.llm.chatbot.pos.User;
 import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;

@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.llm.chatbot.po;
+package com.silong.llm.chatbot.pos;
 
 import java.util.Date;
 import lombok.Data;

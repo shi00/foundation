@@ -22,6 +22,7 @@
 package com.silong.foundation.springboot.starter.jwt.provider;
 
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
+import java.util.Map;
 
 /**
  * 用户鉴权提供者接口
@@ -43,6 +44,7 @@ public interface UserAuthenticationProvider {
    * 用户鉴权
    *
    * @param credentials 用户凭证
+   * @return 鉴权成功后返回的附加信息
    */
-  void authenticate(Credentials credentials);
+  Map<String, Object> authenticate(Credentials credentials);
 }
