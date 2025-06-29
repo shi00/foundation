@@ -24,6 +24,7 @@ package com.silong.foundation.springboot.starter.jwt.security;
 import java.io.Serial;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.security.core.Authentication;
@@ -56,6 +57,17 @@ public class SimpleTokenAuthentication implements Authentication {
 
   /** 用户名 */
   private String userName;
+
+  /**
+   * 获取属性
+   *
+   * @param key 属性key
+   * @return 属性
+   * @param <T> 属性类型
+   */
+  public <T> T getAttribute(String key) {
+    return (T) attributes.get(Objects.requireNonNull(key, "key must not be null."));
+  }
 
   /**
    * 用户access-token
