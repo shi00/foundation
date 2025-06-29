@@ -21,12 +21,13 @@
 
 package com.silong.foundation.springboot.starter.jwt.security;
 
+import jakarta.annotation.Nullable;
 import java.io.Serial;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
@@ -65,8 +66,12 @@ public class SimpleTokenAuthentication implements Authentication {
    * @return 属性
    * @param <T> 属性类型
    */
-  public <T> T getAttribute(String key) {
-    return (T) attributes.get(Objects.requireNonNull(key, "key must not be null."));
+  @Nullable
+  public <T> T getAttribute(@NonNull String key) {
+    if (attributes == null) {
+      return null;
+    }
+    return (T) attributes.get(key);
   }
 
   /**
