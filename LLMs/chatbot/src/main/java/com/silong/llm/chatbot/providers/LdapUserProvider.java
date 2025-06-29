@@ -31,8 +31,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 /**
  * 基于LDAP实现的用户提供者
@@ -47,8 +45,8 @@ public class LdapUserProvider implements UserAuthenticationProvider {
   /** 邮箱地址属性 */
   public static final String MAIL_ATTRIBUTION = "mail";
 
-  /** 电话号码属性 */
-  public static final String TELEPHONE_NUMBER_ATTRIBUTION = "telephoneNumber";
+  /** 移动电话号码属性 */
+  public static final String MOBILE_ATTRIBUTION = "mobile";
 
   /** 显示名属性 */
   public static final String DISPLAY_NAME_ATTRIBUTION = "displayName";
@@ -56,9 +54,16 @@ public class LdapUserProvider implements UserAuthenticationProvider {
   /** 归属属性 */
   public static final String MEMBER_OF_ATTRIBUTION = "memberOf";
 
+  /** 描述信息 */
+  public static final String DESCRIPTION_ATTRIBUTION = "description";
+
   /** 用户属性名，用于查询 */
   private static final String[] USER_ATTRS = {
-    MAIL_ATTRIBUTION, TELEPHONE_NUMBER_ATTRIBUTION, DISPLAY_NAME_ATTRIBUTION, MEMBER_OF_ATTRIBUTION
+    MAIL_ATTRIBUTION,
+    MOBILE_ATTRIBUTION,
+    DISPLAY_NAME_ATTRIBUTION,
+    MEMBER_OF_ATTRIBUTION,
+    DESCRIPTION_ATTRIBUTION
   };
 
   private final LdapProperties ldapProperties;
@@ -106,8 +111,10 @@ public class LdapUserProvider implements UserAuthenticationProvider {
         }
         log.info("User {} authenticated.", userName);
         return Arrays.stream(USER_ATTRS)
-            .map(attr -> Tuples.of(attr, entry.getAttribute(attr)))
-            .collect(Collectors.toUnmodifiableMap(Tuple2::getT1, Tuple2::getT2));
+            .map(attrKey -> new Tuple2(attrKey, entry.getAttribute(attrKey)))
+            .filter(t2 -> t2.attribute != null)
+            .peek(t2 -> log.info(t2.attribute().toString()))
+            .collect(Collectors.toMap(Tuple2::attrKey, Tuple2::attribute));
       }
     } catch (LDAPException e) {
       log.error("Failed to authenticate user {}.", userName, e);
@@ -127,4 +134,6 @@ public class LdapUserProvider implements UserAuthenticationProvider {
     log.info("User {} found.", userName);
     return entry;
   }
+
+  private record Tuple2(String attrKey, Attribute attribute) {}
 }
