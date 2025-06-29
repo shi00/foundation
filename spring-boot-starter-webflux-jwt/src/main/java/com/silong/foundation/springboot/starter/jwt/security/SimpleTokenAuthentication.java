@@ -21,8 +21,10 @@
 
 package com.silong.foundation.springboot.starter.jwt.security;
 
+import java.io.Serial;
 import java.util.Collection;
-import lombok.AllArgsConstructor;
+import java.util.Map;
+import lombok.Builder;
 import lombok.Data;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -35,11 +37,16 @@ import org.springframework.security.core.GrantedAuthority;
  * @since 2024-05-09 11:27
  */
 @Data
-@AllArgsConstructor
+@Builder
 public class SimpleTokenAuthentication implements Authentication {
+
+  @Serial private static final long serialVersionUID = -1234567890123456789L;
 
   /** token对应的权限列表 */
   private Collection<GrantedAuthority> authorities;
+
+  /** 用户属性 */
+  private Map<String, Object> attributes;
 
   /** 鉴权通过 */
   private boolean authenticated;
@@ -50,16 +57,33 @@ public class SimpleTokenAuthentication implements Authentication {
   /** 用户名 */
   private String userName;
 
+  /**
+   * 用户access-token
+   *
+   * @return access-token
+   */
   @Override
   public String getCredentials() {
     return token;
   }
 
+  /**
+   * 暂不支持
+   *
+   * @return details
+   * @throws UnsupportedOperationException 异常
+   */
   @Override
   public Object getDetails() {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * 暂不支持
+   *
+   * @return details
+   * @throws UnsupportedOperationException 异常
+   */
   @Override
   public Object getPrincipal() {
     throw new UnsupportedOperationException();

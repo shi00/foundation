@@ -32,7 +32,9 @@ import com.silong.foundation.springboot.starter.jwt.exception.IllegalAccessToken
 import com.silong.foundation.springboot.starter.jwt.provider.JWTProvider;
 import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -118,7 +120,6 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
 
     // 检查用户存在性
     userAuthenticationProvider.checkUserExists(userName);
-    simpleTokenAuthentication.setUserName(userName);
 
     // 查询缓存，确认token是否由服务发放
     String tokenRecord = tokenCache.get(generateTokenKey(userName, appName, token));
@@ -141,6 +142,11 @@ public class SimpleReactiveAuthenticationManager implements ReactiveAuthenticati
     }
 
     authentication.setAuthenticated(true);
+    simpleTokenAuthentication.setUserName(userName);
+    simpleTokenAuthentication.setAttributes(
+        decodedJWT.getClaims().entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+
     return Mono.just(authentication);
   }
 }
