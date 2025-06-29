@@ -50,7 +50,7 @@ public class User {
   private String telephone;
 
   /** 用户角色 */
-  private String[] role;
+  private String[] roles;
 
   /** 用户描述 */
   private String desc;
