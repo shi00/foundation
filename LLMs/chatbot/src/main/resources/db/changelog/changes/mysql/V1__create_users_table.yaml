@@ -17,6 +17,13 @@ databaseChangeLog:
                     unique: true
                     primaryKey: true
               - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
                   name: mail
                   type: varchar(256)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
@@ -61,6 +68,13 @@ databaseChangeLog:
               - column:
                   name: name
                   type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        - createIndex:
+            indexName: idx_chatbot_users_id
+            tableName: chatbot_users
+            columns:
+              - column:
+                  name: id
+                  type: int
   - changeSet:
       id: V1__add_on_update_to_updated_at_chatbot_users_table
       author: "louis sin"
