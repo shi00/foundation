@@ -21,7 +21,6 @@
 
 package com.silong.llm.chatbot.pos;
 
-import com.silong.llm.chatbot.daos.Constants.Role;
 import lombok.Builder;
 import lombok.Data;
 
@@ -41,8 +40,17 @@ public class User {
   /** 用户名 */
   private String name;
 
+  /** 显示名 */
+  private String displayName;
+
+  /** 邮箱 */
+  private String mail;
+
+  /** 电话号码 */
+  private String telephone;
+
   /** 用户角色 */
-  private Role role;
+  private String[] role;
 
   /** 用户描述 */
   private String desc;
