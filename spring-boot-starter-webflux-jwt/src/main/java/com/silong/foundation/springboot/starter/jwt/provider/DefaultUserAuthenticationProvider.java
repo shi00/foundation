@@ -103,7 +103,7 @@ public class DefaultUserAuthenticationProvider implements UserAuthenticationProv
   }
 
   @Override
-  public void checkUserExists(String userName) {
+  public void checkUserExists(@NonNull String userName) {
     // 查找用户
     UserDetails userDetails = findByUserName(userName);
     if (userDetails == null) {
@@ -113,7 +113,7 @@ public class DefaultUserAuthenticationProvider implements UserAuthenticationProv
   }
 
   @Override
-  public void authenticate(Credentials credentials) {
+  public void authenticate(@NonNull Credentials credentials) {
     String userName = credentials.getUserName();
     UserDetails userDetails = findByUserName(userName);
     if (userDetails == null) {
