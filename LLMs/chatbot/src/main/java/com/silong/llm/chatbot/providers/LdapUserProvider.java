@@ -93,7 +93,7 @@ public class LdapUserProvider implements UserAuthenticationProvider {
         log.info("User {} authenticated.", userName);
         return Arrays.stream(USER_ATTRS)
             .map(attr -> Tuples.of(attr, entry.getAttribute(attr)))
-            .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2));
+            .collect(Collectors.toUnmodifiableMap(Tuple2::getT1, Tuple2::getT2));
       }
     } catch (LDAPException e) {
       log.error("Failed to authenticate user {}.", userName, e);
