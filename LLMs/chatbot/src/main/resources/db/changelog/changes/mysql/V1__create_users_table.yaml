@@ -24,8 +24,8 @@ databaseChangeLog:
                     unique: true
                     nullable: false
               - column:
-                  name: mail
-                  type: varchar(256)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  name: mails
+                  type: varchar(1024)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
                     nullable: true
               - column:
@@ -34,8 +34,8 @@ databaseChangeLog:
                   constraints:
                     nullable: true
               - column:
-                  name: telephone
-                  type: varchar(50)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  name: mobiles
+                  type: varchar(1024)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
                     nullable: true
               - column:
