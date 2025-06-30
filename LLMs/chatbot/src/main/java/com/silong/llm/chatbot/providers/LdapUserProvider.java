@@ -26,7 +26,10 @@ import com.silong.foundation.springboot.starter.jwt.exception.IllegalUserExcepti
 import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import com.silong.llm.chatbot.configure.properties.LdapProperties;
 import com.unboundid.ldap.sdk.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -111,15 +114,30 @@ public class LdapUserProvider implements UserAuthenticationProvider {
         }
         log.info("User {} authenticated.", userName);
         return Arrays.stream(USER_ATTRS)
-            .map(attrKey -> new Tuple2(attrKey, entry.getAttribute(attrKey)))
-            .filter(t2 -> t2.attribute != null)
+            .map(attrKey -> new Tuple2<>(attrKey, entry.getAttribute(attrKey)))
+            .filter(t2 -> t2.attribute != null && t2.attribute.hasValue())
             .peek(t2 -> log.info(t2.attribute().toString()))
-            .collect(Collectors.toMap(Tuple2::attrKey, Tuple2::attribute));
+            .collect(Collectors.toMap(Tuple2::attrKey, LdapUserProvider::convert2StringList));
       }
     } catch (LDAPException e) {
       log.error("Failed to authenticate user {}.", userName, e);
       throw new IllegalUserException(String.format("%s authentication failed.", userName));
     }
+  }
+
+  /**
+   * 读取属性值
+   *
+   * @param t2 属性
+   * @return 字符串列表
+   */
+  private static List<String> convert2StringList(Tuple2<String, Attribute> t2) {
+    byte[][] valueByteArrays = t2.attribute().getValueByteArrays();
+    List<String> values = new ArrayList<>(valueByteArrays.length);
+    for (byte[] v : valueByteArrays) {
+      values.add(new String(v, StandardCharsets.UTF_8));
+    }
+    return values;
   }
 
   private SearchResultEntry searchResultEntry(String userName, LDAPConnection conn)
@@ -135,5 +153,5 @@ public class LdapUserProvider implements UserAuthenticationProvider {
     return entry;
   }
 
-  private record Tuple2(String attrKey, Attribute attribute) {}
+  private record Tuple2<K, V>(K attrKey, V attribute) {}
 }
