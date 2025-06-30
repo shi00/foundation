@@ -26,7 +26,7 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 用户
+ * 角色
  *
  * @author louis sin
  * @version 1.0.0
@@ -34,24 +34,18 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class User {
-  /** 用户编号 */
+public class Role {
+  /** 角色编号 */
   private int id;
 
-  /** 用户名 */
+  /** 角色名 */
   private String name;
 
-  /** 显示名 */
-  private String displayName;
+  /** 归属此角色的用户列表 */
+  private List<String> members;
 
-  /** 邮箱地址 */
-  private List<String> mails;
-
-  /** 移动电话号码 */
-  private List<String> mobiles;
-
-  /** 用户角色 */
-  private List<String> roles;
+  /** 授权的功能访问路径，相对路径 */
+  private List<String> authorizedPaths;
 
   /** 用户描述 */
   private String desc;
