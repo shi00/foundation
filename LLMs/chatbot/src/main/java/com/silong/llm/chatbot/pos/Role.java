@@ -42,7 +42,7 @@ public class Role {
   private String name;
 
   /** 归属此角色的用户列表 */
-  private List<String> members;
+  private List<Integer> members;
 
   /** 授权的功能访问路径，相对路径 */
   private List<String> authorizedPaths;
