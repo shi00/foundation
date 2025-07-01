@@ -5,6 +5,11 @@ ou: people
 dn: uid=tom,ou=people,dc=test,dc=com
 objectClass: inetOrgPerson
 uid: tom
+mail: woaikde@qq.com
+mail: woaiunix@qq.com
+mobile: 13333333333
+displayName: tt
+description: 测试账户
 cn: Tom User
 sn: User
 userPassword: {SSHA}hpNNPnQe/Jhfo5DCHGMIKhigQi/yLAPH

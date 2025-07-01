@@ -24,10 +24,9 @@ package com.silong.llm.chatbot.services;
 import static com.silong.llm.chatbot.providers.LdapUserProvider.*;
 
 import com.silong.foundation.springboot.starter.jwt.security.SimpleTokenAuthentication;
-import com.silong.llm.chatbot.daos.ChatbotUserRepository;
-import com.silong.llm.chatbot.daos.SystemMessagesRepository;
+import com.silong.llm.chatbot.daos.ChatbotRepository;
 import com.silong.llm.chatbot.pos.User;
-import com.unboundid.ldap.sdk.Attribute;
+import java.util.List;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -50,25 +49,18 @@ public class ChatbotService {
   private final ChatClient chatClient;
 
   /** 数据库dao */
-  private final ChatbotUserRepository chatbotUserRepository;
-
-  /** 数据库dao */
-  private final SystemMessagesRepository systemMessagesRepository;
+  private final ChatbotRepository chatbotRepository;
 
   /**
    * 构造方法
    *
    * @param chatClient 模型客户端
-   * @param chatbotUserRepository 数据库访问
-   * @param systemMessagesRepository 数据库访问
+   * @param chatbotRepository 数据库访问
    */
   public ChatbotService(
-      @NonNull ChatClient chatClient,
-      @NonNull ChatbotUserRepository chatbotUserRepository,
-      @NonNull SystemMessagesRepository systemMessagesRepository) {
+      @NonNull ChatClient chatClient, @NonNull ChatbotRepository chatbotRepository) {
     this.chatClient = chatClient;
-    this.chatbotUserRepository = chatbotUserRepository;
-    this.systemMessagesRepository = systemMessagesRepository;
+    this.chatbotRepository = chatbotRepository;
   }
 
   /**
@@ -82,32 +74,22 @@ public class ChatbotService {
         .publishOn(Schedulers.boundedElastic())
         .doOnNext(
             auth -> {
-              String userName = auth.getUserName();
-              Attribute memberOf = auth.getAttribute(MEMBER_OF_ATTRIBUTION);
-              Attribute displayName = auth.getAttribute(DISPLAY_NAME_ATTRIBUTION);
-              Attribute mobiles = auth.getAttribute(MOBILE_ATTRIBUTION);
-              Attribute mails = auth.getAttribute(MAIL_ATTRIBUTION);
-              Attribute desc = auth.getAttribute(DESCRIPTION_ATTRIBUTION);
+              List<String> memberOf = auth.getAttribute(MEMBER_OF_ATTRIBUTION);
+              List<String> displayName = auth.getAttribute(DISPLAY_NAME_ATTRIBUTION);
+              List<String> mobiles = auth.getAttribute(MOBILE_ATTRIBUTION);
+              List<String> mails = auth.getAttribute(MAIL_ATTRIBUTION);
+              List<String> desc = auth.getAttribute(DESCRIPTION_ATTRIBUTION);
               User user =
                   User.builder()
-                      .name(userName)
-                      .roles(getValues(memberOf))
-                      .displayName(getValue(displayName))
-                      .mails(getValues(mails))
-                      .desc(getValue(desc))
-                      .mobiles(getValues(mobiles))
+                      .name(auth.getUserName())
+                      .roles(memberOf)
+                      .mobiles(mobiles)
+                      .mails(mails)
+                      .displayName(displayName == null ? null : displayName.getFirst())
+                      .desc(desc == null ? null : desc.getFirst())
                       .build();
-              chatbotUserRepository.insertOrUpdate(user);
-              log.info("User {} was created or updated.", user);
+              chatbotRepository.insertOrUpdateUser(user);
             })
         .then();
-  }
-
-  private String[] getValues(Attribute attribute) {
-    return attribute == null || !attribute.hasValue() ? null : attribute.getValues();
-  }
-
-  private String getValue(Attribute attribute) {
-    return attribute == null || !attribute.hasValue() ? null : attribute.getValue();
   }
 }

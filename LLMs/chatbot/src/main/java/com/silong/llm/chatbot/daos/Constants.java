@@ -30,6 +30,9 @@ package com.silong.llm.chatbot.daos;
  */
 public interface Constants {
 
+  /** 多值分隔符 */
+  String DELIMITER = "\\u001D";
+
   /** 有效 */
   byte VALID = 1;
 
