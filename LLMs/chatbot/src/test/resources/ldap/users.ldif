@@ -17,6 +17,10 @@ userPassword: {SSHA}hpNNPnQe/Jhfo5DCHGMIKhigQi/yLAPH
 dn: uid=messi,ou=people,dc=test,dc=com
 objectClass: inetOrgPerson
 uid: messi
+mobile: 12222222222
+displayName: 梅西
+mail: messi@qq.com
+description: Account for test
 cn: Lionel Messi
 sn: Messi
 userPassword: {SSHA}8CogfpyPeG3g7oUjar3HloG4L3kd2Cfz
