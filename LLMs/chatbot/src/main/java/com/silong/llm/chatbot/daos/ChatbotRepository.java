@@ -26,7 +26,6 @@ import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_ROLES;
 import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_USERS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.pos.Role;
 import com.silong.llm.chatbot.pos.User;
@@ -77,7 +76,7 @@ public class ChatbotRepository {
     this.objectMapper = objectMapper;
   }
 
-  @SneakyThrows({JsonProcessingException.class, JsonMappingException.class})
+  @SneakyThrows({JsonProcessingException.class})
   private <T> T parseJson(String json, Class<T> type) {
     return objectMapper.readValue(json, type);
   }
