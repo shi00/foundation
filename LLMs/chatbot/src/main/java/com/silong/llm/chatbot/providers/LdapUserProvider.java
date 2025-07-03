@@ -21,18 +21,21 @@
 
 package com.silong.llm.chatbot.providers;
 
+import static com.silong.llm.chatbot.configure.properties.LdapProperties.Type.ACTIVE_DIRECTORY;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.exception.IllegalUserException;
 import com.silong.foundation.springboot.starter.jwt.provider.UserAuthenticationProvider;
 import com.silong.llm.chatbot.configure.properties.LdapProperties;
+import com.silong.llm.chatbot.pos.Role;
 import com.unboundid.ldap.sdk.*;
+import jakarta.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -60,6 +63,9 @@ public class LdapUserProvider implements UserAuthenticationProvider {
   /** 描述信息 */
   public static final String DESCRIPTION_ATTRIBUTION = "description";
 
+  /** 描通用名 */
+  public static final String CN_ATTRIBUTION = "cn";
+
   /** 用户属性名，用于查询 */
   private static final String[] USER_ATTRS = {
     MAIL_ATTRIBUTION,
@@ -73,25 +79,31 @@ public class LdapUserProvider implements UserAuthenticationProvider {
 
   private final LDAPConnectionPool connectionPool;
 
+  private final ObjectMapper objectMapper;
+
   /**
    * 构造方法
    *
    * @param ldapProperties 相关配置
    * @param connectionPool 连接池
+   * @param objectMapper jackson
    */
   public LdapUserProvider(
-      @NonNull LdapProperties ldapProperties, @NonNull LDAPConnectionPool connectionPool) {
+      @NonNull LdapProperties ldapProperties,
+      @NonNull LDAPConnectionPool connectionPool,
+      @NonNull ObjectMapper objectMapper) {
     this.ldapProperties = ldapProperties;
     this.connectionPool = connectionPool;
+    this.objectMapper = objectMapper;
   }
 
   @Override
   public void checkUserExists(@NonNull String userName) {
     try (var conn = connectionPool.getConnection()) {
-      if (ldapProperties.getType() == LdapProperties.Type.ACTIVE_DIRECTORY) {
+      if (ldapProperties.getType() == ACTIVE_DIRECTORY) {
         throw new UnsupportedOperationException();
       } else {
-        searchResultEntry(userName, conn);
+        searchUserResultEntry(userName, conn);
       }
     } catch (LDAPException e) {
       log.error("User {} does not exist.", userName);
@@ -102,22 +114,27 @@ public class LdapUserProvider implements UserAuthenticationProvider {
   @Override
   public Map<String, Object> authenticate(@NonNull Credentials credentials) {
     String userName = credentials.getUserName();
+    String password = credentials.getPassword();
     try (LDAPConnection conn = connectionPool.getConnection()) {
-      if (ldapProperties.getType() == LdapProperties.Type.ACTIVE_DIRECTORY) {
+      if (ldapProperties.getType() == ACTIVE_DIRECTORY) {
         throw new UnsupportedOperationException();
       } else {
-        SearchResultEntry entry = searchResultEntry(userName, conn);
-        BindResult result = conn.bind(entry.getDN(), credentials.getPassword());
+        SearchResultEntry entry = searchUserResultEntry(userName, conn);
+        BindResult result = conn.bind(entry.getDN(), password);
         if (result.getResultCode() != ResultCode.SUCCESS) {
           log.warn("Failed to bind user {}.", userName);
           throw new IllegalUserException(String.format("%s authentication failed.", userName));
         }
         log.info("User {} authenticated.", userName);
-        return Arrays.stream(USER_ATTRS)
-            .map(attrKey -> new Tuple2<>(attrKey, entry.getAttribute(attrKey)))
-            .filter(t2 -> t2.attribute != null && t2.attribute.hasValue())
-            .peek(t2 -> log.info(t2.attribute().toString()))
-            .collect(Collectors.toMap(Tuple2::attrKey, LdapUserProvider::convert2StringList));
+        Map<String, Object> map = new HashMap<>();
+        for (String attrKey : USER_ATTRS) {
+          Attribute attribute = entry.getAttribute(attrKey);
+          if (attribute != null && attribute.hasValue()) {
+            log.info(attribute.toString());
+            map.put(attrKey, convert2StringList(userName, conn, attrKey, attribute));
+          }
+        }
+        return map;
       }
     } catch (LDAPException e) {
       log.error("Failed to authenticate user {}.", userName, e);
@@ -125,22 +142,33 @@ public class LdapUserProvider implements UserAuthenticationProvider {
     }
   }
 
-  /**
-   * 读取属性值
-   *
-   * @param t2 属性
-   * @return 字符串列表
-   */
-  private static List<String> convert2StringList(Tuple2<String, Attribute> t2) {
-    byte[][] valueByteArrays = t2.attribute().getValueByteArrays();
+  @SneakyThrows(JsonProcessingException.class)
+  private List<String> convert2StringList(
+      String userName, LDAPConnection conn, String attrKey, Attribute attribute)
+      throws LDAPException {
+    byte[][] valueByteArrays = attribute.getValueByteArrays();
     List<String> values = new ArrayList<>(valueByteArrays.length);
-    for (byte[] v : valueByteArrays) {
-      values.add(new String(v, StandardCharsets.UTF_8));
+    for (byte[] bytes : valueByteArrays) {
+      String attributeValue = new String(bytes, StandardCharsets.UTF_8);
+      if (MEMBER_OF_ATTRIBUTION.equals(attrKey)) {
+        SearchResultEntry searchEntry = searchGroupResultEntry(userName, attributeValue, conn);
+        var roleName = attribute2String(searchEntry.getAttribute(CN_ATTRIBUTION));
+        var roleDesc = attribute2String(searchEntry.getAttribute(DESCRIPTION_ATTRIBUTION));
+        values.add(
+            objectMapper.writeValueAsString(Role.builder().desc(roleDesc).name(roleName).build()));
+      } else {
+        values.add(attributeValue);
+      }
     }
     return values;
   }
 
-  private SearchResultEntry searchResultEntry(String userName, LDAPConnection conn)
+  @Nullable
+  private static String attribute2String(Attribute attr) {
+    return !attr.hasValue() ? null : new String(attr.getValueByteArray(), StandardCharsets.UTF_8);
+  }
+
+  private SearchResultEntry searchUserResultEntry(String userName, LDAPConnection conn)
       throws LDAPSearchException {
     Filter filter = Filter.createEqualityFilter("uid", Filter.encodeValue(userName));
     SearchResultEntry entry =
@@ -153,5 +181,14 @@ public class LdapUserProvider implements UserAuthenticationProvider {
     return entry;
   }
 
-  private record Tuple2<K, V>(K attrKey, V attribute) {}
+  private SearchResultEntry searchGroupResultEntry(
+      String userName, String groupDn, LDAPConnection conn) throws LDAPException {
+    SearchResultEntry entry = conn.getEntry(groupDn, CN_ATTRIBUTION, DESCRIPTION_ATTRIBUTION);
+    if (entry == null) {
+      log.error("The group {} that user {} belongs to does not exist.", groupDn, userName);
+      throw new IllegalUserException(String.format("%s authentication failed.", userName));
+    }
+    log.info("The group {} that user {} belongs to was found. {}", groupDn, userName, entry);
+    return entry;
+  }
 }
