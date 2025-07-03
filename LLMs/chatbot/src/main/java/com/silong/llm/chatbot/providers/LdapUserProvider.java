@@ -165,7 +165,9 @@ public class LdapUserProvider implements UserAuthenticationProvider {
 
   @Nullable
   private static String attribute2String(Attribute attr) {
-    return !attr.hasValue() ? null : new String(attr.getValueByteArray(), StandardCharsets.UTF_8);
+    return attr == null || !attr.hasValue()
+        ? null
+        : new String(attr.getValueByteArray(), StandardCharsets.UTF_8);
   }
 
   private SearchResultEntry searchUserResultEntry(String userName, LDAPConnection conn)
