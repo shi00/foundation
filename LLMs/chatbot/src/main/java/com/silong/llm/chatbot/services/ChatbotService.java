@@ -88,6 +88,8 @@ public class ChatbotService {
                       .displayName(displayName == null ? null : displayName.getFirst())
                       .desc(desc == null ? null : desc.getFirst())
                       .build();
+
+              log.info("Prepare insert {} to database.", user);
               chatbotRepository.insertOrUpdateUser(user);
             })
         .then();

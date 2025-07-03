@@ -215,7 +215,6 @@ public class ChatbotRepository {
   @SneakyThrows
   public void insertOrUpdateUser(User user) {
     validateUser(user);
-
     var mobiles =
         user.getMobiles() == null || user.getMobiles().isEmpty()
             ? null
