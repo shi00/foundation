@@ -31,7 +31,6 @@ import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
 import com.silong.llm.chatbot.providers.LdapUserProvider;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +45,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.MountableFile;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -75,13 +73,14 @@ public class ChatbotApplicationTests {
 
   @Container
   private static final GenericContainer<?> LDAP_CONTAINER =
-      new GenericContainer<>("osixia/openldap:1.5.0")
-          .withEnv("LDAP_DOMAIN", DOMAIN)
-          .withEnv("LDAP_ADMIN_PASSWORD", ADMIN_PASSWORD)
-          .withExposedPorts(389)
-          .withCopyFileToContainer(
-              MountableFile.forClasspathResource("ldap/users.ldif"), // LDIF 文件路径
-              "/tmp/users.ldif");
+      new GenericContainer<>("kazhar/openldap-demo:0.18")
+          //          .withEnv("LDAP_DOMAIN", DOMAIN)
+          //          .withEnv("LDAP_ADMIN_PASSWORD", ADMIN_PASSWORD)
+          .withExposedPorts(1389)
+      //          .withCopyFileToContainer(
+      //              MountableFile.forClasspathResource("ldap/users.ldif"), // LDIF 文件路径
+      //              "/tmp/users.ldif")
+      ;
 
   @DynamicPropertySource
   static void redisProperties(DynamicPropertyRegistry registry) {
@@ -95,12 +94,17 @@ public class ChatbotApplicationTests {
                 MYSQL_CONTAINER.getHost(), MYSQL_CONTAINER.getMappedPort(3306), TEST_DB));
     registry.add("spring.datasource.username", () -> "root");
     registry.add("spring.datasource.password", () -> ADMIN_PASSWORD);
+
+    registry.add("ldap.base-dn", () -> "dc=sirius,dc=com");
+    registry.add("ldap.username", () -> "cn=admin,dc=sirius,dc=com");
+    registry.add("ldap.password", () -> "passw0rd");
+
     registry.add(
         "ldap.urls",
         () ->
             new String[] {
               String.format(
-                  "ldap://%s:%d", LDAP_CONTAINER.getHost(), LDAP_CONTAINER.getMappedPort(389))
+                  "ldap://%s:%d", LDAP_CONTAINER.getHost(), LDAP_CONTAINER.getMappedPort(1389))
             });
   }
 
@@ -118,34 +122,6 @@ public class ChatbotApplicationTests {
     LDAP_CONTAINER.stop();
   }
 
-  @BeforeAll
-  static void initUser() throws Exception {
-    // 导入 LDIF 文件
-    System.out.println(
-        LDAP_CONTAINER.execInContainer(
-            "ldapadd", "-x",
-            "-H", "ldap://localhost:389",
-            "-D", "cn=admin,dc=test,dc=com",
-            "-w", ADMIN_PASSWORD,
-            "-f", "/tmp/users.ldif"));
-
-    System.out.println(
-        LDAP_CONTAINER.execInContainer(
-            "ldapsearch",
-            "-x",
-            "-H",
-            "ldap://localhost:389",
-            "-D",
-            "cn=admin,dc=test,dc=com",
-            "-w",
-            ADMIN_PASSWORD,
-            "-b",
-            "dc=test,dc=com",
-            "(objectClass=*)"));
-
-    //    System.out.println(LDAP_CONTAINER.execInContainer("slappasswd", "-s", "Jone@123"));
-  }
-
   @Test
   @Order(1)
   void testRedisConnected() {
@@ -154,31 +130,31 @@ public class ChatbotApplicationTests {
 
   @Test
   void searchUser() {
-    assertDoesNotThrow(() -> ldapUserProvider.checkUserExists("tom"));
+    assertDoesNotThrow(() -> ldapUserProvider.checkUserExists("kdoyle"));
   }
 
   @Test
   @Order(2)
   void testImportUsers() {
     Credentials credentials = new Credentials();
-    credentials.setUserName("tom");
-    credentials.setPassword("123456");
+    credentials.setUserName("zfraser");
+    credentials.setPassword("passw0rd");
     assertDoesNotThrow(() -> ldapUserProvider.authenticate(credentials));
 
-    credentials.setUserName("messi");
-    credentials.setPassword("abcdef");
+    credentials.setUserName("ashaw");
+    credentials.setPassword("passw0rd");
     assertDoesNotThrow(() -> ldapUserProvider.authenticate(credentials));
 
-    credentials.setUserName("jone");
-    credentials.setPassword("Jone@123");
+    credentials.setUserName("dwells");
+    credentials.setPassword("passw0rd");
     assertDoesNotThrow(() -> ldapUserProvider.authenticate(credentials));
   }
 
   @Test
   void testLogin() {
     Credentials credentials = new Credentials();
-    credentials.setPassword("123456");
-    credentials.setUserName("tom");
+    credentials.setPassword("passw0rd");
+    credentials.setUserName("dwells");
 
     TokenBody responseBody =
         webTestClient
