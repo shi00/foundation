@@ -212,6 +212,7 @@ public class ChatbotRepository {
    * @param user 用户
    */
   @Transactional
+  @SneakyThrows
   public void insertOrUpdateUser(User user) {
     validateUser(user);
 
@@ -245,22 +246,25 @@ public class ChatbotRepository {
     user.setId(Objects.requireNonNull(id));
     log.info("Inserting {} into database.", user);
 
-    for (var roleName : user.getRoles()) {
-      if (existRole(roleName)) {
+    for (var roleJson : user.getRoles()) {
+      var role = objectMapper.readValue(roleJson, Role.class);
+      if (existRole(role.getName())) {
         dslContext
             .update(CHATBOT_ROLES)
+            .set(CHATBOT_ROLES.DESC, role.getDesc())
             .set(
                 CHATBOT_ROLES.USER_IDS,
                 DSL.field(
                     "JSON_ARRAY_APPEND({0}, '$', {1})",
                     CHATBOT_ROLES.USER_IDS.getDataType(), // 保持类型安全
                     DSL.val(id)))
-            .where(CHATBOT_ROLES.NAME.eq(roleName))
+            .where(CHATBOT_ROLES.NAME.eq(role.getName()))
             .execute();
 
-        log.info("Appending userId:{} into the userIds field of {}.", id, roleName);
+        log.info("Appending userId:{} into the userIds field of {}.", id, role.getName());
       } else {
-        insertOrUpdateRole(Role.builder().name(roleName).members(Set.of(id)).build());
+        role.setMembers(Set.of(id));
+        insertOrUpdateRole(role);
       }
     }
 
