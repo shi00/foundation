@@ -74,8 +74,7 @@ public class ChatbotApplicationStartTLSTests {
 
   @Container
   private static final GenericContainer<?> LDAP_CONTAINER =
-      new GenericContainer<>("ghcr.io/rroemhild/docker-test-openldap:master")
-          .withExposedPorts(10389);
+      new GenericContainer<>("rroemhild/docker-test-openldap:2.1").withExposedPorts(10389);
 
   @DynamicPropertySource
   static void redisProperties(DynamicPropertyRegistry registry) {
@@ -89,6 +88,11 @@ public class ChatbotApplicationStartTLSTests {
                 MYSQL_CONTAINER.getHost(), MYSQL_CONTAINER.getMappedPort(3306), TEST_DB));
     registry.add("spring.datasource.username", () -> "root");
     registry.add("spring.datasource.password", () -> ADMIN_PASSWORD);
+
+    registry.add("ldap.base-dn", () -> "dc=planetexpress,dc=com");
+    registry.add("ldap.username", () -> "cn=admin,dc=planetexpress,dc=com");
+    registry.add("ldap.password", () -> "GoodNewsEveryone");
+
     registry.add(
         "ldap.urls",
         () ->
