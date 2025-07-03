@@ -21,6 +21,7 @@
 
 package com.silong.llm.chatbot.configure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.silong.llm.chatbot.configure.properties.LdapProperties;
 import com.silong.llm.chatbot.providers.LdapUserProvider;
 import com.unboundid.ldap.sdk.*;
@@ -69,8 +70,9 @@ public class LdapAuthAutoConfiguration {
   }
 
   @Bean
-  LdapUserProvider ldapUserProvider(LDAPConnectionPool ldapConnectionPool) {
-    return new LdapUserProvider(ldapProperties, ldapConnectionPool);
+  LdapUserProvider ldapUserProvider(
+      LDAPConnectionPool ldapConnectionPool, ObjectMapper objectMapper) {
+    return new LdapUserProvider(ldapProperties, ldapConnectionPool, objectMapper);
   }
 
   @Bean(destroyMethod = "close")
