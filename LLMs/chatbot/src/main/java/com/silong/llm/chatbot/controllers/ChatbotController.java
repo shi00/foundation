@@ -73,13 +73,12 @@ public class ChatbotController {
   /**
    * 查询会话列表
    *
-   * @param pageIndex 页码
-   * @param sizePerPage 每页包含的记录数
+   * @param marker 以单页最后一条消息的id作为分页标记
+   * @param limit 查询返回消息列表当前页面的数量。
    * @return 会话列表
    */
   @GetMapping(value = "/chat/history", produces = MediaType.APPLICATION_JSON_VALUE)
-  public List<ChatRound> listConversations(
-      @RequestParam int pageIndex, @RequestParam int sizePerPage) {
+  public List<ChatRound> listConversations(@RequestParam int marker, @RequestParam int limit) {
     return List.of();
   }
 
