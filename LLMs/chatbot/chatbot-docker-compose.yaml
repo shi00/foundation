@@ -8,6 +8,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: Secret@123
       MYSQL_DATABASE: chatbot
+      MYSQL_USER: chatbot_user
+      MYSQL_PASSWORD: Secret@123
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
@@ -65,7 +67,7 @@ services:
       - ./src/main/resources/application.properties:/etc/application.properties:ro
     environment:
       SPRING.CONFIG.IMPORT: file:/etc/application.properties
-    mem_limit: 256m
+    mem_limit: 512m
     cpu_shares: 256
     depends_on:
       redis:
