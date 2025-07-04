@@ -1,5 +1,5 @@
 services:
-  db:
+  mysql:
     image: docker.1ms.run/library/mysql:8.0.33
     ports:
       - "3306:3306"
@@ -8,8 +8,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: Secret@123
       MYSQL_DATABASE: chatbot
-      MYSQL_USER: chatbot_user
-      MYSQL_PASSWORD: Secret@123
+    #      MYSQL_USER: chatbot_user
+    #      MYSQL_PASSWORD: Secret@123
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
@@ -38,7 +38,7 @@ services:
     mem_limit: 384m
     cpu_shares: 128
     depends_on:
-      db:
+      mysql:
         condition: service_healthy
 
   redis:
@@ -68,7 +68,7 @@ services:
     environment:
       SPRING.CONFIG.IMPORT: file:/etc/application.properties
     mem_limit: 512m
-    cpu_shares: 256
+    cpu_shares: 128
     depends_on:
       redis:
         condition: service_healthy
