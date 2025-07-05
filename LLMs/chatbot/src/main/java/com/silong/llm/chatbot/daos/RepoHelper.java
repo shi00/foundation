@@ -25,6 +25,7 @@ import static com.silong.llm.chatbot.providers.LdapUserProvider.*;
 import static com.silong.llm.chatbot.providers.LdapUserProvider.DESCRIPTION_ATTRIBUTION;
 import static com.silong.llm.chatbot.providers.LdapUserProvider.MAIL_ATTRIBUTION;
 
+import com.auth0.jwt.interfaces.Claim;
 import com.silong.foundation.springboot.starter.jwt.security.SimpleTokenAuthentication;
 import com.silong.llm.chatbot.pos.User;
 import java.util.List;
@@ -56,11 +57,17 @@ public interface RepoHelper {
    */
   @NonNull
   static User map2User(@NonNull SimpleTokenAuthentication auth) {
-    List<String> memberOf = auth.getAttribute(MEMBER_OF_ATTRIBUTION);
-    List<String> displayName = auth.getAttribute(DISPLAY_NAME_ATTRIBUTION);
-    List<String> mobiles = auth.getAttribute(MOBILE_ATTRIBUTION);
-    List<String> mails = auth.getAttribute(MAIL_ATTRIBUTION);
-    List<String> desc = auth.getAttribute(DESCRIPTION_ATTRIBUTION);
+
+    List<String> memberOf = getList(auth.getAttribute(MEMBER_OF_ATTRIBUTION));
+
+    List<String> displayName = getList(auth.getAttribute(DISPLAY_NAME_ATTRIBUTION));
+
+    List<String> mobiles = getList(auth.getAttribute(MOBILE_ATTRIBUTION));
+
+    List<String> mails = getList(auth.getAttribute(MAIL_ATTRIBUTION));
+
+    List<String> desc = getList(auth.getAttribute(DESCRIPTION_ATTRIBUTION));
+
     return User.builder()
         .name(auth.getUserName())
         .roles(memberOf)
@@ -69,5 +76,9 @@ public interface RepoHelper {
         .displayName(displayName == null ? null : displayName.getFirst())
         .desc(desc == null ? null : desc.getFirst())
         .build();
+  }
+
+  static List<String> getList(Claim attribute) {
+    return attribute == null ? null : attribute.asList(String.class);
   }
 }
