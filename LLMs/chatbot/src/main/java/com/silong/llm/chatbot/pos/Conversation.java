@@ -36,8 +36,14 @@ import lombok.Data;
 @Data
 @Builder
 public class Conversation {
+  /** 会话编号 */
+  private int seq;
+
   /** 会话id */
-  private int id;
+  private String conversationId;
+
+  /** 用户id */
+  private int userId;
 
   /** 会话标题 */
   private String title;
