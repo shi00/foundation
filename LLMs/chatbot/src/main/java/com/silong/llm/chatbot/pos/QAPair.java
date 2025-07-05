@@ -25,7 +25,7 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 一轮聊天，包含用户提问和模型回答
+ * 问答对
  *
  * @author louis sin
  * @version 1.0.0
@@ -33,17 +33,11 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class ChatRound {
+public class QAPair {
 
-  /** 问答对 */
-  private QAPair qaPair;
+  /** 问题 */
+  private TimestampMessage question;
 
-  /** 系统消息 */
-  private String systemMessage;
-
-  /** 提示词 */
-  private String promptMessage;
-
-  /** 工具信息 */
-  private String toolMessage;
+  /** 回答 */
+  private TimestampMessage answer;
 }

@@ -21,11 +21,13 @@
 
 package com.silong.llm.chatbot.pos;
 
+import com.silong.llm.chatbot.mysql.model.enums.ChatbotConversationsStatus;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * 一轮聊天，包含用户提问和模型回答
+ * 用户会话信息
  *
  * @author louis sin
  * @version 1.0.0
@@ -33,17 +35,16 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class ChatRound {
+public class Conversation {
+  /** 会话id */
+  private int id;
 
-  /** 问答对 */
-  private QAPair qaPair;
+  /** 会话标题 */
+  private String title;
 
-  /** 系统消息 */
-  private String systemMessage;
+  /** 会话状态，是否激活 */
+  private ChatbotConversationsStatus status;
 
-  /** 提示词 */
-  private String promptMessage;
-
-  /** 工具信息 */
-  private String toolMessage;
+  /** 会话聊天消息列表 */
+  private List<ChatRound> chatRounds;
 }

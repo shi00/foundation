@@ -21,11 +21,12 @@
 
 package com.silong.llm.chatbot.pos;
 
+import java.util.Date;
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * 一轮聊天，包含用户提问和模型回答
+ * 带时间戳的消息
  *
  * @author louis sin
  * @version 1.0.0
@@ -33,17 +34,10 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class ChatRound {
+public class TimestampMessage {
+  /** 消息内容 */
+  private String message;
 
-  /** 问答对 */
-  private QAPair qaPair;
-
-  /** 系统消息 */
-  private String systemMessage;
-
-  /** 提示词 */
-  private String promptMessage;
-
-  /** 工具信息 */
-  private String toolMessage;
+  /** 消息时间戳 */
+  private Date timestamp;
 }
