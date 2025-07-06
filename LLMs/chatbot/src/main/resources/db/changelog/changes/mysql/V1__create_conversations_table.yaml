@@ -57,6 +57,20 @@ databaseChangeLog:
                   defaultValue: "true"
                   constraints:
                     nullable: false
+        - createIndex:
+            indexName: idx_chatbot_conversations_seq
+            tableName: chatbot_conversations
+            columns:
+              - column:
+                  name: seq
+                  type: int
+        - createIndex:
+            indexName: idx_chatbot_conversations_id
+            tableName: chatbot_conversations
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
   - changeSet:
       id: V1__add_on_update_to_updated_at_chatbot_conversations_table
       author: "louis sin"
