@@ -203,9 +203,11 @@ public class LdapAuthAutoConfiguration {
       options.setReferralHopLimit(ldapProperties.getReferralFollowLimit());
     }
     options.setAbandonOnTimeout(true);
-    options.setConnectionLogger(
-        new JSONLDAPConnectionLogger(
-            new SLF4JBridgeHandler(), new JSONLDAPConnectionLoggerProperties()));
+    if (ldapProperties.isEnableConnectorLogger()) {
+      options.setConnectionLogger(
+          new JSONLDAPConnectionLogger(
+              new SLF4JBridgeHandler(), new JSONLDAPConnectionLoggerProperties()));
+    }
     LdapProperties.Pool pool = ldapProperties.getPool();
     options.setResponseTimeoutMillis(pool.getResponseTimeout().toMillis());
     options.setConnectTimeoutMillis((int) pool.getConnectionTimeout().toMillis());

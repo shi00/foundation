@@ -65,6 +65,9 @@ public class LdapProperties {
   /** 是否启用startTLS，默认：false */
   private boolean useStartTls;
 
+  /** 是否开启连接日志，默认：false */
+  private boolean enableConnectorLogger;
+
   /**
    * Specify how referrals encountered by the service provider are to be processed. If not
    * specified, the default is true.
