@@ -29,7 +29,6 @@ import com.silong.llm.chatbot.daos.ChatbotRepository;
 import com.silong.llm.chatbot.pos.Conversation;
 import com.silong.llm.chatbot.pos.PagedResult;
 import com.silong.llm.chatbot.pos.User;
-import java.util.UUID;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -79,7 +78,6 @@ public class ChatbotService {
         .map(
             useless ->
                 Conversation.builder()
-                    .conversationId(UUID.randomUUID().toString())
                     .title("") // 新建会话没有标题，待第一个问题问出后由模型总结出标题
                     .status(ACTIVE)
                     .build())
