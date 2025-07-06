@@ -32,7 +32,7 @@ databaseChangeLog:
                   name: authorized_paths
                   type: json
                   constraints:
-                    nullable: true
+                    nullable: false
               - column:
                   name: valid
                   type: bool
