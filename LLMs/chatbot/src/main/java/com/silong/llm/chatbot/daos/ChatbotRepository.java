@@ -21,19 +21,17 @@
 
 package com.silong.llm.chatbot.daos;
 
-import static com.silong.llm.chatbot.daos.Constants.*;
-import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_ROLES;
-import static com.silong.llm.chatbot.mysql.model.Tables.CHATBOT_USERS;
+import static com.silong.llm.chatbot.daos.RepoHelper.*;
+import static com.silong.llm.chatbot.mysql.model.Tables.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.silong.foundation.springboot.starter.jwt.security.SimpleTokenAuthentication;
+import com.silong.llm.chatbot.pos.Conversation;
 import com.silong.llm.chatbot.pos.Role;
 import com.silong.llm.chatbot.pos.User;
 import jakarta.annotation.Nullable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -116,6 +114,53 @@ public class ChatbotRepository {
   }
 
   /**
+   * 根据用户名查询用户id
+   *
+   * @param name 用户名
+   * @return 用户id
+   */
+  @Nullable
+  @Transactional(readOnly = true)
+  public Integer getUserIdByName(String name) {
+    if (name == null || name.isEmpty()) {
+      throw new IllegalArgumentException("userName must not be null or empty.");
+    }
+    return dslContext
+        .select(CHATBOT_USERS.ID)
+        .from(CHATBOT_USERS)
+        .where(CHATBOT_USERS.NAME.eq(name).and(VALID_USER_CONDITION))
+        .fetchOne(CHATBOT_USERS.ID);
+  }
+
+  /**
+   * 创建新的会话
+   *
+   * @param conversation 会话
+   * @param authentication 用户鉴权信息
+   */
+  @Transactional
+  public void newConversation(
+      @NonNull Conversation conversation, @NonNull SimpleTokenAuthentication authentication) {
+    User user = map2User(authentication);
+    log.info("Prepare inserting {} into database.", user);
+    insertOrUpdateUser(user);
+    conversation.setUserId(user.getId());
+
+    dslContext
+        .insertInto(CHATBOT_CONVERSATIONS)
+        .set(CHATBOT_CONVERSATIONS.ID, conversation.getConversationId())
+        .set(CHATBOT_CONVERSATIONS.STATUS, conversation.getStatus())
+        .set(CHATBOT_CONVERSATIONS.USER_ID, conversation.getUserId())
+        .set(CHATBOT_CONVERSATIONS.TITLE, conversation.getTitle())
+        .onDuplicateKeyUpdate()
+        .set(CHATBOT_CONVERSATIONS.STATUS, conversation.getStatus())
+        .set(CHATBOT_CONVERSATIONS.USER_ID, conversation.getUserId())
+        .set(CHATBOT_CONVERSATIONS.TITLE, conversation.getTitle())
+        .execute();
+    log.info("Successfully created a new {}.", conversation);
+  }
+
+  /**
    * 用户是否存在
    *
    * @param id 用户id
@@ -152,16 +197,20 @@ public class ChatbotRepository {
   @Transactional
   public void insertOrUpdateRole(Role role) {
     validateRole(role);
+    Collection<String> authorizedPaths = role.getAuthorizedPaths();
+    authorizedPaths = authorizedPaths == null ? List.of() : authorizedPaths;
+    Collection<Integer> members = role.getMembers();
+    members = members == null ? List.of() : members;
     dslContext
         .insertInto(CHATBOT_ROLES)
         .set(CHATBOT_ROLES.DESC, role.getDesc())
-        .set(CHATBOT_ROLES.AUTHORIZED_PATHS, conver2Json(role.getAuthorizedPaths()))
-        .set(CHATBOT_ROLES.USER_IDS, conver2Json(role.getMembers()))
+        .set(CHATBOT_ROLES.AUTHORIZED_PATHS, conver2Json(authorizedPaths))
+        .set(CHATBOT_ROLES.USER_IDS, conver2Json(members))
         .set(CHATBOT_ROLES.NAME, role.getName())
         .onDuplicateKeyUpdate()
         .set(CHATBOT_ROLES.DESC, role.getDesc())
-        .set(CHATBOT_ROLES.AUTHORIZED_PATHS, conver2Json(role.getAuthorizedPaths()))
-        .set(CHATBOT_ROLES.USER_IDS, conver2Json(role.getMembers()))
+        .set(CHATBOT_ROLES.AUTHORIZED_PATHS, conver2Json(authorizedPaths))
+        .set(CHATBOT_ROLES.USER_IDS, conver2Json(members))
         .execute();
   }
 
@@ -242,8 +291,9 @@ public class ChatbotRepository {
             .set(CHATBOT_USERS.MAILS, mails)
             .returning(CHATBOT_USERS.ID) // 指定返回的字段
             .fetchOne(CHATBOT_USERS.ID);
+
     user.setId(Objects.requireNonNull(id));
-    log.info("Inserting {} into database.", user);
+    log.info("Inserted {} into database.", user);
 
     for (var roleJson : user.getRoles()) {
       var role = objectMapper.readValue(roleJson, Role.class);

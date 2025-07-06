@@ -21,16 +21,20 @@
 
 package com.silong.llm.chatbot.services;
 
-import static com.silong.llm.chatbot.providers.LdapUserProvider.*;
+import static com.silong.llm.chatbot.daos.RepoHelper.map2User;
+import static com.silong.llm.chatbot.mysql.model.enums.ChatbotConversationsStatus.ACTIVE;
 
 import com.silong.foundation.springboot.starter.jwt.security.SimpleTokenAuthentication;
 import com.silong.llm.chatbot.daos.ChatbotRepository;
+import com.silong.llm.chatbot.pos.Conversation;
+import com.silong.llm.chatbot.pos.PagedResult;
 import com.silong.llm.chatbot.pos.User;
-import java.util.List;
+import java.util.UUID;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -64,6 +68,60 @@ public class ChatbotService {
   }
 
   /**
+   * 新建会话
+   *
+   * @param authentication 用户鉴权信息
+   * @return 新建会话
+   */
+  public Mono<Conversation> newConversation(SimpleTokenAuthentication authentication) {
+    return Mono.just(authentication)
+        .publishOn(Schedulers.boundedElastic())
+        .map(
+            useless ->
+                Conversation.builder()
+                    .conversationId(UUID.randomUUID().toString())
+                    .title("") // 新建会话没有标题，待第一个问题问出后由模型总结出标题
+                    .status(ACTIVE)
+                    .build())
+        .doOnNext(conversation -> chatbotRepository.newConversation(conversation, authentication));
+  }
+
+  /**
+   * 分页查询会话信息
+   *
+   * @param userName 用户名
+   * @param marker 上一页最后一条记录的id
+   * @param limit 分页记录数
+   * @return 分页会话列表
+   */
+  public Mono<PagedResult<Conversation>> listPagedConversations(
+      String userName, int marker, int limit) {
+    if (!StringUtils.hasLength(userName)) {
+      throw new IllegalArgumentException("userName must not be null or empty.");
+    }
+    if (marker < 0) {
+      throw new IllegalArgumentException("marker must not be negative.");
+    }
+    if (limit <= 0) {
+      throw new IllegalArgumentException("limit must greater than 0.");
+    }
+    return Mono.empty();
+  }
+
+  /**
+   * 查询会话详情
+   *
+   * @param conversationId 会话id
+   * @return 会话详情
+   */
+  public Mono<Conversation> getConversationDetails(String conversationId) {
+    if (!StringUtils.hasLength(conversationId)) {
+      throw new IllegalArgumentException("conversationId must not be null or empty.");
+    }
+    return Mono.empty();
+  }
+
+  /**
    * 按需创建用户，保证用户与鉴权系统保持一致
    *
    * @param authentication 鉴权结果
@@ -74,22 +132,8 @@ public class ChatbotService {
         .publishOn(Schedulers.boundedElastic())
         .doOnNext(
             auth -> {
-              List<String> memberOf = auth.getAttribute(MEMBER_OF_ATTRIBUTION);
-              List<String> displayName = auth.getAttribute(DISPLAY_NAME_ATTRIBUTION);
-              List<String> mobiles = auth.getAttribute(MOBILE_ATTRIBUTION);
-              List<String> mails = auth.getAttribute(MAIL_ATTRIBUTION);
-              List<String> desc = auth.getAttribute(DESCRIPTION_ATTRIBUTION);
-              User user =
-                  User.builder()
-                      .name(auth.getUserName())
-                      .roles(memberOf)
-                      .mobiles(mobiles)
-                      .mails(mails)
-                      .displayName(displayName == null ? null : displayName.getFirst())
-                      .desc(desc == null ? null : desc.getFirst())
-                      .build();
-
-              log.info("Prepare insert {} to database.", user);
+              User user = map2User(auth);
+              log.info("Prepare inserting {} into database.", user);
               chatbotRepository.insertOrUpdateUser(user);
             })
         .then();

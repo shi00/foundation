@@ -23,23 +23,25 @@ package com.silong.llm.chatbot.controllers;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE;
 import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.foundation.springboot.starter.jwt.security.SimpleTokenAuthentication;
-import com.silong.llm.chatbot.pos.ChatRound;
+import com.silong.llm.chatbot.pos.Conversation;
+import com.silong.llm.chatbot.pos.PagedResult;
 import com.silong.llm.chatbot.services.ChatbotService;
-import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * 聊天机器人控制器
@@ -57,6 +59,7 @@ public class ChatbotController {
   /** 聊天客户端 */
   private final ChatClient chatClient;
 
+  /** 聊天服务 */
   private final ChatbotService chatbotService;
 
   /**
@@ -71,15 +74,57 @@ public class ChatbotController {
   }
 
   /**
+   * 创建新会话
+   *
+   * @return 新会话
+   */
+  @PostMapping(value = "/chat/conversations", produces = APPLICATION_JSON_VALUE)
+  public Mono<Conversation> newConversation() {
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+        .cast(SimpleTokenAuthentication.class)
+        .map(
+            simpleTokenAuthentication ->
+                checkAuthorities(simpleTokenAuthentication, "/chat/conversations"))
+        .flatMap(chatbotService::newConversation);
+  }
+
+  /**
    * 查询会话列表
    *
    * @param marker 以单页最后一条消息的id作为分页标记
    * @param limit 查询返回消息列表当前页面的数量。
    * @return 会话列表
    */
-  @GetMapping(value = "/chat/history", produces = MediaType.APPLICATION_JSON_VALUE)
-  public List<ChatRound> listConversations(@RequestParam int marker, @RequestParam int limit) {
-    return List.of();
+  @GetMapping(value = "/chat/conversations", produces = APPLICATION_JSON_VALUE)
+  public Mono<PagedResult<Conversation>> listConversations(
+      @RequestParam int marker, @RequestParam int limit) {
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+        .cast(SimpleTokenAuthentication.class)
+        .map(
+            simpleTokenAuthentication ->
+                checkAuthorities(simpleTokenAuthentication, "/chat/conversations"))
+        .map(SimpleTokenAuthentication::getUserName)
+        .flatMap(userName -> chatbotService.listPagedConversations(userName, marker, limit));
+  }
+
+  /**
+   * 根据会话id查询会话详情
+   *
+   * @param conversationId 会话id
+   * @return 会话详情
+   */
+  @GetMapping(value = "/chat/conversations/{conversation_id}", produces = APPLICATION_JSON_VALUE)
+  public Mono<Conversation> getConversationDetail(
+      @PathVariable("conversation_id") String conversationId) {
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+        .cast(SimpleTokenAuthentication.class)
+        .map(
+            simpleTokenAuthentication ->
+                checkAuthorities(simpleTokenAuthentication, "/chat/conversations"))
+        .flatMap(auth -> chatbotService.getConversationDetails(conversationId));
   }
 
   /**
@@ -90,14 +135,17 @@ public class ChatbotController {
    * @param exchange Contract for an HTTP request-response interaction
    * @return 大模型返回响应
    */
-  @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  @PostMapping(value = "/chat/stream", produces = TEXT_EVENT_STREAM_VALUE)
   public Flux<String> chatStream(
       @RequestBody String query,
       @RequestHeader(name = CONVERSATION_ID, required = false) String conversationId,
       ServerWebExchange exchange) {
     return ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
-        .cast(SimpleTokenAuthentication.class) // 提取Authentication对象
+        .cast(SimpleTokenAuthentication.class)
+        .map(
+            simpleTokenAuthentication ->
+                checkAuthorities(simpleTokenAuthentication, "/chat/stream")) // 提取Authentication对象
         .map(chatbotService::syncUser)
         .flatMapMany(nothing -> Flux.just(query))
         .doOnNext(
@@ -144,5 +192,18 @@ public class ChatbotController {
                     yield Flux.empty();
                   }
                 });
+  }
+
+  /**
+   * 权限校验
+   *
+   * @param authentication 用户授权
+   * @param requestUrl 请求路径
+   * @return 正常则返回，否则抛出权限异常
+   */
+  private SimpleTokenAuthentication checkAuthorities(
+      SimpleTokenAuthentication authentication, String requestUrl) {
+    // TODO  补充权限校验
+    return authentication;
   }
 }
