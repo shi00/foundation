@@ -40,11 +40,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Conversation {
-  /** 会话编号 */
-  private int seq;
-
   /** 会话id */
-  private String conversationId;
+  private int id;
 
   /** 用户id */
   private int userId;
