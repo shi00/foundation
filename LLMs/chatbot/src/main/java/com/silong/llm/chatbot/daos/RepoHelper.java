@@ -30,6 +30,7 @@ import com.silong.foundation.springboot.starter.jwt.security.SimpleTokenAuthenti
 import com.silong.llm.chatbot.pos.User;
 import java.util.List;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 数据库服务的常量
@@ -38,16 +39,20 @@ import lombok.NonNull;
  * @version 1.0.0
  * @since 2025-05-19 20:19
  */
-public interface RepoHelper {
+@Slf4j
+public class RepoHelper {
 
   /** 多值分隔符 */
-  String DELIMITER = "\\u001D";
+  public static final String DELIMITER = "\\u001D";
 
   /** 有效 */
-  byte VALID = 1;
+  public static final byte VALID = 1;
 
   /** 无效 */
-  byte INVALID = 0;
+  public static final byte INVALID = 0;
+
+  /** 禁止实例化 */
+  private RepoHelper() {}
 
   /**
    * 根据用户据鉴权信息生成用户对象
@@ -56,7 +61,7 @@ public interface RepoHelper {
    * @return 用户
    */
   @NonNull
-  static User map2User(@NonNull SimpleTokenAuthentication auth) {
+  public static User map2User(@NonNull SimpleTokenAuthentication auth) {
 
     List<String> memberOf = getList(auth.getAttribute(MEMBER_OF_ATTRIBUTION));
 
