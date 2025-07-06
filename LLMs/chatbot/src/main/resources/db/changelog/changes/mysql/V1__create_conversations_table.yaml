@@ -10,16 +10,9 @@ databaseChangeLog:
             remarks: "聊天会话表"
             columns:
               - column:
-                  name: seq
+                  name: id
                   type: int
                   autoIncrement: true
-                  constraints:
-                    unique: true
-                    primaryKey: true
-                    nullable: false
-              - column:
-                  name: id
-                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                   constraints:
                     unique: true
                     primaryKey: true
@@ -58,19 +51,12 @@ databaseChangeLog:
                   constraints:
                     nullable: false
         - createIndex:
-            indexName: idx_chatbot_conversations_seq
-            tableName: chatbot_conversations
-            columns:
-              - column:
-                  name: seq
-                  type: int
-        - createIndex:
             indexName: idx_chatbot_conversations_id
             tableName: chatbot_conversations
             columns:
               - column:
                   name: id
-                  type: varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  type: int
   - changeSet:
       id: V1__add_on_update_to_updated_at_chatbot_conversations_table
       author: "louis sin"
