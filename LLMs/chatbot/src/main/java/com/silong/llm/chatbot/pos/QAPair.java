@@ -21,8 +21,10 @@
 
 package com.silong.llm.chatbot.pos;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 问答对
@@ -33,6 +35,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class QAPair {
 
   /** 问题 */

@@ -22,8 +22,10 @@
 package com.silong.llm.chatbot.pos;
 
 import java.util.Collection;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 角色
@@ -34,6 +36,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Role {
   /** 角色编号 */
   private int id;

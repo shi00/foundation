@@ -22,8 +22,10 @@
 package com.silong.llm.chatbot.pos;
 
 import java.util.Date;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 带时间戳的消息
@@ -34,6 +36,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TimestampMessage {
   /** 消息内容 */
   private String message;

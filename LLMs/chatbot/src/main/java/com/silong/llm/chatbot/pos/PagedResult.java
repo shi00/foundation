@@ -22,8 +22,10 @@
 package com.silong.llm.chatbot.pos;
 
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 分页查询结果
@@ -35,6 +37,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PagedResult<T> {
 
   /** 记录总数 */

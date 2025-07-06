@@ -23,8 +23,10 @@ package com.silong.llm.chatbot.pos;
 
 import com.silong.llm.chatbot.mysql.model.enums.ChatbotConversationsStatus;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 用户会话信息
@@ -35,6 +37,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Conversation {
   /** 会话编号 */
   private int seq;
