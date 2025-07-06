@@ -22,6 +22,7 @@
 package com.silong.llm.chatbot.configure;
 
 import javax.sql.DataSource;
+import org.jooq.SQLDialect;
 import org.jooq.impl.DataSourceConnectionProvider;
 import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.DefaultDSLContext;
@@ -63,6 +64,7 @@ public class JooqAutoConfiguration {
 
   private DefaultConfiguration configuration() {
     DefaultConfiguration config = new DefaultConfiguration();
+    config.set(SQLDialect.MYSQL);
     config.set(connectionProvider());
     return config;
   }
