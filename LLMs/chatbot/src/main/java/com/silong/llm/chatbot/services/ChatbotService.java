@@ -81,7 +81,8 @@ public class ChatbotService {
                     .title("") // 新建会话没有标题，待第一个问题问出后由模型总结出标题
                     .status(ACTIVE)
                     .build())
-        .doOnNext(conversation -> chatbotRepository.newConversation(conversation, authentication));
+        .doOnNext(
+            conversation -> chatbotRepository.insertConversation(conversation, authentication));
   }
 
   /**

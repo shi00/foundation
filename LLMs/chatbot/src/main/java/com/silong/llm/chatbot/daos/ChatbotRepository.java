@@ -113,6 +113,10 @@ public class ChatbotRepository {
     }
   }
 
+  private static <T> void insertSuccessfully(T t) {
+    log.info("Successfully inserted {} into database.", t);
+  }
+
   /**
    * 根据用户名查询用户id
    *
@@ -133,45 +137,32 @@ public class ChatbotRepository {
   }
 
   /**
-   * 创建新的会话
+   * 插入会话记录
    *
    * @param conversation 会话
    * @param authentication 用户鉴权信息
    */
   @Transactional
-  public void newConversation(
-      @NonNull Conversation conversation, @NonNull SimpleTokenAuthentication authentication) {
+  public void insertConversation(
+      Conversation conversation, SimpleTokenAuthentication authentication) {
+    if (conversation == null) {
+      throw new IllegalArgumentException("conversation must not be null.");
+    }
     User user = map2User(authentication);
-    log.info("Prepare inserting {} into database.", user);
     insertOrUpdateUser(user);
+
     conversation.setUserId(user.getId());
 
-    dslContext
-        .insertInto(CHATBOT_CONVERSATIONS)
-        .set(CHATBOT_CONVERSATIONS.ID, conversation.getConversationId())
-        .set(CHATBOT_CONVERSATIONS.STATUS, conversation.getStatus())
-        .set(CHATBOT_CONVERSATIONS.USER_ID, conversation.getUserId())
-        .set(CHATBOT_CONVERSATIONS.TITLE, conversation.getTitle())
-        .onDuplicateKeyUpdate()
-        .set(CHATBOT_CONVERSATIONS.STATUS, conversation.getStatus())
-        .set(CHATBOT_CONVERSATIONS.USER_ID, conversation.getUserId())
-        .set(CHATBOT_CONVERSATIONS.TITLE, conversation.getTitle())
-        .execute();
-    log.info("Successfully created a new {}.", conversation);
-  }
-
-  /**
-   * 用户是否存在
-   *
-   * @param id 用户id
-   * @return 用户列表
-   */
-  @Transactional(readOnly = true)
-  public boolean existRole(int id) {
-    if (id <= 0) {
-      throw new IllegalArgumentException("roleId must be greater than 0.");
-    }
-    return dslContext.fetchExists(CHATBOT_ROLES, CHATBOT_ROLES.ID.eq(id).and(VALID_ROLE_CONDITION));
+    Integer id =
+        dslContext
+            .insertInto(CHATBOT_CONVERSATIONS)
+            .set(CHATBOT_CONVERSATIONS.STATUS, conversation.getStatus())
+            .set(CHATBOT_CONVERSATIONS.USER_ID, conversation.getUserId())
+            .set(CHATBOT_CONVERSATIONS.TITLE, conversation.getTitle())
+            .returning(CHATBOT_CONVERSATIONS.ID)
+            .fetchOne(CHATBOT_CONVERSATIONS.ID);
+    conversation.setId(Objects.requireNonNull(id));
+    insertSuccessfully(conversation);
   }
 
   /**
@@ -190,28 +181,49 @@ public class ChatbotRepository {
   }
 
   /**
-   * 插入或更新角色
+   * 插入角色
    *
    * @param role 角色
    */
   @Transactional
-  public void insertOrUpdateRole(Role role) {
+  public void insertRole(Role role) {
     validateRole(role);
     Collection<String> authorizedPaths = role.getAuthorizedPaths();
-    authorizedPaths = authorizedPaths == null ? List.of() : authorizedPaths;
     Collection<Integer> members = role.getMembers();
-    members = members == null ? List.of() : members;
-    dslContext
-        .insertInto(CHATBOT_ROLES)
-        .set(CHATBOT_ROLES.DESC, role.getDesc())
-        .set(CHATBOT_ROLES.AUTHORIZED_PATHS, conver2Json(authorizedPaths))
-        .set(CHATBOT_ROLES.USER_IDS, conver2Json(members))
-        .set(CHATBOT_ROLES.NAME, role.getName())
-        .onDuplicateKeyUpdate()
-        .set(CHATBOT_ROLES.DESC, role.getDesc())
-        .set(CHATBOT_ROLES.AUTHORIZED_PATHS, conver2Json(authorizedPaths))
-        .set(CHATBOT_ROLES.USER_IDS, conver2Json(members))
-        .execute();
+    Integer id =
+        dslContext
+            .insertInto(CHATBOT_ROLES)
+            .set(CHATBOT_ROLES.DESC, role.getDesc())
+            .set(
+                CHATBOT_ROLES.AUTHORIZED_PATHS,
+                conver2Json(authorizedPaths == null ? List.of() : authorizedPaths))
+            .set(CHATBOT_ROLES.USER_IDS, conver2Json(members == null ? List.of() : members))
+            .set(CHATBOT_ROLES.NAME, role.getName())
+            .returning(CHATBOT_ROLES.ID)
+            .fetchOne(CHATBOT_ROLES.ID);
+
+    role.setId(Objects.requireNonNull(id));
+
+    insertSuccessfully(role);
+  }
+
+  /**
+   * 根据用户组名称查询用户id
+   *
+   * @param name 用户组名
+   * @return 用户组id
+   */
+  @Nullable
+  @Transactional(readOnly = true)
+  public Integer getRoleIdByName(String name) {
+    if (name == null || name.isEmpty()) {
+      throw new IllegalArgumentException("roleName must not be null or empty.");
+    }
+    return dslContext
+        .select(CHATBOT_ROLES.ID)
+        .from(CHATBOT_ROLES)
+        .where(CHATBOT_ROLES.NAME.eq(name).and(VALID_ROLE_CONDITION))
+        .fetchOne(CHATBOT_ROLES.ID);
   }
 
   /**
@@ -261,7 +273,7 @@ public class ChatbotRepository {
    * @param user 用户
    */
   @Transactional
-  @SneakyThrows
+  @SneakyThrows({JsonProcessingException.class})
   public void insertOrUpdateUser(User user) {
     validateUser(user);
     var mobiles =
@@ -292,32 +304,54 @@ public class ChatbotRepository {
             .returning(CHATBOT_USERS.ID) // 指定返回的字段
             .fetchOne(CHATBOT_USERS.ID);
 
-    user.setId(Objects.requireNonNull(id));
-    log.info("Inserted {} into database.", user);
+    if (id != null) {
+      user.setId(id);
+    } else {
+      // mysql执行更新操作时不会返回主键
+      id = Objects.requireNonNull(getUserIdByName(username));
+      user.setId(id);
+    }
 
+    // 插入或更新用户所属的用户组信息
     for (var roleJson : user.getRoles()) {
       var role = objectMapper.readValue(roleJson, Role.class);
       if (existRole(role.getName())) {
-        dslContext
-            .update(CHATBOT_ROLES)
-            .set(CHATBOT_ROLES.DESC, role.getDesc())
-            .set(
-                CHATBOT_ROLES.USER_IDS,
-                DSL.field(
-                    "JSON_ARRAY_APPEND({0}, '$', {1})",
-                    CHATBOT_ROLES.USER_IDS.getDataType(), // 保持类型安全
-                    DSL.val(id)))
-            .where(CHATBOT_ROLES.NAME.eq(role.getName()))
-            .execute();
-
-        log.info("Appending userId:{} into the userIds field of {}.", id, role.getName());
+        appendUserId2Role(id, role);
       } else {
-        role.setMembers(Set.of(id));
-        insertOrUpdateRole(role);
+        role.setMembers(List.of(id));
+        insertRole(role);
       }
     }
+    insertSuccessfully(user);
+  }
 
-    log.info("Successfully inserted {} into database.", user);
+  @Transactional
+  public void appendUserId2Role(Integer userId, Role role) {
+    if (userId == null || userId <= 0) {
+      throw new IllegalArgumentException("userId must be a positive number");
+    }
+    validateRole(role);
+
+    dslContext
+        .update(CHATBOT_ROLES)
+        .set(CHATBOT_ROLES.DESC, role.getDesc())
+        .set(
+            CHATBOT_ROLES.USER_IDS,
+            DSL.when(
+                    DSL.condition(
+                        "JSON_CONTAINS({0}, {1}) = 0",
+                        CHATBOT_ROLES.USER_IDS, JSON.json(userId.toString())), // 包装为JSON
+                    DSL.field(
+                        "JSON_ARRAY_APPEND({0}, '$', {1})",
+                        CHATBOT_ROLES.USER_IDS.getType(),
+                        CHATBOT_ROLES.USER_IDS,
+                        JSON.json(userId.toString())) // 包装为JSON
+                    )
+                .otherwise(CHATBOT_ROLES.USER_IDS))
+        .where(CHATBOT_ROLES.NAME.eq(role.getName()))
+        .execute();
+
+    log.info("Appending userId:{} into the userIds field of {}.", userId, role.getName());
   }
 
   /**
