@@ -21,12 +21,14 @@
 
 package com.silong.llm.chatbot.configure;
 
+import java.util.Locale;
 import javax.sql.DataSource;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DataSourceConnectionProvider;
 import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.DefaultDSLContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -58,13 +60,13 @@ public class JooqAutoConfiguration {
   }
 
   @Bean
-  public DefaultDSLContext dslContext() {
-    return new DefaultDSLContext(configuration());
+  public DefaultDSLContext dslContext(@Value("${spring.jooq.sql-dialect}") String dialect) {
+    return new DefaultDSLContext(configuration(dialect));
   }
 
-  private DefaultConfiguration configuration() {
+  private DefaultConfiguration configuration(String sqlDialect) {
     DefaultConfiguration config = new DefaultConfiguration();
-    config.set(SQLDialect.MYSQL);
+    config.set(SQLDialect.valueOf(sqlDialect.toUpperCase(Locale.ROOT)));
     config.set(connectionProvider());
     return config;
   }
