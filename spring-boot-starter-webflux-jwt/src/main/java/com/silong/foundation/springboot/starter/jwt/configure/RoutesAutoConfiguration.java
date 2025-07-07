@@ -108,6 +108,10 @@ public class RoutesAutoConfiguration {
                     @ApiResponse(
                         responseCode = "403",
                         description = "FORBIDDEN",
+                        content = @Content(schema = @Schema(implementation = ErrorDetail.class))),
+                    @ApiResponse(
+                        responseCode = "500",
+                        description = "INTERNAL_SERVER_ERROR",
                         content = @Content(schema = @Schema(implementation = ErrorDetail.class)))
                   })))
   RouterFunction<ServerResponse> routes(AuthTokenHandler handler) {
