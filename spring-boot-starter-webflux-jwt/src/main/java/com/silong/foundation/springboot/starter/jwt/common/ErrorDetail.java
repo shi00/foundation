@@ -21,7 +21,10 @@
 
 package com.silong.foundation.springboot.starter.jwt.common;
 
+import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,13 +39,19 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Detailed error information")
 public class ErrorDetail {
 
   /** 错误码 */
   @JsonProperty("error_code")
+  @Schema(description = "Error code", example = "xxx.1001", requiredMode = REQUIRED)
   private String errorCode;
 
   /** 错误描述 */
   @JsonProperty("error_message")
+  @Schema(
+      description = "Error message",
+      example = "Invalid input parameters.",
+      requiredMode = REQUIRED)
   private String errorMessage;
 }

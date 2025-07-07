@@ -93,8 +93,8 @@ public class RoutesAutoConfiguration {
           operation =
               @Operation(
                   operationId = "authenticate",
-                  summary = "User authentication generates an access token",
-                  tags = {"authenticate"},
+                  summary = "User Authentication.",
+                  tags = {"Authentication"},
                   security = {@SecurityRequirement(name = ACCESS_TOKEN)},
                   responses = {
                     @ApiResponse(

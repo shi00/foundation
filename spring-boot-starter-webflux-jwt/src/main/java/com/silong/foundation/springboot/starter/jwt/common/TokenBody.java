@@ -22,6 +22,7 @@
 package com.silong.foundation.springboot.starter.jwt.common;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,8 +37,14 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Schema(description = "Access token message body")
 public class TokenBody {
 
   /** token */
-  @JsonProperty private String token;
+  @Schema(
+      description = "Access token",
+      example = "g3MonUZtNHkdmzicIlibx6iaFqAc56vxLSUfpb6n5WKSYVY0ChQKkiaJ",
+      requiredMode = Schema.RequiredMode.REQUIRED)
+  @JsonProperty
+  private String token;
 }
