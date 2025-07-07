@@ -16,6 +16,7 @@ databaseChangeLog:
                   constraints:
                     unique: true
                     nullable: false
+                    primaryKey: true
               - column:
                   name: name   #角色名称
                   type: varchar(50)  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci

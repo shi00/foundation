@@ -1,32 +1,49 @@
 /*
- *
- *  * Licensed to the Apache Software Foundation (ASF) under one
- *  * or more contributor license agreements.  See the NOTICE file
- *  * distributed with this work for additional information
- *  * regarding copyright ownership.  The ASF licenses this file
- *  * to you under the Apache License, Version 2.0 (the
- *  * "License"); you may not use this file except in compliance
- *  * with the License.  You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing,
- *  * software distributed under the License is distributed on an
- *  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  * KIND, either express or implied.  See the License for the
- *  * specific language governing permissions and limitations
- *  * under the License.
- *
- */
+*
+•  * Licensed to the Apache Software Foundation (ASF) under one
+
+•  * or more contributor license agreements.  See the NOTICE file
+
+•  * distributed with this work for additional information
+
+•  * regarding copyright ownership.  The ASF licenses this file
+
+•  * to you under the Apache License, Version 2.0 (the
+
+•  * "License"); you may not use this file except in compliance
+
+•  * with the License.  You may obtain a copy of the License at
+
+•  *
+
+•  *      http://www.apache.org/licenses/LICENSE-2.0
+
+•  *
+
+•  * Unless required by applicable law or agreed to in writing,
+
+•  * software distributed under the License is distributed on an
+
+•  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+
+•  * KIND, either express or implied.  See the License for the
+
+•  * specific language governing permissions and limitations
+
+•  * under the License.
+
+*
+*/
 
 package com.silong.llm.chatbot.daos;
 
 import static com.silong.llm.chatbot.daos.RepoHelper.*;
 import static com.silong.llm.chatbot.mysql.model.Tables.*;
+import static com.silong.llm.chatbot.mysql.model.enums.ChatbotConversationsStatus.ACTIVE;
+import static com.silong.llm.chatbot.mysql.model.enums.ChatbotConversationsStatus.INACTIVE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.silong.foundation.springboot.starter.jwt.security.SimpleTokenAuthentication;
 import com.silong.llm.chatbot.pos.Conversation;
 import com.silong.llm.chatbot.pos.Role;
 import com.silong.llm.chatbot.pos.User;
@@ -42,7 +59,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 数据库访问服务
+ * 数据库服务
  *
  * @author louis sin
  * @version 1.0.0
@@ -54,8 +71,7 @@ public class ChatbotRepository {
 
   static final Condition VALID_ROLE_CONDITION = CHATBOT_ROLES.VALID.eq(VALID);
 
-  static final Condition USER_ID_IN_ROLES_CONDITION =
-      DSL.condition("? MEMBER OF({0})", DSL.val(CHATBOT_USERS.ID), CHATBOT_ROLES.USER_IDS);
+  static final Condition VALID_CONVERSATIONS_CONDITION = CHATBOT_CONVERSATIONS.VALID.eq(VALID);
 
   static final Condition VALID_USER_CONDITION = CHATBOT_USERS.VALID.eq(VALID);
 
@@ -64,7 +80,7 @@ public class ChatbotRepository {
   private final ObjectMapper objectMapper;
 
   /**
-   * 构造方法
+   * • 构造方法
    *
    * @param dslContext jooq dsl context
    * @param objectMapper jackson
@@ -84,13 +100,23 @@ public class ChatbotRepository {
     return JSON.valueOf(objectMapper.writeValueAsString(json));
   }
 
+  private static void validateConversation(Conversation conversation) {
+    if (conversation == null) {
+      throw new IllegalArgumentException("conversation must not be null.");
+    }
+
+    if (conversation.getStatus() == null) {
+      throw new IllegalArgumentException("conversationStatus must not be null.");
+    }
+  }
+
   private static void validateUser(User user) {
     if (user == null) {
       throw new IllegalArgumentException("user must not be null.");
     }
 
-    String name = user.getName();
-    if (name == null || name.isEmpty()) {
+    String userName = user.getName();
+    if (userName == null || userName.isEmpty()) {
       throw new IllegalArgumentException("userName must not be null or empty.");
     }
 
@@ -120,38 +146,45 @@ public class ChatbotRepository {
   /**
    * 根据用户名查询用户id
    *
-   * @param name 用户名
+   * @param userName 用户名
    * @return 用户id
    */
   @Nullable
   @Transactional(readOnly = true)
-  public Integer getUserIdByName(String name) {
-    if (name == null || name.isEmpty()) {
+  public Integer getUserIdByName(String userName) {
+    if (userName == null || userName.isEmpty()) {
       throw new IllegalArgumentException("userName must not be null or empty.");
     }
     return dslContext
         .select(CHATBOT_USERS.ID)
         .from(CHATBOT_USERS)
-        .where(CHATBOT_USERS.NAME.eq(name).and(VALID_USER_CONDITION))
+        .where(CHATBOT_USERS.NAME.eq(userName).and(VALID_USER_CONDITION))
         .fetchOne(CHATBOT_USERS.ID);
   }
 
   /**
-   * 插入会话记录
+   * 新建会话记录，每个用户只能有一个激活会话
    *
    * @param conversation 会话
-   * @param authentication 用户鉴权信息
+   * @param user 用户
    */
   @Transactional
-  public void insertConversation(
-      Conversation conversation, SimpleTokenAuthentication authentication) {
-    if (conversation == null) {
-      throw new IllegalArgumentException("conversation must not be null.");
-    }
-    User user = map2User(authentication);
+  public void newConversation(Conversation conversation, User user) {
+    validateConversation(conversation);
     insertOrUpdateUser(user);
-
     conversation.setUserId(user.getId());
+
+    // 每个用户只有一个激活的会话
+    dslContext
+        .update(CHATBOT_CONVERSATIONS)
+        .set(CHATBOT_CONVERSATIONS.STATUS, INACTIVE)
+        .where(
+            CHATBOT_CONVERSATIONS
+                .USER_ID
+                .eq(user.getId())
+                .and(CHATBOT_CONVERSATIONS.STATUS.eq(ACTIVE))
+                .and(VALID_CONVERSATIONS_CONDITION))
+        .execute();
 
     Integer id =
         dslContext
@@ -325,6 +358,39 @@ public class ChatbotRepository {
     insertSuccessfully(user);
   }
 
+  /**
+   * 从角色中移除用户id
+   *
+   * @param userId 用户id
+   * @param role 角色
+   */
+  @Transactional
+  public void removeUserIdFromRole(Integer userId, Role role) {
+    if (userId == null || userId <= 0) {
+      throw new IllegalArgumentException("userId must be a positive number");
+    }
+    validateRole(role);
+    dslContext
+        .update(CHATBOT_ROLES)
+        .set(
+            CHATBOT_ROLES.USER_IDS,
+            DSL.field(
+                "(SELECT JSON_ARRAYAGG(id) FROM JSON_TABLE({0}, '$[*]' COLUMNS (id INT PATH '$')) AS t WHERE id != {1})",
+                JSON.class, CHATBOT_ROLES.USER_IDS, DSL.val(userId)))
+        .where(
+            DSL.condition(
+                "JSON_CONTAINS({0}, CAST({1} AS JSON))", CHATBOT_ROLES.USER_IDS, DSL.val(userId)))
+        .execute();
+
+    log.info("Removing userId:{} from the userIds field of {}.", userId, role.getName());
+  }
+
+  /**
+   * 用户添加到用户组
+   *
+   * @param userId 用户id
+   * @param role 角色
+   */
   @Transactional
   public void appendUserId2Role(Integer userId, Role role) {
     if (userId == null || userId <= 0) {
@@ -332,6 +398,7 @@ public class ChatbotRepository {
     }
     validateRole(role);
 
+    String roleName = role.getName();
     dslContext
         .update(CHATBOT_ROLES)
         .set(CHATBOT_ROLES.DESC, role.getDesc())
@@ -339,19 +406,20 @@ public class ChatbotRepository {
             CHATBOT_ROLES.USER_IDS,
             DSL.when(
                     DSL.condition(
-                        "JSON_CONTAINS({0}, {1}) = 0",
-                        CHATBOT_ROLES.USER_IDS, JSON.json(userId.toString())), // 包装为JSON
+                        "JSON_CONTAINS(COALESCE({0}, '[]'), cast({1} as JSON)) = 0",
+                        CHATBOT_ROLES.USER_IDS, DSL.inline(userId) // 直接传递数值类型
+                        ),
                     DSL.field(
-                        "JSON_ARRAY_APPEND({0}, '$', {1})",
-                        CHATBOT_ROLES.USER_IDS.getType(),
+                        "JSON_ARRAY_APPEND({0}, '$', cast({1} as JSON))",
+                        CHATBOT_ROLES.USER_IDS.getDataType(),
                         CHATBOT_ROLES.USER_IDS,
-                        JSON.json(userId.toString())) // 包装为JSON
-                    )
+                        DSL.inline(userId) // 直接传递数值类型
+                        ))
                 .otherwise(CHATBOT_ROLES.USER_IDS))
-        .where(CHATBOT_ROLES.NAME.eq(role.getName()))
+        .where(CHATBOT_ROLES.NAME.eq(roleName))
         .execute();
 
-    log.info("Appending userId:{} into the userIds field of {}.", userId, role.getName());
+    log.info("Appending userId:{} into the user_ids of {} in database.", userId, roleName);
   }
 
   /**
@@ -444,172 +512,4 @@ public class ChatbotRepository {
     return dslContext.fetchExists(
         CHATBOT_USERS, CHATBOT_USERS.NAME.eq(name).and(VALID_USER_CONDITION));
   }
-  //
-  //  /**
-  //   * 查询当前系统中的所有用户
-  //   *
-  //   * @param name 用户名
-  //   * @return 用户列表
-  //   */
-  //  @Nullable
-  //  @Transactional(readOnly = true)
-  //  public User getUser(String name) {
-  //    if (name == null || name.isEmpty()) {
-  //      throw new IllegalArgumentException("userName must not be null or empty.");
-  //    }
-  //    return dslContext
-  //        .select(
-  //            CHATBOT_USERS.ID,
-  //            CHATBOT_USERS.NAME,
-  //            CHATBOT_USERS.MOBILES,
-  //            CHATBOT_USERS.MAILS,
-  //            CHATBOT_USERS.DISPLAY_NAME,
-  //            CHATBOT_ROLES.NAME,
-  //            CHATBOT_USERS.DESC)
-  //        .from(CHATBOT_USERS, CHATBOT_ROLES)
-  //        .where(
-  //            CHATBOT_USERS
-  //                .NAME
-  //                .eq(name)
-  //                .and(CHATBOT_USERS.VALID.eq(VALID))
-  //                .and(USER_ID_IN_ROLES_CONDITION)
-  //                .and(CHATBOT_ROLES.VALID.eq(VALID)))
-  //        .fetch(USER_RECORD_MAPPER)
-  //        .stream()
-  //        .reduce(ChatbotRepository::mergeUser)
-  //        .orElse(null);
-  //  }
-  //
-  //  /**
-  //   * 查询当前系统中的所有用户
-  //   *
-  //   * @param id 用户id
-  //   * @return 用户列表
-  //   */
-  //  @Nullable
-  //  @Transactional(readOnly = true)
-  //  public User get(int id) {
-  //
-  //    if (id <= 0) {
-  //      throw new IllegalArgumentException("userId" + " must be greater than 0.");
-  //    }
-  //    return dslContext
-  //        .select(
-  //            CHATBOT_USERS.ID,
-  //            CHATBOT_USERS.NAME,
-  //            CHATBOT_USERS.MOBILES,
-  //            CHATBOT_USERS.MAILS,
-  //            CHATBOT_USERS.DISPLAY_NAME,
-  //            CHATBOT_ROLES.NAME,
-  //            CHATBOT_USERS.DESC)
-  //        .from(CHATBOT_USERS, CHATBOT_ROLES)
-  //        .where(
-  //            CHATBOT_USERS
-  //                .ID
-  //                .eq(id)
-  //                .and(VALID_USER_CONDITION)
-  //                .and(DSL.condition("? MEMBER OF({0})", DSL.val(id), CHATBOT_ROLES.USER_IDS))
-  //                .and(VALID_ROLE_CONDITION))
-  //        .fetch(USER_RECORD_MAPPER)
-  //        .stream()
-  //        .reduce(ChatbotRepository::mergeUser)
-  //        .orElse(null);
-  //  }
-  //
-  //  private static User mergeUser(User a, User b) {
-  //    assert a.getId() == b.getId()
-  //        : String.format("Invalid user record. userA: %s, userB: %s", a, b);
-  //    a.setRoles(
-  //        Stream.concat(Arrays.stream(a.getRoles()), Arrays.stream(b.getRoles()))
-  //            .toArray(String[]::new));
-  //    return a;
-  //  }
-  //
-  //  /**
-  //   * 查询当前系统中的所有有效用户
-  //   *
-  //   * @return 用户列表
-  //   */
-  //  @Transactional(readOnly = true)
-  //  public PagedResult<User> listAll() {
-  //    int total =
-  // dslContext.selectCount().from(CHATBOT_USERS).where(VALID_USER_CONDITION).execute();
-  //    List<User> users =
-  //        dslContext
-  //            .select(
-  //                CHATBOT_USERS.ID,
-  //                CHATBOT_USERS.NAME,
-  //                CHATBOT_USERS.MOBILES,
-  //                CHATBOT_USERS.MAILS,
-  //                CHATBOT_USERS.DISPLAY_NAME,
-  //                CHATBOT_ROLES.NAME,
-  //                CHATBOT_USERS.DESC)
-  //            .from(CHATBOT_USERS, CHATBOT_ROLES)
-  //
-  // .where(VALID_USER_CONDITION.and(USER_ID_IN_ROLES_CONDITION).and(VALID_ROLE_CONDITION))
-  //            .groupBy(CHATBOT_USERS.ID)
-  //            .orderBy(CHATBOT_USERS.ID.asc())
-  //            .fetchGroups(CHATBOT_USERS.ID, USER_RECORD_MAPPER)
-  //            .values()
-  //            .stream()
-  //            .map(
-  //                userList ->
-  //                    userList.stream()
-  //                        .reduce(ChatbotRepository::mergeUser)
-  //                        .orElseThrow(() -> new RuntimeException("Invalid users: " + userList)))
-  //            .toList();
-  //    return PagedResult.<User>builder().pageResults(users).totalCount(total).build();
-  //  }
-  //
-  //  /**
-  //   * 分页查询用户
-  //   *
-  //   * @param pageSize 每页结果数量
-  //   * @param pageNumber 页码
-  //   * @param usersCondition 用户查询条件
-  //   * @param rolesCondition 角色查询条件
-  //   * @return 分页结果
-  //   */
-  //  @Transactional(readOnly = true)
-  //  public PagedResult<User> list(
-  //      int pageSize,
-  //      int pageNumber,
-  //      @Nullable Condition usersCondition,
-  //      @Nullable Condition rolesCondition) {
-  //    if (pageSize <= 0) {
-  //      throw new IllegalArgumentException("pageSize must be greater than 0.");
-  //    }
-  //
-  //    if (pageNumber <= 0) {
-  //      throw new IllegalArgumentException("pageNumber must be greater than 0.");
-  //    }
-  //
-  //    if (usersCondition == null) {
-  //      usersCondition = VALID_USER_CONDITION;
-  //    }
-  //
-  //    if (rolesCondition == null) {
-  //      rolesCondition = VALID_ROLE_CONDITION;
-  //    }
-  //
-  //    int total = dslContext.selectCount().from(CHATBOT_USERS).where(usersCondition).execute();
-  //
-  //    List<User> users =
-  //        dslContext
-  //            .select(
-  //                CHATBOT_USERS.ID,
-  //                CHATBOT_USERS.NAME,
-  //                CHATBOT_USERS.MOBILES,
-  //                CHATBOT_USERS.MAILS,
-  //                CHATBOT_USERS.DISPLAY_NAME,
-  //                CHATBOT_ROLES.NAME,
-  //                CHATBOT_USERS.DESC)
-  //            .from(CHATBOT_USERS, CHATBOT_ROLES)
-  //            .where(usersCondition.and(USER_ID_IN_ROLES_CONDITION).and(rolesCondition))
-  //            .orderBy(CHATBOT_USERS.ID.asc())
-  //            .limit(pageSize)
-  //            .offset((pageNumber - 1) * pageSize)
-  //            .fetch(USER_RECORD_MAPPER);
-  //    return PagedResult.<User>builder().pageResults(users).totalCount(total).build();
-  //  }
 }

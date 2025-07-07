@@ -21,6 +21,7 @@
 
 package com.silong.llm.chatbot.pos;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,9 +38,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Q&A")
 public class QAPair {
 
   /** 问题 */
+  @Schema(description = "Q&A")
   private TimestampMessage question;
 
   /** 回答 */

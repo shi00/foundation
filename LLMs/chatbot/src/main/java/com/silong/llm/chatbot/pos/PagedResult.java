@@ -21,6 +21,7 @@
 
 package com.silong.llm.chatbot.pos;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,11 +40,17 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Paged query result")
 public class PagedResult<T> {
 
   /** 记录总数 */
+  @Schema(
+      description = "Total number of query results",
+      example = "2000",
+      requiredMode = Schema.RequiredMode.REQUIRED)
   private int totalCount;
 
   /** 分页查询结果 */
+  @Schema(description = "Query Results List", requiredMode = Schema.RequiredMode.REQUIRED)
   private List<T> pageResults;
 }

@@ -22,6 +22,7 @@ databaseChangeLog:
                   autoIncrement: true
                   constraints:
                     unique: true
+                    primaryKey: true
                     nullable: false
               - column:
                   name: mails

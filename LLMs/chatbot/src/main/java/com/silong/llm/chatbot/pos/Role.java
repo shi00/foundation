@@ -21,6 +21,7 @@
 
 package com.silong.llm.chatbot.pos;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collection;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,19 +39,27 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "User role")
 public class Role {
   /** 角色编号 */
+  @Schema(description = "Role ID", example = "12324")
   private int id;
 
   /** 角色名 */
+  @Schema(description = "Role name", example = "Administrators")
   private String name;
 
   /** 归属此角色的用户列表 */
+  @Schema(description = "List of user IDs authorized for this role", example = "[1,2,3,4]")
   private Collection<Integer> members;
 
-  /** 授权的功能访问路径，相对路径 */
+  /** 角色授权的功能访问路径，相对路径 */
+  @Schema(
+      description = "List of functions authorized for this role",
+      example = "[\"list\\users\",\"list\\groups\"]")
   private Collection<String> authorizedPaths;
 
-  /** 用户描述 */
+  /** 角色描述 */
+  @Schema(description = "User role description")
   private String desc;
 }

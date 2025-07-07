@@ -82,7 +82,8 @@ public class ChatbotService {
                     .status(ACTIVE)
                     .build())
         .doOnNext(
-            conversation -> chatbotRepository.insertConversation(conversation, authentication));
+            conversation ->
+                chatbotRepository.newConversation(conversation, map2User(authentication)));
   }
 
   /**
@@ -113,9 +114,9 @@ public class ChatbotService {
    * @param conversationId 会话id
    * @return 会话详情
    */
-  public Mono<Conversation> getConversationDetails(String conversationId) {
-    if (!StringUtils.hasLength(conversationId)) {
-      throw new IllegalArgumentException("conversationId must not be null or empty.");
+  public Mono<Conversation> getConversationDetails(int conversationId) {
+    if (conversationId <= 0) {
+      throw new IllegalArgumentException("conversationId must be a positive value.");
     }
     return Mono.empty();
   }
