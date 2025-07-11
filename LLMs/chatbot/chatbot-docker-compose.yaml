@@ -37,8 +37,37 @@ services:
     restart: always
     mem_limit: 384m
     cpu_shares: 128
+
+  minio:
+    image: minio/minio:RELEASE.2025-06-13T11-33-47Z
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - /data/minio:/data
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    #      MINIO_IDENTITY_LDAP_SERVER_INSECURE: "on"
+    #      MINIO_IDENTITY_LDAP_SERVER_STARTTLS: "on"
+    #      MINIO_IDENTITY_LDAP_TLS_SKIP_VERIFY: "on"
+    #      MINIO_IDENTITY_LDAP_SERVER_ADDR: "openldap:10389"
+    #      MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN: "cn=admin,dc=planetexpress,dc=com"
+    #      MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD: "GoodNewsEveryone"
+    #      MINIO_IDENTITY_LDAP_USER_DN_SEARCH_BASE_DN: "dc=planetexpress,dc=com"
+    #      MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER: "(uid=%s)"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
+    restart: always
+    mem_limit: 256m
+    cpu_shares: 128
     depends_on:
-      mysql:
+      openldap:
         condition: service_healthy
 
   redis:
@@ -71,5 +100,11 @@ services:
     cpu_shares: 128
     depends_on:
       redis:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      openldap:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     restart: always
