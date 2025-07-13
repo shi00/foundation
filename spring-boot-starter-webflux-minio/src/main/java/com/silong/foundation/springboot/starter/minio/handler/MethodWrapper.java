@@ -172,14 +172,17 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
                     e));
   }
 
-  Mono<Boolean> checkIntegrity(String bucket, String object, Path path, String eTag) {
+  Mono<Boolean> checkIntegrity(
+      String bucket, String object, Path path, String eTag, boolean deleteFile) {
     return Mono.fromCallable(
             () -> {
               try (InputStream in = new BufferedInputStream(Files.newInputStream(path))) {
                 String md5 = md5DigestAsHex(in);
                 if (!md5.equals(eTag)) {
-                  deleteRecursively(path);
-                  throw new CheckFileIntegrityException(
+                  if (deleteFile) {
+                    deleteRecursively(path);
+                  }
+                  throw new CheckIntegrityException(
                       String.format(
                           "MD5 checksum mismatch: [%s --- MD5: %s] vs obs[bucket:%s / object:%s --- eTag:%s]",
                           path.toFile().getAbsolutePath(), md5, bucket, object, eTag));
@@ -191,7 +194,7 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
         .onErrorMap(
             IOException.class,
             e ->
-                new CheckFileIntegrityException(
+                new CheckIntegrityException(
                     String.format(
                         "Failed to calculate MD5 of %s.", path.toFile().getAbsolutePath()),
                     e))
@@ -205,7 +208,9 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
                     eTag))
         .doOnError(
             t -> {
-              deleteRecursively(path);
+              if (deleteFile) {
+                deleteRecursively(path);
+              }
               log.error("Failed to pass the integrity check.", t);
             });
   }
