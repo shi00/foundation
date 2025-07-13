@@ -96,6 +96,7 @@
         <module>LLMs/chatbot-desktop</module>
         <module>LLMs/crawler</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
+        <module>spring-boot-starter-webflux-minio</module>
         <module>spring-boot-starter-webflux-jwt</module>
         <module>spring-boot-starter-crypto</module>
         <module>spring-boot-starter-raft-k8s</module>
@@ -217,6 +218,7 @@
         <commons-compress.version>1.27.1</commons-compress.version>
         <commons-text.version>1.13.1</commons-text.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
+        <minio.version>8.5.17</minio.version>
         <!--开源组件-->
 
         <checkstyle.skip>false</checkstyle.skip><!--checkstyle检查插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
@@ -265,6 +267,14 @@
                 <version>${guava.version}</version>
             </dependency>
             <!-- google 基础库 -->
+
+            <!-- oss -->
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
+            <!-- oss -->
 
             <!-- k8s client -->
             <dependency>
