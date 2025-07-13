@@ -22,6 +22,7 @@
 package com.silong.foundation.springboot.starter.minio.handler;
 
 import static com.silong.foundation.springboot.starter.minio.handler.FileUtils.deleteRecursively;
+import static com.silong.foundation.springboot.starter.minio.handler.MethodWrapper.closeQuietly;
 import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.foundation.springboot.starter.minio.configure.properties.MinioClientProperties;
@@ -113,10 +114,13 @@ public class AsyncMinioHandler {
     return makeBucket(bucket)
         .flatMap(v -> uploadObjet(bucket, object, file))
         .flatMap(
-            resp ->
-                checkFileIntegrity(
-                        bucket, object, file.toPath().getParent(), file.toPath(), resp.etag())
-                    .zipWith(Mono.just(resp)))
+            resp -> {
+              String eTag = resp.etag();
+              return wrapper
+                  .checkFileIntegrity(
+                      bucket, object, file.toPath().getParent(), file.toPath(), eTag)
+                  .zipWith(Mono.just(resp));
+            })
         .doOnSuccess(
             resp ->
                 log.info(
@@ -137,7 +141,7 @@ public class AsyncMinioHandler {
 
   private Mono<ObjectWriteResponse> uploadObjet(String bucket, String object, File file) {
     log.info(
-        "Start uploading to bucket:{}, object:{}, file:{}", bucket, object, file.getAbsolutePath());
+        "Start uploading file:{} to bucket:{}, object:{}.", file.getAbsolutePath(), bucket, object);
     try {
       InputStream inputStream =
           new ProgressStream(
@@ -145,13 +149,39 @@ public class AsyncMinioHandler {
               file.length(),
               log,
               new BufferedInputStream(new FileInputStream(file)));
-
-      return wrapper.uploadObjet(
-          PutObjectArgs.builder().bucket(bucket).object(object).stream(
-                  inputStream, file.length(), -1)
-              .build(),
-          file,
-          inputStream);
+      return wrapper
+          .uploadObjet(
+              PutObjectArgs.builder().bucket(bucket).object(object).stream(
+                      inputStream, file.length(), -1)
+                  .build(),
+              file)
+          .doOnSuccess(
+              resp -> {
+                closeQuietly(
+                    inputStream,
+                    tt ->
+                        log.error(
+                            "Failed to close input stream of {}.", file.getAbsolutePath(), tt));
+                log.info(
+                    "Successfully updated {} to {} with name {}.",
+                    file.getAbsolutePath(),
+                    bucket,
+                    object);
+              })
+          .doOnError(
+              t -> {
+                closeQuietly(
+                    inputStream,
+                    tt ->
+                        log.error(
+                            "Failed to close input stream of {}.", file.getAbsolutePath(), tt));
+                log.error(
+                    "Failed to upload {} from local to {} with name {}.",
+                    file.getAbsolutePath(),
+                    bucket,
+                    object,
+                    t);
+              });
     } catch (FileNotFoundException e) {
       throw new UploadObjectException(bucket, object, file, e);
     }
@@ -177,7 +207,7 @@ public class AsyncMinioHandler {
         .doOnNext(
             t3 ->
                 log.info(
-                    "Start downloading from bucket:{}, object:{}, eTag:{}, objectSize:{}, tempDir:{}",
+                    "Start downloading from [bucket:{}, object:{}, eTag:{}, objectSize:{}] to tempDir:{}.",
                     bucket,
                     object,
                     t3.getT1(),
@@ -187,27 +217,14 @@ public class AsyncMinioHandler {
         .flatMap(t2 -> writeToFile(t2, object))
         .flatMap(
             t4 ->
-                checkFileIntegrity(bucket, object, t4.getT3(), t4.getT4(), t4.getT1())
+                wrapper
+                    .checkFileIntegrity(bucket, object, t4.getT3(), t4.getT4(), t4.getT1())
                     .zipWith(Mono.just(t4)))
         .flatMap(t2 -> move2Target(t2.getT2().getT4(), Path.of(getSavingDir(saveDir))))
         .doOnError(t -> log.error("Failed to download {} from {} to local.", object, bucket, t))
         .doOnSuccess(
             file ->
                 log.info("Successfully downloaded {} from {} to local {}.", object, bucket, file));
-  }
-
-  /**
-   * 校验对象完整性
-   *
-   * @param bucket 桶名
-   * @param object 对象名
-   * @param parent 临时文件所在目录
-   * @param file 对象存储的临时文件
-   * @param eTag 对象eTag
-   */
-  private Mono<Boolean> checkFileIntegrity(
-      String bucket, String object, Path parent, Path file, String eTag) {
-    return wrapper.checkFileIntegrity(bucket, object, parent, file, eTag);
   }
 
   private Mono<File> move2Target(Path tmpFile, Path target) {
