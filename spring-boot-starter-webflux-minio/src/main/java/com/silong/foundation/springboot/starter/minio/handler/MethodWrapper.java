@@ -172,18 +172,17 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
                     e));
   }
 
-  Mono<Boolean> checkFileIntegrity(
-      String bucket, String object, Path parent, Path file, String eTag) {
+  Mono<Boolean> checkIntegrity(String bucket, String object, Path path, String eTag) {
     return Mono.fromCallable(
             () -> {
-              try (InputStream in = new BufferedInputStream(Files.newInputStream(file))) {
+              try (InputStream in = new BufferedInputStream(Files.newInputStream(path))) {
                 String md5 = md5DigestAsHex(in);
                 if (!md5.equals(eTag)) {
-                  deleteRecursively(parent);
+                  deleteRecursively(path);
                   throw new CheckFileIntegrityException(
                       String.format(
                           "MD5 checksum mismatch: [%s --- MD5: %s] vs obs[bucket:%s / object:%s --- eTag:%s]",
-                          file.toFile().getAbsolutePath(), md5, bucket, object, eTag));
+                          path.toFile().getAbsolutePath(), md5, bucket, object, eTag));
                 }
                 return Boolean.TRUE;
               }
@@ -194,19 +193,19 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
             e ->
                 new CheckFileIntegrityException(
                     String.format(
-                        "Failed to calculate MD5 of %s.", file.toFile().getAbsolutePath()),
+                        "Failed to calculate MD5 of %s.", path.toFile().getAbsolutePath()),
                     e))
         .doOnSuccess(
             e ->
                 log.info(
                     "MD5 checksum matched: {} vs obs[bucket:{} / object:{} / eTag:{}]",
-                    file.toFile().getAbsolutePath(),
+                    path.toFile().getAbsolutePath(),
                     bucket,
                     object,
                     eTag))
         .doOnError(
             t -> {
-              deleteRecursively(parent);
+              deleteRecursively(path);
               log.error("Failed to pass the integrity check.", t);
             });
   }
