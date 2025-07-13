@@ -53,35 +53,39 @@ public class FileUtils {
   }
 
   /**
-   * 删除目录
+   * 删除目录或文件，如果是目录则递归删除，如果是文件则直接删除
    *
-   * @param dir 目录
+   * @param path path
    */
-  public static void deleteRecursively(Path dir) {
+  public static void deleteRecursively(Path path) {
     try {
-      Files.walkFileTree(
-          dir,
-          new SimpleFileVisitor<>() {
-            @Override
-            @NonNull
-            public FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs)
-                throws IOException {
-              Files.delete(file);
-              log.info("Deleted file: {}", file);
-              return FileVisitResult.CONTINUE;
-            }
+      if (Files.isDirectory(path)) {
+        Files.walkFileTree(
+            path,
+            new SimpleFileVisitor<>() {
+              @Override
+              @NonNull
+              public FileVisitResult visitFile(
+                  @NonNull Path file, @NonNull BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                log.info("Deleted file: {}", file);
+                return FileVisitResult.CONTINUE;
+              }
 
-            @Override
-            @NonNull
-            public FileVisitResult postVisitDirectory(@NonNull Path dir, IOException exc)
-                throws IOException {
-              Files.delete(dir);
-              log.info("Deleted directory: {}", dir);
-              return FileVisitResult.CONTINUE;
-            }
-          });
+              @Override
+              @NonNull
+              public FileVisitResult postVisitDirectory(@NonNull Path dir, IOException exc)
+                  throws IOException {
+                Files.delete(dir);
+                log.info("Deleted directory: {}", dir);
+                return FileVisitResult.CONTINUE;
+              }
+            });
+      } else {
+        Files.delete(path);
+      }
     } catch (IOException e) {
-      log.error("Failed to delete {}", dir, e);
+      log.error("Failed to delete {}", path, e);
     }
   }
 }
