@@ -81,7 +81,7 @@ public class AsyncMinioHandler {
    */
   public Mono<String> getBucketPolicy(String bucket) {
     return Mono.just(GetBucketPolicyArgs.builder().bucket(bucket).build())
-        .flatMap(wrapper::_getBucketPolicy)
+        .flatMap(wrapper::getBucketPolicy)
         .doOnSuccess(
             policyJson ->
                 log.info("Successfully get policy:{} from bucket:{}.", policyJson, bucket))
@@ -96,7 +96,7 @@ public class AsyncMinioHandler {
    */
   public Mono<Boolean> setBucketPolicy(String bucket, String policyJson) {
     return Mono.just(SetBucketPolicyArgs.builder().bucket(bucket).config(policyJson).build())
-        .flatMap(wrapper::_setBucketPolicy)
+        .flatMap(wrapper::setBucketPolicy)
         .doOnSuccess(v -> log.info("Successfully set policy:{} for bucket:{}.", policyJson, bucket))
         .doOnError(t -> log.error("Failed to set policy:{} for bucket:{}.", policyJson, bucket));
   }
@@ -146,7 +146,7 @@ public class AsyncMinioHandler {
               log,
               new BufferedInputStream(new FileInputStream(file)));
 
-      return wrapper._uploadObjet(
+      return wrapper.uploadObjet(
           PutObjectArgs.builder().bucket(bucket).object(object).stream(
                   inputStream, file.length(), -1)
               .build(),
@@ -207,12 +207,12 @@ public class AsyncMinioHandler {
    */
   private Mono<Boolean> checkFileIntegrity(
       String bucket, String object, Path parent, Path file, String eTag) {
-    return wrapper._checkFileIntegrity(bucket, object, parent, file, eTag);
+    return wrapper.checkFileIntegrity(bucket, object, parent, file, eTag);
   }
 
   private Mono<File> move2Target(Path tmpFile, Path target) {
     return wrapper
-        ._move2Target(tmpFile, target)
+        .move2Target(tmpFile, target)
         .doOnSuccess(
             file ->
                 log.info(
@@ -240,7 +240,7 @@ public class AsyncMinioHandler {
     Path parent = tuple2.getT2().getT3();
     Path targetFile = parent.resolve(object);
     return wrapper
-        ._write2File(tuple2, object, parent, targetFile)
+        .write2File(tuple2, object, parent, targetFile)
         .doOnSuccess(
             t4 ->
                 log.info(
@@ -264,7 +264,7 @@ public class AsyncMinioHandler {
     return Mono.just(GetObjectArgs.builder().bucket(bucket).object(object).build())
         .doOnNext(
             args -> log.info("GetObjectArgs: [bucket:{}, object:{}]", args.bucket(), args.object()))
-        .flatMap(wrapper::_getObject)
+        .flatMap(wrapper::getObject)
         .doOnSuccess(
             resp -> log.info("Successfully downloaded {} from {}.", resp.object(), resp.bucket()))
         .doOnError(t -> log.error("Failed to download {} from {}.", object, bucket, t));
@@ -281,7 +281,7 @@ public class AsyncMinioHandler {
     return Mono.just(StatObjectArgs.builder().bucket(bucket).object(object).build())
         .doOnNext(
             arg -> log.info("StatObjectArgs: [bucket:{}, object:{}]", arg.bucket(), arg.object()))
-        .flatMap(wrapper::_statObject)
+        .flatMap(wrapper::statObject)
         .doOnSuccess(resp -> log.info("Successfully obtained statObject: {}.", resp))
         .doOnError(
             t ->
@@ -300,7 +300,7 @@ public class AsyncMinioHandler {
     return Mono.just(RemoveObjectArgs.builder().bucket(bucket).object(object).build())
         .doOnNext(
             arg -> log.info("RemoveObjectArgs: [bucket:{}, object:{}]", arg.bucket(), arg.object()))
-        .flatMap(wrapper::_removeObject)
+        .flatMap(wrapper::removeObject)
         .doOnSuccess(v -> log.info("Successfully removed {} from {}.", object, bucket))
         .doOnError(t -> log.error("Failed to remove {} from {}.", object, bucket, t));
   }
@@ -318,7 +318,7 @@ public class AsyncMinioHandler {
             arg ->
                 log.info(
                     "ListObjectsArgs: [bucket:{}, recursive:{}]", arg.bucket(), arg.recursive()))
-        .flatMapMany(wrapper::_ListObjects)
+        .flatMapMany(wrapper::listObjects)
         .doOnNext(
             item ->
                 log.info(
@@ -345,7 +345,7 @@ public class AsyncMinioHandler {
    */
   public Flux<Bucket> listBuckets() {
     return Mono.just(ListBucketsArgs.builder().build())
-        .flatMapMany(wrapper::_listBuckets)
+        .flatMapMany(wrapper::listBuckets)
         .sort(Comparator.comparing(Bucket::name, String::compareTo))
         .doOnNext(
             bucket ->
@@ -370,7 +370,7 @@ public class AsyncMinioHandler {
                     ? Mono.just(Boolean.TRUE)
                     : Mono.just(MakeBucketArgs.builder().bucket(bucket).build())
                         .doOnNext(args -> log.info("MakeBucketArgs: bucket:{}", args.bucket()))
-                        .flatMap(wrapper::_makeBucket)
+                        .flatMap(wrapper::makeBucket)
                         .doOnSuccess(bn -> log.info("Bucket {} created successfully.", bucket))
                         .doOnError(t -> log.error("Failed to create bucket: {}", bucket, t)));
   }
@@ -384,7 +384,7 @@ public class AsyncMinioHandler {
   public Mono<Boolean> bucketExists(String bucket) {
     return Mono.just(BucketExistsArgs.builder().bucket(bucket).build())
         .doOnNext(args -> log.info("BucketExistsArgs: bucket:{}.", args.bucket()))
-        .flatMap(wrapper::_bucketExists)
+        .flatMap(wrapper::bucketExists)
         .doOnSuccess(exist -> log.info("Bucket {} exists: {}", bucket, exist))
         .doOnError(t -> log.error("Failed to check bucket {} exists.", bucket, t));
   }
@@ -398,7 +398,7 @@ public class AsyncMinioHandler {
   public Mono<Boolean> removeBucket(String bucket) {
     return Mono.just(RemoveBucketArgs.builder().bucket(bucket).build())
         .doOnNext(args -> log.info("RemoveBucketArgs: bucket:{}", args.bucket()))
-        .flatMap(wrapper::_removeBucket)
+        .flatMap(wrapper::removeBucket)
         .doOnSuccess(v -> log.info("Successfully removed bucket {}.", bucket))
         .doOnError(t -> log.error("Failed to remove bucket {}.", bucket, t));
   }

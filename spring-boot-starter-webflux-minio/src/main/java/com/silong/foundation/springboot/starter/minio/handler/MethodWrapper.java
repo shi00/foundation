@@ -38,7 +38,6 @@ import java.nio.file.Path;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.function.Consumer;
-import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -57,20 +56,16 @@ import reactor.util.function.Tuples;
  * @since 2025-03-27 21:33
  */
 @Slf4j
-class MethodWrapper {
-
-  @Getter private final MinioAsyncClient minioAsyncClient;
+record MethodWrapper(MinioAsyncClient minioAsyncClient) {
 
   /**
    * 构造方法
    *
    * @param minioAsyncClient 客户端
    */
-  MethodWrapper(MinioAsyncClient minioAsyncClient) {
-    this.minioAsyncClient = minioAsyncClient;
-  }
+  MethodWrapper {}
 
-  Mono<Boolean> _bucketExists(BucketExistsArgs args) {
+  Mono<Boolean> bucketExists(BucketExistsArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.bucketExists(args))
         .flatMap(Mono::fromFuture)
         .subscribeOn(Schedulers.boundedElastic())
@@ -78,7 +73,7 @@ class MethodWrapper {
             MethodWrapper::isMinioException, t -> new CheckBucketExistException(args.bucket(), t));
   }
 
-  Flux<Bucket> _listBuckets(ListBucketsArgs args) {
+  Flux<Bucket> listBuckets(ListBucketsArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.listBuckets(args))
         .flatMap(Mono::fromFuture)
         .flatMapMany(Flux::fromIterable)
@@ -86,7 +81,7 @@ class MethodWrapper {
         .onErrorMap(MethodWrapper::isMinioException, ListBucketsException::new);
   }
 
-  Mono<Boolean> _removeBucket(RemoveBucketArgs args) {
+  Mono<Boolean> removeBucket(RemoveBucketArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.removeBucket(args).thenApply(v -> Boolean.TRUE))
         .flatMap(Mono::fromFuture)
         .subscribeOn(Schedulers.boundedElastic())
@@ -94,14 +89,14 @@ class MethodWrapper {
             MethodWrapper::isMinioException, t -> new RemoveBucketException(args.bucket(), t));
   }
 
-  Flux<Item> _ListObjects(ListObjectsArgs args) {
+  Flux<Item> listObjects(ListObjectsArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.listObjects(args))
         .flatMapMany(Flux::fromIterable)
         .map(MethodWrapper::getResult)
         .subscribeOn(Schedulers.boundedElastic());
   }
 
-  Mono<Boolean> _removeObject(RemoveObjectArgs args) {
+  Mono<Boolean> removeObject(RemoveObjectArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.removeObject(args).thenApply(v -> Boolean.TRUE))
         .flatMap(Mono::fromFuture)
         .subscribeOn(Schedulers.boundedElastic())
@@ -110,7 +105,7 @@ class MethodWrapper {
             t -> new RemoveObjectException(args.bucket(), args.object(), t));
   }
 
-  Mono<StatObjectResponse> _statObject(StatObjectArgs args) {
+  Mono<StatObjectResponse> statObject(StatObjectArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.statObject(args))
         .flatMap(Mono::fromFuture)
         .subscribeOn(Schedulers.boundedElastic())
@@ -119,7 +114,7 @@ class MethodWrapper {
             t -> new GetObjectStatException(args.bucket(), args.object(), t));
   }
 
-  Mono<GetObjectResponse> _getObject(GetObjectArgs args) {
+  Mono<GetObjectResponse> getObject(GetObjectArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.getObject(args))
         .flatMap(Mono::fromFuture)
         .subscribeOn(Schedulers.boundedElastic())
@@ -128,7 +123,7 @@ class MethodWrapper {
             t -> new GetObjectException(args.bucket(), args.object(), t));
   }
 
-  Mono<Boolean> _makeBucket(MakeBucketArgs args) {
+  Mono<Boolean> makeBucket(MakeBucketArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.makeBucket(args).thenApply(v -> Boolean.TRUE))
         .flatMap(Mono::fromFuture)
         .subscribeOn(Schedulers.boundedElastic())
@@ -136,7 +131,7 @@ class MethodWrapper {
             MethodWrapper::isMinioException, t -> new MakeBucketException(args.bucket(), t));
   }
 
-  Mono<Tuple4<String, Long, Path, Path>> _write2File(
+  Mono<Tuple4<String, Long, Path, Path>> write2File(
       Tuple2<GetObjectResponse, Tuple3<String, Long, Path>> tuple2,
       String object,
       Path parent,
@@ -158,7 +153,7 @@ class MethodWrapper {
         .onErrorMap(IOException.class, e -> new WriteObject2FileException(targetFile, object, e));
   }
 
-  Mono<File> _move2Target(Path tmpFile, Path target) {
+  Mono<File> move2Target(Path tmpFile, Path target) {
     return Mono.fromCallable(
             () -> {
               createDirectories(target);
@@ -177,7 +172,7 @@ class MethodWrapper {
                     e));
   }
 
-  Mono<Boolean> _checkFileIntegrity(
+  Mono<Boolean> checkFileIntegrity(
       String bucket, String object, Path parent, Path file, String eTag) {
     return Mono.fromCallable(
             () -> {
@@ -217,7 +212,7 @@ class MethodWrapper {
             });
   }
 
-  Mono<ObjectWriteResponse> _uploadObjet(PutObjectArgs args, File file, InputStream input) {
+  Mono<ObjectWriteResponse> uploadObjet(PutObjectArgs args, File file, InputStream input) {
     return Mono.fromCallable(
             () ->
                 minioAsyncClient
@@ -250,7 +245,7 @@ class MethodWrapper {
             });
   }
 
-  Mono<Boolean> _setBucketPolicy(SetBucketPolicyArgs args) {
+  Mono<Boolean> setBucketPolicy(SetBucketPolicyArgs args) {
     return Mono.fromCallable(
             () -> minioAsyncClient.setBucketPolicy(args).thenApply(v -> Boolean.TRUE))
         .flatMap(Mono::fromFuture)
@@ -258,7 +253,7 @@ class MethodWrapper {
             MethodWrapper::isMinioException, t -> new SetBucketPolicyException(args.bucket(), t));
   }
 
-  Mono<String> _getBucketPolicy(GetBucketPolicyArgs args) {
+  Mono<String> getBucketPolicy(GetBucketPolicyArgs args) {
     return Mono.fromCallable(() -> minioAsyncClient.getBucketPolicy(args))
         .flatMap(Mono::fromFuture)
         .onErrorMap(
