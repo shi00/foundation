@@ -151,7 +151,9 @@ public class AsyncMinioHandler {
       return wrapper
           .uploadObjet(
               PutObjectArgs.builder().bucket(bucket).object(object).stream(
-                      inputStream, file.length(), -1)
+                      inputStream,
+                      file.length(),
+                      minioClientProperties.getPartThreshold().toBytes())
                   .build(),
               file)
           .doOnSuccess(
