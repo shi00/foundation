@@ -117,7 +117,7 @@ public class AsyncMinioHandler {
             resp -> {
               Path path = file.toPath();
               return wrapper
-                  .checkIntegrity(bucket, object, path, resp.etag())
+                  .checkIntegrity(bucket, object, path, resp.etag(), false)
                   .zipWith(Mono.just(resp));
             })
         .doOnSuccess(
@@ -217,7 +217,7 @@ public class AsyncMinioHandler {
         .flatMap(
             t4 ->
                 wrapper
-                    .checkIntegrity(bucket, object, t4.getT4(), t4.getT1())
+                    .checkIntegrity(bucket, object, t4.getT4(), t4.getT1(), true)
                     .zipWith(Mono.just(t4)))
         .flatMap(t2 -> move2Target(t2.getT2().getT4(), Path.of(getSavingDir(saveDir))))
         .doOnError(t -> log.error("Failed to download {} from {} to local.", object, bucket, t))
