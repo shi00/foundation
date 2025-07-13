@@ -44,7 +44,7 @@ public class MinioClientProperties {
   /** obs区域，可以为null */
   @Nullable private String region;
 
-  /** 分段下载阈值，默认：5MB */
+  /** 分段阈值有效值为5MB---5GB，默认：5MB */
   @NotNull private DataSize partThreshold = DataSize.of(5, MEGABYTES);
 
   /** 连接超时，默认：30秒 */
