@@ -33,6 +33,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.util.unit.DataSize;
 
 /**
  * 测试类
@@ -53,10 +54,10 @@ public class FileUtilsTests {
     for (var p : paths) {
       String name = MinioTests.FAKER.artist().name();
       var file = p.resolve(name + ".docx").toFile();
-      RandomDocxGenerator.generateDocx(file, 1024 * 10);
+      RandomFileGenerator.createRandomTempFile(file, DataSize.ofMegabytes(1));
       name = MinioTests.FAKER.artist().name();
       file = p.resolve(name + ".docx").toFile();
-      RandomDocxGenerator.generateDocx(file, 1024 * 10);
+      RandomFileGenerator.createRandomTempFile(file, DataSize.ofMegabytes(10));
     }
     FileUtils.deleteRecursively(path);
     Assertions.assertTrue(Files.notExists(path));
