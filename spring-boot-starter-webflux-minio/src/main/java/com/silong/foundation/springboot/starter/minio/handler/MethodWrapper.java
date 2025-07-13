@@ -182,10 +182,9 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
                   deleteRecursively(parent);
                   throw new CheckFileIntegrityException(
                       String.format(
-                          "MD5 checksum mismatch: [%s / MD5: %s] vs obs[bucket:%s / object:%s / eTag:%s]",
+                          "MD5 checksum mismatch: [%s --- MD5: %s] vs obs[bucket:%s / object:%s --- eTag:%s]",
                           file.toFile().getAbsolutePath(), md5, bucket, object, eTag));
                 }
-
                 return Boolean.TRUE;
               }
             })
