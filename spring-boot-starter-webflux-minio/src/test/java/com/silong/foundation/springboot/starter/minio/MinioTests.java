@@ -54,6 +54,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.util.unit.DataSize;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
@@ -166,12 +167,10 @@ public class MinioTests {
   }
 
   @Test
-  @SneakyThrows
-  public void test4() {
+  public void test4() throws IOException {
     String objectName = "test4.docx";
     var f = new File("target/test-data/" + objectName);
-    createDirectories(f.toPath().getParent());
-    RandomDocxGenerator.generateDocx(f, 1024 * 10);
+    RandomFileGenerator.createRandomTempFile(f, DataSize.ofMegabytes(1));
     log.info("file: {}, size: {}", f.getAbsolutePath(), f.length());
     String bucketName = OSSBucketGenerator.generate(10);
     StepVerifier.create(handler.upload(bucketName, objectName, f))
@@ -180,12 +179,10 @@ public class MinioTests {
   }
 
   @Test
-  @SneakyThrows
-  public void test5() {
+  public void test5() throws IOException {
     String objectName = "test5.docx";
     var f = new File("target/test-data/" + objectName);
-    createDirectories(f.toPath().getParent());
-    RandomDocxGenerator.generateDocx(f, 1024 * 128);
+    RandomFileGenerator.createRandomTempFile(f, DataSize.ofMegabytes(1));
     String bucketName = OSSBucketGenerator.generate(10);
     StepVerifier.create(handler.upload(bucketName, objectName, f))
         .expectNextMatches(resp -> resp.object().equals(objectName))
@@ -204,12 +201,10 @@ public class MinioTests {
   }
 
   @Test
-  @SneakyThrows
-  public void test6() {
+  public void test6() throws IOException {
     String objectName = "test6.docx";
     var f = new File("target/test-data/" + objectName);
-    createDirectories(f.toPath().getParent());
-    RandomDocxGenerator.generateDocx(f, 1024 * 15);
+    RandomFileGenerator.createRandomTempFile(f, DataSize.ofMegabytes(10));
     String bucketName = OSSBucketGenerator.generate(10);
     StepVerifier.create(handler.upload(bucketName, objectName, f))
         .expectNextMatches(resp -> resp.object().equals(objectName))
@@ -227,12 +222,10 @@ public class MinioTests {
   }
 
   @Test
-  @SneakyThrows
-  public void test7() {
+  public void test7() throws IOException {
     String objectName = "test7.docx";
     var f = new File("target/test-data/" + objectName);
-    createDirectories(f.toPath().getParent());
-    RandomDocxGenerator.generateDocx(f, 1024 * 19);
+    RandomFileGenerator.createRandomTempFile(f, DataSize.ofMegabytes(100));
     String bucketName = OSSBucketGenerator.generate(10);
     StepVerifier.create(handler.upload(bucketName, objectName, f))
         .expectNextMatches(resp -> resp.object().equals(objectName))
@@ -292,20 +285,17 @@ public class MinioTests {
     var bucketName = "ABC";
     assertThrowsExactly(
         IllegalArgumentException.class,
-        () -> handler.makeBucket(bucketName),
+        () -> handler.makeBucket(bucketName).subscribe(),
         "bucket name 'ABC' does not follow Amazon S3 standards. For more information refer https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html");
   }
 
   @Test
   public void test12() throws IOException {
-    var path = Paths.get(props.getSavingDir());
-    createDirectories(path);
-    var fp = path.resolve("test12.docx");
+    var fp = Paths.get(SAVE_DIR).resolve("test12.docx");
     File file = fp.toFile();
-    RandomDocxGenerator.generateDocx(file, 1024 * 30);
+    RandomFileGenerator.createRandomTempFile(file, DataSize.ofMegabytes(100));
     var bucketName = OSSBucketGenerator.generate(63);
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
-    file.delete();
     StepVerifier.create(handler.upload(bucketName, "test12.docx", file))
         .verifyErrorMatches(
             t ->
@@ -324,7 +314,7 @@ public class MinioTests {
       var name = String.format("test13%d.docx", i);
       var fp = path.resolve(name);
       File file = fp.toFile();
-      RandomDocxGenerator.generateDocx(file, 1024 * 30);
+      RandomFileGenerator.createRandomTempFile(file, DataSize.ofMegabytes(10));
       StepVerifier.create(handler.upload(bucketName, name, file))
           .expectNextMatches(resp -> resp.object().equals(name))
           .verifyComplete();
