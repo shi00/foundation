@@ -24,21 +24,22 @@ package com.silong.foundation.springboot.starter.minio.exceptions;
 import lombok.NonNull;
 
 /**
- * 文件完整性校验异常
+ * 完整性校验异常
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2021-12-26 09:20
  */
-public class CheckFileIntegrityException extends RuntimeException {
-  @java.io.Serial private static final long serialVersionUID = -6642135317438157788L;
+public class CheckIntegrityException extends RuntimeException {
+
+  @java.io.Serial private static final long serialVersionUID = 4660127691064902987L;
 
   /**
    * 构造方法
    *
    * @param msg 异常消息
    */
-  public CheckFileIntegrityException(@NonNull String msg) {
+  public CheckIntegrityException(@NonNull String msg) {
     super(msg);
   }
 
@@ -48,7 +49,7 @@ public class CheckFileIntegrityException extends RuntimeException {
    * @param msg 异常消息
    * @param cause 异常
    */
-  public CheckFileIntegrityException(@NonNull String msg, @NonNull Throwable cause) {
+  public CheckIntegrityException(@NonNull String msg, @NonNull Throwable cause) {
     super(msg, cause);
   }
 }
