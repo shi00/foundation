@@ -211,37 +211,12 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
             });
   }
 
-  Mono<ObjectWriteResponse> uploadObjet(PutObjectArgs args, File file, InputStream input) {
-    return Mono.fromCallable(
-            () ->
-                minioAsyncClient
-                    .putObject(args)
-                    .whenComplete(
-                        (resp, t) -> {
-                          if (t != null) {
-                            log.error(
-                                "Failed to upload {} from local to {} with name {}",
-                                file.getAbsolutePath(),
-                                args.bucket(),
-                                args.object());
-                          }
-                          closeQuietly(
-                              input,
-                              tt ->
-                                  log.error(
-                                      "Failed to close input stream of {}.",
-                                      file.getAbsolutePath(),
-                                      tt));
-                        }))
+  Mono<ObjectWriteResponse> uploadObjet(PutObjectArgs args, File file) {
+    return Mono.fromCallable(() -> minioAsyncClient.putObject(args))
         .flatMap(Mono::fromFuture)
         .onErrorMap(
             MethodWrapper::isMinioException,
-            t -> new UploadObjectException(args.bucket(), args.object(), file, t))
-        .doOnError(
-            t -> {
-              deleteRecursively(file.toPath().getParent());
-              closeQuietly(input, tt -> log.error("Failed to close input stream of {}.", file, t));
-            });
+            t -> new UploadObjectException(args.bucket(), args.object(), file, t));
   }
 
   Mono<Boolean> setBucketPolicy(SetBucketPolicyArgs args) {
@@ -268,7 +243,7 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
         || t instanceof XmlParserException);
   }
 
-  private static void closeQuietly(InputStream inputStream, Consumer<Throwable> logIOException) {
+  static void closeQuietly(InputStream inputStream, Consumer<Throwable> logIOException) {
     if (inputStream != null) {
       try {
         inputStream.close();
