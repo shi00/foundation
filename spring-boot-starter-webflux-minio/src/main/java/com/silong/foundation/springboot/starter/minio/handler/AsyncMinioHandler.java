@@ -371,7 +371,7 @@ public class AsyncMinioHandler {
                     : Mono.just(MakeBucketArgs.builder().bucket(bucket).build())
                         .doOnNext(args -> log.info("MakeBucketArgs: bucket:{}", args.bucket()))
                         .flatMap(wrapper::_makeBucket)
-                        .doOnSuccess(bn -> log.info("Bucket {} created.", bucket))
+                        .doOnSuccess(bn -> log.info("Bucket {} created successfully.", bucket))
                         .doOnError(t -> log.error("Failed to create bucket: {}", bucket, t)));
   }
 

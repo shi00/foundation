@@ -163,7 +163,7 @@ class MethodWrapper {
             () -> {
               createDirectories(target);
               Path targetFile = target.resolve(tmpFile.getFileName());
-              Files.move(tmpFile, targetFile, ATOMIC_MOVE, COPY_ATTRIBUTES, REPLACE_EXISTING);
+              Files.move(tmpFile, targetFile, ATOMIC_MOVE, REPLACE_EXISTING);
               return targetFile.toFile();
             })
         .subscribeOn(Schedulers.boundedElastic()) // 指定使用IO调度器
