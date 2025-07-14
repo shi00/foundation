@@ -21,9 +21,7 @@
 
 package com.silong.foundation.springboot.starter.minio.handler;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
@@ -31,6 +29,7 @@ import java.security.NoSuchAlgorithmException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
+import org.springframework.util.DigestUtils;
 
 /**
  * 文件工具
@@ -64,40 +63,51 @@ class FileUtils {
    * @param partSize 分段大小
    * @return eTag
    * @throws IOException 异常
+   * @throws NoSuchAlgorithmException 异常
    */
-  public static String calculateETag(File file, long partSize) throws IOException {
+  public static String calculateETag(File file, long partSize)
+      throws IOException, NoSuchAlgorithmException {
     long fileSize = file.length();
+
+    // 单片直接计算，无需考虑分段计算
+    if (partSize >= fileSize) {
+      try (InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
+        return DigestUtils.md5DigestAsHex(inputStream);
+      }
+    }
+
     int partCount = (int) Math.ceil((double) fileSize / partSize);
+
+    assert partCount > 1;
 
     // 存储每个分片的原始MD5字节
     byte[][] partMD5s = new byte[partCount][];
-
+    var digest = MessageDigest.getInstance("MD5");
     try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
       for (int i = 0; i < partCount; i++) {
         long offset = i * partSize;
         long currentPartSize = Math.min(partSize, fileSize - offset);
 
         raf.seek(offset);
-        partMD5s[i] = calculatePartMD5(raf, currentPartSize);
+        partMD5s[i] = calculatePartMD5(digest, raf, currentPartSize);
       }
     }
 
     // 合并所有分片的MD5字节
-    MessageDigest combinedDigest = getMD5Digest();
+    digest.reset();
     for (byte[] partMD5 : partMD5s) {
-      combinedDigest.update(partMD5);
+      digest.update(partMD5);
     }
 
     // 格式化为 "MD5-分片数"
-    String combinedMD5Hex = Hex.encodeHexString(combinedDigest.digest());
-    return partCount == 1 ? combinedMD5Hex : String.format("\"%s-%d\"", combinedMD5Hex, partCount);
+    String combinedMD5Hex = Hex.encodeHexString(digest.digest());
+    return String.format("\"%s-%d\"", combinedMD5Hex, partCount);
   }
 
-  private static byte[] calculatePartMD5(RandomAccessFile raf, long partSize) throws IOException {
-    MessageDigest digest = getMD5Digest();
+  private static byte[] calculatePartMD5(MessageDigest digest, RandomAccessFile raf, long partSize)
+      throws IOException {
     byte[] buffer = new byte[8192];
     long remaining = partSize;
-
     while (remaining > 0) {
       int read = raf.read(buffer, 0, (int) Math.min(buffer.length, remaining));
       if (read == -1) break;
@@ -106,14 +116,6 @@ class FileUtils {
     }
 
     return digest.digest();
-  }
-
-  private static MessageDigest getMD5Digest() {
-    try {
-      return MessageDigest.getInstance("MD5");
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("MD5 algorithm not found", e);
-    }
   }
 
   /**
