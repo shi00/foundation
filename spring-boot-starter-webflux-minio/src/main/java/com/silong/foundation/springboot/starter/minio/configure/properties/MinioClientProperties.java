@@ -1,17 +1,12 @@
 package com.silong.foundation.springboot.starter.minio.configure.properties;
 
-import static org.springframework.util.unit.DataUnit.MEGABYTES;
-
 import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import java.time.Duration;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.util.unit.DataSize;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -45,7 +40,9 @@ public class MinioClientProperties {
   @Nullable private String region;
 
   /** 分段阈值有效值为5MB---5GB，默认：5MB */
-  @NotNull private DataSize partThreshold = DataSize.of(5, MEGABYTES);
+  @Min(5L * 1024 * 1024)
+  @Max(5L * 1024 * 1024 * 1024)
+  private long partThreshold = 5 * 1024 * 1024;
 
   /** 连接超时，默认：30秒 */
   @NotNull private Duration connectionTimeout = Duration.ofSeconds(30);
