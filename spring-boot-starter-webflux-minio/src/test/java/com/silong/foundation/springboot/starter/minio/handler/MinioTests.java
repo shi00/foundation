@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.minio;
+package com.silong.foundation.springboot.starter.minio.handler;
 
 import static com.google.common.io.Files.toByteArray;
 import static java.nio.file.Files.*;
@@ -29,7 +29,6 @@ import static org.springframework.util.DigestUtils.md5DigestAsHex;
 import com.silong.foundation.springboot.starter.minio.configure.MinioClientAutoConfiguration;
 import com.silong.foundation.springboot.starter.minio.configure.properties.MinioClientProperties;
 import com.silong.foundation.springboot.starter.minio.exceptions.UploadObjectException;
-import com.silong.foundation.springboot.starter.minio.handler.AsyncMinioHandler;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.DeleteError;

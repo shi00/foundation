@@ -19,11 +19,10 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.minio;
+package com.silong.foundation.springboot.starter.minio.handler;
 
 import static java.nio.file.Files.*;
 
-import com.silong.foundation.springboot.starter.minio.handler.FileUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
