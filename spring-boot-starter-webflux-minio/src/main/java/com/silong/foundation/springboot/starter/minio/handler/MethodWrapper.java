@@ -21,8 +21,7 @@
 
 package com.silong.foundation.springboot.starter.minio.handler;
 
-import static com.silong.foundation.springboot.starter.minio.handler.FileUtils.createDirectories;
-import static com.silong.foundation.springboot.starter.minio.handler.FileUtils.deleteRecursively;
+import static com.silong.foundation.springboot.starter.minio.handler.FileUtils.*;
 import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.StandardOpenOption.*;
 
@@ -175,7 +174,7 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
       String bucket, String object, Path path, long partSize, String eTag, boolean deleteFile) {
     return Mono.fromCallable(
             () -> {
-              String md5 = FileUtils.calculateETag(path.toFile(), partSize);
+              String md5 = calculateETag(path.toFile(), partSize);
               if (!md5.equals(eTag)) {
                 if (deleteFile) {
                   deleteRecursively(path);
@@ -198,7 +197,7 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
         .doOnSuccess(
             e ->
                 log.info(
-                    "MD5 checksum matched: {} vs obs[bucket:{} / object:{} / eTag:{}]",
+                    "MD5 checksum matched: [{}] vs obs[bucket:{} / object:{} / eTag:{}]",
                     path.toFile().getAbsolutePath(),
                     bucket,
                     object,
