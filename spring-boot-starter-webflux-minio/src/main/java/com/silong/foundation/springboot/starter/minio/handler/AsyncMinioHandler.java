@@ -117,7 +117,13 @@ public class AsyncMinioHandler {
             resp -> {
               Path path = file.toPath();
               return wrapper
-                  .checkIntegrity(bucket, object, path, resp.etag(), false)
+                  .checkIntegrity(
+                      bucket,
+                      object,
+                      path,
+                      minioClientProperties.getPartThreshold(),
+                      resp.etag(),
+                      false)
                   .zipWith(Mono.just(resp));
             })
         .doOnSuccess(
@@ -151,9 +157,7 @@ public class AsyncMinioHandler {
       return wrapper
           .uploadObjet(
               PutObjectArgs.builder().bucket(bucket).object(object).stream(
-                      inputStream,
-                      file.length(),
-                      minioClientProperties.getPartThreshold().toBytes())
+                      inputStream, file.length(), minioClientProperties.getPartThreshold())
                   .build(),
               file)
           .doOnSuccess(
@@ -219,7 +223,13 @@ public class AsyncMinioHandler {
         .flatMap(
             t4 ->
                 wrapper
-                    .checkIntegrity(bucket, object, t4.getT4(), t4.getT1(), true)
+                    .checkIntegrity(
+                        bucket,
+                        object,
+                        t4.getT4(),
+                        minioClientProperties.getPartThreshold(),
+                        t4.getT1(),
+                        true)
                     .zipWith(Mono.just(t4)))
         .flatMap(t2 -> move2Target(t2.getT2().getT4(), Path.of(getSavingDir(saveDir))))
         .doOnError(t -> log.error("Failed to download {} from {} to local.", object, bucket, t))
