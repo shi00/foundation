@@ -25,7 +25,6 @@ import static com.silong.foundation.springboot.starter.minio.handler.FileUtils.c
 import static com.silong.foundation.springboot.starter.minio.handler.FileUtils.deleteRecursively;
 import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.StandardOpenOption.*;
-import static org.springframework.util.DigestUtils.md5DigestAsHex;
 
 import com.silong.foundation.springboot.starter.minio.exceptions.*;
 import io.minio.*;
@@ -173,22 +172,20 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
   }
 
   Mono<Boolean> checkIntegrity(
-      String bucket, String object, Path path, String eTag, boolean deleteFile) {
+      String bucket, String object, Path path, long partSize, String eTag, boolean deleteFile) {
     return Mono.fromCallable(
             () -> {
-              try (InputStream in = new BufferedInputStream(Files.newInputStream(path))) {
-                String md5 = md5DigestAsHex(in);
-                if (!md5.equals(eTag)) {
-                  if (deleteFile) {
-                    deleteRecursively(path);
-                  }
-                  throw new CheckIntegrityException(
-                      String.format(
-                          "MD5 checksum mismatch: [%s --- MD5: %s] vs obs[bucket:%s / object:%s --- eTag:%s]",
-                          path.toFile().getAbsolutePath(), md5, bucket, object, eTag));
+              String md5 = FileUtils.calculateETag(path.toFile(), partSize);
+              if (!md5.equals(eTag)) {
+                if (deleteFile) {
+                  deleteRecursively(path);
                 }
-                return Boolean.TRUE;
+                throw new CheckIntegrityException(
+                    String.format(
+                        "MD5 checksum mismatch: [%s --- MD5: %s] vs obs[bucket:%s / object:%s --- eTag:%s]",
+                        path.toFile().getAbsolutePath(), md5, bucket, object, eTag));
               }
+              return Boolean.TRUE;
             })
         .subscribeOn(Schedulers.boundedElastic())
         .onErrorMap(
