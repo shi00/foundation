@@ -19,7 +19,7 @@
  *
  */
 
-package com.silong.foundation.springboot.starter.minio;
+package com.silong.foundation.springboot.starter.minio.handler;
 
 import java.util.Random;
 
