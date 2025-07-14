@@ -28,14 +28,12 @@ import static org.springframework.util.DigestUtils.md5DigestAsHex;
 
 import com.silong.foundation.springboot.starter.minio.configure.MinioClientAutoConfiguration;
 import com.silong.foundation.springboot.starter.minio.configure.properties.MinioClientProperties;
-import com.silong.foundation.springboot.starter.minio.exceptions.UploadObjectException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -296,10 +294,8 @@ public class MinioTests {
     var bucketName = OSSBucketGenerator.generate(63);
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.upload(bucketName, "test12.docx", file))
-        .verifyErrorMatches(
-            t ->
-                t instanceof UploadObjectException e
-                    && e.getCause() instanceof FileNotFoundException);
+        .expectNextMatches(resp -> resp.object().equals("test12.docx"))
+        .verifyComplete();
   }
 
   @Test

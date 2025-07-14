@@ -22,14 +22,22 @@
 package com.silong.foundation.springboot.starter.minio.handler;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.springframework.util.DigestUtils;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 /**
  * 文件工具
@@ -40,6 +48,19 @@ import org.springframework.util.DigestUtils;
  */
 @Slf4j
 class FileUtils {
+
+  private static final ThreadLocal<MessageDigest> MD5_DIGEST =
+      ThreadLocal.withInitial(
+          () -> {
+            try {
+              return MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+              throw new RuntimeException(e);
+            }
+          });
+
+  private static final ThreadLocal<ByteBuffer> BUFFER_THREAD_LOCAL =
+      ThreadLocal.withInitial(() -> ByteBuffer.allocateDirect(8192));
 
   /** 工具类，禁止实例化 */
   private FileUtils() {}
@@ -65,8 +86,7 @@ class FileUtils {
    * @throws IOException 异常
    * @throws NoSuchAlgorithmException 异常
    */
-  public static String calculateETag(File file, long partSize)
-      throws IOException, NoSuchAlgorithmException {
+  public static String calculateETag(File file, long partSize) throws Exception {
     long fileSize = file.length();
 
     // 单片直接计算，无需考虑分段计算
@@ -80,42 +100,66 @@ class FileUtils {
 
     assert partCount > 1;
 
-    // 存储每个分片的原始MD5字节
-    byte[][] partMD5s = new byte[partCount][];
-    var digest = MessageDigest.getInstance("MD5");
-    try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+    try (FileChannel channel = FileChannel.open(file.toPath())) {
+      CompletableFuture<Tuple2<Integer, byte[]>>[] futures = new CompletableFuture[partCount];
       for (int i = 0; i < partCount; i++) {
         long offset = i * partSize;
-        long currentPartSize = Math.min(partSize, fileSize - offset);
-
-        raf.seek(offset);
-        partMD5s[i] = calculatePartMD5(digest, raf, currentPartSize);
+        long length = Math.min(partSize, fileSize - offset);
+        int index = i;
+        futures[i] =
+            CompletableFuture.supplyAsync(
+                () -> Tuples.of(index, computeChunkMD5(channel, offset, length)));
       }
-    }
 
-    // 合并所有分片的MD5字节
-    digest.reset();
-    for (byte[] partMD5 : partMD5s) {
-      digest.update(partMD5);
+      String combinedMD5Hex =
+          CompletableFuture.allOf(futures)
+              .thenApply(v -> getMD5Digest())
+              .thenApply(
+                  digest -> {
+                    var first = new AtomicBoolean(false);
+                    Arrays.stream(futures)
+                        .map(CompletableFuture::join)
+                        .sorted(Comparator.comparingInt(Tuple2::getT1))
+                        .reduce(
+                            (v1, v2) -> {
+                              if (first.compareAndSet(false, true)) {
+                                digest.update(v1.getT2());
+                                digest.update(v2.getT2());
+                              } else {
+                                digest.update(v2.getT2());
+                              }
+                              return v1;
+                            })
+                        .ifPresent(t -> log.info("{} segment eTag calculation is complete.", file));
+                    return Hex.encodeHexString(digest.digest());
+                  })
+              .get();
+      return String.format("\"%s-%d\"", combinedMD5Hex, partCount);
     }
-
-    // 格式化为 "MD5-分片数"
-    String combinedMD5Hex = Hex.encodeHexString(digest.digest());
-    return String.format("\"%s-%d\"", combinedMD5Hex, partCount);
   }
 
-  private static byte[] calculatePartMD5(MessageDigest digest, RandomAccessFile raf, long partSize)
-      throws IOException {
-    byte[] buffer = new byte[8192];
-    long remaining = partSize;
-    while (remaining > 0) {
-      int read = raf.read(buffer, 0, (int) Math.min(buffer.length, remaining));
-      if (read == -1) break;
-      digest.update(buffer, 0, read);
-      remaining -= read;
-    }
+  @SneakyThrows
+  private static byte[] computeChunkMD5(FileChannel channel, long offset, long length) {
+    MessageDigest digest = getMD5Digest();
+    ByteBuffer buf = BUFFER_THREAD_LOCAL.get(); // 直接缓冲区
+    long pos = offset;
+    long remaining = length;
 
+    while (remaining > 0) {
+      buf.clear();
+      int bytesRead = channel.read(buf, pos);
+      buf.flip();
+      digest.update(buf);
+      pos += bytesRead;
+      remaining -= bytesRead;
+    }
     return digest.digest();
+  }
+
+  private static MessageDigest getMD5Digest() {
+    MessageDigest digest = MD5_DIGEST.get();
+    digest.reset();
+    return digest;
   }
 
   /**
