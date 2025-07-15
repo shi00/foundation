@@ -30,11 +30,14 @@ import com.silong.foundation.springboot.starter.minio.configure.properties.Minio
 import com.silong.foundation.springboot.starter.minio.exceptions.*;
 import io.minio.*;
 import io.minio.messages.Bucket;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import jakarta.annotation.Nullable;
 import java.io.*;
 import java.nio.file.*;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.UUID;
 import lombok.NonNull;
@@ -335,6 +338,24 @@ public class AsyncMinioHandler {
         .flatMap(wrapper::removeObject)
         .doOnSuccess(v -> log.info("Successfully removed {} from {}.", object, bucket))
         .doOnError(t -> log.error("Failed to remove {} from {}.", object, bucket, t));
+  }
+
+  /**
+   * 批量删除桶内对象
+   *
+   * @param bucket 桶名
+   * @param objects 待删除对象列表
+   * @return true or false
+   */
+  public Flux<DeleteError> removeObjects(String bucket, String... objects) {
+    return Mono.just(
+            RemoveObjectsArgs.builder()
+                .bucket(bucket)
+                .objects(Arrays.stream(objects).map(DeleteObject::new).toList())
+                .build())
+        .flatMapMany(wrapper::removeObjects)
+        .doOnNext(e -> log.info("removeObjects: {}", e))
+        .doOnError(t -> log.error("Failed to remove objects:{}.", objects, t));
   }
 
   /**

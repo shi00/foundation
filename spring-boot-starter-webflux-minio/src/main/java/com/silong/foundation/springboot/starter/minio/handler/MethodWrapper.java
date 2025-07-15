@@ -29,8 +29,11 @@ import com.silong.foundation.springboot.starter.minio.exceptions.*;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.Bucket;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
@@ -102,6 +105,33 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
         .onErrorMap(
             MethodWrapper::isMinioException,
             t -> new RemoveObjectException(args.bucket(), args.object(), t));
+  }
+
+  Flux<DeleteError> removeObjects(RemoveObjectsArgs args) {
+    return Flux.fromIterable(minioAsyncClient.removeObjects(args))
+        .map(MethodWrapper::getResult)
+        .onErrorMap(
+            MethodWrapper::isMinioException,
+            t ->
+                new RemoveObjectsException(
+                    args.bucket(),
+                    Flux.fromIterable(args.objects())
+                        .map(
+                            e -> {
+                              try {
+                                Field nameField = DeleteObject.class.getDeclaredField("name");
+                                nameField.setAccessible(true); // 允许访问私有字段
+                                return (String) nameField.get(e);
+                              } catch (NoSuchFieldException | IllegalAccessException ex) {
+                                log.error(
+                                    "Failed to get the field name from DeleteObject.class.", ex);
+                                return "";
+                              }
+                            })
+                        .toStream()
+                        .toArray(String[]::new),
+                    t))
+        .subscribeOn(Schedulers.boundedElastic());
   }
 
   Mono<StatObjectResponse> statObject(StatObjectArgs args) {
@@ -236,12 +266,7 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
   }
 
   private static boolean isMinioException(Throwable t) {
-    return (t instanceof InsufficientDataException
-        || t instanceof InternalException
-        || t instanceof InvalidKeyException
-        || t instanceof IOException
-        || t instanceof NoSuchAlgorithmException
-        || t instanceof XmlParserException);
+    return true;
   }
 
   static void closeQuietly(InputStream inputStream, Consumer<Throwable> logIOException) {

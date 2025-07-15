@@ -28,6 +28,7 @@ import static org.springframework.util.DigestUtils.md5DigestAsHex;
 
 import com.silong.foundation.springboot.starter.minio.configure.MinioClientAutoConfiguration;
 import com.silong.foundation.springboot.starter.minio.configure.properties.MinioClientProperties;
+import com.silong.foundation.springboot.starter.minio.exceptions.GetObjectStatException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.DeleteError;
@@ -40,6 +41,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
@@ -148,7 +150,7 @@ public class MinioTests {
 
   @Test
   public void test2() {
-    String bucketName = OSSBucketGenerator.generate(10);
+    String bucketName = OSSBucketGenerator.generate(3);
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.listBuckets())
         .expectNextMatches(bucket -> bucket.name().equals(bucketName))
@@ -157,7 +159,7 @@ public class MinioTests {
 
   @Test
   public void test3() {
-    String bucketName = OSSBucketGenerator.generate(10);
+    String bucketName = OSSBucketGenerator.generate(4);
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.removeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.listBuckets()).expectNextCount(0).verifyComplete();
@@ -169,7 +171,7 @@ public class MinioTests {
     var f = new File("target/test-data/" + objectName);
     RandomFileGenerator.createRandomTempFile(f, DataSize.ofMegabytes(1));
     log.info("file: {}, size: {}", f.getAbsolutePath(), f.length());
-    String bucketName = OSSBucketGenerator.generate(10);
+    String bucketName = OSSBucketGenerator.generate(5);
     StepVerifier.create(handler.upload(bucketName, objectName, f))
         .expectNextMatches(resp -> resp.object().equals(objectName))
         .verifyComplete();
@@ -180,11 +182,10 @@ public class MinioTests {
     String objectName = "test5.docx";
     var f = new File("target/test-data/" + objectName);
     RandomFileGenerator.createRandomTempFile(f, DataSize.ofMegabytes(1));
-    String bucketName = OSSBucketGenerator.generate(10);
+    String bucketName = OSSBucketGenerator.generate(6);
     StepVerifier.create(handler.upload(bucketName, objectName, f))
         .expectNextMatches(resp -> resp.object().equals(objectName))
         .verifyComplete();
-
     StepVerifier.create(handler.download(bucketName, objectName, SAVE_DIR))
         .expectNextMatches(
             file -> {
@@ -202,7 +203,7 @@ public class MinioTests {
     String objectName = "test6.docx";
     var f = new File("target/test-data/" + objectName);
     RandomFileGenerator.createRandomTempFile(f, DataSize.ofMegabytes(10));
-    String bucketName = OSSBucketGenerator.generate(10);
+    String bucketName = OSSBucketGenerator.generate(7);
     StepVerifier.create(handler.upload(bucketName, objectName, f))
         .expectNextMatches(resp -> resp.object().equals(objectName))
         .verifyComplete();
@@ -213,17 +214,18 @@ public class MinioTests {
     StepVerifier.create(handler.getObjectStat(bucketName, objectName))
         .verifyErrorMatches(
             t ->
-                t instanceof CompletionException e
-                    && e.getCause() instanceof ErrorResponseException ee
-                    && ee.errorResponse().message().equals("Object does not exist"));
+                t instanceof GetObjectStatException e
+                    && e.getCause() instanceof CompletionException ee
+                    && ee.getCause() instanceof ErrorResponseException eee
+                    && eee.errorResponse().message().equals("Object does not exist"));
   }
 
   @Test
   public void test7() throws IOException {
     String objectName = "test7.docx";
     var f = new File("target/test-data/" + objectName);
-    RandomFileGenerator.createRandomTempFile(f, DataSize.ofMegabytes(100));
-    String bucketName = OSSBucketGenerator.generate(10);
+    RandomFileGenerator.createRandomTempFile(f, DataSize.ofGigabytes(1));
+    String bucketName = OSSBucketGenerator.generate(8);
     StepVerifier.create(handler.upload(bucketName, objectName, f))
         .expectNextMatches(resp -> resp.object().equals(objectName))
         .verifyComplete();
@@ -232,31 +234,31 @@ public class MinioTests {
         .verifyComplete();
   }
 
-  //
-  //  @Test
-  //  @SneakyThrows
-  //  public void test8() {
-  //    var bucketName = OSSBucketGenerator.generate(10);
-  //    var objectNames = new ArrayList<String>();
-  //    for (int i = 0; i < 10; i++) {
-  //      var objectName = String.format("test8%d.docx", i);
-  //      var f = new File("target/test-data/" + objectName);
-  //      createDirectories(f.toPath().getParent());
-  //      RandomDocxGenerator.generateDocx(f, 1024 * (i + 1));
-  //      StepVerifier.create(handler.upload(bucketName, objectName, f))
-  //          .expectNextMatches(resp -> resp.object().equals(objectName))
-  //          .verifyComplete();
-  //      objectNames.add(objectName);
-  //    }
-  //
-  //    StepVerifier.create(handler.deleteObjects(bucketName, objectNames))
-  //        .expectNext(true)
-  //        .verifyComplete();
-  //
-  //    StepVerifier.create(handler.listBucketObjects(bucketName, true))
-  //        .expectNextMatches(List::isEmpty)
-  //        .verifyComplete();
-  //  }
+  @Test
+  @SneakyThrows
+  public void test8() {
+    var bucketName = OSSBucketGenerator.generate(9);
+    var objectNames = new String[10];
+    for (int i = 0; i < 10; i++) {
+      var objectName = String.format("test8%d.docx", i);
+      var f = new File("target/test-data/" + objectName);
+      createDirectories(f.toPath().getParent());
+      RandomFileGenerator.createRandomTempFile(
+          f, DataSize.ofMegabytes(ThreadLocalRandom.current().nextLong(1, 100)));
+      StepVerifier.create(handler.upload(bucketName, objectName, f))
+          .expectNextMatches(resp -> resp.object().equals(objectName))
+          .verifyComplete();
+      objectNames[i] = objectName;
+    }
+
+    StepVerifier.create(handler.removeObjects(bucketName, objectNames))
+        .expectNextCount(10)
+        .verifyComplete();
+
+    StepVerifier.create(handler.listBucketObjects(bucketName, true))
+        .expectNextCount(0)
+        .verifyComplete();
+  }
 
   @Test
   public void test9() {
@@ -270,7 +272,7 @@ public class MinioTests {
 
   @Test
   public void test10() {
-    var bucketName = OSSBucketGenerator.generate(10);
+    var bucketName = OSSBucketGenerator.generate(11);
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.removeObject(bucketName, "non-existing-object"))
         .expectNext(true)
@@ -291,7 +293,8 @@ public class MinioTests {
     var fp = Paths.get(SAVE_DIR).resolve("test12.docx");
     File file = fp.toFile();
     RandomFileGenerator.createRandomTempFile(file, DataSize.ofMegabytes(100));
-    var bucketName = OSSBucketGenerator.generate(63);
+    var bucketName = OSSBucketGenerator.generate(13);
+
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.upload(bucketName, "test12.docx", file))
         .expectNextMatches(resp -> resp.object().equals("test12.docx"))
@@ -300,7 +303,7 @@ public class MinioTests {
 
   @Test
   public void test13() throws IOException {
-    var bucketName = OSSBucketGenerator.generate(3);
+    var bucketName = OSSBucketGenerator.generate(14);
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
 
     var path = Paths.get(props.getSavingDir());
@@ -309,14 +312,15 @@ public class MinioTests {
       var name = String.format("test13%d.docx", i);
       var fp = path.resolve(name);
       File file = fp.toFile();
-      RandomFileGenerator.createRandomTempFile(file, DataSize.ofMegabytes(10));
+      RandomFileGenerator.createRandomTempFile(
+          file, DataSize.ofMegabytes(ThreadLocalRandom.current().nextLong(1, 100)));
       StepVerifier.create(handler.upload(bucketName, name, file))
           .expectNextMatches(resp -> resp.object().equals(name))
           .verifyComplete();
     }
 
     StepVerifier.create(handler.listBucketObjects(bucketName, true))
-        .expectNextMatches(items -> items.size() == 10)
+        .expectNextCount(10)
         .verifyComplete();
   }
 
