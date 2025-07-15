@@ -23,6 +23,7 @@ package com.silong.foundation.springboot.starter.minio.handler;
 
 import static com.silong.foundation.springboot.starter.minio.handler.FileUtils.deleteRecursively;
 import static com.silong.foundation.springboot.starter.minio.handler.MethodWrapper.closeQuietly;
+import static com.silong.foundation.springboot.starter.minio.handler.MethodWrapper.doOnTerminated;
 import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.foundation.springboot.starter.minio.configure.properties.MinioClientProperties;
@@ -161,32 +162,35 @@ public class AsyncMinioHandler {
                   .build(),
               file)
           .doOnSuccess(
-              resp -> {
-                closeQuietly(
-                    inputStream,
-                    tt ->
-                        log.error(
-                            "Failed to close input stream of {}.", file.getAbsolutePath(), tt));
-                log.info(
-                    "Successfully updated {} to {} with name {}.",
-                    file.getAbsolutePath(),
-                    bucket,
-                    object);
-              })
+              resp ->
+                  log.info(
+                      "Successfully updated {} to {} with name {}.",
+                      file.getAbsolutePath(),
+                      bucket,
+                      object))
           .doOnError(
-              t -> {
-                closeQuietly(
-                    inputStream,
-                    tt ->
-                        log.error(
-                            "Failed to close input stream of {}.", file.getAbsolutePath(), tt));
-                log.error(
-                    "Failed to upload {} from local to {} with name {}.",
-                    file.getAbsolutePath(),
-                    bucket,
-                    object,
-                    t);
-              });
+              t ->
+                  log.error(
+                      "Failed to upload {} from local to {} with name {}.",
+                      file.getAbsolutePath(),
+                      bucket,
+                      object,
+                      t))
+          .doFinally(
+              signalType ->
+                  doOnTerminated(
+                      signalType,
+                      () -> {
+                        closeQuietly(
+                            inputStream,
+                            tt ->
+                                log.error(
+                                    "Failed to close input stream of {}.",
+                                    file.getAbsolutePath(),
+                                    tt));
+                        log.info("Closed input stream of {}.", file.getAbsolutePath());
+                      }));
+
     } catch (FileNotFoundException e) {
       throw new UploadObjectException(bucket, object, file, e);
     }
