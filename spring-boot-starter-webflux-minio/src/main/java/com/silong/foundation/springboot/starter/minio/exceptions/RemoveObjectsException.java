@@ -25,32 +25,32 @@ import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * 删除对象异常
+ * 批量删除对象异常
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2021-12-26 09:20
  */
 @Getter
-public class RemoveObjectException extends RuntimeException {
+public class RemoveObjectsException extends RuntimeException {
 
-  @java.io.Serial private static final long serialVersionUID = 4860373678884877152L;
+  @java.io.Serial private static final long serialVersionUID = 725022606954542784L;
 
   private final String bucket;
 
-  private final String object;
+  private final String[] objects;
 
   /**
    * 构造方法
    *
    * @param bucket 桶
-   * @param object 对象名
+   * @param objects 对象名列表
    * @param cause 异常
    */
-  public RemoveObjectException(
-      @NonNull String bucket, @NonNull String object, @NonNull Throwable cause) {
+  public RemoveObjectsException(
+      @NonNull String bucket, @NonNull String[] objects, @NonNull Throwable cause) {
     super(cause);
     this.bucket = bucket;
-    this.object = object;
+    this.objects = objects;
   }
 }
