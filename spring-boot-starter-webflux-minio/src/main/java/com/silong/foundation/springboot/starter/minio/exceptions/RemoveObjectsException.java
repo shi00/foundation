@@ -23,6 +23,7 @@ package com.silong.foundation.springboot.starter.minio.exceptions;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * 批量删除对象异常
@@ -32,13 +33,14 @@ import lombok.NonNull;
  * @since 2021-12-26 09:20
  */
 @Getter
+@Setter
 public class RemoveObjectsException extends RuntimeException {
 
   @java.io.Serial private static final long serialVersionUID = 725022606954542784L;
 
-  private final String bucket;
+  private String bucket;
 
-  private final String[] objects;
+  private String[] objects;
 
   /**
    * 构造方法
@@ -52,5 +54,16 @@ public class RemoveObjectsException extends RuntimeException {
     super(cause);
     this.bucket = bucket;
     this.objects = objects;
+  }
+
+  /**
+   * 构造方法
+   *
+   * @param bucket 桶
+   * @param cause 异常
+   */
+  public RemoveObjectsException(@NonNull String bucket, @NonNull Throwable cause) {
+    super(cause);
+    this.bucket = bucket;
   }
 }
