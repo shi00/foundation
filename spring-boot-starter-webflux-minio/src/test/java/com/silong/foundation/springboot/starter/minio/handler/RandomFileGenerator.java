@@ -24,11 +24,10 @@ package com.silong.foundation.springboot.starter.minio.handler;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.MappedByteBuffer;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.util.unit.DataSize;
 
 class RandomFileGenerator {
@@ -39,44 +38,27 @@ class RandomFileGenerator {
   /**
    * 生成指定大小的随机内容临时文件
    *
-   * @param f 生成文件
+   * @param file 生成文件
    * @param sizeInBytes 文件大小（字节）
    * @throws IOException 创建文件失败时抛出
    */
-  public static void createRandomTempFile(File f, DataSize sizeInBytes) throws IOException {
-    // 确保父目录存在
-    Path path = f.toPath();
-    Files.createDirectories(path.getParent());
+  public static void createRandomTempFile(File file, DataSize sizeInBytes) throws IOException {
 
-    try (RandomAccessFile raf = new RandomAccessFile(f, "rw");
+    try (RandomAccessFile raf = new RandomAccessFile(file, "rw");
         FileChannel channel = raf.getChannel()) {
 
-      // 预先分配文件空间（避免后续扩展文件大小带来的性能开销）
       raf.setLength(sizeInBytes.toBytes());
+      Random random = ThreadLocalRandom.current();
+      byte[] buffer = new byte[1024 * 1024];
 
-      // 每次映射 1GB（可根据系统内存调整）
-      long chunkSize = 1024L * 1024L * 1024L; // 1GB
-      Random random = new Random();
-
-      for (long position = 0; position < sizeInBytes.toBytes(); position += chunkSize) {
-        long currentChunkSize = Math.min(chunkSize, sizeInBytes.toBytes() - position);
-
-        // 映射文件区域
-        MappedByteBuffer buffer =
-            channel.map(FileChannel.MapMode.READ_WRITE, position, currentChunkSize);
-
-        // 使用 8KB 缓冲区填充随机数据
-        byte[] fillBuffer = new byte[8192];
-        while (buffer.remaining() > 0) {
-          random.nextBytes(fillBuffer);
-          int length = Math.min(fillBuffer.length, buffer.remaining());
-          buffer.put(fillBuffer, 0, length);
-        }
-
-        // 强制刷新到磁盘（可选，取决于是否需要立即持久化）
-        //        buffer.force();
+      // 分块写入数据，但不使用内存映射（避免直接内存管理）
+      for (long position = 0; position < sizeInBytes.toBytes(); position += buffer.length) {
+        int bytesToWrite = (int) Math.min(buffer.length, sizeInBytes.toBytes() - position);
+        random.nextBytes(buffer);
+        channel.write(ByteBuffer.wrap(buffer, 0, bytesToWrite), position);
       }
+    } finally {
+      file.deleteOnExit();
     }
-    f.deleteOnExit();
   }
 }
