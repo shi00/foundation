@@ -29,6 +29,7 @@ import static org.springframework.util.DigestUtils.md5DigestAsHex;
 import com.silong.foundation.springboot.starter.minio.configure.MinioClientAutoConfiguration;
 import com.silong.foundation.springboot.starter.minio.configure.properties.MinioClientProperties;
 import com.silong.foundation.springboot.starter.minio.exceptions.GetObjectStatException;
+import com.silong.foundation.springboot.starter.minio.exceptions.RemoveBucketException;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.messages.DeleteError;
@@ -151,6 +152,7 @@ public class MinioTests {
   @Test
   public void test2() {
     String bucketName = OSSBucketGenerator.generate(3);
+
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.listBuckets())
         .expectNextMatches(bucket -> bucket.name().equals(bucketName))
@@ -160,7 +162,9 @@ public class MinioTests {
   @Test
   public void test3() {
     String bucketName = OSSBucketGenerator.generate(4);
+
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
+
     StepVerifier.create(handler.removeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.listBuckets()).expectNextCount(0).verifyComplete();
   }
@@ -266,13 +270,15 @@ public class MinioTests {
     StepVerifier.create(handler.removeBucket(bucketName))
         .verifyErrorMatches(
             t ->
-                t instanceof ErrorResponseException e
-                    && e.errorResponse().message().equals("The specified bucket does not exist"));
+                t instanceof RemoveBucketException e
+                    && e.getCause() instanceof ErrorResponseException ee
+                    && ee.errorResponse().code().equals("NoSuchBucket"));
   }
 
   @Test
   public void test10() {
     var bucketName = OSSBucketGenerator.generate(11);
+
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
     StepVerifier.create(handler.removeObject(bucketName, "non-existing-object"))
         .expectNext(true)
@@ -304,6 +310,7 @@ public class MinioTests {
   @Test
   public void test13() throws IOException {
     var bucketName = OSSBucketGenerator.generate(14);
+
     StepVerifier.create(handler.makeBucket(bucketName)).expectNext(Boolean.TRUE).verifyComplete();
 
     var path = Paths.get(props.getSavingDir());
