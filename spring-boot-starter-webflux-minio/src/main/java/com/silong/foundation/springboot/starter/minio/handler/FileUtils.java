@@ -30,14 +30,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.springframework.util.DigestUtils;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 /**
  * 文件工具
@@ -101,36 +98,19 @@ class FileUtils {
     assert partCount > 1;
 
     try (FileChannel channel = FileChannel.open(file.toPath())) {
-      CompletableFuture<Tuple2<Integer, byte[]>>[] futures = new CompletableFuture[partCount];
+      CompletableFuture<byte[]>[] futures = new CompletableFuture[partCount];
       for (int i = 0; i < partCount; i++) {
         long offset = i * partSize;
         long length = Math.min(partSize, fileSize - offset);
-        int index = i;
-        futures[i] =
-            CompletableFuture.supplyAsync(
-                () -> Tuples.of(index, computeChunkMD5(channel, offset, length)));
+        futures[i] = CompletableFuture.supplyAsync(() -> computeChunkMD5(channel, offset, length));
       }
 
       String combinedMD5Hex =
           CompletableFuture.allOf(futures)
-              .thenApply(v -> getMD5Digest())
               .thenApply(
-                  digest -> {
-                    var first = new AtomicBoolean(false);
-                    Arrays.stream(futures)
-                        .map(CompletableFuture::join)
-                        .sorted(Comparator.comparingInt(Tuple2::getT1))
-                        .reduce(
-                            (v1, v2) -> {
-                              if (first.compareAndSet(false, true)) {
-                                digest.update(v1.getT2());
-                                digest.update(v2.getT2());
-                              } else {
-                                digest.update(v2.getT2());
-                              }
-                              return v1;
-                            })
-                        .ifPresent(t -> log.info("{} segment eTag calculation is complete.", file));
+                  v -> {
+                    var digest = getMd5Digest();
+                    Arrays.stream(futures).map(CompletableFuture::join).forEach(digest::update);
                     return Hex.encodeHexString(digest.digest());
                   })
               .get();
@@ -140,7 +120,7 @@ class FileUtils {
 
   @SneakyThrows
   private static byte[] computeChunkMD5(FileChannel channel, long offset, long length) {
-    MessageDigest digest = getMD5Digest();
+    MessageDigest digest = getMd5Digest();
     ByteBuffer buf = BUFFER_THREAD_LOCAL.get(); // 直接缓冲区
     long pos = offset;
     long remaining = length;
@@ -156,7 +136,7 @@ class FileUtils {
     return digest.digest();
   }
 
-  private static MessageDigest getMD5Digest() {
+  private static MessageDigest getMd5Digest() {
     MessageDigest digest = MD5_DIGEST.get();
     digest.reset();
     return digest;
