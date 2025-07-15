@@ -40,6 +40,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
@@ -267,5 +268,19 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
   })
   private static <T> T getResult(Result<T> result) {
     return result.get();
+  }
+
+  /**
+   * 反应流执行结束时执行某个动作，结束有三种状态：ON_COMPLETE(正常结束)，ON_ERROR(异常结束)，CANCEL(取消执行)
+   *
+   * @param signalType 信号类型
+   * @param action 动作
+   */
+  static void doOnTerminated(SignalType signalType, Runnable action) {
+    if (SignalType.CANCEL == signalType
+        || SignalType.ON_COMPLETE == signalType
+        || SignalType.ON_ERROR == signalType) {
+      action.run();
+    }
   }
 }
