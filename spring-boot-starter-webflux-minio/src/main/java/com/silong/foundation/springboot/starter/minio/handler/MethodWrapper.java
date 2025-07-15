@@ -30,10 +30,8 @@ import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.Bucket;
 import io.minio.messages.DeleteError;
-import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
@@ -111,26 +109,7 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
     return Flux.fromIterable(minioAsyncClient.removeObjects(args))
         .map(MethodWrapper::getResult)
         .onErrorMap(
-            MethodWrapper::isMinioException,
-            t ->
-                new RemoveObjectsException(
-                    args.bucket(),
-                    Flux.fromIterable(args.objects())
-                        .map(
-                            e -> {
-                              try {
-                                Field nameField = DeleteObject.class.getDeclaredField("name");
-                                nameField.setAccessible(true); // 允许访问私有字段
-                                return (String) nameField.get(e);
-                              } catch (NoSuchFieldException | IllegalAccessException ex) {
-                                log.error(
-                                    "Failed to get the field name from DeleteObject.class.", ex);
-                                return "";
-                              }
-                            })
-                        .toStream()
-                        .toArray(String[]::new),
-                    t))
+            MethodWrapper::isMinioException, t -> new RemoveObjectsException(args.bucket(), t))
         .subscribeOn(Schedulers.boundedElastic());
   }
 
