@@ -21,6 +21,7 @@
 
 package com.silong.foundation.springboot.starter.minio.handler;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -46,6 +47,9 @@ import org.springframework.util.DigestUtils;
 @Slf4j
 class FileUtils {
 
+  @SuppressFBWarnings(
+      value = "WEAK_MESSAGE_DIGEST_MD5",
+      justification = "MD5 used for non-security purposes")
   private static final ThreadLocal<MessageDigest> MD5_DIGEST =
       ThreadLocal.withInitial(
           () -> {

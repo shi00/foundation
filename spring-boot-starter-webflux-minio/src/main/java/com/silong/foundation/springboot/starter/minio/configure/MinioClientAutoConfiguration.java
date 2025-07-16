@@ -13,10 +13,10 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import lombok.NonNull;
 import okhttp3.*;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * minio client 配置
@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Configuration;
  * @version 1.0.0
  * @since 2025-03-29 6:42
  */
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties({MinioClientProperties.class})
 @ConditionalOnClass(MinioAsyncClient.class)
 public class MinioClientAutoConfiguration {
@@ -67,7 +67,6 @@ public class MinioClientAutoConfiguration {
             TimeUnit.SECONDS);
 
     // 构建 OkHttpClient 并设置连接池
-
     OkHttpClient.Builder builder =
         new OkHttpClient.Builder()
             .connectionPool(connectionPool)
