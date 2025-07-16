@@ -43,6 +43,7 @@ import java.util.Comparator;
 import java.util.UUID;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -58,6 +59,7 @@ import reactor.util.function.Tuples;
  * @since 2025-03-27 21:33
  */
 @Slf4j
+@Service
 @SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "Path is validated before use")
 public class AsyncMinioHandler {
 
