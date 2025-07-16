@@ -21,6 +21,7 @@
 
 package com.silong.llm.chatbot;
 
+import static com.silong.foundation.springboot.starter.jwt.common.Constants.ACCESS_TOKEN;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -28,6 +29,7 @@ import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.foundation.springboot.starter.jwt.common.Credentials;
 import com.silong.foundation.springboot.starter.jwt.common.TokenBody;
+import com.silong.llm.chatbot.pos.Conversation;
 import com.silong.llm.chatbot.providers.LdapUserProvider;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterAll;
@@ -53,6 +55,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @AutoConfigureWebTestClient
 public class ChatbotApplicationStartTLSTests {
 
+  private static final String ADMIN = "admin";
   private static final String ADMIN_PASSWORD = "Secret@123";
   private static final String TEST_DB = "test_db";
 
@@ -75,6 +78,20 @@ public class ChatbotApplicationStartTLSTests {
   @Container
   private static final GenericContainer<?> LDAP_CONTAINER =
       new GenericContainer<>("rroemhild/docker-test-openldap:2.1").withExposedPorts(10389);
+
+  // 启动 MinIO 容器
+  @Container
+  private static final GenericContainer<?> MINIO_CONTAINER =
+      new GenericContainer<>("minio/minio:RELEASE.2025-06-13T11-33-47Z")
+          .withExposedPorts(9000, 9001) // MinIO API 和 Console 端口
+          .withEnv("MINIO_ROOT_USER", ADMIN)
+          .withEnv("MINIO_ROOT_PASSWORD", ADMIN_PASSWORD)
+          .withCommand("server", "/data", "--console-address", ":9001")
+          .waitingFor(
+              Wait.forHttp("/minio/health/ready")
+                  .forPort(9000)
+                  .allowInsecure()
+                  .withStartupTimeout(Duration.ofMinutes(1)));
 
   @DynamicPropertySource
   static void redisProperties(DynamicPropertyRegistry registry) {
@@ -100,6 +117,17 @@ public class ChatbotApplicationStartTLSTests {
               String.format(
                   "ldap://%s:%d", LDAP_CONTAINER.getHost(), LDAP_CONTAINER.getMappedPort(10389))
             });
+
+    // 获取动态端口并设置数据源 URL
+    registry.add(
+        "minio.client.endpoint",
+        () ->
+            String.format(
+                "http://%s:%d", MINIO_CONTAINER.getHost(), MINIO_CONTAINER.getMappedPort(9000)));
+
+    registry.add("minio.client.access-key", () -> ADMIN);
+
+    registry.add("minio.client.secret-key", () -> ADMIN_PASSWORD);
   }
 
   @Autowired private WebTestClient webTestClient;
@@ -180,5 +208,81 @@ public class ChatbotApplicationStartTLSTests {
             .getResponseBody();
 
     assertTrue(responseBody != null && hasLength(responseBody.getToken()));
+  }
+
+  @Test
+  void newConversation1() {
+    Credentials credentials = new Credentials();
+    credentials.setPassword("leela");
+    credentials.setUserName("leela");
+
+    TokenBody responseBody =
+        webTestClient
+            .post()
+            .uri(loginPath)
+            .body(BodyInserters.fromValue(credentials))
+            .accept(APPLICATION_JSON)
+            .exchange()
+            .expectStatus()
+            .is2xxSuccessful()
+            .expectBody(TokenBody.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertTrue(responseBody != null && hasLength(responseBody.getToken()));
+
+    Conversation conversation =
+        webTestClient
+            .post()
+            .uri("/chat/conversations")
+            .header(ACCESS_TOKEN, responseBody.getToken())
+            .exchange()
+            .expectStatus()
+            .is2xxSuccessful()
+            .expectBody(Conversation.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertTrue(conversation != null && conversation.getId() > 0);
+    System.out.println(conversation);
+  }
+
+  @Test
+  void newConversation2() {
+    Credentials credentials = new Credentials();
+    credentials.setPassword("leela");
+    credentials.setUserName("leela");
+
+    TokenBody responseBody =
+        webTestClient
+            .post()
+            .uri(loginPath)
+            .body(BodyInserters.fromValue(credentials))
+            .accept(APPLICATION_JSON)
+            .exchange()
+            .expectStatus()
+            .is2xxSuccessful()
+            .expectBody(TokenBody.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertTrue(responseBody != null && hasLength(responseBody.getToken()));
+
+    Conversation conversation =
+        webTestClient
+            .mutate()
+            .responseTimeout(Duration.ofSeconds(300))
+            .build()
+            .post()
+            .uri("/chat/conversations")
+            .header(ACCESS_TOKEN, responseBody.getToken())
+            .exchange()
+            .expectStatus()
+            .is2xxSuccessful()
+            .expectBody(Conversation.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertTrue(conversation != null && conversation.getId() > 0);
   }
 }
