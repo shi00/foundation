@@ -28,6 +28,7 @@ import static org.springframework.util.StringUtils.hasLength;
 
 import com.silong.foundation.springboot.starter.minio.configure.properties.MinioClientProperties;
 import com.silong.foundation.springboot.starter.minio.exceptions.*;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.minio.*;
 import io.minio.messages.Bucket;
 import io.minio.messages.DeleteError;
@@ -57,6 +58,7 @@ import reactor.util.function.Tuples;
  * @since 2025-03-27 21:33
  */
 @Slf4j
+@SuppressFBWarnings(value = "PATH_TRAVERSAL_IN", justification = "Path is validated before use")
 public class AsyncMinioHandler {
 
   private static final DateTimeFormatter FORMATTER =
