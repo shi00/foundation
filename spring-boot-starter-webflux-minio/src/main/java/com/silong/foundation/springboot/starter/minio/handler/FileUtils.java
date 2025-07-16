@@ -45,11 +45,11 @@ import org.springframework.util.DigestUtils;
  * @since 2025-03-27 21:33
  */
 @Slf4j
+@SuppressFBWarnings(
+    value = "WEAK_MESSAGE_DIGEST_MD5",
+    justification = "MD5 used for non-security purposes")
 class FileUtils {
 
-  @SuppressFBWarnings(
-      value = "WEAK_MESSAGE_DIGEST_MD5",
-      justification = "MD5 used for non-security purposes")
   private static final ThreadLocal<MessageDigest> MD5_DIGEST =
       ThreadLocal.withInitial(
           () -> {
