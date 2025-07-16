@@ -22,6 +22,7 @@
 package com.silong.foundation.springboot.starter.minio.handler;
 
 import static com.silong.foundation.springboot.starter.minio.handler.FileUtils.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.StandardOpenOption.*;
 
@@ -35,6 +36,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.function.Consumer;
 import lombok.SneakyThrows;
@@ -185,7 +187,7 @@ record MethodWrapper(MinioAsyncClient minioAsyncClient) {
     return Mono.fromCallable(
             () -> {
               String md5 = calculateETag(path.toFile(), partSize);
-              if (!md5.equals(eTag)) {
+              if (!MessageDigest.isEqual(md5.getBytes(UTF_8), eTag.getBytes(UTF_8))) {
                 if (deleteFile) {
                   deleteRecursively(path);
                 }

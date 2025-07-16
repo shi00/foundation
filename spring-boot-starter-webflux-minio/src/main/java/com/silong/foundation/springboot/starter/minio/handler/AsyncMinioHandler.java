@@ -345,7 +345,7 @@ public class AsyncMinioHandler {
    *
    * @param bucket 桶名
    * @param objects 待删除对象列表
-   * @return 删除结果
+   * @return 删除失败时会有删除失败对象的错误结果，如果全部成功返回空流
    */
   public Flux<DeleteError> removeObjects(String bucket, String... objects) {
     return Mono.just(
@@ -360,7 +360,7 @@ public class AsyncMinioHandler {
                     bucket,
                     String.join(", ", objects)))
         .flatMapMany(wrapper::removeObjects)
-        .doOnNext(e -> log.info("removeObjects: {}", e))
+        .doOnNext(e -> log.info("Failed to delete {}.", e))
         .doOnError(
             t -> {
               if (t instanceof RemoveObjectsException e) {
