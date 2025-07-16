@@ -52,10 +52,10 @@ public class FileUtilsTests {
     var paths = new ArrayList<Path>(32);
     createNestedDirectories(path, 10, paths);
     for (var p : paths) {
-      String name = MinioTests.FAKER.artist().name();
+      String name = RandomStringUtils.randomAlphabetic(10);
       var file = p.resolve(name + ".docx").toFile();
       RandomFileGenerator.createRandomTempFile(file, DataSize.ofMegabytes(1));
-      name = MinioTests.FAKER.artist().name();
+      name = RandomStringUtils.randomAlphabetic(20);
       file = p.resolve(name + ".docx").toFile();
       RandomFileGenerator.createRandomTempFile(file, DataSize.ofMegabytes(10));
     }

@@ -45,7 +45,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,8 +74,6 @@ import reactor.test.StepVerifier;
 public class MinioTests {
 
   static final String SAVE_DIR = System.getProperty("java.io.tmpdir");
-
-  static final Faker FAKER = new Faker();
 
   static final String ADMIN = "admin";
 
