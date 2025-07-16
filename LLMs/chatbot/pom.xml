@@ -67,6 +67,11 @@
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>
+            <artifactId>spring-boot-starter-webflux-minio</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.silong</groupId>
             <artifactId>spring-boot-starter-crypto</artifactId>
             <version>1.0.0</version>
         </dependency>
