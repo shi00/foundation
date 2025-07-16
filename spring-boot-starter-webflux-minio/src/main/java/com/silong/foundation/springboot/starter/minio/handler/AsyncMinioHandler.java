@@ -82,33 +82,6 @@ public class AsyncMinioHandler {
   }
 
   /**
-   * 设置桶策略
-   *
-   * @param bucket 桶名
-   */
-  public Mono<String> getBucketPolicy(String bucket) {
-    return Mono.just(GetBucketPolicyArgs.builder().bucket(bucket).build())
-        .flatMap(wrapper::getBucketPolicy)
-        .doOnSuccess(
-            policyJson ->
-                log.info("Successfully get policy:{} from bucket:{}.", policyJson, bucket))
-        .doOnError(t -> log.error("Failed to get policy from bucket:{}.", bucket));
-  }
-
-  /**
-   * 设置桶策略
-   *
-   * @param bucket 桶名
-   * @param policyJson 策略json
-   */
-  public Mono<Boolean> setBucketPolicy(String bucket, String policyJson) {
-    return Mono.just(SetBucketPolicyArgs.builder().bucket(bucket).config(policyJson).build())
-        .flatMap(wrapper::setBucketPolicy)
-        .doOnSuccess(v -> log.info("Successfully set policy:{} for bucket:{}.", policyJson, bucket))
-        .doOnError(t -> log.error("Failed to set policy:{} for bucket:{}.", policyJson, bucket));
-  }
-
-  /**
    * 上传文件到指定桶
    *
    * @param bucket 桶名
