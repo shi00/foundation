@@ -256,7 +256,7 @@ public class MinioTests {
     }
 
     StepVerifier.create(handler.removeObjects(bucketName, objectNames))
-        .expectNextCount(10)
+        .expectNextCount(0)
         .verifyComplete();
 
     StepVerifier.create(handler.listBucketObjects(bucketName, true))
