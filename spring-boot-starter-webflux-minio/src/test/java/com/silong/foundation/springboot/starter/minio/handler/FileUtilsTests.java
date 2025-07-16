@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.unit.DataSize;
+import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 /**
  * 测试类
@@ -74,5 +75,18 @@ public class FileUtilsTests {
       paths.add(newPath);
     }
     createNestedDirectories(newPath, remainingLevels - 1, paths);
+  }
+
+  @Test
+  void test2() throws Exception {
+    var path = Paths.get("target/test-data/test-dir");
+    createDirectories(path);
+
+    var fp = path.resolve(RandomStringUtils.randomAlphabetic(32));
+    RandomFileGenerator.createRandomTempFile(fp.toFile(), DataSize.ofMegabytes(2));
+    Assertions.assertTrue(Files.exists(fp));
+
+    FileUtils.deleteRecursively(fp);
+    Assertions.assertTrue(Files.notExists(fp));
   }
 }
