@@ -42,10 +42,10 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("minio.client")
 public class MinioClientProperties {
 
-  /** 文件处理临时保存目录，默认: java.io.tmpdir */
+  /** 文件临时保存目录，默认: java.io.tmpdir */
   @NotEmpty private String tempDir = System.getProperty("java.io.tmpdir");
 
-  /** 临时文件保存目录，默认：java.io.tmpdir */
+  /** 文件保存目录，默认：java.io.tmpdir */
   @NotEmpty private String savingDir = System.getProperty("user.home");
 
   /** 服务端点 */
