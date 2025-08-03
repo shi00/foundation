@@ -22,7 +22,7 @@
         <mysql.version>8.0.33</mysql.version>
         <mysql.password>Test@12345</mysql.password>
         <mysql.jdbc-driver>com.mysql.cj.jdbc.Driver</mysql.jdbc-driver>
-        <oci.image.builder.version>0.0.43</oci.image.builder.version>  <!-- paketobuildpacks/builder-noble-java-tiny -->
+        <oci.image.builder.version>0.0.50</oci.image.builder.version>  <!-- paketobuildpacks/builder-noble-java-tiny -->
     </properties>
 
     <dependencies>
@@ -34,7 +34,16 @@
                     <groupId>com.microsoft.azure</groupId>
                     <artifactId>msal4j</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-annotations-jakarta</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>2.2.30</version>
         </dependency>
         <dependency>
             <groupId>com.microsoft.azure</groupId>
@@ -64,6 +73,12 @@
             <groupId>com.silong</groupId>
             <artifactId>spring-boot-starter-webflux-jwt</artifactId>
             <version>1.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-annotations-jakarta</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.silong</groupId>

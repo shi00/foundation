@@ -176,9 +176,9 @@
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.5.3</spring-boot.version>
-        <spring-ai.version>1.0.0</spring-ai.version>
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <spring-boot.version>3.5.4</spring-boot.version>
+        <spring-ai.version>1.0.1</spring-ai.version>
+        <spring-cloud.version>2025.1.0-M1</spring-cloud.version>
         <guava.version>33.4.8-jre</guava.version>
         <passay.version>1.6.6</passay.version>
         <zxcvbn.version>1.9.0</zxcvbn.version>
@@ -191,9 +191,9 @@
         <jooq.version>3.19.24</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
         <springdoc.version>2.8.9</springdoc.version>
-        <libphonenumber.version>9.0.7</libphonenumber.version>
-        <datafaker.version>2.4.3</datafaker.version>
-        <commons-io.version>2.19.0</commons-io.version>
+        <libphonenumber.version>9.0.11</libphonenumber.version>
+        <datafaker.version>2.4.4</datafaker.version>
+        <commons-io.version>2.20.0</commons-io.version>
         <commons-rng-simple.version>1.6</commons-rng-simple.version>
         <maven.version>3.9.9</maven.version>
         <plexus-utils.version>3.6.0</plexus-utils.version>
@@ -202,22 +202,22 @@
         <jgroups.version>5.4.8.Final</jgroups.version>
         <jgroups-raft.version>1.1.0.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.2.Final</jgroups-kubernetes.version>
-        <protobuf-java.version>3.25.7</protobuf-java.version>
+        <protobuf-java.version>3.25.8</protobuf-java.version>
         <rocksdbjni.version>10.2.1</rocksdbjni.version>
-        <snappy-java.version>1.1.10.7</snappy-java.version>
-        <zstd-jni.version>1.5.7-3</zstd-jni.version>
+        <snappy-java.version>1.1.10.8</snappy-java.version>
+        <zstd-jni.version>1.5.7-4</zstd-jni.version>
         <kryo.version>5.6.2</kryo.version>
         <java-jwt.version>4.5.0</java-jwt.version>
-        <oshi-core.version>6.8.1</oshi-core.version>
-        <mysql-connector-j.version>9.3.0</mysql-connector-j.version>
-        <redisson-spring-boot-starter.version>3.49.0</redisson-spring-boot-starter.version>
+        <oshi-core.version>6.8.2</oshi-core.version>
+        <mysql-connector-j.version>9.4.0</mysql-connector-j.version>
+        <redisson-spring-boot-starter.version>3.50.0</redisson-spring-boot-starter.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
-        <commons-validator.version>1.9.0</commons-validator.version>
-        <k8s-client.version>23.0.0</k8s-client.version>
+        <commons-validator.version>1.10.0</commons-validator.version>
+        <k8s-client.version>24.0.0</k8s-client.version>
         <webmagic.version>1.0.3</webmagic.version>
-        <commons-compress.version>1.27.1</commons-compress.version>
-        <commons-text.version>1.13.1</commons-text.version>
-        <commons-lang3.version>3.17.0</commons-lang3.version>
+        <commons-compress.version>1.28.0</commons-compress.version>
+        <commons-text.version>1.14.0</commons-text.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
         <minio.version>8.5.17</minio.version>
         <!--开源组件-->
 
