@@ -22,8 +22,7 @@
 package com.silong.foundation.utilities.xxhash;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
@@ -41,9 +40,9 @@ public class XxHashTest {
   public void test1() {
     int count = 1000;
     do {
-      String str = RandomStringUtils.random(1024);
+      String str = RandomStringUtils.random(1982);
       byte[] bytes = str.getBytes(UTF_8);
-      assertEquals(XxHashGenerator.hash32(bytes), XxHashGenerator.hash32(bytes));
+      assertEquals(XxHashGenerator.hash32(bytes), XxHashGenerator.hash32(bytes, 0, bytes.length));
     } while (--count > 0);
   }
 
@@ -51,9 +50,20 @@ public class XxHashTest {
   public void test2() {
     int count = 1000;
     do {
-      String str = RandomStringUtils.random(1024);
+      String str = RandomStringUtils.random(9981);
       byte[] bytes = str.getBytes(UTF_8);
-      assertEquals(XxHashGenerator.hash64(bytes), XxHashGenerator.hash64(bytes));
+      assertEquals(XxHashGenerator.hash64(bytes), XxHashGenerator.hash64(bytes, 0, bytes.length));
+    } while (--count > 0);
+  }
+
+  @Test
+  public void test5() {
+    int count = 1000;
+    do {
+      String str = RandomStringUtils.random(5521);
+      byte[] bytes = str.getBytes(UTF_8);
+      assertArrayEquals(
+          XxHashGenerator.hash128(bytes), XxHashGenerator.hash128(bytes, 0, bytes.length));
     } while (--count > 0);
   }
 

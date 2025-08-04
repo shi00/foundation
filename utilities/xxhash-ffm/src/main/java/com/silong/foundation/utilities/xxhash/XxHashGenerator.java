@@ -42,12 +42,52 @@ public final class XxHashGenerator {
   /** 共享库名称 */
   private static final String LIB_XXHASH = "libxxhash";
 
+  private static final long DEFAULT_SEED = 0xcafebabeL;
+
   static {
     NativeLibLoader.loadLibrary(LIB_XXHASH);
   }
 
   /** 工具类禁止实例化 */
   private XxHashGenerator() {}
+
+  /**
+   * 生成xxhash
+   *
+   * @param data 数据
+   * @return hash码
+   */
+  public static byte[] hash128(byte[] data) {
+    return hash128(Objects.requireNonNull(data), 0, data.length);
+  }
+
+  /**
+   * 生成xxhash
+   *
+   * @param data 数据
+   * @param offset offset
+   * @param length length
+   * @return hash码
+   */
+  public static byte[] hash128(byte[] data, int offset, int length) {
+    check(
+        data,
+        offset,
+        length,
+        () ->
+            String.format(
+                "Invalid data:%s or offset:%d or length:%d.",
+                data == null ? null : HexFormat.of().formatHex(data), offset, length));
+    try (Arena arena = Arena.ofConfined()) {
+      return XXH3_128bits_withSeed(
+              arena,
+              arena.allocateFrom(
+                  JAVA_BYTE, arena.allocateFrom(JAVA_BYTE, data), JAVA_BYTE, offset, length),
+              length,
+              DEFAULT_SEED)
+          .toArray(JAVA_BYTE);
+    }
+  }
 
   /**
    * 生成xxhash
@@ -77,7 +117,11 @@ public final class XxHashGenerator {
                 "Invalid data:%s or offset:%d or length:%d.",
                 data == null ? null : HexFormat.of().formatHex(data), offset, length));
     try (Arena arena = Arena.ofConfined()) {
-      return XXH3_64bits_withSeed(arena.allocateFrom(JAVA_BYTE, data), data.length, 0xcafebabeL);
+      return XXH3_64bits_withSeed(
+          arena.allocateFrom(
+              JAVA_BYTE, arena.allocateFrom(JAVA_BYTE, data), JAVA_BYTE, offset, length),
+          length,
+          DEFAULT_SEED);
     }
   }
 
@@ -109,7 +153,11 @@ public final class XxHashGenerator {
                 "Invalid data:%s or offset:%d or length:%d.",
                 data == null ? null : HexFormat.of().formatHex(data), offset, length));
     try (Arena arena = Arena.ofConfined()) {
-      return XXH32(arena.allocateFrom(JAVA_BYTE, data), data.length, 0xcafebabe);
+      return XXH32(
+          arena.allocateFrom(
+              JAVA_BYTE, arena.allocateFrom(JAVA_BYTE, data), JAVA_BYTE, offset, length),
+          length,
+          (int) DEFAULT_SEED);
     }
   }
 
