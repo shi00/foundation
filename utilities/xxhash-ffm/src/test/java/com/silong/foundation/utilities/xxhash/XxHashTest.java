@@ -24,6 +24,7 @@ package com.silong.foundation.utilities.xxhash;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
@@ -40,9 +41,12 @@ public class XxHashTest {
   public void test1() {
     int count = 1000;
     do {
-      String str = RandomStringUtils.random(1982);
+      String str = RandomStringUtils.random(8448);
       byte[] bytes = str.getBytes(UTF_8);
-      assertEquals(XxHashGenerator.hash32(bytes), XxHashGenerator.hash32(bytes, 0, bytes.length));
+      int expected = XxHashGenerator.hash32(bytes);
+      int actual = XxHashGenerator.hash32(bytes, 0, bytes.length);
+      System.out.printf("expected: %d, actual: %d%n", expected, actual);
+      assertEquals(expected, actual);
     } while (--count > 0);
   }
 
@@ -52,7 +56,10 @@ public class XxHashTest {
     do {
       String str = RandomStringUtils.random(9981);
       byte[] bytes = str.getBytes(UTF_8);
-      assertEquals(XxHashGenerator.hash64(bytes), XxHashGenerator.hash64(bytes, 0, bytes.length));
+      long expected = XxHashGenerator.hash64(bytes);
+      long actual = XxHashGenerator.hash64(bytes, 0, bytes.length);
+      System.out.printf("expected: %d, actual: %d%n", expected, actual);
+      assertEquals(expected, actual);
     } while (--count > 0);
   }
 
@@ -62,8 +69,11 @@ public class XxHashTest {
     do {
       String str = RandomStringUtils.random(5521);
       byte[] bytes = str.getBytes(UTF_8);
-      assertArrayEquals(
-          XxHashGenerator.hash128(bytes), XxHashGenerator.hash128(bytes, 0, bytes.length));
+      byte[] expected = XxHashGenerator.hash128(bytes);
+      byte[] actual = XxHashGenerator.hash128(bytes, 0, bytes.length);
+      System.out.printf(
+          "expected: %s, actual: %s%n", Arrays.toString(expected), Arrays.toString(actual));
+      assertArrayEquals(expected, actual);
     } while (--count > 0);
   }
 
