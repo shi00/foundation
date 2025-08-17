@@ -24,9 +24,9 @@ package com.silong.foundation.utilities.xxhash;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Arrays;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * xxhash单元测试
@@ -37,55 +37,66 @@ import org.junit.jupiter.api.Test;
  */
 public class XxHashTest {
 
-  @Test
-  public void test1() {
-    int count = 1000;
-    do {
-      String str = RandomStringUtils.random(8448);
-      byte[] bytes = str.getBytes(UTF_8);
-      int expected = XxHashGenerator.hash32(bytes);
-      int actual = XxHashGenerator.hash32(bytes, 0, bytes.length);
-      System.out.printf("expected: %d, actual: %d%n", expected, actual);
-      assertEquals(expected, actual);
-    } while (--count > 0);
+  @ParameterizedTest
+  @ValueSource(ints = {8448, 9981, 5521})
+  public void testHash32(int length) {
+    String str = RandomStringUtils.random(length);
+    byte[] bytes = str.getBytes(UTF_8);
+    int expected = XxHashGenerator.hash32(bytes);
+    int actual = XxHashGenerator.hash32(bytes, 0, bytes.length);
+    assertEquals(expected, actual);
   }
 
-  @Test
-  public void test2() {
-    int count = 1000;
-    do {
-      String str = RandomStringUtils.random(9981);
-      byte[] bytes = str.getBytes(UTF_8);
-      long expected = XxHashGenerator.hash64(bytes);
-      long actual = XxHashGenerator.hash64(bytes, 0, bytes.length);
-      System.out.printf("expected: %d, actual: %d%n", expected, actual);
-      assertEquals(expected, actual);
-    } while (--count > 0);
+  @ParameterizedTest
+  @ValueSource(ints = {8448, 9981, 5521})
+  public void testHash64(int length) {
+    String str = RandomStringUtils.random(length);
+    byte[] bytes = str.getBytes(UTF_8);
+    long expected = XxHashGenerator.hash64(bytes);
+    long actual = XxHashGenerator.hash64(bytes, 0, bytes.length);
+    assertEquals(expected, actual);
   }
 
-  @Test
-  public void test5() {
-    int count = 1000;
-    do {
-      String str = RandomStringUtils.random(5521);
-      byte[] bytes = str.getBytes(UTF_8);
-      byte[] expected = XxHashGenerator.hash128(bytes);
-      byte[] actual = XxHashGenerator.hash128(bytes, 0, bytes.length);
-      System.out.printf(
-          "expected: %s, actual: %s%n", Arrays.toString(expected), Arrays.toString(actual));
-      assertArrayEquals(expected, actual);
-    } while (--count > 0);
+  @ParameterizedTest
+  @ValueSource(ints = {8448, 9981, 5521})
+  public void testHash128(int length) {
+    String str = RandomStringUtils.random(length);
+    byte[] bytes = str.getBytes(UTF_8);
+    byte[] expected = XxHashGenerator.hash128(bytes);
+    byte[] actual = XxHashGenerator.hash128(bytes, 0, bytes.length);
+    assertArrayEquals(expected, actual);
   }
 
-  @Test
-  public void test3() {
+  @ParameterizedTest
+  @ValueSource(strings = {"hash32", "hash64", "hash128"})
+  public void testEmptyInput(String method) {
     byte[] bytes = new byte[0];
-    assertThrowsExactly(IllegalArgumentException.class, () -> XxHashGenerator.hash64(bytes));
+    switch (method) {
+      case "hash32":
+        assertThrowsExactly(IllegalArgumentException.class, () -> XxHashGenerator.hash32(bytes));
+        break;
+      case "hash64":
+        assertThrowsExactly(IllegalArgumentException.class, () -> XxHashGenerator.hash64(bytes));
+        break;
+      case "hash128":
+        assertThrowsExactly(IllegalArgumentException.class, () -> XxHashGenerator.hash128(bytes));
+        break;
+    }
   }
 
-  @Test
-  public void test4() {
-    byte[] bytes = new byte[0];
-    assertThrowsExactly(IllegalArgumentException.class, () -> XxHashGenerator.hash32(bytes));
+  @ParameterizedTest
+  @ValueSource(strings = {"hash32", "hash64", "hash128"})
+  public void testNullInput(String method) {
+    switch (method) {
+      case "hash32":
+        assertThrowsExactly(NullPointerException.class, () -> XxHashGenerator.hash32(null));
+        break;
+      case "hash64":
+        assertThrowsExactly(NullPointerException.class, () -> XxHashGenerator.hash64(null));
+        break;
+      case "hash128":
+        assertThrowsExactly(NullPointerException.class, () -> XxHashGenerator.hash128(null));
+        break;
+    }
   }
 }
