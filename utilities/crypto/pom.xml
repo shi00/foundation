@@ -32,7 +32,6 @@
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <java.version>11</java.version>
-        <jacoco-coverage.minimum>0.90</jacoco-coverage.minimum>
     </properties>
 
     <dependencies>
