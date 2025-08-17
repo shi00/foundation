@@ -18,18 +18,17 @@
  */
 package com.silong.foundation.crypto.rsa;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.crypto.Cipher.DECRYPT_MODE;
+import static javax.crypto.Cipher.ENCRYPT_MODE;
+
 import com.silong.foundation.crypto.utils.SecurityWrapper;
 import com.silong.foundation.crypto.utils.ThreadLocalCipher;
-
-import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
 import java.security.*;
 import java.security.interfaces.RSAKey;
 import java.util.Base64;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static javax.crypto.Cipher.DECRYPT_MODE;
-import static javax.crypto.Cipher.ENCRYPT_MODE;
+import javax.crypto.Cipher;
 
 /**
  * RSA非对称加解密工具
@@ -90,7 +89,7 @@ public final class RsaToolkit {
    * @return 加密文本
    */
   public static String encryptByPublicKey(PublicKey key, String plainText) {
-    if (plainText == null || plainText.isEmpty()) {
+    if (plainText == null || plainText.isBlank()) {
       throw new IllegalArgumentException("plainText must not be null or empty.");
     }
     return SecurityWrapper.wrap(

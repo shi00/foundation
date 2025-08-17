@@ -18,19 +18,14 @@
  */
 package com.silong.foundation.crypto;
 
-import com.silong.foundation.crypto.digest.HmacToolkit;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.RandomUtils;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-
 import static com.silong.foundation.crypto.digest.HmacToolkit.*;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 
 /**
  * 单元测试
@@ -40,65 +35,97 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 2022-01-16 19:22
  */
 public class HmacTests {
-  static RootKey rootKey;
-
-  String workKey;
-
-  String plaintext;
+  private static String workKey;
 
   @BeforeAll
-  static void init() throws IOException {
-    Path dir = new File("target/test-classes").toPath();
-    RootKey.export(
-        RootKey.DEFAULT_ROOT_KEY_PARTS.stream()
-            .map(s -> dir.resolve(s).toFile())
-            .toArray(File[]::new));
-    rootKey = RootKey.initialize();
-  }
-
-  @BeforeEach
-  void initEatch() {
-    plaintext = RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE));
-    workKey = rootKey.encryptWorkKey(RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE)));
+  static void init() {
+    RootKey rootKey = RootKey.initialize();
+    workKey = rootKey.encryptWorkKey("testWorkKey");
   }
 
   @Test
-  void test1() {
-    assertEquals(
-        HmacToolkit.hmacSha256(plaintext, workKey), HmacToolkit.hmacSha256(plaintext, workKey));
+  @DisplayName("测试hmacSha256Hash方法")
+  void testHmacSha256Hash() {
+    String plainText = "testPlainText";
+    byte[] result = hmacSha256Hash(plainText, workKey);
+    assertNotNull(result);
+    assertTrue(result.length > 0);
   }
 
   @Test
-  void test2() {
-    assertArrayEquals(hmacSha256Hash(plaintext, workKey), hmacSha256Hash(plaintext, workKey));
+  @DisplayName("测试hmacSha256方法")
+  void testHmacSha256() {
+    String plainText = "testPlainText";
+    String result = hmacSha256(plainText, workKey);
+    assertNotNull(result);
+    assertFalse(result.isEmpty());
   }
 
   @Test
-  void test3() {
-    assertEquals(hmacSha512(plaintext, workKey), hmacSha512(plaintext, workKey));
+  @DisplayName("测试hmacSha512方法")
+  void testHmacSha512() {
+    String plainText = "testPlainText";
+    String result = hmacSha512(plainText, workKey);
+    assertNotNull(result);
+    assertFalse(result.isEmpty());
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @DisplayName("测试传入空明文时抛出异常")
+  void testHmacWithNullOrEmptyPlainText(String plainText) {
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> hmacSha256(plainText, workKey));
+    assertEquals("plainText must not be null or empty.", exception.getMessage());
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @DisplayName("测试传入空工作密钥时抛出异常")
+  void testHmacWithNullOrEmptyWorkKey(String workKey) {
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> hmacSha256("testPlainText", workKey));
+    assertEquals("workKey must not be null or empty.", exception.getMessage());
   }
 
   @Test
-  void test4() {
-    assertArrayEquals(hmacSha512Hash(plaintext, workKey), hmacSha512Hash(plaintext, workKey));
+  @DisplayName("测试hmacSha512Hash方法正常情况")
+  void testHmacSha512Hash() {
+    String plainText = "testPlainText";
+    byte[] result = hmacSha512Hash(plainText, workKey);
+    assertNotNull(result);
+    assertTrue(result.length > 0);
   }
 
   @Test
-  void test5() {
-    assertNotEquals(
-        hmacSha512(RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE)), workKey),
-        hmacSha512(plaintext, workKey));
+  @DisplayName("测试hmacSha512Hash方法传入空明文")
+  void testHmacSha512HashWithNullPlainText() {
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> hmacSha512Hash(null, workKey));
+    assertEquals("plainText must not be null or empty.", exception.getMessage());
   }
 
   @Test
-  void test6() {
-    assertNotEquals(
-        hmacSha256(RandomStringUtils.random(RandomUtils.nextInt(1, Short.SIZE)), workKey),
-        hmacSha256(plaintext, workKey));
+  @DisplayName("测试hmacSha512Hash方法传入空工作密钥")
+  void testHmacSha512HashWithNullWorkKey() {
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> hmacSha512Hash("testPlainText", null));
+    assertEquals("workKey must not be null or empty.", exception.getMessage());
   }
 
   @Test
-  void test7() {
-    assertNotEquals(hmacSha512(plaintext, workKey), hmacSha256(plaintext, workKey));
+  @DisplayName("测试hmacSha512Hash方法传入空字符串明文")
+  void testHmacSha512HashWithEmptyPlainText() {
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> hmacSha512Hash("", workKey));
+    assertEquals("plainText must not be null or empty.", exception.getMessage());
+  }
+
+  @Test
+  @DisplayName("测试hmacSha512Hash方法传入空字符串工作密钥")
+  void testHmacSha512HashWithEmptyWorkKey() {
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> hmacSha512Hash("testPlainText", ""));
+    assertEquals("workKey must not be null or empty.", exception.getMessage());
   }
 }

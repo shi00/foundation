@@ -18,14 +18,15 @@
  */
 package com.silong.foundation.crypto;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.*;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
+
 import com.silong.foundation.crypto.aes.AesGcmToolkit;
 import com.silong.foundation.crypto.aes.AesKeySize;
 import com.silong.foundation.crypto.pbkdf2.Pbkdf2;
 import com.silong.foundation.crypto.utils.ThreadLocalSecureRandom;
-import lombok.extern.slf4j.Slf4j;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -41,11 +42,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardOpenOption.*;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 根密钥工具，根密钥用于加密工作密钥
@@ -67,6 +66,7 @@ public final class RootKey {
 
   private static final Map<String, byte[]> WK_CACHE = new ConcurrentHashMap<>();
 
+  /** 缓存实例 */
   private static RootKey rootKey;
 
   /** 根密钥 */
@@ -74,6 +74,11 @@ public final class RootKey {
 
   static {
     Security.setProperty("crypto.policy", "unlimited");
+  }
+
+  /** 清空缓存 */
+  static void clear() {
+    rootKey = null;
   }
 
   /**
