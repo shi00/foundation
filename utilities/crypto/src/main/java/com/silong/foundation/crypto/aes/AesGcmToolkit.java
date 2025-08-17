@@ -18,20 +18,19 @@
  */
 package com.silong.foundation.crypto.aes;
 
+import static com.silong.foundation.crypto.RootKey.ENABLED_CACHE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.silong.foundation.crypto.RootKey;
 import com.silong.foundation.crypto.utils.SecurityWrapper;
 import com.silong.foundation.crypto.utils.ThreadLocalCipher;
 import com.silong.foundation.crypto.utils.ThreadLocalSecureRandom;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.silong.foundation.crypto.RootKey.ENABLED_CACHE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * AES GCM加解密工具
@@ -55,6 +54,12 @@ public final class AesGcmToolkit {
   /** 禁止实例化 */
   private AesGcmToolkit() {}
 
+  /**
+   * 计算Sk
+   *
+   * @param workKey 工作密钥
+   * @return sk
+   */
   private static SecretKey decryptWorkKey(String workKey) {
     return ENABLED_CACHE
         ? WK_CACHE.computeIfAbsent(
