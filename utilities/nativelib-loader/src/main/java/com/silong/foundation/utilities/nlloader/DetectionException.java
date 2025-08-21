@@ -31,7 +31,7 @@ import java.io.Serial;
  * @since 2023-10-14 10:03
  */
 public class DetectionException extends RuntimeException {
-  @Serial private static final long serialVersionUID = 6762544410638199392L;
+  @Serial private static final long serialVersionUID = -1420767071455009168L;
 
   public DetectionException(String message) {
     super(message);
