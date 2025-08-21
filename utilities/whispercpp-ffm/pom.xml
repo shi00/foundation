@@ -50,11 +50,6 @@
                     <name>linux</name>
                 </os>
             </activation>
-            <properties>
-                <build_params>
-                    https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.1/linux/l_openvino_toolkit_ubuntu22_2024.1.0.15008.f4afc983258_x86_64.tgz
-                </build_params>
-            </properties>
             <dependencies>
                 <dependency>
                     <groupId>ws.schild</groupId>
@@ -123,7 +118,6 @@
                                                     <shell>
                                                         ./build.sh ${output.src.dir} ${output.shared-lib.dir}
                                                         ${lib.name} ${header.class.name} ${sourcecode.package}
-                                                        ${build_params}
                                                     </shell>
                                                 </entrypoint>
                                                 <wait>
@@ -147,11 +141,6 @@
         </profile>
         <profile>
             <id>windows</id>
-            <properties>
-                <build_params>
-                    https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.1/windows/w_openvino_toolkit_windows_2024.1.0.15008.f4afc983258_x86_64.zip
-                </build_params>
-            </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
                 <os>
@@ -229,7 +218,6 @@
                                                         powershell .\build.ps1 ${output.src.dir}
                                                         ${output.shared-lib.dir}
                                                         ${lib.name} ${header.class.name} ${sourcecode.package}
-                                                        ${build_params}
                                                     </shell>
                                                 </entrypoint>
                                                 <wait>

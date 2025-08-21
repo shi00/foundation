@@ -1,88 +1,87 @@
 #! /bin/bash
+#
+# /*
+#  * Licensed to the Apache Software Foundation (ASF) under one
+#  * or more contributor license agreements.  See the NOTICE file
+#  * distributed with this work for additional information
+#  * regarding copyright ownership.  The ASF licenses this file
+#  * to you under the Apache License, Version 2.0 (the
+#  * "License"); you may not use this file except in compliance
+#  * with the License.  You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing,
+#  * software distributed under the License is distributed on an
+#  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  * KIND, either express or implied.  See the License for the
+#  * specific language governing permissions and limitations
+#  * under the License.
+#  */
+#
+
 OUTPUT_SRC_DIR=$1
 SHARDED_LIB_DIR=$2
 SHARDED_LIB_NAME=$3".so"
 HEADER_CLASS_NAME=$4
 SOURCECODE_PACKAGE=$5
-BUILD_PARAMS=$6
 
-echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR" "$HEADER_CLASS_NAME" "$SOURCECODE_PACKAGE" "$BUILD_PARAMS"
+echo "$OS_NAME" "$OS_ARCH" "$OUTPUT_SRC_DIR" "$SHARDED_LIB_DIR" "$HEADER_CLASS_NAME" "$SOURCECODE_PACKAGE"
 echo "================== Start building whispercpp =================="
 
-git clone https://github.com/ggerganov/whisper.cpp.git
-if [ ! -d "./whisper.cpp/" ];then
-  echo "Failed to clone whisper.cpp from github."
-  exit 1
-fi
+# 执行 nvidia-smi 并捕获退出码（&> /dev/null 静默执行，不输出内容）
+nvidia-smi &> /dev/null
 
-# 切换到最新的release版本
-cd "whisper.cpp"
-last_tag=$(git describe --tags)
-git checkout "$last_tag"
-
-if echo "$BUILD_PARAMS" | grep -iqF "openvino"; then
- echo "Start downloading OpenVINO......"
- openvino_file=${BUILD_PARAMS##*/} #substring 最后一个/后的字符串
- openvino_dir=${openvino_file%.*}  #substring 最后一个.前的字符串
- openvino_path="/opt/whisper.cpp/$openvino_dir/runtime/cmake/"
- echo "openvino_file=$openvino_file"
- echo "openvino_dir=$openvino_dir"
- echo "openvino_url=$BUILD_PARAMS"
- echo "openvino_path=$openvino_path"
- wget -t 3 -c --no-check-certificate "$BUILD_PARAMS"  # 下载openvino
- if [ ! -f "./$openvino_file" ];then
-   echo "Failed to download $openvino_file."
-   exit 1
- fi
-
- #解压openvino运行时包
- tar zxvf "$openvino_file"
- rm -rf "$openvino_file"
-
- cd "$openvino_dir"
- yes | source ./install_dependencies/install_openvino_dependencies.sh
- cd ".."
-
- cd "models"
- python3 -m venv openvino_conv_env && source "openvino_conv_env/bin/activate" && python -m pip install --upgrade pip  && pip install -r requirements-openvino.txt
- source "/opt/whisper.cpp/$openvino_dir/setupvars.sh"
-
- # 开始构建
- cd ".."
- sed -Ei "s|# Add path to modules|list(APPEND CMAKE_PREFIX_PATH \"$openvino_path\")|" CMakeLists.txt
-
- cmake -B build -DWHISPER_OPENVINO=1
- cmake --build build -j --config Release
-
- #判断文件是否存在
- if [ ! -f "./build/$SHARDED_LIB_NAME" ]; then
-     echo "Failed to build whispercpp."
-     exit 1
- fi
-
- cp "./build/$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"/"$SHARDED_LIB_NAME"
-
-elif echo "$BUILD_PARAMS" | grep -iqF "cuda"; then
-  echo "CUDA is not supported now."
-  exit 1
+# 判断退出码
+if [ $? -eq 0 ]; then
+    echo "Nvidia GPU has been detected and CUDA installation has started."
+    # 暂不支持
+    exit 1
 else
-  make "$SHARDED_LIB_NAME" && make stream
+    echo "Nvidia GPU not detected, enabling CPU mode."
 
-  #判断文件是否存在
-  if [ ! -f "$SHARDED_LIB_NAME" ]; then
-      echo "Failed to build whispercpp."
-      exit 1
-  fi
+    # 进入vcpkg目录，完成vcpkg的更新和初始化
+    cd "vcpkg"
 
-  cp "$SHARDED_LIB_NAME" /opt/"$SHARDED_LIB_DIR"/"$SHARDED_LIB_NAME"
+    git pull origin master
+    if [ $? -eq 0 ]; then
+        echo "vcpkg updated successfully."
+    else
+        echo "Failed to update vcpkg."
+        exit 1
+    fi
+
+    ./bootstrap-vcpkg.sh
+    if [ $? -eq 0 ]; then
+        echo "vcpkg bootstrapped successfully."
+    else
+        echo "Failed to bootstrap vcpkg."
+        exit 1
+    fi
+
+    vcpkg install whisper-cpp:x64-linux-dynamic
+    cd "installed/x64-linux-dynamic/lib"
+
+    #判断构建whisper-cpp是否成功
+    if [ ! -f "./$SHARDED_LIB_NAME" ]; then
+       echo "Failed to build whisper-cpp."
+       exit 1
+    fi
+
+    # 拷贝所有so文件至目标目录
+    find . -maxdepth 1 \( -type f -o -type l \) -name "*.so" -exec cp {} /opt/"$SHARDED_LIB_DIR" \;
+
+    # 进入include目录
+    cd "../include/"
+
+    echo "================== Start generate source code for whispercpp =================="
+    jextract --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" --target-package "$SOURCECODE_PACKAGE" --include-dir . whisper.h
+    if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
+        echo "Failed to generate code by jextract"
+        exit 1
+    fi
+
+    echo "================== Build completed =================="
+    sleep 5s
+    exit 0
 fi
-
-echo "================== Start generate source code for whispercpp =================="
-jextract --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" --target-package "$SOURCECODE_PACKAGE" --include-dir . whisper.h
-if [ ! -d "/opt/$OUTPUT_SRC_DIR" ];then
-  echo "Failed to generate code by jextract"
-  exit 1
-fi
-
-echo "================== Build completed =================="
-sleep 5s
