@@ -45,13 +45,13 @@ import org.junit.jupiter.api.Test;
  */
 public class WhisperTests {
 
-  private static Whisper whisper;
+  private static WhisperCpp whisperCpp;
 
   private long startTime;
 
   @BeforeAll
   static void init() {
-    whisper = Whisper.getInstance(loadJsonFromClassPath());
+    whisperCpp = WhisperCpp.getInstance(loadJsonFromClassPath());
   }
 
   @BeforeEach
@@ -81,7 +81,7 @@ public class WhisperTests {
   @Test
   public void testEN() throws Exception {
     String[] text =
-        whisper.speech2Text(
+        whisperCpp.speech2Text(
             Paths.get(".", "src", "test", "resources", "Have-you-seen-one-of-these.wav")
                 .toFile()
                 .getCanonicalFile());
@@ -91,7 +91,7 @@ public class WhisperTests {
   @Test
   public void testEN1() throws Exception {
     String language =
-        whisper.recognizeLanguage(
+        whisperCpp.recognizeLanguage(
             Paths.get(".", "src", "test", "resources", "Have-you-seen-one-of-these.wav")
                 .toFile()
                 .getCanonicalFile());
@@ -101,7 +101,7 @@ public class WhisperTests {
   @Test
   public void testEN2() throws Exception {
     String[] text =
-        whisper.speech2Text(
+        whisperCpp.speech2Text(
             Paths.get(".", "src", "test", "resources", "Thank-you-that-was-helpful.ogg")
                 .toFile()
                 .getCanonicalFile());
@@ -111,7 +111,7 @@ public class WhisperTests {
   @Test
   public void testEN3() throws Exception {
     String[] text =
-        whisper.speech2Text(
+        whisperCpp.speech2Text(
             Paths.get(
                     ".",
                     "src",
@@ -127,7 +127,7 @@ public class WhisperTests {
   @Test
   public void testZH() throws Exception {
     String[] text =
-        whisper.speech2Text(
+        whisperCpp.speech2Text(
             Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.wav")
                 .toFile()
                 .getCanonicalFile());
@@ -137,7 +137,7 @@ public class WhisperTests {
   @Test
   public void testZH1() throws Exception {
     String[] text =
-        whisper.speech2Text(
+        whisperCpp.speech2Text(
             Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.mp3")
                 .toFile()
                 .getCanonicalFile());
@@ -147,7 +147,7 @@ public class WhisperTests {
   @Test
   public void testZH2() throws Exception {
     String[] text =
-        whisper.speech2Text(
+        whisperCpp.speech2Text(
             Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.ogg")
                 .toFile()
                 .getCanonicalFile());

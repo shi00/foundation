@@ -102,8 +102,8 @@ class WhisperCppImpl implements WhisperCpp {
 
   @Nullable
   @Override
-  public String[] speech2Text(File wavFile) throws Exception {
-    return new String[0];
+  public String[] speech2Text(@NonNull File wavFile) throws Exception {
+    return speech2Text(new FileInputStream(wavFile));
   }
 
   @Nullable
