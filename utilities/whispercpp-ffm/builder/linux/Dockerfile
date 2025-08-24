@@ -26,6 +26,12 @@ RUN ARCH=$(uname -m) && case $ARCH in \
 ENV PATH $PATH:/opt/jextract-22/bin
 #安装java相关软件包
 
+WORKDIR /opt/vcpkg
+RUN git pull origin master \
+&& ./bootstrap-vcpkg.sh
+
+WORKDIR /opt
+
 # 添加构建脚本
 ADD build.sh .
 RUN chmod +x ./build.sh
