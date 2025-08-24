@@ -185,7 +185,7 @@
         <spotbugs.version>4.9.3</spotbugs.version>
         <disruptor.version>4.0.0</disruptor.version>
         <jctools.version>4.0.5</jctools.version>
-        <jave.version>3.5.0</jave.version>
+        <javacv.version>1.5.12</javacv.version>
         <jetcd.version>0.8.5</jetcd.version>
         <jmh.version>1.37</jmh.version>
         <jooq.version>3.19.24</jooq.version>
@@ -226,6 +226,7 @@
         <check-dependencies.skip>false</check-dependencies.skip><!--依赖检查插件暂不支持java22，设置此标识用于各模块自行控制是否执行-->
         <maven-enforcer-plugin.skip>false</maven-enforcer-plugin.skip> <!-- 是否忽略enforcer检查 -->
 
+        <jacoco-coverage.minimum>0.80</jacoco-coverage.minimum><!-- 工程测试代码覆盖率最低要求 -->
     </properties>
 
     <dependencyManagement>
@@ -454,19 +455,9 @@
 
             <!-- 音频组件 -->
             <dependency>
-                <groupId>ws.schild</groupId>
-                <artifactId>jave-core</artifactId>
-                <version>${jave.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ws.schild</groupId>
-                <artifactId>jave-nativebin-win64</artifactId>
-                <version>${jave.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ws.schild</groupId>
-                <artifactId>jave-nativebin-linux64</artifactId>
-                <version>${jave.version}</version>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>javacv</artifactId>
+                <version>${javacv.version}</version>
             </dependency>
             <!-- 音频组件 -->
 
@@ -1150,36 +1141,45 @@
                 <configuration>
                     <!-- rules里面指定覆盖规则 -->
                     <rules>
-                        <!--                        <rule implementation="org.jacoco.maven.RuleConfiguration">-->
-                        <!--                            <element>BUNDLE</element>-->
-                        <!--                            <limits>-->
-                        <!--                                &lt;!&ndash; 指定方法覆盖到80% &ndash;&gt;-->
-                        <!--                                <limit implementation="org.jacoco.report.check.Limit">-->
-                        <!--                                    <counter>METHOD</counter>-->
-                        <!--                                    <value>COVEREDRATIO</value>-->
-                        <!--                                    <minimum>0.80</minimum>-->
-                        <!--                                </limit>-->
-                        <!--                                &lt;!&ndash; 指定指令覆盖到80% &ndash;&gt;-->
-                        <!--                                <limit implementation="org.jacoco.report.check.Limit">-->
-                        <!--                                    <counter>INSTRUCTION</counter>-->
-                        <!--                                    <value>COVEREDRATIO</value>-->
-                        <!--                                    <minimum>0.80</minimum>-->
-                        <!--                                </limit>-->
-                        <!--                                &lt;!&ndash; 指定行覆盖到80% &ndash;&gt;-->
-                        <!--                                <limit implementation="org.jacoco.report.check.Limit">-->
-                        <!--                                    <counter>LINE</counter>-->
-                        <!--                                    <value>COVEREDRATIO</value>-->
-                        <!--                                    <minimum>0.80</minimum>-->
-                        <!--                                </limit>-->
-                        <!--                                &lt;!&ndash; 指定类覆盖到100%，不能遗失任何类 &ndash;&gt;-->
-                        <!--                                <limit implementation="org.jacoco.report.check.Limit">-->
-                        <!--                                    <counter>CLASS</counter>-->
-                        <!--                                    <value>MISSEDCOUNT</value>-->
-                        <!--                                    <maximum>0</maximum>-->
-                        <!--                                </limit>-->
-                        <!--                            </limits>-->
-                        <!--                        </rule>-->
+                        <rule implementation="org.jacoco.maven.RuleConfiguration">
+                            <element>BUNDLE</element>
+                            <limits>
+                                <!--                                &lt;!&ndash; 指定方法覆盖到80% &ndash;&gt;-->
+                                <!--                                <limit implementation="org.jacoco.report.check.Limit">-->
+                                <!--                                    <counter>METHOD</counter>-->
+                                <!--                                    <value>COVEREDRATIO</value>-->
+                                <!--                                    <minimum>0.80</minimum>-->
+                                <!--                                </limit>-->
+                                <!--                                &lt;!&ndash; 指定指令覆盖到80% &ndash;&gt;-->
+                                <!--                                <limit implementation="org.jacoco.report.check.Limit">-->
+                                <!--                                    <counter>INSTRUCTION</counter>-->
+                                <!--                                    <value>COVEREDRATIO</value>-->
+                                <!--                                    <minimum>0.80</minimum>-->
+                                <!--                                </limit>-->
+                                <!--                                &lt;!&ndash; 指定行覆盖到80% &ndash;&gt;-->
+                                <limit implementation="org.jacoco.report.check.Limit">
+                                    <counter>LINE</counter>
+                                    <value>COVEREDRATIO</value>
+                                    <minimum>${jacoco-coverage.minimum}</minimum>
+                                </limit>
+                                <!--                                &lt;!&ndash; 指定类覆盖到100%，不能遗失任何类 &ndash;&gt;-->
+                                <!--                                <limit implementation="org.jacoco.report.check.Limit">-->
+                                <!--                                    <counter>CLASS</counter>-->
+                                <!--                                    <value>MISSEDCOUNT</value>-->
+                                <!--                                    <maximum>0</maximum>-->
+                                <!--                                </limit>-->
+                            </limits>
+                        </rule>
                     </rules>
+                    <excludes>
+                        <!-- 排除所有自动生成的DTO（假设包路径含"generated/dto"） -->
+                        <exclude>**/generated/**/*.class</exclude>
+                        <!-- 排除Lombok生成的Builder类（以Builder结尾） -->
+                        <exclude>**/*Builder.class</exclude>
+                        <!-- 排除所有测试类 -->
+                        <exclude>**/*Test.class</exclude>
+                        <exclude>**/*Tests.class</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
