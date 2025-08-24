@@ -115,9 +115,9 @@ public final class NativeLibLoader {
           REPLACE_EXISTING);
       File tmpFile = tmpLib.toFile();
       tmpFile.deleteOnExit();
-      log.info(String.format("Prepare to load %s from %s in classpath.", originLib, libPath));
+      log.info("Prepare to load {} from {} in classpath.", originLib, libPath);
       String canonicalPath = tmpFile.getCanonicalPath();
-      log.info(String.format("Generate %s for loading.", canonicalPath));
+      log.info("Generate {} for loading.", canonicalPath);
       return canonicalPath;
     }
   }
