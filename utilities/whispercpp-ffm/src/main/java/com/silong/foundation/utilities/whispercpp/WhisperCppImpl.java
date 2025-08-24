@@ -48,7 +48,7 @@ class WhisperCppImpl implements WhisperCpp {
 
   static {
     // 加载共享库
-    loadLibrary("libwhisper", "libs");
+    loadLibrary("libwhisper", "native_libs");
   }
 
   /** 根据配置生成的全量参数 */
