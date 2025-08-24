@@ -24,6 +24,7 @@ package com.silong.foundation.utilities.nlloader;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.*;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.UUID;
@@ -99,5 +100,62 @@ public class NativeLibsExtractorTests {
     Path targetDir = TEMP_DIR.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
     Assertions.assertEquals(0, Objects.requireNonNull(targetDir.toFile().list()).length);
+  }
+
+  @Test
+  void testLocateWithValidClass() {
+    Path path = NativeLibsExtractor.locate(RocksDB.class);
+    Assertions.assertNotNull(path);
+  }
+
+  @Test
+  void testLocateWithInvalidClass() {
+    Assertions.assertThrows(
+        NullPointerException.class, () -> NativeLibsExtractor.locate(String.class));
+  }
+
+  @Test
+  void testExtractNativeLibsWithValidJar() {
+    Path path = NativeLibsExtractor.locate(RocksDB.class);
+    String dir = UUID.randomUUID().toString();
+    Path targetDir = TEMP_DIR.resolve(dir);
+    NativeLibsExtractor.extractNativeLibs(path, targetDir);
+    var files = targetDir.toFile().list();
+    Assertions.assertNotNull(files);
+    Assertions.assertTrue(files.length > 0);
+  }
+
+  @Test
+  void testExtractNativeLibsWithInvalidPath() {
+    Path invalidPath = Path.of("invalid/path/to/jar");
+    String dir = UUID.randomUUID().toString();
+    Path targetDir = TEMP_DIR.resolve(dir);
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> NativeLibsExtractor.extractNativeLibs(invalidPath, targetDir));
+  }
+
+  @Test
+  void testByGetProtectionDomainWithValidClass() throws URISyntaxException {
+    Path path = NativeLibsExtractor.byGetProtectionDomain(RocksDB.class);
+    Assertions.assertNotNull(path);
+  }
+
+  @Test
+  void testByGetProtectionDomainWithInvalidClass() {
+    Assertions.assertThrows(
+        NullPointerException.class, () -> NativeLibsExtractor.byGetProtectionDomain(String.class));
+  }
+
+  @Test
+  void testByGetResourceWithValidClass() throws URISyntaxException {
+    Path path = NativeLibsExtractor.byGetResource(CompressionType.class);
+    Assertions.assertNotNull(path);
+  }
+
+  @Test
+  void testByGetResourceWithInvalidClass() {
+    Assertions.assertThrows(
+        IllegalStateException.class, () -> NativeLibsExtractor.byGetResource(String.class));
   }
 }
