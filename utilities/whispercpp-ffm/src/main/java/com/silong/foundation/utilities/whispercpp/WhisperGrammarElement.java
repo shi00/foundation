@@ -19,26 +19,20 @@
  *
  */
 
+package com.silong.foundation.utilities.whispercpp;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+
 /**
- * 模块定义
+ * 语法元素
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-04-21 16:11
+ * @since 2024-04-22 18:45
  */
-module whispercpp.ffm {
-  requires nativelib.loader;
-  requires static lombok;
-  requires org.slf4j;
-  requires java.desktop;
-  requires jakarta.annotation;
-  requires com.github.spotbugs.annotations;
-  requires jave.core;
-  requires jakarta.validation;
-  requires jave.nativebin.win64;
-
-  opens libs.windows.x86_64 to
-      nativelib.loader;
-
-  exports com.silong.foundation.utilities.whispercpp;
-}
+public record WhisperGrammarElement(
+    // 元素类型
+    @NotNull WhisperGreType type,
+    // Unicode code point or rule ID
+    @PositiveOrZero int value) {}

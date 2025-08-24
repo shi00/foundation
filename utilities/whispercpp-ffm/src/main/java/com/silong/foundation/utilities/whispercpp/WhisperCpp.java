@@ -21,28 +21,35 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
+import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.WHISPER_SAMPLE_RATE;
+
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
- * Whisper接口
+ * WhisperCpp接口
  *
  * @author louis sin
  * @version 1.0.0
  * @since 2024-04-22 18:45
  */
-public interface Whisper {
+public interface WhisperCpp extends AutoCloseable {
+
+  /** 临时目录 */
+  Path TEMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"));
 
   /** 支持的音频采样率 */
-  int SUPPORTED_SAMPLED_RATE = 16000;
+  int SUPPORTED_SAMPLED_RATE = WHISPER_SAMPLE_RATE();
 
-  /** 支持的采样比特数 */
-  int SUPPORTED_SAMPLED_BITS = 16;
+  /** 支持的声道数量 */
+  int SUPPORTED_CHANNELS = 1;
 
-  /** 支持的最大声道数量 */
-  int MAX_CHANNELS = 2;
+  /** 支持的比特率，计算公式为：SUPPORTED_SAMPLED_RATE * 16 * SUPPORTED_CHANNELS */
+  int SUPPORTED_BIT_RATE = SUPPORTED_SAMPLED_RATE * 16 * SUPPORTED_CHANNELS;
 
   /**
    * 根据配置获取Whisper实例
@@ -51,7 +58,7 @@ public interface Whisper {
    * @return 实例
    */
   @Nonnull
-  static Whisper getInstance(WhisperConfig config) {
+  static WhisperCpp getInstance(WhisperConfig config) {
     return new WhisperCppImpl(config);
   }
 
@@ -82,6 +89,5 @@ public interface Whisper {
    * @return 识别文本
    * @throws Exception 异常
    */
-  @Nullable
   String[] speech2Text(InputStream inputStream) throws Exception;
 }

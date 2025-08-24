@@ -22,29 +22,15 @@
 package com.silong.foundation.utilities.whispercpp;
 
 /**
- * 字节缓存输出流
+ * whisper_ahead 结构体用于指定参与音频 - 文本对齐计算的注意力头（attention head）的具体位置，主要配合
+ * DTW（动态时间规整）算法优化令牌级时间戳（token-level timestamps）的精度。
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-04-26 16:04
+ * @since 2024-04-22 18:45
  */
-public class ByteArrayOutputStream extends java.io.ByteArrayOutputStream {
-
-  /**
-   * 构造方法
-   *
-   * @param size byte array长度
-   */
-  public ByteArrayOutputStream(int size) {
-    super(size);
-  }
-
-  /**
-   * 返回内部缓存
-   *
-   * @return 内部缓存
-   */
-  public byte[] buf() {
-    return buf;
-  }
-}
+public record WhisperAHead(
+    // n_text_layer指定使用 Transformer 模型中 “文本编码器” 的第几层（从 0 开始计数）。
+    int nTextLayer,
+    // n_head指定在 nTextLayer 层中使用第几个注意力头（从 0 开始计数）。
+    int nHead) {}

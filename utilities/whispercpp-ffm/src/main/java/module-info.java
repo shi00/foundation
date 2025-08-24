@@ -30,14 +30,13 @@ module whispercpp.ffm {
   requires nativelib.loader;
   requires static lombok;
   requires org.slf4j;
-  requires java.desktop;
   requires jakarta.annotation;
   requires com.github.spotbugs.annotations;
-  requires jave.core;
   requires jakarta.validation;
-  requires jave.nativebin.linux64;
+  requires org.bytedeco.javacv;
+  requires org.bytedeco.ffmpeg;
 
-  opens libs.linux.x86_64 to
+  opens native_libs to
       nativelib.loader;
 
   exports com.silong.foundation.utilities.whispercpp;

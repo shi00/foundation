@@ -18,49 +18,26 @@
  *  * under the License.
  *
  */
+
 package com.silong.foundation.utilities.whispercpp;
 
-import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.WHISPER_SAMPLING_BEAM_SEARCH;
-import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.WHISPER_SAMPLING_GREEDY;
-import static java.util.stream.Collectors.joining;
-
-import java.util.Arrays;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
- * whisper 采样策略
+ * 采样策略
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-04-22 16:25
+ * @since 2024-04-22 18:45
  */
-@AllArgsConstructor
-@Getter
 public enum WhisperSamplingStrategy {
-  WHISPER_SAMPLING_GREEDY(WHISPER_SAMPLING_GREEDY()), // similar to OpenAI's GreedyDecoder
-  WHISPER_SAMPLING_BEAM_SEARCH(
-      WHISPER_SAMPLING_BEAM_SEARCH()); // similar to OpenAI's BeamSearchDecoder
+  WHISPER_SAMPLING_GREEDY, // similar to OpenAI's GreedyDecoder
+  WHISPER_SAMPLING_BEAM_SEARCH // similar to OpenAI's BeamSearchDecoder
+;
 
-  private final int value;
-
-  /**
-   * 根据value值解析枚举类型
-   *
-   * @param value 值
-   * @return 枚举
-   */
-  public static WhisperSamplingStrategy parse(int value) {
-    WhisperSamplingStrategy[] values = WhisperSamplingStrategy.values();
-    return Arrays.stream(values)
-        .filter(v -> v.getValue() == value)
-        .findAny()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    String.format(
-                        "value: %d, values: %s",
-                        value,
-                        Arrays.stream(values).map(Enum::name).collect(joining(", ", "[", "]")))));
+  public static WhisperSamplingStrategy fromOriginal(int original) {
+    return switch (original) {
+      case 0 -> WHISPER_SAMPLING_GREEDY;
+      case 1 -> WHISPER_SAMPLING_BEAM_SEARCH;
+      default -> throw new IllegalArgumentException("Unknown sampling strategy: " + original);
+    };
   }
 }

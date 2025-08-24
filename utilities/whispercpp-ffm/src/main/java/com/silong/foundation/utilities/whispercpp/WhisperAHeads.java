@@ -21,25 +21,18 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
-import jakarta.annotation.Nonnull;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
-
 /**
- * 本地参数接口，支持把自身转换为MemorySegment供外部方法使用
+ * whisper_aheads 结构体是对 一组 whisper_ahead 实例的统一管理容器，核心作用是整合 “参与音频 - 文本对齐计算的多个注意力头（attention head）”
+ * 的配置，为 DTW（动态时间规整）算法提供明确的 “注意力头集合”，从而实现更精细的令牌级时间戳（token-level timestamps）优化。
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-04-28 11:05
+ * @since 2024-04-22 18:45
  */
-public interface ForeignParams {
+public record WhisperAHeads(
+    // nHeads 明确当前 whisper_aheads 容器中包含的 whisper_ahead 实例总数（即参与对齐计算的 “层 - 头” 组合数量）。
+    long nHeads,
 
-  /**
-   * 转换
-   *
-   * @param allocator 分配器
-   * @return memorysegment
-   */
-  @Nonnull
-  MemorySegment convertTo(SegmentAllocator allocator);
-}
+    // 指向一个 whisper_ahead 类型的数组，数组中的每个元素对应一个 “参与对齐的注意力头配置”（通过 whisper_ahead 的 nTextLayer
+    // 确定层索引、nHead 确定头索引）。
+    WhisperAHead[] heads) {}

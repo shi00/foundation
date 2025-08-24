@@ -21,42 +21,34 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
- * grammar element type
+ * 语法元素类型
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-05-01 11:53
+ * @since 2024-04-22 18:45
  */
-@Getter
-@AllArgsConstructor
 public enum WhisperGreType {
 
-  // end of rule definition
-  WHISPER_GRETYPE_END(0),
+  /** 结束规则定义 */
+  WHISPER_GRETYPE_END,
 
   // start of alternate definition for rule
-  WHISPER_GRETYPE_ALT(1),
+  /** 开始规则定义 */
+  WHISPER_GRETYPE_ALT,
 
-  // non-terminal element: reference to rule
-  WHISPER_GRETYPE_RULE_REF(2),
+  /** 非终端元素：规则引用 */
+  WHISPER_GRETYPE_RULE_REF,
 
-  // terminal element: character (code point)
-  WHISPER_GRETYPE_CHAR(3),
+  /** 终端元素：字符（代码点） */
+  WHISPER_GRETYPE_CHAR,
 
-  // inverse char(s) ([^a], [^a-b] [^abc])
-  WHISPER_GRETYPE_CHAR_NOT(4),
+  /** 反向字符（[^a]，[ ^a-b] [^abc]） */
+  WHISPER_GRETYPE_CHAR_NOT,
 
-  // modifies a preceding WHISPER_GRETYPE_CHAR or LLAMA_GRETYPE_CHAR_ALT to
-  // be an inclusive range ([a-z])
-  WHISPER_GRETYPE_CHAR_RNG_UPPER(5),
+  /** 修改前面的 WHISPER_GRETYPE_CHAR 或 LLAMA_GRETYPE_CHAR_ALT 以成为一个包含范围（[a-z]） */
+  WHISPER_GRETYPE_CHAR_RNG_UPPER,
 
-  // modifies a preceding WHISPER_GRETYPE_CHAR or
-  // WHISPER_GRETYPE_CHAR_RNG_UPPER to add an alternate char to match ([ab], [a-zA])
-  WHISPER_GRETYPE_CHAR_ALT(6);
-
-  private final int value;
+  /** 修改前面的 WHISPER_GRETYPE_CHAR 或 WHISPER_GRETYPE_CHAR_RNG_UPPER 以添加一个备用字符进行匹配（[ab]，[a-zA]） */
+  WHISPER_GRETYPE_CHAR_ALT
 }

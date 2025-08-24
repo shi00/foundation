@@ -21,48 +21,154 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
-import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.C_INT;
-import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.beam_search.beam_size;
-import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.beam_search.patience;
-import static com.silong.foundation.utilities.whispercpp.generated.whisper_full_params.greedy.best_of;
-import static java.lang.foreign.MemorySegment.NULL;
+import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.int32_t;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.*;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.joining;
-import static javax.sound.sampled.AudioFileFormat.Type.WAVE;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.io.IOException;
-import java.lang.foreign.*;
+import com.silong.foundation.utilities.whispercpp.generated.*;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Objects;
-import javax.sound.sampled.AudioFormat;
-import lombok.NonNull;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import lombok.SneakyThrows;
 
 /**
- * 工具类
+ * 工具方法
  *
  * @author louis sin
  * @version 1.0.0
- * @since 2024-04-28 9:16
+ * @since 2024-04-22 18:45
  */
-interface Utils {
+class Utils {
 
-  Linker LINKER = Linker.nativeLinker();
+  private static final Linker LINKER = Linker.nativeLinker();
 
-  // 临时目录
-  Path TEMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"));
-
-  MethodHandle FREE =
+  private static final MethodHandle FREE =
       LINKER.downcallHandle(
           LINKER.defaultLookup().find("free").orElseThrow(), FunctionDescriptor.ofVoid(ADDRESS));
+
+  static String whisperContextParams2String(MemorySegment params) {
+    return String.format(
+        "whisper_context_params: {use_gpu:%b, flash_attn:%b, gpu_device:%d, dtw_token_timestamps:%b, dtw_aheads_preset:%s, dtw_n_top:%d, dtw_aheads:%s, dtw_mem_size:%d}",
+        whisper_context_params.use_gpu(params),
+        whisper_context_params.flash_attn(params),
+        whisper_context_params.gpu_device(params),
+        whisper_context_params.dtw_token_timestamps(params),
+        WhisperAlignmentHeadsPreset.fromOriginal(whisper_context_params.dtw_aheads_preset(params)),
+        whisper_context_params.dtw_n_top(params),
+        whisperAheads2String(whisper_context_params.dtw_aheads(params)),
+        whisper_context_params.dtw_mem_size(params));
+  }
+
+  static String whisperAheads2String(MemorySegment params) {
+    long nHeads = whisper_aheads.n_heads(params);
+    MemorySegment heads = whisper_aheads.heads(params);
+    return LongStream.range(0, nHeads)
+        .mapToObj(
+            i -> {
+              MemorySegment head = heads.asSlice(i, whisper_ahead.layout());
+              return String.format(
+                  "{nTextLayer:%d, nHead:%d}",
+                  whisper_ahead.n_text_layer(head), whisper_ahead.n_head(head));
+            })
+        .collect(Collectors.joining(", ", "[", "]"));
+  }
+
+  static String whisperFullParams2String(MemorySegment params) {
+    MemorySegment temp;
+    return String.format(
+        "whisper_full_params: {n_threads:%d, n_max_text_ctx:%d, offset_ms:%dms, duration_ms:%dms, "
+            + System.lineSeparator()
+            + "translate:%b, no_context:%b, no_timestamps:%b, single_segment:%b, print_special:%b, print_progress:%b, print_realtime:%b, print_timestamps:%b, "
+            + System.lineSeparator()
+            + "token_timestamps:%b, thold_pt:%f, thold_ptsum:%f, max_len:%d, split_on_word:%b, max_tokens:%d, "
+            + System.lineSeparator()
+            + "debug_mode:%b, audio_ctx:%d, "
+            + System.lineSeparator()
+            + "tdrz_enable:%b, suppress_regex:%s, initial_prompt:%s, prompt_tokens:%s, prompt_n_tokens:%d, "
+            + System.lineSeparator()
+            + "language:%s, detect_language:%b, "
+            + System.lineSeparator()
+            + "suppress_blank:%b, suppress_nst:%b, temperature:%f, max_initial_ts:%f, length_penalty:%f, "
+            + System.lineSeparator()
+            + "temperature_inc:%f, entropy_thold:%f, logprob_thold:%f, no_speech_thold:%f, strategy:%s, "
+            + System.lineSeparator()
+            + "grammar_rules:%s, n_grammar_rules:%d, i_start_rule:%d, grammar_penalty:%f, "
+            + System.lineSeparator()
+            + "vad:%b, vad_model_path:%s, vad_params_threshold:%f, vad_params_min_speech_duration_ms:%d, vad_params_min_silence_duration_ms:%d, vad_params_max_speech_duration_s:%f, vad_params_speech_pad_ms:%d, vad_params_samples_overlap:%f}",
+        whisper_full_params.n_threads(params),
+        whisper_full_params.n_max_text_ctx(params),
+        whisper_full_params.offset_ms(params),
+        whisper_full_params.duration_ms(params),
+        whisper_full_params.translate(params),
+        whisper_full_params.no_context(params),
+        whisper_full_params.no_timestamps(params),
+        whisper_full_params.single_segment(params),
+        whisper_full_params.print_special(params),
+        whisper_full_params.print_progress(params),
+        whisper_full_params.print_realtime(params),
+        whisper_full_params.print_timestamps(params),
+        whisper_full_params.token_timestamps(params),
+        whisper_full_params.thold_pt(params),
+        whisper_full_params.thold_ptsum(params),
+        whisper_full_params.max_len(params),
+        whisper_full_params.split_on_word(params),
+        whisper_full_params.max_tokens(params),
+        whisper_full_params.debug_mode(params),
+        whisper_full_params.audio_ctx(params),
+        whisper_full_params.tdrz_enable(params),
+        ((temp = whisper_full_params.suppress_regex(params)) == MemorySegment.NULL || temp == null)
+            ? null
+            : temp.getString(0, UTF_8),
+        ((temp = whisper_full_params.initial_prompt(params)) == MemorySegment.NULL || temp == null)
+            ? null
+            : temp.getString(0, UTF_8),
+        ((temp = whisper_full_params.prompt_tokens(params)) == MemorySegment.NULL || temp == null)
+            ? null
+            : whisperTokenArray2String(temp, whisper_full_params.prompt_n_tokens(params)),
+        whisper_full_params.prompt_n_tokens(params),
+        ((temp = whisper_full_params.language(params)) == MemorySegment.NULL || temp == null)
+            ? null
+            : temp.getString(0, UTF_8),
+        whisper_full_params.detect_language(params),
+        whisper_full_params.suppress_blank(params),
+        whisper_full_params.suppress_nst(params),
+        whisper_full_params.temperature(params),
+        whisper_full_params.max_initial_ts(params),
+        whisper_full_params.length_penalty(params),
+        whisper_full_params.temperature_inc(params),
+        whisper_full_params.entropy_thold(params),
+        whisper_full_params.logprob_thold(params),
+        whisper_full_params.no_speech_thold(params),
+        WhisperSamplingStrategy.fromOriginal(whisper_full_params.strategy(params)),
+        whisperGrammarArray2String(whisper_full_params.grammar_rules(params), 0, 0),
+        whisper_full_params.n_grammar_rules(params),
+        whisper_full_params.i_start_rule(params),
+        whisper_full_params.grammar_penalty(params),
+        whisper_full_params.vad(params),
+        ((temp = whisper_full_params.vad_model_path(params)) == MemorySegment.NULL || temp == null)
+            ? null
+            : temp.getString(0, UTF_8),
+        whisper_vad_params.threshold(temp = whisper_full_params.vad_params(params)),
+        whisper_vad_params.min_speech_duration_ms(temp),
+        whisper_vad_params.min_silence_duration_ms(temp),
+        whisper_vad_params.max_speech_duration_s(temp),
+        whisper_vad_params.speech_pad_ms(temp),
+        whisper_vad_params.samples_overlap(temp));
+  }
+
+  private static String whisperTokenArray2String(MemorySegment segment, int length) {
+    return IntStream.range(0, length)
+        .mapToObj(i -> segment.getAtIndex(int32_t, i) + "")
+        .collect(Collectors.joining(", ", "[", "]"));
+  }
+
+  private static String whisperGrammarArray2String(MemorySegment segment, int row, int col) {
+    return null;
+  }
 
   /**
    * 释放内存空间(malloc分配)
@@ -70,103 +176,7 @@ interface Utils {
    * @param ptr 指针
    */
   @SneakyThrows
-  static void free(@NonNull MemorySegment ptr) {
+  static void free(MemorySegment ptr) {
     FREE.invokeExact(ptr);
-  }
-
-  static String beamSearchToString(@NonNull MemorySegment beamSearch) {
-    return NULL.equals(beamSearch)
-        ? "null"
-        : String.format(
-            "beam_search{beam_size = %d, patience = %f}",
-            beam_size(beamSearch), patience(beamSearch));
-  }
-
-  static String greedyToString(@NonNull MemorySegment greedy) {
-    return NULL.equals(greedy) ? "null" : String.format("greedy{best_of = %d}", best_of(greedy));
-  }
-
-  static String valueArrayToString(
-      @NonNull MemorySegment valueArrayPtr, @NonNull ValueLayout valueLayout, int elements) {
-    if (elements < 0) {
-      throw new IllegalArgumentException("elements must be greater than or equal to 0.");
-    }
-    return NULL.equals(valueArrayPtr)
-        ? "null"
-        : valueArrayPtr
-            .elements(MemoryLayout.sequenceLayout(elements, valueLayout))
-            .map(m -> String.valueOf(m.get(C_INT, 0)))
-            .collect(joining(", ", "[", "]"));
-  }
-
-  static String charPtr2ToString(@NonNull MemorySegment charPtr, String returnValueWhenNULLPtr) {
-    return NULL.equals(charPtr) ? returnValueWhenNULLPtr : charPtr.getString(0, UTF_8);
-  }
-
-  static String toString(String[] strings) {
-    return strings == null ? "null" : Arrays.stream(strings).collect(joining(", ", "[", "]"));
-  }
-
-  /**
-   * 音频格式比较
-   *
-   * @param af1 格式1
-   * @param af2 格式2
-   * @return true or false
-   */
-  static boolean equals(AudioFormat af1, AudioFormat af2) {
-    return af1 != null
-        && af2 != null
-        && Objects.equals(af1.getEncoding(), af2.getEncoding())
-        && af1.getChannels() == af2.getChannels()
-        && af1.isBigEndian() == af2.isBigEndian()
-        && af1.getFrameRate() == af2.getFrameRate()
-        && af1.getSampleRate() == af2.getSampleRate()
-        && af1.getFrameSize() == af2.getFrameSize()
-        && af1.getSampleSizeInBits() == af2.getSampleSizeInBits();
-  }
-
-  /**
-   * 时间格式化
-   *
-   * @param millis 毫秒时间
-   * @return 格式化结果
-   */
-  static String format2HHmmssSSS(long millis) {
-    long hours = MILLISECONDS.toHours(millis);
-    long minutes = MILLISECONDS.toMinutes(millis);
-    long seconds = MILLISECONDS.toSeconds(millis);
-    return String.format(
-        "%02d:%02d:%02d.%03d",
-        hours,
-        minutes - HOURS.toMinutes(hours),
-        seconds - MINUTES.toSeconds(minutes),
-        millis - SECONDS.toMillis(seconds));
-  }
-
-  /**
-   * 调用无参数public构造方法构造实例
-   *
-   * @param aClass class
-   * @return 实例
-   * @param <T> 类型
-   */
-  @SneakyThrows
-  @SuppressWarnings("unchecked")
-  static <T> T newInstance(@NonNull Class<?> aClass) {
-    return (T) aClass.getDeclaredConstructor().newInstance();
-  }
-
-  /**
-   * 生成临时文件
-   *
-   * @return 临时文件
-   * @throws IOException 异常
-   */
-  @SuppressFBWarnings(
-      value = "PATH_TRAVERSAL_IN",
-      justification = "Create a temporary file in the temporary directory.")
-  static Path createTempFile() throws IOException {
-    return Files.createTempFile(TEMP_DIR, "whisper-cpp", "." + WAVE.getExtension());
   }
 }
