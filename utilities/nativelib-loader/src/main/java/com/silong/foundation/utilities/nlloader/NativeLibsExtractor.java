@@ -22,6 +22,7 @@
 package com.silong.foundation.utilities.nlloader;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.util.Objects.requireNonNull;
 import static java.util.zip.ZipFile.OPEN_READ;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -152,7 +153,12 @@ public final class NativeLibsExtractor {
       value = "PATH_TRAVERSAL_IN",
       justification = "Get the jar file to which the code belongs")
   static Path byGetProtectionDomain(Class<?> clazz) throws URISyntaxException {
-    return Paths.get(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
+    return Paths.get(
+        requireNonNull(
+                clazz.getProtectionDomain().getCodeSource(),
+                String.format("Failed to get CodeSource of %s.", clazz.getName()))
+            .getLocation()
+            .toURI());
   }
 
   static Path byGetResource(Class<?> clazz) throws URISyntaxException {
