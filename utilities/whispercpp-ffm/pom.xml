@@ -31,14 +31,14 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <native.libdir>libs</native.libdir>
-
+        <native.libdir>native_libs</native.libdir>
+        <java.version>22</java.version>
         <output.src.dir>whispercpp-java-src</output.src.dir>
         <output.shared-lib.dir>classes</output.shared-lib.dir>
         <header.class.name>WhisperCpp</header.class.name>
         <lib.name>libwhisper</lib.name>
         <sourcecode.package>com.silong.foundation.utilities.whispercpp.generated</sourcecode.package>
-        <check-dependencies.skip>true</check-dependencies.skip><!--依赖检查插件暂不支持java22-->
+        <check-dependencies.skip>false</check-dependencies.skip><!--依赖检查插件暂不支持java22-->
     </properties>
 
     <profiles>
@@ -50,12 +50,6 @@
                     <name>linux</name>
                 </os>
             </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>ws.schild</groupId>
-                    <artifactId>jave-nativebin-linux64</artifactId>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -107,7 +101,7 @@
                                                             ${project.build.directory}/generated-sources:/opt/${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.basedir}/src/main/resources/${native.libdir}/${os.detected.name}/${os.detected.arch}:/opt/${output.shared-lib.dir}
+                                                            ${project.basedir}/src/main/resources/${native.libdir}:/opt/${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -147,12 +141,6 @@
                     <name>windows</name>
                 </os>
             </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>ws.schild</groupId>
-                    <artifactId>jave-nativebin-win64</artifactId>
-                </dependency>
-            </dependencies>
             <build>
                 <!-- windows容器启动需要挂载classes和generated-sources目录，此处与Linux平台不同(linux docker会自己创建不存在的挂载目录)，需要提前创建好提供给windows容器 -->
                 <plugins>
@@ -206,7 +194,7 @@
                                                             ${project.build.directory}\generated-sources:c:\${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.basedir}\src\main\resources\${native.libdir}\${os.detected.name}\${os.detected.arch}:c:\${output.shared-lib.dir}
+                                                            ${project.basedir}\src\main\resources\${native.libdir}:c:\${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -285,8 +273,12 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>ws.schild</groupId>
-            <artifactId>jave-core</artifactId>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacpp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -303,38 +295,6 @@
         </extensions>
         <plugins>
             <plugin>
-                <groupId>com.coderplus.maven.plugins</groupId>
-                <artifactId>copy-rename-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-module-info</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <sourceFile>${project.build.sourceDirectory}/module-info.java.${os.detected.classifier}
-                            </sourceFile>
-                            <destinationFile>${project.build.directory}/generated-sources/module-info.java
-                            </destinationFile>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-test-application-json</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <sourceFile>${project.basedir}/src/test/resources/application.json.${os.detected.classifier}
-                            </sourceFile>
-                            <destinationFile>${project.build.testOutputDirectory}/application.json
-                            </destinationFile>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
@@ -346,7 +306,7 @@
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.basedir}/src/main/resources/${native.libdir}/${os.detected.name}/${os.detected.arch}"/>
+                                <mkdir dir="${project.basedir}/src/main/resources/${native.libdir}"/>
                                 <mkdir dir="${project.build.directory}/generated-sources"/>
                             </target>
                         </configuration>
@@ -357,35 +317,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
-                    <excludeDefaultDirectories>false</excludeDefaultDirectories>
                     <filesets>
                         <fileset>
-                            <directory>${project.build.sourceDirectory}</directory>
-                            <followSymlinks>false</followSymlinks>
-                            <includes>
-                                <include>module-info.java</include>
-                            </includes>
-                        </fileset>
-                        <fileset>
-                            <directory>
-                                ${project.basedir}/src/main/resources/${native.libdir}
-                            </directory>
-                            <followSymlinks>false</followSymlinks>
-                            <includes>
-                                <include>**/*</include>
-                            </includes>
-                            <excludes>
-                                <exclude>${os.detected.name}</exclude>
-                            </excludes>
-                        </fileset>
-                        <fileset>
-                            <directory>
-                                ${project.basedir}/src/main/resources/${native.libdir}/${os.detected.name}/${os.detected.arch}
-                            </directory>
-                            <followSymlinks>false</followSymlinks>
-                            <includes>
-                                <include>**/*</include>
-                            </includes>
+                            <directory>${project.basedir}/src/main/resources/${native.libdir}</directory>
                         </fileset>
                     </filesets>
                 </configuration>
@@ -447,7 +381,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <release>22</release>
+                    <release>${java.version}</release>
                     <annotationProcessorPaths>
                         <annotationProcessorPath>
                             <groupId>org.projectlombok</groupId>
