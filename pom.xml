@@ -459,6 +459,11 @@
                 <artifactId>javacv</artifactId>
                 <version>${javacv.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>javacpp</artifactId>
+                <version>${javacv.version}</version>
+            </dependency>
             <!-- 音频组件 -->
 
             <!-- xml解析api -->
