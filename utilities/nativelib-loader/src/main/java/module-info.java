@@ -29,6 +29,7 @@ module nativelib.loader {
   requires com.github.spotbugs.annotations;
   requires static lombok;
   requires org.apache.commons.codec;
+  requires org.apache.commons.lang3;
   requires org.slf4j;
 
   exports com.silong.foundation.utilities.nlloader;

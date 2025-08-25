@@ -22,17 +22,20 @@
 package com.silong.foundation.utilities.nlloader;
 
 import static com.silong.foundation.utilities.nlloader.NativeLibsExtractor.extractNativeLibs;
-import static com.silong.foundation.utilities.nlloader.PlatformDetector.*;
 import static java.io.File.pathSeparator;
+import static org.apache.commons.lang3.SystemProperties.getJavaLibraryPath;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 从classpath包含的jar包中加载指定的共享库，配合本地方法使用
@@ -42,42 +45,33 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2023-10-13 22:55
  */
 @Slf4j
+@SuppressFBWarnings(
+    value = "PATH_TRAVERSAL_IN",
+    justification = "Reference the path in the apache commons lang3")
 public final class NativeLibLoader {
 
-  /** 临时目录 */
-  public static final Path TEMP_DIR = new File(System.getProperty("java.io.tmpdir")).toPath();
+  /** 动态库写入路径 */
+  public static final Path SELECTED_JAVA_LOAD_PATH =
+      Arrays.stream(getJavaLibraryPath().split(pathSeparator))
+          .filter(StringUtils::isNotEmpty)
+          .map(File::new)
+          .filter(f -> f.isDirectory() && f.canWrite())
+          .limit(1)
+          .peek(
+              f ->
+                  log.info(
+                      "Choose directory: {} to write the temporary shared library.",
+                      f.getAbsolutePath()))
+          .findFirst()
+          .orElseThrow(
+              () ->
+                  new IllegalStateException(
+                      "No writable directory found in ${java.library.path}: "
+                          + getJavaLibraryPath()))
+          .toPath();
 
   /** 默认本地库在classpath中存放的目录 */
-  private static final String DEFAULT_LIB_DIR = "/native";
-
-  /** 操作系统名 */
-  public static final String OS_NAME;
-
-  /** 操作系统名 */
-  public static final String OS_ARCH;
-
-  /** 动态库搜索路径列表 */
-  private static final LinkedList<Path> DYNAMIC_LOAD_PATHS;
-
-  static {
-    Properties properties = new Properties();
-    PLATFORM_DETECTOR.detect(properties, List.of());
-    OS_NAME = properties.getProperty(DETECTED_NAME);
-    OS_ARCH = properties.getProperty(DETECTED_ARCH);
-    log.info("OS_NAME: {}", OS_NAME);
-    log.info("OS_ARCH: {}", OS_ARCH);
-
-    log.info("java.library.path: [");
-    DYNAMIC_LOAD_PATHS =
-        Arrays.stream(System.getProperty("java.library.path").split(pathSeparator))
-            .map(File::new)
-            .peek(f -> log.info(f.getAbsolutePath()))
-            .map(File::toPath)
-            .collect(Collectors.toCollection(LinkedList::new));
-    log.info("]");
-
-    assert !DYNAMIC_LOAD_PATHS.isEmpty() : "java.library.path is empty.";
-  }
+  private static final String DEFAULT_LIB_DIR = "";
 
   /** 工具类，禁止实例化 */
   private NativeLibLoader() {}
@@ -101,7 +95,7 @@ public final class NativeLibLoader {
    * @param libName 库名，不带格式
    * @param libDir 共享库存放目录
    */
-  @SneakyThrows({java.net.URISyntaxException.class, IOException.class})
+  @SneakyThrows({URISyntaxException.class, IOException.class})
   public static void loadLibrary(String libName, String libDir) {
     if (libName == null || libName.isEmpty()) {
       throw new IllegalArgumentException("libName must not be null or empty.");
@@ -119,7 +113,7 @@ public final class NativeLibLoader {
     }
 
     // 使用classloader从classpath中定位指定的本地库
-    String libFormat = PlatformLibFormat.match(OS_NAME).libFormat;
+    String libFormat = PlatformLibFormat.get().libFormat;
     URL url =
         NativeLibLoader.class
             .getClassLoader()
@@ -129,11 +123,12 @@ public final class NativeLibLoader {
                     : String.format("%s/%s.%s", libDir, libName, libFormat));
     if (url != null) {
       File file;
+
       boolean isJar = false;
       switch (url.getProtocol()) {
         case "file" -> {
           file = new File(url.toURI());
-          extractNativeLibs(file.toPath().getParent(), DYNAMIC_LOAD_PATHS.getLast());
+          extractNativeLibs(file.toPath().getParent(), SELECTED_JAVA_LOAD_PATH);
         }
         case "jar" -> {
           isJar = true;
@@ -141,19 +136,24 @@ public final class NativeLibLoader {
           // 提取 JAR 包路径和内部资源路径
           String[] parts = jarUrl.split("!/", 2);
           file = new File(new URL(parts[0]).toURI());
-          extractNativeLibs(file.toPath(), DYNAMIC_LOAD_PATHS.getLast());
+          extractNativeLibs(file.toPath(), SELECTED_JAVA_LOAD_PATH);
         }
         default ->
             throw new UnsupportedOperationException(String.format("Unsupported URL: %s", url));
       }
 
-      System.loadLibrary(libName);
+      Path libPath = SELECTED_JAVA_LOAD_PATH.resolve(libName + "." + libFormat);
+      if (!Files.exists(libPath)) {
+        throw new DetectionException("Failed to extract native library: " + libPath);
+      }
+      System.load(libPath.toFile().getAbsolutePath());
       log.info(
           "Successfully loaded {} from {}",
           libName,
           isJar ? file.getAbsolutePath() : file.getParentFile().getAbsolutePath());
     } else {
-      log.error("Cannot find {} in the classpath.", String.format("%s.%s", libName, libFormat));
+      throw new DetectionException(
+          String.format("Cannot find %s.%s in the classpath.", libName, libFormat));
     }
   }
 }

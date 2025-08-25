@@ -57,12 +57,12 @@ public final class NativeLibsExtractor {
   /**
    * 把目标jar文件内的所有当前操作系统平台的共享库抽取至给定目录
    *
-   * @param jarFile jar文件
+   * @param jarFileOrDir jar文件或目录
    * @param targetDir 目标目录
    */
   @SneakyThrows(IOException.class)
-  public static void extractNativeLibs(@NonNull Path jarFile, @NonNull Path targetDir) {
-    PlatformLibFormat format = PlatformLibFormat.match(NativeLibLoader.OS_NAME);
+  public static void extractNativeLibs(@NonNull Path jarFileOrDir, @NonNull Path targetDir) {
+    PlatformLibFormat format = PlatformLibFormat.get();
 
     // 创建目标目录，并列出目标目录下所有共享库
     Files.createDirectories(targetDir);
@@ -83,7 +83,7 @@ public final class NativeLibsExtractor {
                           }
                         }));
 
-    File file = jarFile.toFile();
+    File file = jarFileOrDir.toFile();
     if (file.isFile() && file.getName().endsWith(".jar")) {
       try (JarFile archive = new JarFile(file, true, OPEN_READ)) {
         // sort entries by name to always create folders first
@@ -102,7 +102,9 @@ public final class NativeLibsExtractor {
             try (InputStream inputStream = archive.getInputStream(entry)) {
               if (!DigestUtils.sha256Hex(inputStream).equals(existLibsCache.get(name))) {
                 try (InputStream in = archive.getInputStream(entry)) {
-                  Files.copy(in, targetDir.resolve(name), REPLACE_EXISTING);
+                  Path targetPath = targetDir.resolve(name);
+                  Files.copy(in, targetPath, REPLACE_EXISTING);
+                  targetPath.toFile().deleteOnExit(); // 保持临时文件清理
                 }
               }
             }
@@ -111,8 +113,12 @@ public final class NativeLibsExtractor {
       }
     } else if (file.isDirectory()) {
       Files.walkFileTree(
-          jarFile,
+          jarFileOrDir,
           new SimpleFileVisitor<>() {
+
+            @SuppressFBWarnings(
+                value = "PATH_TRAVERSAL_IN",
+                justification = "Traverse all shared libraries in the jar file")
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                 throws IOException {
@@ -121,7 +127,9 @@ public final class NativeLibsExtractor {
                 try (InputStream inputStream = Files.newInputStream(file)) {
                   if (!DigestUtils.sha256Hex(inputStream).equals(existLibsCache.get(name))) {
                     try (InputStream in = Files.newInputStream(file)) {
-                      Files.copy(in, targetDir.resolve(name), REPLACE_EXISTING);
+                      Path targetPath = targetDir.resolve(name);
+                      Files.copy(in, targetPath, REPLACE_EXISTING);
+                      targetPath.toFile().deleteOnExit(); // 保持临时文件清理
                     }
                   }
                 }
@@ -130,7 +138,7 @@ public final class NativeLibsExtractor {
             }
           });
     } else {
-      throw new IllegalArgumentException(String.format("Invalid jarFile: %s", jarFile));
+      throw new IllegalArgumentException(String.format("Invalid jarFile: %s", jarFileOrDir));
     }
   }
 

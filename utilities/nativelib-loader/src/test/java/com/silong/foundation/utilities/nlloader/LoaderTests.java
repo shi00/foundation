@@ -21,8 +21,7 @@
 
 package com.silong.foundation.utilities.nlloader;
 
-import static com.silong.foundation.utilities.nlloader.NativeLibLoader.OS_ARCH;
-import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
+import static org.apache.commons.lang3.SystemUtils.*;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Assertions;
@@ -53,5 +52,19 @@ public class LoaderTests {
     }
     String ll = lib;
     Assertions.assertDoesNotThrow(() -> NativeLibLoader.loadLibrary(ll));
+  }
+
+  @Test
+  void test2() {
+    if (IS_OS_WINDOWS)
+      Assertions.assertDoesNotThrow(
+          () -> NativeLibLoader.loadLibrary("libwhisper", "windows_native_libs"));
+  }
+
+  @Test
+  void test3() {
+    if (IS_OS_LINUX)
+      Assertions.assertDoesNotThrow(
+          () -> NativeLibLoader.loadLibrary("libwhisper", "linux_native_libs"));
   }
 }

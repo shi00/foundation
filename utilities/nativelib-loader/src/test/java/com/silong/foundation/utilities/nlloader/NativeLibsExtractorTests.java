@@ -67,7 +67,7 @@ public class NativeLibsExtractorTests {
   void test4() {
     Path path = NativeLibsExtractor.locate(RocksDB.class);
     String dir = UUID.randomUUID().toString();
-    Path targetDir = TEMP_DIR.resolve(dir);
+    Path targetDir = SELECTED_JAVA_LOAD_PATH.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
     var files = targetDir.toFile().list();
     Assertions.assertNotNull(files);
@@ -79,7 +79,7 @@ public class NativeLibsExtractorTests {
   void test5() {
     Path path = NativeLibsExtractor.locate(RocksDB.class);
     String dir = UUID.randomUUID().toString();
-    Path targetDir = TEMP_DIR.resolve(dir);
+    Path targetDir = SELECTED_JAVA_LOAD_PATH.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
     var files = targetDir.toFile().list();
     Assertions.assertNotNull(files);
@@ -97,7 +97,7 @@ public class NativeLibsExtractorTests {
   void test6() {
     Path path = NativeLibsExtractor.locate(NativeLibLoader.class);
     String dir = UUID.randomUUID().toString();
-    Path targetDir = TEMP_DIR.resolve(dir);
+    Path targetDir = SELECTED_JAVA_LOAD_PATH.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
     Assertions.assertEquals(0, Objects.requireNonNull(targetDir.toFile().list()).length);
   }
@@ -118,7 +118,7 @@ public class NativeLibsExtractorTests {
   void testExtractNativeLibsWithValidJar() {
     Path path = NativeLibsExtractor.locate(RocksDB.class);
     String dir = UUID.randomUUID().toString();
-    Path targetDir = TEMP_DIR.resolve(dir);
+    Path targetDir = SELECTED_JAVA_LOAD_PATH.resolve(dir);
     NativeLibsExtractor.extractNativeLibs(path, targetDir);
     var files = targetDir.toFile().list();
     Assertions.assertNotNull(files);
@@ -129,7 +129,7 @@ public class NativeLibsExtractorTests {
   void testExtractNativeLibsWithInvalidPath() {
     Path invalidPath = Path.of("invalid/path/to/jar");
     String dir = UUID.randomUUID().toString();
-    Path targetDir = TEMP_DIR.resolve(dir);
+    Path targetDir = SELECTED_JAVA_LOAD_PATH.resolve(dir);
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () -> NativeLibsExtractor.extractNativeLibs(invalidPath, targetDir));

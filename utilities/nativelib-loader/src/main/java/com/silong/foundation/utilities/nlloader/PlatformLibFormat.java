@@ -21,7 +21,11 @@
 
 package com.silong.foundation.utilities.nlloader;
 
+import static org.apache.commons.lang3.SystemUtils.*;
+import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
+
 import java.util.Arrays;
+import java.util.function.Supplier;
 import lombok.Getter;
 
 /**
@@ -31,42 +35,39 @@ import lombok.Getter;
  * @version 1.0.0
  * @since 2023-10-13 23:05
  */
-@Getter
 public enum PlatformLibFormat {
 
-  /** Linux */
-  LINUX("linux", "so"),
-
   /** Apple OS */
-  OSX("osx", "dylib"),
+  MAC(() -> IS_OS_MAC || IS_OS_MAC_OSX, "dylib"),
+
+  /** UNIX */
+  UNIX(() -> IS_OS_UNIX && !IS_OS_MAC_OSX, "so"),
 
   /** Windows */
-  WINDOWS("windows", "dll");
+  WINDOWS(() -> IS_OS_WINDOWS, "dll");
 
-  /** 操作系统民族 */
-  final String osName;
+  final Supplier<Boolean> detector;
 
   /** 共享库格式 */
-  final String libFormat;
+  @Getter final String libFormat;
 
-  PlatformLibFormat(String osName, String libFormat) {
-    this.osName = osName;
+  PlatformLibFormat(Supplier<Boolean> detector, String libFormat) {
+    this.detector = detector;
     this.libFormat = libFormat;
   }
 
   /**
-   * 根据操作系统名查找
+   * 获取当前程序运行平台上的动态库格式
    *
-   * @param osName 操作系统名
-   * @return true or false
+   * @return 格式
    */
-  public static PlatformLibFormat match(String osName) {
+  public static PlatformLibFormat get() {
     return Arrays.stream(PlatformLibFormat.values())
-        .filter(platformLibFormat -> platformLibFormat.osName.equals(osName))
+        .filter(platformLibFormat -> platformLibFormat.detector.get())
         .findAny()
         .orElseThrow(
             () ->
                 new UnsupportedOperationException(
-                    "Only supports three operating systems: Linux, Windows and OSX."));
+                    "Unsupported operating system. Only supports Unix, Windows and MAC."));
   }
 }
