@@ -140,19 +140,20 @@
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-        <maven-pmd-plugin.version>3.26.0</maven-pmd-plugin.version>
-        <pmd.version>7.14.0</pmd.version>
+        <checkstyle.version>11.0.0</checkstyle.version>
+        <maven-pmd-plugin.version>3.27.0</maven-pmd-plugin.version>
+        <pmd.version>7.16.0</pmd.version>
         <maven-failsafe-plugin.version>3.5.3</maven-failsafe-plugin.version>
-        <checkstyle.version>10.26.0</checkstyle.version>
         <jaxb2-maven-plugin.version>3.1.0</jaxb2-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
         <maven-jxr-plugin.version>3.6.0</maven-jxr-plugin.version>
         <spotbugs-maven-plugin.version>4.9.4.0</spotbugs-maven-plugin.version>
+        <spotbugs.version>4.9.4</spotbugs.version>
         <findsecbugs-plugin.version>1.14.0</findsecbugs-plugin.version>
         <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
         <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
         <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
-        <maven-plugin-api.version>3.9.10</maven-plugin-api.version>
+        <maven-plugin-api.version>3.9.11</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.15.1</maven-plugin-annotations.version>
         <maven-plugin-plugin.version>3.15.1</maven-plugin-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
@@ -167,31 +168,31 @@
         <docker-maven-plugin.version>0.46.0</docker-maven-plugin.version>
         <maven-project-info-reports-plugin.version>3.9.0</maven-project-info-reports-plugin.version>
         <download-maven-plugin.version>1.13.0</download-maven-plugin.version>
-        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+        <maven-enforcer-plugin.version>3.6.1</maven-enforcer-plugin.version>
         <extra-enforcer-rules.version>1.10.0</extra-enforcer-rules.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
-        <native-maven-plugin.version>0.10.6</native-maven-plugin.version>
-        <liquibase-maven-plugin.version>4.31.1</liquibase-maven-plugin.version>
+        <native-maven-plugin.version>0.11.0</native-maven-plugin.version>
+        <liquibase-maven-plugin.version>4.31.1
+        </liquibase-maven-plugin.version>  <!-- 插件版本要与spring boot中的liquibase版本一致  -->
         <copy-rename-maven-plugin.version>1.0.1</copy-rename-maven-plugin.version>
         <!-- 插件 -->
 
         <!--开源组件-->
-        <spring-boot.version>3.5.4</spring-boot.version>
+        <spring-boot.version>3.5.5</spring-boot.version>
         <spring-ai.version>1.0.1</spring-ai.version>
         <spring-cloud.version>2025.1.0-M1</spring-cloud.version>
         <guava.version>33.4.8-jre</guava.version>
         <passay.version>1.6.6</passay.version>
         <zxcvbn.version>1.9.0</zxcvbn.version>
-        <spotbugs.version>4.9.4</spotbugs.version>
         <disruptor.version>4.0.0</disruptor.version>
         <jctools.version>4.0.5</jctools.version>
         <javacv.version>1.5.12</javacv.version>
         <jetcd.version>0.8.5</jetcd.version>
         <jmh.version>1.37</jmh.version>
-        <jooq.version>3.19.24</jooq.version>
+        <jooq.version>3.19.25</jooq.version>
         <jaxb-impl.version>4.0.3</jaxb-impl.version>
-        <springdoc.version>2.8.9</springdoc.version>
-        <libphonenumber.version>9.0.11</libphonenumber.version>
+        <springdoc.version>2.8.11</springdoc.version>
+        <libphonenumber.version>9.0.12</libphonenumber.version>
         <datafaker.version>2.4.4</datafaker.version>
         <commons-io.version>2.20.0</commons-io.version>
         <commons-rng-simple.version>1.6</commons-rng-simple.version>
@@ -202,15 +203,15 @@
         <jgroups.version>5.4.8.Final</jgroups.version>
         <jgroups-raft.version>1.1.0.Final</jgroups-raft.version>
         <jgroups-kubernetes.version>2.0.2.Final</jgroups-kubernetes.version>
-        <protobuf-java.version>3.25.8</protobuf-java.version>
-        <rocksdbjni.version>10.2.1</rocksdbjni.version>
+        <protobuf-java.version>4.32.0</protobuf-java.version>
+        <rocksdbjni.version>10.4.2</rocksdbjni.version>
         <snappy-java.version>1.1.10.8</snappy-java.version>
         <zstd-jni.version>1.5.7-4</zstd-jni.version>
         <kryo.version>5.6.2</kryo.version>
         <java-jwt.version>4.5.0</java-jwt.version>
-        <oshi-core.version>6.8.2</oshi-core.version>
+        <oshi-core.version>6.8.3</oshi-core.version>
         <mysql-connector-j.version>9.4.0</mysql-connector-j.version>
-        <redisson-spring-boot-starter.version>3.50.0</redisson-spring-boot-starter.version>
+        <redisson-spring-boot-starter.version>3.51.0</redisson-spring-boot-starter.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
         <commons-validator.version>1.10.0</commons-validator.version>
         <k8s-client.version>24.0.0</k8s-client.version>
