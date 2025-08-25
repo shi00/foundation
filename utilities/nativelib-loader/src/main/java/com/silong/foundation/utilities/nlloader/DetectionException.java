@@ -33,7 +33,22 @@ import java.io.Serial;
 public class DetectionException extends RuntimeException {
   @Serial private static final long serialVersionUID = -1420767071455009168L;
 
+  /**
+   * 构造方法
+   *
+   * @param message 错误信息
+   */
   public DetectionException(String message) {
     super(message);
+  }
+
+  /**
+   * 构造方法
+   *
+   * @param message 错误信息
+   * @param cause 异常根因
+   */
+  public DetectionException(String message, Throwable cause) {
+    super(message, cause);
   }
 }
