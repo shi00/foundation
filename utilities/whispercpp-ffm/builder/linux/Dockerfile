@@ -24,8 +24,8 @@ RUN ARCH=$(uname -m) && case $ARCH in \
 
 # 设置环境变量
 ENV PATH $PATH:/opt/jextract-22/bin
-#安装java相关软件包
 
+# 更新vcpkg
 WORKDIR /opt/vcpkg
 RUN git pull origin master \
 && ./bootstrap-vcpkg.sh

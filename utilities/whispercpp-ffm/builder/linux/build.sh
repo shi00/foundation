@@ -43,22 +43,6 @@ else
     # 进入vcpkg目录，完成vcpkg的更新和初始化
     cd "vcpkg"
 
-    git pull origin master
-    if [ $? -eq 0 ]; then
-        echo "vcpkg updated successfully."
-    else
-        echo "Failed to update vcpkg."
-        exit 1
-    fi
-
-    ./bootstrap-vcpkg.sh
-    if [ $? -eq 0 ]; then
-        echo "vcpkg bootstrapped successfully."
-    else
-        echo "Failed to bootstrap vcpkg."
-        exit 1
-    fi
-
     vcpkg install whisper-cpp:x64-linux-dynamic
     cd "installed/x64-linux-dynamic/lib"
 
