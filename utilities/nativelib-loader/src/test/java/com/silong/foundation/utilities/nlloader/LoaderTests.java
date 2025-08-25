@@ -26,6 +26,8 @@ import static org.apache.commons.lang3.SystemUtils.*;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 /**
  * 单元测试
@@ -55,16 +57,23 @@ public class LoaderTests {
   }
 
   @Test
+  @EnabledOnOs(OS.WINDOWS)
   void test2() {
-    if (IS_OS_WINDOWS)
-      Assertions.assertDoesNotThrow(
-          () -> NativeLibLoader.loadLibrary("libwhisper", "windows_native_libs"));
+    Assertions.assertDoesNotThrow(
+        () -> NativeLibLoader.loadLibrary("libwhisper", "windows_native_libs"));
   }
 
   @Test
+  @EnabledOnOs({OS.LINUX})
   void test3() {
-    if (IS_OS_LINUX)
-      Assertions.assertDoesNotThrow(
-          () -> NativeLibLoader.loadLibrary("libwhisper", "linux_native_libs"));
+    Assertions.assertDoesNotThrow(
+        () -> NativeLibLoader.loadLibrary("libwhisper", "linux_native_libs"));
+  }
+
+  @Test
+  @EnabledOnOs(OS.MAC)
+  void test4() {
+    Assertions.assertDoesNotThrow(
+        () -> NativeLibLoader.loadLibrary("libwhisper", "mac_native_libs"));
   }
 }
