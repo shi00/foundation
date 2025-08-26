@@ -27,8 +27,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * WhisperCpp接口
@@ -38,9 +36,6 @@ import java.nio.file.Paths;
  * @since 2024-04-22 18:45
  */
 public interface WhisperCpp extends AutoCloseable {
-
-  /** 临时目录 */
-  Path TEMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"));
 
   /** 支持的音频采样率 */
   int SUPPORTED_SAMPLED_RATE = WHISPER_SAMPLE_RATE();

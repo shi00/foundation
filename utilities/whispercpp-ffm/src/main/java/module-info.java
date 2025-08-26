@@ -23,7 +23,6 @@
  * 模块定义
  *
  * @author louis sin
- * @version 1.0.0
  * @since 2024-04-21 16:11
  */
 module whispercpp.ffm {
@@ -35,6 +34,7 @@ module whispercpp.ffm {
   requires jakarta.validation;
   requires org.bytedeco.javacv;
   requires org.bytedeco.ffmpeg;
+  requires javafx.graphics;
 
   opens native_libs to
       nativelib.loader;

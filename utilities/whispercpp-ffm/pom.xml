@@ -273,6 +273,11 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>26-ea+3</version>
+        </dependency>
+        <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv</artifactId>
         </dependency>
@@ -296,6 +301,26 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <!-- 配置资源目录及排除规则 -->
+                    <resources>
+                        <resource>
+                            <!-- 源资源目录（默认就是 src/main/resources，可省略，但显式配置更清晰） -->
+                            <directory>src/main/resources</directory>
+                            <!-- 排除规则：排除 hack 目录及其下所有内容 -->
+                            <excludes>
+                                <!-- 规则1：排除 hack 目录本身（单层目录匹配） -->
+                                <exclude>hack/</exclude>
+                                <!-- 规则2：排除 hack 目录下所有文件和子目录（** 匹配多层） -->
+                                <exclude>hack/**</exclude>
+                            </excludes>
+                        </resource>
+                    </resources>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
@@ -308,6 +333,21 @@
                             <target>
                                 <mkdir dir="${project.basedir}/src/main/resources/${native.libdir}"/>
                                 <mkdir dir="${project.build.directory}/generated-sources"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-files</id>
+                        <phase>process-resources</phase> <!-- 绑定到打包阶段 -->
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <!-- 另一个拷贝任务：拷贝单个文件并改名 -->
+                                <copy file="src/main/resources/hack/WhisperCpp_1.java.bak"
+                                      tofile="${project.build.directory}/generated-sources/com/silong/foundation/utilities/whispercpp/generated/WhisperCpp_1.java"
+                                      overwrite="true"/>
                             </target>
                         </configuration>
                     </execution>
@@ -327,7 +367,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>${maven-source-plugin.version}</version>
                 <configuration>
                     <excludes>
                         <exclude>**/models/*</exclude>
