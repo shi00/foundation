@@ -65,6 +65,16 @@ public interface WhisperCpp extends AutoCloseable {
   String recognizeLanguage(File wavFile) throws Exception;
 
   /**
+   * 识别语言文件语种，返回zh,en,es等语言缩写
+   *
+   * @param wavFile 文件
+   * @param topK 返回前K个可能的语种
+   * @return 最可能的k个语种列表
+   * @throws Exception 异常
+   */
+  String[] recognizeLanguage(File wavFile, int topK) throws Exception;
+
+  /**
    * wav语音文件识别
    *
    * @param wavFile 文件

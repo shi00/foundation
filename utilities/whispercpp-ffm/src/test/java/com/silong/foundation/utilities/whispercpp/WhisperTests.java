@@ -23,10 +23,10 @@ package com.silong.foundation.utilities.whispercpp;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
-import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
@@ -67,9 +67,7 @@ public class WhisperTests {
 
   @SneakyThrows(IOException.class)
   private static WhisperConfig loadJsonFromClassPath() {
-    try (InputStream inputStream =
-        requireNonNull(
-            WhisperTests.class.getClassLoader().getResourceAsStream("application.json"))) {
+    try (InputStream inputStream = new FileInputStream("src/test/resources/application.json")) {
       return JsonMapper.builder()
           .enable(ACCEPT_CASE_INSENSITIVE_ENUMS)
           .configure(FAIL_ON_UNKNOWN_PROPERTIES, true)

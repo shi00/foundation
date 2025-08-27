@@ -22,6 +22,7 @@ package com.silong.foundation.utilities.whispercpp;
 
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
 import static com.silong.foundation.utilities.whispercpp.ParamsValidator.validateModelPath;
+import static com.silong.foundation.utilities.whispercpp.Pcmf32Extractor.extract;
 import static com.silong.foundation.utilities.whispercpp.Utils.*;
 import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp.*;
 import static java.lang.foreign.MemorySegment.NULL;
@@ -30,11 +31,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import jakarta.annotation.Nullable;
 import java.io.*;
 import java.lang.foreign.*;
-import java.nio.FloatBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.bytedeco.javacv.*;
 
 /**
  * 语音识别
@@ -47,7 +48,6 @@ import org.bytedeco.javacv.*;
 class WhisperCppImpl implements WhisperCpp {
 
   static {
-    // 加载共享库
     loadLibrary("libwhisper", "native_libs");
   }
 
@@ -80,7 +80,7 @@ class WhisperCppImpl implements WhisperCpp {
     MemorySegment systemInfo = NULL;
     try {
       systemInfo = whisper_print_system_info();
-      log.info("system_info: {}", systemInfo == NULL ? null : systemInfo.getString(0, UTF_8));
+      log.info("system_info: {}", NULL.equals(systemInfo) ? null : systemInfo.getString(0, UTF_8));
       whisperFullParams = config.buildWhisperFullParams();
       log.info("{}", whisperFullParams2String(whisperFullParams));
 
@@ -97,8 +97,52 @@ class WhisperCppImpl implements WhisperCpp {
   @Nullable
   @Override
   public String recognizeLanguage(File wavFile) throws Exception {
-    return "";
+    return analyze(
+        extract(wavFile),
+        (arena, ctxPtr) -> {
+          int retCode = whisper_lang_auto_detect(ctxPtr, 0, config.getNThreads(), NULL);
+          if (retCode == -1) {
+            log.error(
+                "Failed to detect the language of the multimedia file: {}",
+                wavFile.getAbsolutePath());
+            return null;
+          }
+          return whisper_lang_str(retCode).getString(0, UTF_8);
+        });
   }
+
+  @Nullable
+  @Override
+  public String[] recognizeLanguage(File wavFile, int topK) throws Exception {
+    return analyze(
+        extract(wavFile),
+        (arena, ctxPtr) -> {
+          int length = whisper_lang_max_id() + 1;
+          SequenceLayout layout = MemoryLayout.sequenceLayout(length, C_FLOAT);
+          MemorySegment probs = arena.allocate(layout);
+          int retCode = whisper_lang_auto_detect(ctxPtr, 0, config.getNThreads(), probs);
+          if (retCode == -1) {
+            log.error(
+                "Failed to detect the language of the multimedia file: {}",
+                wavFile.getAbsolutePath());
+            return null;
+          }
+
+          AtomicInteger index = new AtomicInteger(0);
+
+          return probs
+              .elements(layout)
+              .map(
+                  memorySegment ->
+                      new LangProb(index.getAndIncrement(), memorySegment.get(C_FLOAT, 0)))
+              .sorted((p1, p2) -> Float.compare(p2.prob, p1.prob))
+              .limit(topK)
+              .map(lp -> whisper_lang_str(lp.langId))
+              .toArray(String[]::new);
+        });
+  }
+
+  private record LangProb(int langId, float prob) {}
 
   @Nullable
   @Override
@@ -109,10 +153,19 @@ class WhisperCppImpl implements WhisperCpp {
   @Nullable
   @Override
   public String[] speech2Text(@NonNull InputStream inputStream) throws Exception {
+    return analyze(extract(inputStream), (arena, ctxPtr) -> collectResultFromCtx(ctxPtr));
+  }
+
+  private <T> T analyze(
+      float[] pcmf32, @NonNull BiFunction<Arena, MemorySegment, T> contextProcessor) {
     MemorySegment ctxPtr = NULL;
     try (Arena arena = Arena.ofConfined()) {
       ctxPtr = whisper_init_from_file_with_params(modelPath, whisperContextParams);
-      float[] pcmf32 = convertToPcmf32(inputStream);
+      if (ctxPtr == null || NULL.equals(ctxPtr)) {
+        log.error("Failed to initialize whisperContext with model:{}", modelPath);
+        return null;
+      }
+
       MemorySegment pcmf32Ptr = arena.allocateFrom(C_FLOAT, pcmf32);
       int retCode =
           whisper_full_parallel(
@@ -121,7 +174,7 @@ class WhisperCppImpl implements WhisperCpp {
         log.error("Failed to execute whisper_full_parallel with errCode:{}", retCode);
         return null;
       }
-      return collectResultFromCtx(ctxPtr);
+      return contextProcessor.apply(arena, ctxPtr);
     } finally {
       whisper_free(ctxPtr);
     }
@@ -130,88 +183,8 @@ class WhisperCppImpl implements WhisperCpp {
   private static String[] collectResultFromCtx(MemorySegment ctxPtr) {
     return IntStream.range(0, whisper_full_n_segments(ctxPtr))
         .mapToObj(i -> whisper_full_get_segment_text(ctxPtr, i))
-        .filter(ms -> ms != NULL && ms != null)
+        .filter(ms -> !NULL.equals(ms) && ms != null)
         .map(ms -> ms.getString(0, UTF_8))
         .toArray(String[]::new);
-  }
-
-  /**
-   * 直接将输入音频文件转换为whisper_full所需的float[]（pcmf32格式） 无需中间文件，全程内存处理
-   *
-   * @param inputStream 输入音频流
-   * @return 符合要求的float[]数组（单声道、16000Hz、范围[-1.0, 1.0]）
-   * @throws Exception 处理过程中发生错误时抛出
-   */
-  private static float[] convertToPcmf32(InputStream inputStream) throws Exception {
-    try ( // 1. 初始化抓取器，读取输入音频
-    var grabber = new FFmpegFrameGrabber(inputStream)) {
-
-      // 配置抓取器直接输出目标格式
-      grabber.setSampleRate(SUPPORTED_SAMPLED_RATE); // 强制采样率为16000Hz
-      grabber.setAudioChannels(SUPPORTED_CHANNELS); // 强制单声道
-      grabber.setAudioBitrate(SUPPORTED_BIT_RATE); // 设置比特率
-
-      log.info(
-          "Start initializing the audio grabber, sampleRate: {}Hz, audioChannels: {}, audioBitrate: {}bps",
-          grabber.getSampleRate(),
-          grabber.getAudioChannels(),
-          grabber.getAudioBitrate());
-
-      grabber.start();
-
-      // 预估容量，避免频繁扩容
-      int estimatedFrames = grabber.getLengthInFrames();
-      int initialCapacity = estimatedFrames > 0 ? (int) (estimatedFrames * 1.1) : 1024 * 1024;
-      FloatBuffer buffer = FloatBuffer.allocate(initialCapacity);
-      log.info("Audio conversion started, initial buffer capacity: {}", initialCapacity);
-
-      Frame frame;
-      long startTime = System.currentTimeMillis();
-      while ((frame = grabber.grabFrame()) != null) {
-        if (frame.samples == null || frame.samples.length == 0) {
-          continue;
-        }
-
-        // 检查缓冲区类型
-        if (!(frame.samples[0] instanceof FloatBuffer frameBuffer)) {
-          throw new IllegalStateException(
-              "Unsupported buffer type: " + frame.samples[0].getClass());
-        }
-        frameBuffer.flip();
-
-        int frameSamples = frameBuffer.remaining();
-        if (frameSamples > 0) {
-          // 确保缓冲区容量
-          buffer = ensureCapacity(buffer, frameSamples);
-          buffer.put(frameBuffer);
-        }
-      }
-
-      // 转换为最终数组
-      buffer.flip();
-      float[] pcmf32 = new float[buffer.limit()];
-      buffer.get(pcmf32);
-
-      long duration = System.currentTimeMillis() - startTime;
-      log.info(
-          "Audio conversion completed, total samples: {}, duration: {}ms, rate: {}/ms",
-          pcmf32.length,
-          duration,
-          (int) (pcmf32.length / Math.max(1, duration)));
-      return pcmf32;
-    }
-  }
-
-  // 新增缓冲区扩容方法
-  private static FloatBuffer ensureCapacity(FloatBuffer buffer, int required) {
-    if (buffer.remaining() >= required) {
-      return buffer;
-    }
-    int newCapacity = Math.max(buffer.capacity() + required, buffer.capacity() * 2);
-    FloatBuffer newBuffer = FloatBuffer.allocate(newCapacity);
-    buffer.flip();
-    newBuffer.put(buffer);
-    log.debug("Buffer expanded to {} (required: {})", newCapacity, required);
-    return newBuffer;
   }
 }
