@@ -43,9 +43,6 @@ public interface WhisperCpp extends AutoCloseable {
   /** 支持的声道数量 */
   int SUPPORTED_CHANNELS = 1;
 
-  /** 支持的比特率，计算公式为：SUPPORTED_SAMPLED_RATE * 16 * SUPPORTED_CHANNELS */
-  int SUPPORTED_BIT_RATE = SUPPORTED_SAMPLED_RATE * 16 * SUPPORTED_CHANNELS;
-
   /**
    * 根据配置获取Whisper实例
    *
