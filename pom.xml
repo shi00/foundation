@@ -454,10 +454,15 @@
             </dependency>
             <!-- 集群通信组件 -->
 
-            <!-- 音频组件 -->
+            <!-- javacv -->
             <dependency>
                 <groupId>org.bytedeco</groupId>
                 <artifactId>javacv</artifactId>
+                <version>${javacv.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bytedeco</groupId>
+                <artifactId>javacv-platform</artifactId>
                 <version>${javacv.version}</version>
             </dependency>
             <dependency>
