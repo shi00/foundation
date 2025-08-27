@@ -38,7 +38,6 @@
         <header.class.name>WhisperCpp</header.class.name>
         <lib.name>libwhisper</lib.name>
         <sourcecode.package>com.silong.foundation.utilities.whispercpp.generated</sourcecode.package>
-        <check-dependencies.skip>false</check-dependencies.skip><!--依赖检查插件暂不支持java22-->
     </properties>
 
     <profiles>
@@ -135,6 +134,9 @@
         </profile>
         <profile>
             <id>windows</id>
+            <properties>
+                <target.arch>x64</target.arch>
+            </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
                 <os>
@@ -206,6 +208,7 @@
                                                         powershell .\build.ps1 ${output.src.dir}
                                                         ${output.shared-lib.dir}
                                                         ${lib.name} ${header.class.name} ${sourcecode.package}
+                                                        ${target.arch}
                                                     </shell>
                                                 </entrypoint>
                                                 <wait>
@@ -273,17 +276,78 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>26-ea+3</version>
-        </dependency>
-        <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv</artifactId>
+            <exclusions>
+                <!-- 排除视频/图像相关依赖 -->
+                <exclusion>
+                    <groupId>org.bytedeco</groupId>
+                    <artifactId>opencv</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bytedeco</groupId>
+                    <artifactId>javafx</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>artoolkitplus</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>flycapture</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>leptonica</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>libdc1394</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>libfreenect</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>librealsense</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>libfreenect2</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>librealsense2</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>openblas</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>tesseract</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>videoinput</artifactId>
+                    <groupId>org.bytedeco</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
+        <!-- 2. FFmpeg 核心库（音频解码核心，无平台依赖） -->
         <dependency>
             <groupId>org.bytedeco</groupId>
-            <artifactId>javacpp</artifactId>
+            <artifactId>ffmpeg</artifactId>
+            <version>7.1.1-${javacv.version}</version>
+            <classifier>${os.detected.classifier}</classifier>
+            <exclusions>
+                <!-- 排除FFmpeg的视频相关原生绑定（若有） -->
+                <exclusion>
+                    <groupId>org.bytedeco</groupId>
+                    <artifactId>ffmpeg-platform</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
