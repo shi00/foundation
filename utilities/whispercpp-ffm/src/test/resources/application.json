@@ -1,3 +1,6 @@
 {
-  "modelPath": "src/test/resources/models/ggml-tiny.bin"
+  "modelPath": "src/test/resources/models/ggml-tiny.bin",
+  "context": {
+    "dtwAHeadsPreset": "WHISPER_AHEADS_TINY"
+  }
 }
