@@ -56,13 +56,12 @@ public final class NativeLibLoader {
           .filter(StringUtils::isNotEmpty)
           .map(File::new)
           .filter(f -> f.isDirectory() && f.canWrite())
-          .limit(1)
           .peek(
               f ->
                   log.info(
                       "Choose directory: {} to write the temporary shared library.",
                       f.getAbsolutePath()))
-          .findFirst()
+          .reduce((first, second) -> second) // 取最后一个可写目录
           .orElseThrow(
               () ->
                   new IllegalStateException(
