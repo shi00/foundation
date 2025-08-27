@@ -36,6 +36,7 @@ import jakarta.validation.constraints.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Whisper配置
@@ -309,18 +310,25 @@ public class WhisperConfig {
     whisper_full_params.audio_ctx(whisperFullParams, getAudioCtx());
 
     // [EXPERIMENTAL] [TDRZ] tinydiarize
+    String temp;
     whisper_full_params.tdrz_enable(whisperFullParams, isTdrzEnable());
     whisper_full_params.suppress_regex(
         whisperFullParams,
-        getSuppressRegex() == null ? NULL : arena.allocateFrom(getSuppressRegex(), UTF_8));
+        (temp = getSuppressRegex()) == null || StringUtils.isBlank(temp)
+            ? NULL
+            : arena.allocateFrom(getSuppressRegex(), UTF_8));
     whisper_full_params.initial_prompt(
         whisperFullParams,
-        getInitialPrompt() == null ? NULL : arena.allocateFrom(getInitialPrompt(), UTF_8));
+        (temp = getInitialPrompt()) == null || StringUtils.isBlank(temp)
+            ? NULL
+            : arena.allocateFrom(getInitialPrompt(), UTF_8));
+
+    int[] pts = getPromptTokens();
     whisper_full_params.prompt_tokens(
         whisperFullParams,
-        getPromptTokens() == null ? NULL : arena.allocateFrom(int32_t, getPromptTokens()));
+        pts == null || pts.length == 0 ? NULL : arena.allocateFrom(int32_t, pts));
     whisper_full_params.prompt_n_tokens(
-        whisperFullParams, getPromptTokens() == null ? 0 : getPromptTokens().length);
+        whisperFullParams, pts == null || pts.length == 0 ? 0 : pts.length);
 
     // 语言设置
     whisper_full_params.language(
