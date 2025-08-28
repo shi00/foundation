@@ -23,7 +23,6 @@ package com.silong.foundation.utilities.whispercpp;
 
 import static java.lang.Float.MAX_VALUE;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -60,5 +59,5 @@ public class VadConfig {
   private boolean enable;
 
   /** vad模型路径 */
-  @NotBlank private String modelPath;
+  private String modelPath;
 }
