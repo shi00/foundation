@@ -21,6 +21,7 @@ if ($LASTEXITCODE -ne 0)
 # 切换到最新的release版本
 cd .\whisper.cpp\
 $last_tag = git describe --tags
+$last_tag = $last_tag.Split("-")[0]
 git checkout $last_tag
 if ($LASTEXITCODE -ne 0)
 {
