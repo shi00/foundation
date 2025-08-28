@@ -31,7 +31,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import jakarta.annotation.Nullable;
 import java.io.*;
 import java.lang.foreign.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import lombok.NonNull;
@@ -110,39 +109,6 @@ class WhisperCppImpl implements WhisperCpp {
           return whisper_lang_str(retCode).getString(0, UTF_8);
         });
   }
-
-  @Nullable
-  @Override
-  public String[] recognizeLanguage(File wavFile, int topK) throws Exception {
-    return analyze(
-        extract(wavFile),
-        (arena, ctxPtr) -> {
-          int length = whisper_lang_max_id() + 1;
-          SequenceLayout layout = MemoryLayout.sequenceLayout(length, C_FLOAT);
-          MemorySegment probs = arena.allocate(layout);
-          int retCode = whisper_lang_auto_detect(ctxPtr, 0, config.getNThreads(), probs);
-          if (retCode == -1) {
-            log.error(
-                "Failed to detect the language of the multimedia file: {}",
-                wavFile.getAbsolutePath());
-            return null;
-          }
-
-          AtomicInteger index = new AtomicInteger(0);
-
-          return probs
-              .elements(layout)
-              .map(
-                  memorySegment ->
-                      new LangProb(index.getAndIncrement(), memorySegment.get(C_FLOAT, 0)))
-              .sorted((p1, p2) -> Float.compare(p2.prob, p1.prob))
-              .limit(topK)
-              .map(lp -> whisper_lang_str(lp.langId))
-              .toArray(String[]::new);
-        });
-  }
-
-  private record LangProb(int langId, float prob) {}
 
   @Nullable
   @Override

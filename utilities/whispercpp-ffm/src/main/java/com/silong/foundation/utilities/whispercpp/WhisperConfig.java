@@ -21,6 +21,7 @@
 
 package com.silong.foundation.utilities.whispercpp;
 
+import static com.silong.foundation.utilities.whispercpp.ParamsValidator.validateModelPath;
 import static com.silong.foundation.utilities.whispercpp.ParamsValidator.validateSupportedLanguage;
 import static com.silong.foundation.utilities.whispercpp.WhisperSamplingStrategy.WHISPER_SAMPLING_GREEDY;
 import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp.whisper_context_default_params;
@@ -377,9 +378,9 @@ public class WhisperConfig {
     whisper_vad_params.threshold(vadParams, vadConfig.getThreshold());
     whisper_full_params.vad_model_path(
         whisperFullParams,
-        vadConfig.getModelPath() == null
+        vadConfig.getModelPath() == null || StringUtils.isBlank(vadConfig.getModelPath())
             ? NULL
-            : arena.allocateFrom(vadConfig.getModelPath(), UTF_8));
+            : arena.allocateFrom(validateModelPath(vadConfig.getModelPath()), UTF_8));
     whisper_full_params.vad(whisperFullParams, vadConfig.isEnable());
     return whisperFullParams;
   }
