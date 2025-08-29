@@ -1,0 +1,2 @@
+[registry."docker.io"]
+mirrors = ["https://docker.1ms.run", "https://docker.anyhub.us.kg", "https://dockerhub.jobcher.com", "https://dockerhub.icu"]
