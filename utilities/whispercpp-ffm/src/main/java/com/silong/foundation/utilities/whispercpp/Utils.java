@@ -23,6 +23,7 @@ package com.silong.foundation.utilities.whispercpp;
 
 import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.C_POINTER;
 import static com.silong.foundation.utilities.whispercpp.generated.WhisperCpp_1.int32_t;
+import static java.lang.foreign.MemorySegment.NULL;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -156,10 +157,7 @@ class Utils {
           whisper_full_params.tdrz_enable(params),
           getString(arena, whisper_full_params.suppress_regex(params)),
           getString(arena, whisper_full_params.initial_prompt(params)),
-          intArray2String(
-              arena,
-              whisper_full_params.prompt_tokens(params),
-              whisper_full_params.prompt_n_tokens(params)),
+          intArray2String(arena, whisper_full_params.prompt_tokens(params)),
           whisper_full_params.prompt_n_tokens(params),
           getString(arena, whisper_full_params.language(params)),
           whisper_full_params.detect_language(params),
@@ -191,13 +189,13 @@ class Utils {
     }
   }
 
-  private static String intArray2String(Arena arena, MemorySegment segment, int length) {
-    return (segment == null || MemorySegment.NULL.equals(segment)
+  private static String intArray2String(Arena arena, MemorySegment segment) {
+    return (segment == null || NULL.equals(segment)
         ? null
-        : intArray2String(segment.reinterpret(arena, Utils::free), length));
+        : intArray2String(segment.reinterpret(arena, Utils::free)));
   }
 
-  private static String intArray2String(MemorySegment segment, int length) {
+  private static String intArray2String(MemorySegment segment) {
     return segment
         .elements(int32_t)
         .map(String::valueOf)
@@ -205,29 +203,31 @@ class Utils {
   }
 
   private static String getString(Arena arena, MemorySegment segment) {
-    return (segment == null || MemorySegment.NULL.equals(segment)
+    return (segment == null || NULL.equals(segment)
         ? null
         : segment.reinterpret(arena, Utils::free).getString(0, UTF_8));
   }
 
   private static String whisperGrammarArray2String(
       Arena arena, MemorySegment segment, long length) {
-    if (segment == null || MemorySegment.NULL.equals(segment)) {
+    if (segment == null || NULL.equals(segment)) {
       return null;
     }
-
-    var arrayPtr =
-        segment.reinterpret(
+    return segment
+        .reinterpret(
             arena,
             ms -> {
               LongStream.range(0, length).forEach(index -> free(ms.getAtIndex(C_POINTER, index)));
               free(segment);
-            });
-
-    arrayPtr.elements(C_POINTER).map(ptr -> String.format("[type:%s,value:%s]"));
-    // TODO
-
-    return null;
+            })
+        .elements(C_POINTER)
+        .map(
+            ptr ->
+                String.format(
+                    "[type:%s,value:%d]",
+                    WhisperGreType.fromOriginal(whisper_grammar_element.type(ptr)),
+                    whisper_grammar_element.value(ptr)))
+        .collect(Collectors.joining(", ", "{", "}"));
   }
 
   /**
