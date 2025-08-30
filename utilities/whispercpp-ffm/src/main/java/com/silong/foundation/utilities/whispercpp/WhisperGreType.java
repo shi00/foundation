@@ -50,5 +50,18 @@ public enum WhisperGreType {
   WHISPER_GRETYPE_CHAR_RNG_UPPER,
 
   /** 修改前面的 WHISPER_GRETYPE_CHAR 或 WHISPER_GRETYPE_CHAR_RNG_UPPER 以添加一个备用字符进行匹配（[ab]，[a-zA]） */
-  WHISPER_GRETYPE_CHAR_ALT
+  WHISPER_GRETYPE_CHAR_ALT;
+
+  public static WhisperGreType fromOriginal(int original) {
+    return switch (original) {
+      case 0 -> WHISPER_GRETYPE_END;
+      case 1 -> WHISPER_GRETYPE_ALT;
+      case 2 -> WHISPER_GRETYPE_RULE_REF;
+      case 3 -> WHISPER_GRETYPE_CHAR;
+      case 4 -> WHISPER_GRETYPE_CHAR_NOT;
+      case 5 -> WHISPER_GRETYPE_CHAR_RNG_UPPER;
+      case 6 -> WHISPER_GRETYPE_CHAR_ALT;
+      default -> throw new IllegalArgumentException("Unknown WhisperGreType: " + original);
+    };
+  }
 }
