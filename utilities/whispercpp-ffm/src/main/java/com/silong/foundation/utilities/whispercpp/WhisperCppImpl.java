@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 class WhisperCppImpl implements WhisperCpp {
 
   static {
-    loadLibrary("libwhisper", "native_libs");
+    loadLibrary("libwhisper", "native-libs/" + getOSDetectedClassifier());
   }
 
   /** 根据配置生成的全量参数 */
