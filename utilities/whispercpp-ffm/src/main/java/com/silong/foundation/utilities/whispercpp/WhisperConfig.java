@@ -207,6 +207,56 @@ public class WhisperConfig {
   private float noSpeechThold = 0.6f;
 
   /**
+   * 对于长音频或实时流（如麦克风输入）场景，模型会将音频切分为多个连续的
+   * whisper_segment（片段）逐段处理。每当一个片段的转录完成，whisper_new_segment_callback *
+   * 会立即被调用，开发者可通过该回调实时拿到当前片段的文本、时间戳等信息，实现 “边听边转边显示” 的效果（如字幕实时渲染、实时语音助手响应）。
+   */
+  private WhisperNewSegmentCallback whisperNewSegmentCallback;
+
+  /**
+   * 实时反馈处理进度<br>
+   * 当使用 whisper_full 或 whisper_full_with_state 等函数处理音频时，模型会按固定间隔（通常是处理完一定比例的音频数据后）触发
+   * whisper_progress_callback，并传递当前的进度信息。开发者可利用这些信息实现：<br>
+   * 1、进度条 UI 展示（如命令行进度条、图形界面进度条）； <br>
+   * 2、日志输出（如 “已完成 30%”）；<br>
+   * 3、超时控制（若长时间未更新进度，可主动中断处理）。 <br>
+   * 支持中断处理流程<br>
+   * 1、回调函数的返回值为 int 类型，开发者可通过返回非零值（如 1）主动中断当前的转录过程（例如用户手动点击 “取消” 按钮时），返回 0 则表示继续处理。<br>
+   */
+  private WhisperProgressCallback whisperProgressCallback;
+
+  /**
+   * whisper_encoder_begin_callback
+   * 是一个与模型编码阶段相关的回调函数，主要用于在编码器（Encoder）开始处理音频数据前触发特定逻辑，为开发者提供了在编码阶段启动时介入处理流程的机会。<br>
+   * whisper.cpp 的语音转文字（ASR）过程主要分为两大阶段：<br>
+   * 1、编码器（Encoder）阶段：对输入的音频数据进行特征提取和编码，将原始音频转换为模型可理解的特征表示。<br>
+   * 2、解码器（Decoder）阶段：基于编码器输出的特征，生成对应的文本转录结果。<br>
+   * whisper_encoder_begin_callback 专门在编码器开始工作前被调用，其核心价值在于：<br>
+   * 1、允许开发者在编码启动前执行初始化操作（如日志记录、资源预热、参数校验等）。<br>
+   * 2、支持在编码开始前决定是否中断整个处理流程（通过返回值控制）。<br>
+   */
+  private WhisperEncoderBeginCallback whisperEncoderBeginCallback;
+
+  /**
+   * ggml_abort_callback 是 ggml 库（whisper.cpp 的底层张量计算引擎） 提供的中断回调函数，核心作用是在 ggml
+   * 执行耗时计算（如模型推理中的张量运算）时，允许外部通过 “主动检查中断信号” 的方式终止计算，避免无响应的阻塞，是实现 “可取消计算” 的关键接口。
+   */
+  private GgmlAbortCallback ggmlAbortCallback;
+
+  /**
+   * whisper_logits_filter_callback 是一个用于自定义调整模型输出 “logits”（未归一化的概率分布） 的回调函数，作用是在解码器生成文本的关键阶段介入，通过修改
+   * logits 来影响后续 token（词元）的选择，从而实现对转录结果的精细化控制（如过滤敏感词、强制输出特定格式、优化领域特定术语等）。
+   *
+   * <p>whisper 模型的文本生成（解码）过程是逐 token 进行的：<br>
+   * 1、解码器每一步会输出当前位置的 logits—— 一个向量，每个元素对应一个可能 token 的 “未归一化得分”（得分越高，模型认为该 token 越可能出现）。<br>
+   * 2、模型通过 softmax * 函数将 logits 转换为概率分布，再基于此选择下一个 token（如贪婪搜索选概率最高的 token）。<br>
+   *
+   * <p>whisper_logits_filter_callback 正是在 logits 生成后、概率转换前 被调用，允许开发者直接修改 logits 数值，从而改变后续 token
+   * 的选择概率。
+   */
+  private WhisperLogitsFilterCallback whisperLogitsFilterCallback;
+
+  /**
    * grammar_rules 是语音识别中 “规则约束层” 的核心，其核心价值是将模型的 “自由生成” 限制在业务需求范围内，通过限定内容、格式、词汇，解决
    * “识别结果虽正确但不符合实际使用需求” 的问题，尤其适合语音命令、结构化数据输入、专业领域识别等场景，是平衡 “识别精度” 与 “业务适配性” 的关键配置。
    */
@@ -282,19 +332,21 @@ public class WhisperConfig {
    */
   public MemorySegment buildWhisperFullParams() {
     var arena = Arena.global();
-    var whisperFullParams = whisper_full_default_params(arena, getSamplingStrategy().ordinal());
+    var whisperFullParams =
+        whisper_full_default_params(arena, getSamplingStrategy().ordinal()); // 创建默认参数结构体
 
-    whisper_full_params.offset_ms(whisperFullParams, getOffsetMs());
-    whisper_full_params.duration_ms(whisperFullParams, getDurationMs());
     whisper_full_params.n_threads(whisperFullParams, getNThreads());
     whisper_full_params.n_max_text_ctx(whisperFullParams, getNMaxTextCtx());
+    whisper_full_params.offset_ms(whisperFullParams, getOffsetMs());
+    whisper_full_params.duration_ms(whisperFullParams, getDurationMs());
+
     whisper_full_params.translate(whisperFullParams, isTranslate());
     whisper_full_params.no_context(whisperFullParams, isNoContext());
     whisper_full_params.no_timestamps(whisperFullParams, isNoTimestamps());
     whisper_full_params.single_segment(whisperFullParams, isSingleSegment());
     whisper_full_params.print_special(whisperFullParams, isPrintSpecial());
-    whisper_full_params.print_realtime(whisperFullParams, isPrintRealtime());
     whisper_full_params.print_progress(whisperFullParams, isPrintProgress());
+    whisper_full_params.print_realtime(whisperFullParams, isPrintRealtime());
     whisper_full_params.print_timestamps(whisperFullParams, isPrintTimestamps());
 
     // [EXPERIMENTAL] token-level timestamps
@@ -311,25 +363,14 @@ public class WhisperConfig {
     whisper_full_params.audio_ctx(whisperFullParams, getAudioCtx());
 
     // [EXPERIMENTAL] [TDRZ] tinydiarize
-    String temp;
     whisper_full_params.tdrz_enable(whisperFullParams, isTdrzEnable());
-    whisper_full_params.suppress_regex(
-        whisperFullParams,
-        (temp = getSuppressRegex()) == null || StringUtils.isBlank(temp)
-            ? NULL
-            : arena.allocateFrom(getSuppressRegex(), UTF_8));
-    whisper_full_params.initial_prompt(
-        whisperFullParams,
-        (temp = getInitialPrompt()) == null || StringUtils.isBlank(temp)
-            ? NULL
-            : arena.allocateFrom(getInitialPrompt(), UTF_8));
-
+    whisper_full_params.suppress_regex(whisperFullParams, getString(arena, getSuppressRegex()));
+    whisper_full_params.initial_prompt(whisperFullParams, getString(arena, getInitialPrompt()));
     int[] pts = getPromptTokens();
+    int ptsLength = pts == null ? 0 : pts.length;
     whisper_full_params.prompt_tokens(
-        whisperFullParams,
-        pts == null || pts.length == 0 ? NULL : arena.allocateFrom(int32_t, pts));
-    whisper_full_params.prompt_n_tokens(
-        whisperFullParams, pts == null || pts.length == 0 ? 0 : pts.length);
+        whisperFullParams, ptsLength == 0 ? NULL : arena.allocateFrom(int32_t, pts));
+    whisper_full_params.prompt_n_tokens(whisperFullParams, ptsLength);
 
     // 语言设置
     whisper_full_params.language(
@@ -339,13 +380,54 @@ public class WhisperConfig {
     // common decoding parameters:
     whisper_full_params.suppress_blank(whisperFullParams, isSuppressBlank());
     whisper_full_params.suppress_nst(whisperFullParams, isSuppressNst());
+
     whisper_full_params.temperature(whisperFullParams, getTemperature());
     whisper_full_params.max_initial_ts(whisperFullParams, getMaxInitialTs());
     whisper_full_params.length_penalty(whisperFullParams, getLengthPenalty());
+
     whisper_full_params.temperature_inc(whisperFullParams, getTemperatureInc());
     whisper_full_params.entropy_thold(whisperFullParams, getEntropyThold());
     whisper_full_params.logprob_thold(whisperFullParams, getLogprobThold());
     whisper_full_params.no_speech_thold(whisperFullParams, getNoSpeechThold());
+
+    // 配置new_segment_callback回调函数
+    if (whisperNewSegmentCallback != null) {
+      whisper_full_params.new_segment_callback(
+          whisperFullParams, whisperNewSegmentCallback.newSegmentCallback());
+      whisper_full_params.new_segment_callback_user_data(
+          whisperFullParams, whisperNewSegmentCallback.newSegmentUserData());
+    }
+
+    // 配置progress_callback回调函数
+    if (whisperProgressCallback != null) {
+      whisper_full_params.progress_callback(
+          whisperFullParams, whisperProgressCallback.progressCallback());
+      whisper_full_params.progress_callback_user_data(
+          whisperFullParams, whisperProgressCallback.progressCallbackUserData());
+    }
+
+    // 配置encoder_begin_callback回调函数
+    if (whisperEncoderBeginCallback != null) {
+      whisper_full_params.encoder_begin_callback(
+          whisperFullParams, whisperEncoderBeginCallback.encoderBeginCallback());
+      whisper_full_params.encoder_begin_callback_user_data(
+          whisperFullParams, whisperEncoderBeginCallback.encoderBeginCallbackUserData());
+    }
+
+    // 配置ggml_abort_callback回调函数
+    if (ggmlAbortCallback != null) {
+      whisper_full_params.abort_callback(whisperFullParams, ggmlAbortCallback.abortCallback());
+      whisper_full_params.abort_callback_user_data(
+          whisperFullParams, ggmlAbortCallback.abortCallbackUserData());
+    }
+
+    // 配置whisper_logits_filter_callback回调函数
+    if (whisperLogitsFilterCallback != null) {
+      whisper_full_params.logits_filter_callback(
+          whisperFullParams, whisperLogitsFilterCallback.logitsFilterCallback());
+      whisper_full_params.logits_filter_callback_user_data(
+          whisperFullParams, whisperLogitsFilterCallback.logitsFilterCallbackUserData());
+    }
 
     var grammarRules = getGrammarRules();
     if (grammarRules != null) {
@@ -383,5 +465,9 @@ public class WhisperConfig {
             : arena.allocateFrom(validateModelPath(vadConfig.getModelPath()), UTF_8));
     whisper_full_params.vad(whisperFullParams, vadConfig.isEnable());
     return whisperFullParams;
+  }
+
+  private MemorySegment getString(Arena arena, String val) {
+    return val == null || StringUtils.isBlank(val) ? NULL : arena.allocateFrom(val, UTF_8);
   }
 }

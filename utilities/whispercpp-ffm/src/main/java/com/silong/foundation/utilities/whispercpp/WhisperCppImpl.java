@@ -79,7 +79,9 @@ class WhisperCppImpl implements WhisperCpp {
     MemorySegment systemInfo = NULL;
     try {
       systemInfo = whisper_print_system_info();
-      log.info("system_info: {}", NULL.equals(systemInfo) ? null : systemInfo.getString(0, UTF_8));
+      log.info(
+          "system_info: {}",
+          NULL.equals(systemInfo) || null == systemInfo ? null : systemInfo.getString(0, UTF_8));
       whisperFullParams = config.buildWhisperFullParams();
       log.info("{}", whisperFullParams2String(whisperFullParams));
 
