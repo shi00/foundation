@@ -429,6 +429,7 @@ public class WhisperConfig {
           whisperFullParams, whisperLogitsFilterCallback.logitsFilterCallbackUserData());
     }
 
+    // 配置语法规则
     var grammarRules = getGrammarRules();
     if (grammarRules != null) {
       MemorySegment pp = arena.allocate(C_POINTER, grammarRules.length);
@@ -442,8 +443,6 @@ public class WhisperConfig {
         }
         pp.setAtIndex(C_POINTER, j++, array);
       }
-    } else {
-      whisper_full_params.grammar_rules(whisperFullParams, NULL);
     }
     whisper_full_params.i_start_rule(whisperFullParams, getIStartRule());
     whisper_full_params.n_grammar_rules(whisperFullParams, getNGrammarRules());
