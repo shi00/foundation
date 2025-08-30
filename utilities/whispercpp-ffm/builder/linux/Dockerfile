@@ -23,7 +23,7 @@ RUN ARCH=$(uname -m) && case $ARCH in \
 && apt-get clean
 
 # 设置环境变量
-ENV PATH $PATH:/opt/jextract-22/bin
+ENV PATH=$PATH:/opt/jextract-22/bin
 
 # 更新vcpkg
 WORKDIR /opt/vcpkg
