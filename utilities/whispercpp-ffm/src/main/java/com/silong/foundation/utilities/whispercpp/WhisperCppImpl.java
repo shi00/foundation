@@ -35,6 +35,11 @@ import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.pool2.BasePooledObjectFactory;
+import org.apache.commons.pool2.PooledObject;
+import org.apache.commons.pool2.impl.DefaultPooledObject;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 /**
  * 语音识别
@@ -50,6 +55,9 @@ class WhisperCppImpl implements WhisperCpp {
     loadLibrary("libwhisper", "native-libs/" + getOSDetectedClassifier());
   }
 
+  /** 上下文缓存 */
+  private final GenericObjectPool<MemorySegment> whisperContextPtrPool;
+
   /** 根据配置生成的全量参数 */
   private final MemorySegment whisperFullParams;
 
@@ -62,11 +70,56 @@ class WhisperCppImpl implements WhisperCpp {
   /** 配置参数 */
   private final WhisperConfig config;
 
+  /** whisper_context上下文对象池工厂 */
+  private class WhisperContextFactory extends BasePooledObjectFactory<MemorySegment> {
+
+    @Override
+    public MemorySegment create() {
+      MemorySegment ctx = whisper_init_from_file_with_params(modelPath, whisperContextParams);
+      if (ctx == null || NULL.equals(ctx)) {
+        throw new IllegalStateException(
+            "Failed to create whisper_context by function of whisper_init_from_file_with_params.");
+      }
+      return ctx;
+    }
+
+    @Override
+    public PooledObject<MemorySegment> wrap(MemorySegment ctx) {
+      return new DefaultPooledObject<>(ctx);
+    }
+
+    @Override
+    public void destroyObject(PooledObject<MemorySegment> pooledObject) {
+      whisper_free(pooledObject.getObject());
+    }
+  }
+
   @Override
   public void close() {
     whisper_free_context_params(MemorySegment.ofAddress(whisperContextParams.address()));
     whisper_free_params(MemorySegment.ofAddress(whisperFullParams.address()));
     free(modelPath);
+    whisperContextPtrPool.close();
+    log.info("Shut down the whisper.cpp service and release all associated resources.");
+  }
+
+  private GenericObjectPool<MemorySegment> newWhisperContextPtrPool(
+      WhisperContextPoolConfig config) {
+    // 1. 配置池参数（GenericObjectPoolConfig）
+    GenericObjectPoolConfig<MemorySegment> poolConfig = new GenericObjectPoolConfig<>();
+    // 核心参数配置（根据业务调整）
+    poolConfig.setMaxTotal(config.getMaxTotal()); // 池内对象的最大总数（最多创建5个连接）
+    poolConfig.setMaxIdle(config.getMaxIdle()); // 池内最大空闲对象数（空闲时最多保留3个连接）
+    poolConfig.setMinIdle(config.getMinIdle()); // 池内最小空闲对象数（空闲时至少保留1个连接，避免频繁创建）
+    poolConfig.setBlockWhenExhausted(
+        config.isBlockWhenExhausted()); // 当池无可用对象时，是否阻塞等待（true：阻塞；false：立即抛异常）
+    poolConfig.setMaxWait(config.getMaxWait()); // 阻塞等待的最大时间（3秒，超时抛NoSuchElementException）
+
+    // 2. 创建对象工厂实例
+    WhisperContextFactory factory = new WhisperContextFactory();
+
+    // 3. 创建对象池（将配置和工厂传入）
+    return new GenericObjectPool<>(factory, poolConfig);
   }
 
   /**
@@ -76,19 +129,30 @@ class WhisperCppImpl implements WhisperCpp {
    */
   WhisperCppImpl(@NonNull WhisperConfig config) {
     this.config = config;
+    this.whisperContextPtrPool = newWhisperContextPtrPool(config.getPoolConfig());
     MemorySegment systemInfo = NULL;
     try {
       systemInfo = whisper_print_system_info();
-      log.info(
-          "system_info: {}",
-          NULL.equals(systemInfo) || null == systemInfo ? null : systemInfo.getString(0, UTF_8));
+      if (systemInfo == null || NULL.equals(systemInfo)) {
+        throw new IllegalStateException("Failed to collect the information of system.");
+      }
+      log.info("system_info: {}", systemInfo.getString(0, UTF_8));
       whisperFullParams = config.buildWhisperFullParams();
+      if (whisperFullParams == null || NULL.equals(whisperFullParams)) {
+        throw new IllegalStateException("Failed to build whisper_full_params for whisper.cpp.");
+      }
       log.info("{}", whisperFullParams2String(whisperFullParams));
 
       whisperContextParams = config.buildWhisperContextParams();
+      if (whisperContextParams == null || NULL.equals(whisperContextParams)) {
+        throw new IllegalStateException("Failed to build whisper_context_params for whisper.cpp.");
+      }
       log.info("{}", whisperContextParams2String(whisperContextParams));
 
       modelPath = Arena.global().allocateFrom(validateModelPath(config.getModelPath()), UTF_8);
+      if (modelPath == null || NULL.equals(modelPath)) {
+        throw new IllegalStateException("Failed to build model_path for whisper.cpp.");
+      }
       log.info("modelPath: {}", modelPath.getString(0, UTF_8));
     } finally {
       free(systemInfo);
@@ -126,13 +190,9 @@ class WhisperCppImpl implements WhisperCpp {
 
   private <T> T analyze(
       float[] pcmf32, @NonNull BiFunction<Arena, MemorySegment, T> contextProcessor) {
-    MemorySegment ctxPtr = NULL;
+    MemorySegment ctxPtr = null;
     try (Arena arena = Arena.ofConfined()) {
-      ctxPtr = whisper_init_from_file_with_params(modelPath, whisperContextParams);
-      if (ctxPtr == null || NULL.equals(ctxPtr)) {
-        log.error("Failed to initialize whisperContext with model:{}", modelPath);
-        return null;
-      }
+      ctxPtr = whisperContextPtrPool.borrowObject();
 
       MemorySegment pcmf32Ptr = arena.allocateFrom(C_FLOAT, pcmf32);
       int retCode =
@@ -143,8 +203,12 @@ class WhisperCppImpl implements WhisperCpp {
         return null;
       }
       return contextProcessor.apply(arena, ctxPtr);
+    } catch (Exception e) {
+      throw new IllegalStateException("Failed to borrow whisper_context from objectsPool.", e);
     } finally {
-      whisper_free(ctxPtr);
+      if (ctxPtr != null) {
+        whisperContextPtrPool.returnObject(ctxPtr);
+      }
     }
   }
 

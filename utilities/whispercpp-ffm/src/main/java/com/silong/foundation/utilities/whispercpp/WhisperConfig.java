@@ -49,6 +49,9 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 public class WhisperConfig {
 
+  /** whisper_context上下文缓存配置 */
+  @Valid private WhisperContextPoolConfig poolConfig = new WhisperContextPoolConfig();
+
   /** 采样策略，默认：WHISPER_SAMPLING_GREEDY */
   @NotNull private WhisperSamplingStrategy samplingStrategy = WHISPER_SAMPLING_GREEDY;
 
