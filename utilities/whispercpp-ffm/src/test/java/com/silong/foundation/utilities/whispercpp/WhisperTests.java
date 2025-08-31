@@ -31,10 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 /**
  * 单元测试
@@ -52,6 +49,11 @@ public class WhisperTests {
   @BeforeAll
   static void init() {
     whisperCpp = WhisperCpp.getInstance(loadJsonFromClassPath());
+  }
+
+  @AfterAll
+  static void cleanup() throws Exception {
+    whisperCpp.close();
   }
 
   @BeforeEach
@@ -77,16 +79,6 @@ public class WhisperTests {
   }
 
   @Test
-  public void testEN() throws Exception {
-    String[] text =
-        whisperCpp.speech2Text(
-            Paths.get(".", "src", "test", "resources", "Have-you-seen-one-of-these.wav")
-                .toFile()
-                .getCanonicalFile());
-    assertEquals(" Have you seen one of these?", text[0]);
-  }
-
-  @Test
   public void testEN1() throws Exception {
     String language =
         whisperCpp.recognizeLanguage(
@@ -103,7 +95,7 @@ public class WhisperTests {
             Paths.get(".", "src", "test", "resources", "Thank-you-that-was-helpful.ogg")
                 .toFile()
                 .getCanonicalFile());
-    assertEquals(" Thank you. That was helpful.", text[0]);
+    assertEquals(" Thank you. That was helpful.", String.join(" ", text));
   }
 
   @Test
@@ -120,6 +112,16 @@ public class WhisperTests {
                 .getCanonicalFile());
     assertEquals(
         " Oh, really? I'm sorry, sweetie. Been a little distracted this morning.", text[0]);
+  }
+
+  @Test
+  public void testEN4() throws Exception {
+    String[] text =
+        whisperCpp.speech2Text(
+            Paths.get(".", "src", "test", "resources", "Have-you-seen-one-of-these.wav")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals(" Have you seen one of these?", String.join(" ", text));
   }
 
   @Test
