@@ -53,13 +53,6 @@
                     <name>linux</name>
                 </os>
             </activation>
-            <properties>
-                <docker.buildx.platforms>
-                    linux/amd64
-                    <!--            ,-->
-                    <!--            linux/arm64-->
-                </docker.buildx.platforms>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -80,12 +73,6 @@
                                                 <contextDir>${project.basedir}/builder/linux</contextDir>
                                                 <dockerFile>Dockerfile</dockerFile>
                                                 <optimise>true</optimise>
-                                                <buildx>
-                                                    <configFile>builder/buildkitd.toml</configFile>
-                                                    <platforms>
-                                                        ${docker.buildx.platforms}
-                                                    </platforms>
-                                                </buildx>
                                             </build>
                                         </image>
                                     </images>
