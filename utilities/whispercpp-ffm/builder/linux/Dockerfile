@@ -17,8 +17,7 @@ RUN ARCH=$(uname -m) && case $ARCH in \
 && chmod +x ./jextract-22/bin/jextract \
 && dpkg -i ${CUDA_PACKAGE} && rm -rf ${CUDA_PACKAGE} \
 && apt-get update \
-&& apt-get -y install cuda-toolkit-13-0 \
-&& apt install libopenblas-dev -y \
+&& apt-get -y install pax-utils patchelf libopenblas-dev cuda-toolkit-13-0 \
 && apt-get autoremove \
 && apt-get clean \
 && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
