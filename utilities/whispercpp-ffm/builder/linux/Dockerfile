@@ -17,7 +17,7 @@ RUN ARCH=$(uname -m) && case $ARCH in \
 && chmod +x ./jextract-22/bin/jextract \
 && dpkg -i ${CUDA_PACKAGE} && rm -rf ${CUDA_PACKAGE} \
 && apt-get update \
-&& apt-get -y install pax-utils patchelf libopenblas-dev cuda-toolkit-13-0 \
+&& apt-get -y install dos2unix pax-utils patchelf libopenblas-dev cuda-toolkit-13-0 \
 && apt-get autoremove \
 && apt-get clean \
 && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -38,4 +38,4 @@ WORKDIR /opt
 
 # 添加构建脚本
 ADD build.sh .
-RUN chmod +x ./build.sh
+RUN chmod +x ./build.sh && dos2unix ./build.sh
