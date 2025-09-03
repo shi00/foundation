@@ -101,8 +101,7 @@ elif [ -n "$(find /usr/lib* -name "libopenblas.so" 2>/dev/null | head -n 1)" ]; 
     cmake -B build -DGGML_BLAS=1 -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build -j4 --config Release
 else
-    echo "Neither Nvidia GPU nor OpenBLAS detected, proceeding with CPU build."
-    # 进入vcpkg目录，完成vcpkg的更新和初始化
+   echo "Neither Nvidia GPU nor OpenBLAS detected, proceeding with CPU build."
    cmake -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
    cmake --build build -j4 --config Release
 fi
