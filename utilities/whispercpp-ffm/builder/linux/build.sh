@@ -96,7 +96,7 @@ if nvidia-smi &> /dev/null; then
     echo "Nvidia GPU has been detected and CUDA installation has started."
     cmake -B build -DGGML_CUDA=1 -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build -j4 --config Release
-elif ldconfig -p | grep -q openblas; then
+elif [ -n "$(find /usr/lib* -name "libopenblas.so" 2>/dev/null | head -n 1)" ]; then
     echo "Nvidia GPU not detected, enabling OpenBLAS mode."
     cmake -B build -DGGML_BLAS=1 -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build -j4 --config Release
