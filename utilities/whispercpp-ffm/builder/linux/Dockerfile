@@ -25,16 +25,6 @@ RUN ARCH=$(uname -m) && case $ARCH in \
 # 设置环境变量
 ENV PATH=$PATH:/opt/jextract-22/bin:/usr/local/cuda-13.0/bin
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-13.0/lib64
-ENV TZ=Asia/Shanghai
-
-# 更新vcpkg
-WORKDIR /opt/vcpkg
-RUN git pull origin master \
-&& ./bootstrap-vcpkg.sh  \
-&& rm -rf .git/objects/ .git/subtree-cache/ \
-&& ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-WORKDIR /opt
 
 # 添加构建脚本
 ADD build.sh .

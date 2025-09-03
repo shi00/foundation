@@ -42,7 +42,10 @@ SYSTEM_LIB_PATHS=(
 )
 
 download_and_checkout_whispercpp() {
-    git clone https://github.com/ggml-org/whisper.cpp.git
+    git clone https://github.com/ggml-org/whisper.cpp.git || {
+      echo "Failed to pull whisper.cpp from repo."
+      exit 1
+    }
     cd whisper.cpp
     last_tag=$(git describe --tags 2>/dev/null)
     last_tag="${last_tag%%-*}"
@@ -85,39 +88,27 @@ collect_build_libs() {
     cd include
 }
 
+#下载whisper代码并切换至最新分支
+download_and_checkout_whispercpp
+
 # 执行 nvidia-smi 并捕获退出码（&> /dev/null 静默执行，不输出内容）
 if nvidia-smi &> /dev/null; then
     echo "Nvidia GPU has been detected and CUDA installation has started."
-    download_and_checkout_whispercpp
     cmake -B build -DGGML_CUDA=1 -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build -j4 --config Release
-    collect_build_libs
 elif ldconfig -p | grep -q openblas; then
     echo "Nvidia GPU not detected, enabling OpenBLAS mode."
-    download_and_checkout_whispercpp
     cmake -B build -DGGML_BLAS=1 -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
     cmake --build build -j4 --config Release
-    collect_build_libs
 else
     echo "Neither Nvidia GPU nor OpenBLAS detected, proceeding with CPU build."
     # 进入vcpkg目录，完成vcpkg的更新和初始化
-    cd "vcpkg"
-    vcpkg install whisper-cpp:x64-linux-dynamic
-    cd "installed/x64-linux-dynamic/lib"
-
-    #判断构建whisper-cpp是否成功
-    if [ ! -f "./$SHARDED_LIB_NAME" ]; then
-         echo "Failed to build whisper-cpp."
-         exit 1
-    fi
-
-    # 拷贝所有so文件至目标目录
-    find . -maxdepth 1 \( -type f -o -type l \) -name "*.so" -exec cp {} /opt/"$SHARDED_LIB_DIR" \;
-
-    # 进入include目录
-    cd "../include/"
-    include_dirs="."
+   cmake -B build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+   cmake --build build -j4 --config Release
 fi
+
+# 收集构建结果
+collect_build_libs
 
 echo "================== Start generate source code for whispercpp =================="
 jextract --header-class-name "$HEADER_CLASS_NAME" --output /opt/"$OUTPUT_SRC_DIR" --target-package "$SOURCECODE_PACKAGE" --include-dir "$include_dirs" whisper.h

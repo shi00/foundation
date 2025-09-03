@@ -49,7 +49,7 @@ interface ParamsValidator {
     if (!f.exists() || !f.canRead() || !f.isFile()) {
       throw new IllegalArgumentException("Invalid model file: " + f.getAbsolutePath());
     }
-    return modelPath;
+    return f.getAbsolutePath();
   }
 
   /**
