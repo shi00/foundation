@@ -14,11 +14,12 @@ RUN choco install wget -Y \
 
 # install jextract openblas
 RUN tar zxvf openjdk-22-jextract+6-47_windows-x64_bin.tar.gz \
-&& mkdir OpenBLAS-0.3.30-x64 && choco install unzip -Y && unzip OpenBLAS-0.3.30-x64.zip -d OpenBLAS-0.3.30-x64 && choco uninstall unzip -y \
+&& mkdir OpenBLAS-0.3.30-x64 && choco install unzip pkgconfiglite -Y && unzip OpenBLAS-0.3.30-x64.zip -d OpenBLAS-0.3.30-x64 && choco uninstall unzip -y \
 && del openjdk-22-jextract+6-47_windows-x64_bin.tar.gz OpenBLAS-0.3.30-x64.zip \
 && setx path "%PATH%;C:\Program Files\jextract-22\bin;C:\Program Files\OpenBLAS-0.3.30-x64\bin;C:\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\BuildTools\MSBuild\Current\Bin\amd64" \
 && refreshenv
 
+ENV OPENBLAS_HOME="C:\Program Files\OpenBLAS-0.3.30-x64"
 WORKDIR "c:\\"
 
 # 添加构建脚本

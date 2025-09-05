@@ -36,7 +36,7 @@ if (-not $nvidiaGpu)
     Write-Host "Enable CPU compilation options ......"
     mkdir build
     cd .\build\
-    cmake .. -G "Visual Studio 17 2022" -A $target_arch -DBUILD_SHARED_LIBS=ON -DGGML_BLAS=1
+    cmake .. -G "Visual Studio 17 2022" -A $target_arch -DBUILD_SHARED_LIBS=ON -DGGML_BLAS_VENDOR=OpenBLAS -DGGML_BLAS=1 -DBLAS_LIBRARIES="$env:OPENBLAS_HOME\lib\libopenblas.lib" -DLAPACK_LIBRARIES="$env:OPENBLAS_HOME\lib\libopenblas.lib" -DBLAS_INCLUDE_DIR="$env:OPENBLAS_HOME\include"
     if ($LASTEXITCODE -ne 0)
     {
         Write-Error "Failed to run cmake for whisper.cpp."
