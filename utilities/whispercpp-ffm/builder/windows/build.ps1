@@ -36,7 +36,7 @@ if (-not $nvidiaGpu)
     Write-Host "Enable CPU compilation options ......"
     mkdir build
     cd .\build\
-    cmake .. -G "Visual Studio 17 2022" -A $target_arch -DBUILD_SHARED_LIBS=ON
+    cmake .. -G "Visual Studio 17 2022" -A $target_arch -DBUILD_SHARED_LIBS=ON -DGGML_BLAS=1
     if ($LASTEXITCODE -ne 0)
     {
         Write-Error "Failed to run cmake for whisper.cpp."
