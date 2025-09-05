@@ -195,11 +195,9 @@ class WhisperCppImpl implements WhisperCpp {
       ctxPtr = whisperContextPtrPool.borrowObject();
 
       MemorySegment pcmf32Ptr = arena.allocateFrom(C_FLOAT, pcmf32);
-      int retCode =
-          whisper_full_parallel(
-              ctxPtr, whisperFullParams, pcmf32Ptr, pcmf32.length, config.getNThreads());
+      int retCode = whisper_full(ctxPtr, whisperFullParams, pcmf32Ptr, pcmf32.length);
       if (retCode != 0) {
-        log.error("Failed to execute whisper_full_parallel with errCode:{}", retCode);
+        log.error("Failed to execute whisper_full with errCode:{}", retCode);
         return null;
       }
       return contextProcessor.apply(arena, ctxPtr);
