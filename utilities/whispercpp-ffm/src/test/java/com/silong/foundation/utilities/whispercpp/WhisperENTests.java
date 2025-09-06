@@ -40,7 +40,7 @@ import org.junit.jupiter.api.*;
  * @version 1.0.0
  * @since 2024-04-22 18:51
  */
-public class WhisperTests {
+public class WhisperENTests {
 
   private static WhisperCpp whisperCpp;
 
@@ -48,7 +48,7 @@ public class WhisperTests {
 
   @BeforeAll
   static void init() {
-    whisperCpp = WhisperCpp.getInstance(loadJsonFromClassPath());
+    whisperCpp = WhisperCpp.getInstance(loadENJsonFromClassPath());
   }
 
   @AfterAll
@@ -68,8 +68,8 @@ public class WhisperTests {
   }
 
   @SneakyThrows(IOException.class)
-  private static WhisperConfig loadJsonFromClassPath() {
-    try (InputStream inputStream = new FileInputStream("src/test/resources/application.json")) {
+  private static WhisperConfig loadENJsonFromClassPath() {
+    try (InputStream inputStream = new FileInputStream("src/test/resources/application_en.json")) {
       return JsonMapper.builder()
           .enable(ACCEPT_CASE_INSENSITIVE_ENUMS)
           .configure(FAIL_ON_UNKNOWN_PROPERTIES, true)
@@ -95,7 +95,7 @@ public class WhisperTests {
             Paths.get(".", "src", "test", "resources", "Thank-you-that-was-helpful.ogg")
                 .toFile()
                 .getCanonicalFile());
-    assertEquals(" Thank you. That was helpful.", String.join(" ", text));
+    assertEquals(" Thank you. That was helpful.", String.join("", text));
   }
 
   @Test
@@ -111,7 +111,8 @@ public class WhisperTests {
                 .toFile()
                 .getCanonicalFile());
     assertEquals(
-        " Oh, really? I'm sorry, sweetie. Been a little distracted this morning.", text[0]);
+        " Oh, really? I'm sorry, sweetie. Been a little distracted this morning.",
+        String.join("", text));
   }
 
   @Test
@@ -121,36 +122,6 @@ public class WhisperTests {
             Paths.get(".", "src", "test", "resources", "Have-you-seen-one-of-these.wav")
                 .toFile()
                 .getCanonicalFile());
-    assertEquals(" Have you seen one of these?", String.join(" ", text));
-  }
-
-  @Test
-  public void testZH() throws Exception {
-    String[] text =
-        whisperCpp.speech2Text(
-            Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.wav")
-                .toFile()
-                .getCanonicalFile());
-    assertEquals("这个地方是观光名胜吗?", text[0]);
-  }
-
-  @Test
-  public void testZH1() throws Exception {
-    String[] text =
-        whisperCpp.speech2Text(
-            Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.mp3")
-                .toFile()
-                .getCanonicalFile());
-    assertEquals("这个地方是观光名胜吗?", text[0]);
-  }
-
-  @Test
-  public void testZH2() throws Exception {
-    String[] text =
-        whisperCpp.speech2Text(
-            Paths.get(".", "src", "test", "resources", "这个地方是观光名胜吗.ogg")
-                .toFile()
-                .getCanonicalFile());
-    assertEquals("这个地方是观光名胜吗?", text[0]);
+    assertEquals(" Have you seen one of these?", String.join("", text));
   }
 }

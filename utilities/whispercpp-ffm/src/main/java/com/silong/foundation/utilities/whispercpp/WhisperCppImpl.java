@@ -165,14 +165,14 @@ class WhisperCppImpl implements WhisperCpp {
     return analyze(
         extract(wavFile),
         (arena, ctxPtr) -> {
-          int retCode = whisper_lang_auto_detect(ctxPtr, 0, config.getNThreads(), NULL);
-          if (retCode == -1) {
+          int index = whisper_lang_auto_detect(ctxPtr, 0, config.getNThreads(), NULL);
+          if (index == -1) {
             log.error(
                 "Failed to detect the language of the multimedia file: {}",
                 wavFile.getAbsolutePath());
             return null;
           }
-          return whisper_lang_str(retCode).getString(0, UTF_8);
+          return whisper_lang_str(index).getString(0, UTF_8);
         });
   }
 
@@ -215,6 +215,7 @@ class WhisperCppImpl implements WhisperCpp {
         .mapToObj(i -> whisper_full_get_segment_text(ctxPtr, i))
         .filter(ms -> !NULL.equals(ms) && ms != null)
         .map(ms -> ms.getString(0, UTF_8))
+        .peek(str -> log.debug("{}", str))
         .toArray(String[]::new);
   }
 }
