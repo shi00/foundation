@@ -1,7 +1,7 @@
 {
-  "modelPath": "src/test/resources/models/ggml-small.bin",
+  "modelPath": "src/test/resources/models/ggml-base.bin",
   "initialPrompt": "任务目标：识别对话语音所属的语言，仅输出该语言对应的标准语言代码，不包含任何额外内容。\n\n核心规则：\n1. 识别依据：以对话中实际使用的主要语言为准，不预设任何语言可能性。\n2. 判断原则：\n   - 单语对话：直接输出该语言代码\n   - 多语混合：以占比最高的语言为准\n   - 无法明确区分时：输出识别置信度最高的语言代码\n\n上下文参考：对话可能使用任何语言，场景包括各类日常交流、专业讨论等，语音可能包含口音、方言或混合语特征。",
   "context": {
-    "dtwAHeadsPreset": "WHISPER_AHEADS_SMALL"
+    "dtwAHeadsPreset": "WHISPER_AHEADS_BASE"
   }
 }
