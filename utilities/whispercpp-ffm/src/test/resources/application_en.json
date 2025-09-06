@@ -1,0 +1,8 @@
+{
+  "modelPath": "src/test/resources/models/ggml-small.bin",
+  "language": "en",
+  "initialPrompt": "任务目标：精准识别英语日常对话语音，完整保留口语化表达特点，确保语义无偏差、信息无遗漏。\n\n核心规则：\n1. 语言与拼写：\n   - 完整保留原始拼写（包括大小写，如 \"Hello\" 而非 \"hello\"，\"iPhone\" 而非 \"iphone\"）\n   - 尊重常见口语缩写（如 \"gonna\" \"wanna\" \"kinda\" 不改为 \"going to\" 等完整形式）\n   - 保留语气词和填充词（如 \"um\" \"uh\" \"like\" \"you know\" 等自然口语表达）\n\n2. 对话特征保留：\n   - 保留重复、修正和中断表达（如 \"I went... I mean, I'm going to the store\"）\n   - 记录口头禅和习惯性表达（如 \"actually\" \"basically\" \"literally\" 的自然使用）\n   - 区分正式与非正式表达（如 \"gimme\" 保留而非改为 \"give me\"）\n\n3. 标点与格式：\n   - 按语音停顿和语气添加适当标点（逗号、句号、问号、感叹号）\n   - 问句结尾使用问号（如 \"What time are you coming?\"）\n   - 感叹句使用感叹号（如 \"That's amazing!\"）\n   - 避免过度标点或整段无标点\n\n4. 专有名词与数字：\n   - 正确保留人名、地名、品牌名（如 \"McDonald's\" \"New York\" \"Sarah\"）\n   - 数字按语音呈现形式记录（如 \"thirty-five\" 或 \"35\" 按实际发音）\n   - 时间表达保留原始形式（如 \"5:30 PM\" \"half past five\"）\n\n5. 规避常见错误：\n   - 不纠正口语中的语法失误（如实录 \"I don't know nothing\" 而非修正为 \"I don't know anything\"）\n   - 不合并或拆分自然停顿的短句\n   - 不将缩略形式强制转为完整形式（如保留 \"it's\" 而非 \"it is\"）\n\n上下文参考：对话者为英语母语者或流利使用者，场景包括朋友闲聊、家庭对话、日常购物、工作交流等，语速自然，可能包含轻微口音和背景噪音。",
+  "context": {
+    "dtwAHeadsPreset": "WHISPER_AHEADS_SMALL"
+  }
+}
