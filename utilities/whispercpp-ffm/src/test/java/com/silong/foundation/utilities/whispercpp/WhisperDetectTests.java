@@ -108,4 +108,34 @@ public class WhisperDetectTests {
                 .getCanonicalFile());
     assertEquals("zh", language);
   }
+
+  @Test
+  public void testDE() throws Exception {
+    String language =
+        whisperCpp.recognizeLanguage(
+            Paths.get(".", "src", "test", "resources", "Cooking Together(德语).mp3")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals("de", language);
+  }
+
+  @Test
+  public void testFR() throws Exception {
+    String language =
+        whisperCpp.recognizeLanguage(
+            Paths.get(".", "src", "test", "resources", "restaurant(法语).mp3")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals("fr", language);
+  }
+
+  @Test
+  public void testES() throws Exception {
+    String language =
+        whisperCpp.recognizeLanguage(
+            Paths.get(".", "src", "test", "resources", "restaurant(法语).mp3")
+                .toFile()
+                .getCanonicalFile());
+    assertEquals("es", language);
+  }
 }
