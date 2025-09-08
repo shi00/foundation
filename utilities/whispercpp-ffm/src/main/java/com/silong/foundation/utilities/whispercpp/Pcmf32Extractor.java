@@ -83,7 +83,7 @@ class Pcmf32Extractor {
       grabber.start();
 
       // 预估数组大小以减少重新分配
-      int estimatedSize = (int) (grabber.getLengthInTime() * grabber.getSampleRate() / 1000_1000);
+      int estimatedSize = (int) (grabber.getLengthInTime() * grabber.getSampleRate() / 1_000_000);
       float[] pcmData = estimatedSize > DEFAULT_SIZE ? new float[estimatedSize] : PCM_BUF.get();
       int offset = 0;
 
@@ -95,7 +95,7 @@ class Pcmf32Extractor {
           // 如果数组不够大，则扩容
           if (offset + remaining > pcmData.length) {
             float[] newArray =
-                new float[Math.max(((int) (pcmData.length * 1.1)), offset + remaining)];
+                new float[Math.max(((int) (pcmData.length * 1.5)), offset + remaining)];
             System.arraycopy(pcmData, 0, newArray, 0, offset);
             pcmData = newArray;
           }
@@ -105,8 +105,6 @@ class Pcmf32Extractor {
           offset += remaining;
         }
       }
-
-      grabber.stop();
 
       // 返回实际大小的数组
       if (offset < pcmData.length) {
