@@ -37,6 +37,7 @@ module chatbot.desktop {
   requires passay;
   requires org.apache.commons.validator;
   requires static lombok;
+  requires org.fxmisc.richtext;
 
   opens views to
       javafx.fxml;

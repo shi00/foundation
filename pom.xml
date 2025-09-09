@@ -93,7 +93,6 @@
         <module>duuid/duuid-server</module>
         <module>LLMs/chatbot</module>
         <module>LLMs/chatbot-desktop</module>
-        <module>LLMs/crawler</module>
         <module>spring-boot-starter-webflux-simpleAuth</module>
         <module>spring-boot-starter-webflux-minio</module>
         <module>spring-boot-starter-webflux-jwt</module>

@@ -1,7 +1,0 @@
-{
-  "modelPath": "src/test/resources/models/ggml-base.bin",
-  "initialPrompt": "这是一段一个人说话的音频，语言可能是英文。请：\n1. 准确转录口语化表达（如缩写或口语用词）；\n2. 保持句子连贯性。\n3. 注意根据语气标注标点符号。",
-  "context": {
-    "dtwAHeadsPreset": "WHISPER_AHEADS_BASE"
-  }
-}
