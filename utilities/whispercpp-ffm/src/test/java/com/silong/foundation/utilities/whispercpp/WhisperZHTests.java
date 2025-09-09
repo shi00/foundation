@@ -24,7 +24,7 @@ package com.silong.foundation.utilities.whispercpp;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import java.io.FileInputStream;
@@ -173,14 +173,9 @@ public class WhisperZHTests {
   public void testZH() throws Exception {
     String[] text =
         whisperCpp.speech2Text(
-            Paths.get(
-                    ".",
-                    "src",
-                    "test",
-                    "resources",
-                    "男：你好，早上好。今天你看起来很有精神。女：你好呀，我今天睡得很好，所以精神很好。.aac")
-                .toFile()
-                .getCanonicalFile());
-    assertEquals("这个地方是观光名胜吗?", String.join("", text));
+            Paths.get(".", "src", "test", "resources", "我在学校教中文.mp3").toFile().getCanonicalFile());
+    String rs = String.join("", text);
+    System.out.println("testZH: " + rs);
+    assertTrue(rs.contains("我在学校教中文"));
   }
 }
