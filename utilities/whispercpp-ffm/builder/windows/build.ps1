@@ -98,7 +98,7 @@ $dllFiles = Get-ChildItem -Path . -Filter *.dll -File
 if ($dllFiles.Count -eq 0)
 {
     Write-Warning "No DLL files found in the current directory."
-    exit 0
+    exit 1
 }
 
 # 复制所有DLL文件到目标目录（覆盖同名文件）
