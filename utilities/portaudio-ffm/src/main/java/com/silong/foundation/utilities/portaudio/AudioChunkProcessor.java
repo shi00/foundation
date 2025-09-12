@@ -31,4 +31,4 @@ import java.util.function.Consumer;
  * @since 2025-09-11 14:52
  */
 @FunctionalInterface
-public interface AudioChunkProcessor extends Consumer<Object> {}
+public interface AudioChunkProcessor extends Consumer<AudioChunk> {}
