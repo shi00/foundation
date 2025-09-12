@@ -106,6 +106,7 @@
         <module>utilities/random-password</module>
         <module>utilities/xxhash-ffm</module>
         <module>utilities/crypto</module>
+        <module>utilities/portaudio-ffm</module>
         <module>utilities/reactive-webclient</module>
         <module>utilities/rocksdb-ffm</module>
         <module>utilities/whispercpp-ffm</module>
