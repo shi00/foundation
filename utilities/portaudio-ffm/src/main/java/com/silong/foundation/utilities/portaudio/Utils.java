@@ -29,6 +29,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.SystemUtils;
 
 /**
  * 工具类
@@ -55,6 +56,37 @@ class Utils {
 
   /** 禁止实例化 */
   private Utils() {}
+
+  /**
+   * 操作系统检测到的分类器
+   *
+   * @return 分类器字符串，如 linux-x86_64、windows-x86_64、osx-arm64 等
+   */
+  static String getOSDetectedClassifier() {
+    // 操作系统类型
+    String osType;
+    if (SystemUtils.IS_OS_LINUX) {
+      osType = "linux";
+    } else if (SystemUtils.IS_OS_WINDOWS) {
+      osType = "windows";
+    } else if (SystemUtils.IS_OS_MAC) {
+      osType = "osx";
+    } else {
+      throw new IllegalStateException("Unsupported OS: " + SystemUtils.OS_NAME);
+    }
+
+    // 系统架构（需手动映射标准化）
+    String arch =
+        switch (SystemUtils.OS_ARCH.toLowerCase()) {
+          case String s when (s.contains("amd64") || s.contains("x86_64")) -> "x86_64";
+          case String s when (s.contains("arm64") || s.contains("aarch64")) -> "arm64";
+          default ->
+              throw new IllegalStateException(
+                  "Unsupported OS-ARCH: " + SystemUtils.OS_ARCH.toLowerCase());
+        };
+
+    return osType + "-" + arch;
+  }
 
   /**
    * 释放内存空间(malloc分配)

@@ -19,21 +19,30 @@
  *
  */
 
+package com.silong.foundation.utilities.portaudio;
+
+import java.time.Duration;
+import org.junit.jupiter.api.Test;
+
 /**
- * 模块定义
+ * 测试用例
  *
  * @author louis sin
- * @since 2024-04-21 16:11
+ * @version 1.0.0
+ * @since 2023-09-20 22:13
  */
-module portaudio.ffm {
-  requires nativelib.loader;
-  requires org.jctools.core;
-  requires static lombok;
-  requires org.slf4j;
-  requires org.apache.commons.lang3;
+public class PortAudioTests {
 
-  exports com.silong.foundation.utilities.portaudio;
-
-  opens com.silong.foundation.utilities.portaudio to
-      nativelib.loader;
+  @Test
+  public void test() throws Exception {
+    PortAudio.getInstance()
+        .start(
+            44100,
+            SampleFormat.paInt16,
+            1,
+            Duration.ofMillis(1000),
+            chunk -> {
+              System.out.println(chunk.data().toString());
+            });
+  }
 }

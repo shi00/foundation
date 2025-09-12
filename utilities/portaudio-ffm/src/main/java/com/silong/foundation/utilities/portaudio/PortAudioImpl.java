@@ -21,7 +21,9 @@
 
 package com.silong.foundation.utilities.portaudio;
 
+import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
 import static com.silong.foundation.utilities.portaudio.Utils.free;
+import static com.silong.foundation.utilities.portaudio.Utils.getOSDetectedClassifier;
 import static com.silong.foundation.utilities.portaudio.generated.PortAudio.*;
 import static com.silong.foundation.utilities.portaudio.generated.PortAudio.Pa_GetErrorText;
 import static java.lang.foreign.MemorySegment.NULL;
@@ -59,6 +61,7 @@ class PortAudioImpl implements PortAudio {
   static {
     QUEUE_CAPACITY = Integer.parseInt(System.getProperty("audio.chunk.queue.capacity", "128"));
     FRAMES_PER_READ = Integer.parseInt(System.getProperty("audio.frames.per.read", "1024"));
+    loadLibrary("libportaudio", "native-libs/" + getOSDetectedClassifier());
   }
 
   /** 禁止实例化 */
