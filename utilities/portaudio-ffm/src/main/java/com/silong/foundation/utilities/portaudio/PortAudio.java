@@ -44,17 +44,17 @@ public interface PortAudio extends AutoCloseable {
    * 开始录音
    *
    * @param sampleRate 采样率
+   * @param sampleFormat 采样格式
    * @param channels 声道数
    * @param audioChunkDuration 音频块时长
-   * @param parallel 是否并行处理，回调函数是否多线程并行调用处理
    * @param processor 音频块回调函数
    * @throws Exception 异常
    */
   void start(
       int sampleRate,
+      SampleFormat sampleFormat,
       int channels,
       Duration audioChunkDuration,
-      boolean parallel,
       AudioChunkProcessor processor)
       throws Exception;
 }
