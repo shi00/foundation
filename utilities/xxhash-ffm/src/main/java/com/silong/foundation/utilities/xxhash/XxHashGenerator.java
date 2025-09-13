@@ -21,10 +21,11 @@
 
 package com.silong.foundation.utilities.xxhash;
 
+import static com.silong.foundation.utilities.nlloader.NativeLibLoader.getOSDetectedClassifier;
+import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
 import static com.silong.foundation.utilities.xxhash.generated.XxHash.*;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
-import com.silong.foundation.utilities.nlloader.NativeLibLoader;
 import java.lang.foreign.Arena;
 import java.util.HexFormat;
 import java.util.Objects;
@@ -45,7 +46,7 @@ public final class XxHashGenerator {
   private static final long DEFAULT_SEED = 0xcafebabeL;
 
   static {
-    NativeLibLoader.loadLibrary(LIB_XXHASH);
+    loadLibrary(LIB_XXHASH, "native-libs/" + getOSDetectedClassifier());
   }
 
   /** 工具类禁止实例化 */

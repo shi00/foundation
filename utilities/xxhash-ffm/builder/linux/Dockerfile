@@ -1,11 +1,8 @@
-FROM kuyoh/vcpkg:2025.06.13-ubuntu24.04 AS base
+FROM kuyoh/vcpkg:2025.07.25-ubuntu24.04 AS base
 
 LABEL maintainer="louis sin"
 
 USER root
-
-ENV TZ=Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /opt
 
@@ -26,9 +23,8 @@ ENV PATH $PATH:/opt/jextract-22/bin
 #安装java相关软件包
 
 # update vcpkg
-RUN rm -rf vcpkg \
-&& git clone https://github.com/microsoft/vcpkg.git \
-&& ./vcpkg/bootstrap-vcpkg.sh
+RUN cd vcpkg && git pull origin master \
+&& ./bootstrap-vcpkg.sh
 
 FROM base
 

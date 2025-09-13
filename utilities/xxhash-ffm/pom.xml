@@ -31,12 +31,14 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <native.libsdir.name>native-libs</native.libsdir.name>
+        <nativelibs.dir>${project.basedir}/src/main/resources/${native.libsdir.name}/${os.detected.classifier}
+        </nativelibs.dir>
         <output.src.dir>xxhash-java-src</output.src.dir>
         <output.shared-lib.dir>classes</output.shared-lib.dir>
         <header.class.name>XxHash</header.class.name>
         <sourcecode.package>com.silong.foundation.utilities.xxhash.generated</sourcecode.package>
         <lib.name>libxxhash</lib.name>
-        <check-dependencies.skip>true</check-dependencies.skip><!--依赖检查插件暂不支持java22-->
         <jacoco-coverage.minimum>1.0</jacoco-coverage.minimum>
     </properties>
 
@@ -100,7 +102,7 @@
                                                             ${project.build.directory}/generated-sources:/opt/${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}:/opt/${output.shared-lib.dir}
+                                                            ${nativelibs.dir}:/opt/${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -193,7 +195,7 @@
                                                             ${project.build.directory}\generated-sources:c:\${output.src.dir}
                                                         </volume>
                                                         <volume>
-                                                            ${project.basedir}\src\main\resources\native\${os.detected.name}\${os.detected.arch}:c:\${output.shared-lib.dir}
+                                                            ${nativelibs.dir}:c:\${output.shared-lib.dir}
                                                         </volume>
                                                     </bind>
                                                 </volumes>
@@ -276,7 +278,7 @@
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}"/>
+                                <mkdir dir="${nativelibs.dir}"/>
                                 <mkdir dir="${project.build.directory}/generated-sources"/>
                             </target>
                         </configuration>
@@ -290,25 +292,7 @@
                     <excludeDefaultDirectories>false</excludeDefaultDirectories>
                     <filesets>
                         <fileset>
-                            <directory>
-                                ${project.basedir}/src/main/resources/native
-                            </directory>
-                            <followSymlinks>false</followSymlinks>
-                            <includes>
-                                <include>**/*</include>
-                            </includes>
-                            <excludes>
-                                <exclude>${os.detected.name}</exclude>
-                            </excludes>
-                        </fileset>
-                        <fileset>
-                            <directory>
-                                ${project.basedir}/src/main/resources/native/${os.detected.name}/${os.detected.arch}
-                            </directory>
-                            <followSymlinks>false</followSymlinks>
-                            <includes>
-                                <include>**/*</include>
-                            </includes>
+                            <directory>${nativelibs.dir}</directory>
                         </fileset>
                     </filesets>
                 </configuration>
