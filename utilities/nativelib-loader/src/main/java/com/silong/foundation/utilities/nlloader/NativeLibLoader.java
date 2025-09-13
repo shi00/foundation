@@ -36,6 +36,7 @@ import java.util.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 /**
  * 从classpath包含的jar包中加载指定的共享库，配合本地方法使用
@@ -74,6 +75,37 @@ public final class NativeLibLoader {
 
   /** 工具类，禁止实例化 */
   private NativeLibLoader() {}
+
+  /**
+   * 操作系统检测到的分类器
+   *
+   * @return 分类器字符串，如 linux-x86_64、windows-x86_64、osx-arm64 等
+   */
+  public static String getOSDetectedClassifier() {
+    // 操作系统类型
+    String osType;
+    if (SystemUtils.IS_OS_LINUX) {
+      osType = "linux";
+    } else if (SystemUtils.IS_OS_WINDOWS) {
+      osType = "windows";
+    } else if (SystemUtils.IS_OS_MAC) {
+      osType = "osx";
+    } else {
+      throw new IllegalStateException("Unsupported OS: " + SystemUtils.OS_NAME);
+    }
+
+    // 系统架构（需手动映射标准化）
+    String arch = SystemUtils.OS_ARCH.toLowerCase();
+    if (arch.contains("amd64") || arch.contains("x86_64")) {
+      arch = "x86_64";
+    } else if (arch.contains("arm64") || arch.contains("aarch64")) {
+      arch = "arm64";
+    } else {
+      throw new IllegalStateException("Unsupported OS-ARCH: " + arch);
+    }
+
+    return osType + "-" + arch;
+  }
 
   /**
    * 搜索classpath中jar包，加载指定共享库，按当前程序运行操作系统类型以及架构进行加载<br>
