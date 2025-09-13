@@ -20,6 +20,7 @@
  */
 package com.silong.foundation.utilities.whispercpp;
 
+import static com.silong.foundation.utilities.nlloader.NativeLibLoader.getOSDetectedClassifier;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
 import static com.silong.foundation.utilities.whispercpp.ParamsValidator.validateModelPath;
 import static com.silong.foundation.utilities.whispercpp.Pcmf32Extractor.extract;

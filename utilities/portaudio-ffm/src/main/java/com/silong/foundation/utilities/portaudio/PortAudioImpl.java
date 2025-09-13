@@ -21,9 +21,9 @@
 
 package com.silong.foundation.utilities.portaudio;
 
+import static com.silong.foundation.utilities.nlloader.NativeLibLoader.getOSDetectedClassifier;
 import static com.silong.foundation.utilities.nlloader.NativeLibLoader.loadLibrary;
-import static com.silong.foundation.utilities.portaudio.Utils.free;
-import static com.silong.foundation.utilities.portaudio.Utils.getOSDetectedClassifier;
+import static com.silong.foundation.utilities.portaudio.Utils.*;
 import static com.silong.foundation.utilities.portaudio.generated.PortAudio.*;
 import static com.silong.foundation.utilities.portaudio.generated.PortAudio.Pa_GetErrorText;
 import static java.lang.foreign.MemorySegment.NULL;
@@ -46,9 +46,9 @@ import org.jctools.queues.SpscArrayQueue;
 @Slf4j
 class PortAudioImpl implements PortAudio {
 
-  private static final int QUEUE_CAPACITY;
+  private static final int DEFAULT_QUEUE_CAPACITY = 256;
 
-  private static final int FRAMES_PER_READ;
+  private static final int DEFAULT_FRAMES_PER_READ = 1024;
 
   static final PortAudioImpl INSTANCE = new PortAudioImpl();
 
@@ -59,8 +59,6 @@ class PortAudioImpl implements PortAudio {
   private final ResettableCountDownLatch latch = new ResettableCountDownLatch(2);
 
   static {
-    QUEUE_CAPACITY = Integer.parseInt(System.getProperty("audio.chunk.queue.capacity", "128"));
-    FRAMES_PER_READ = Integer.parseInt(System.getProperty("audio.frames.per.read", "1024"));
     loadLibrary("libportaudio", "native-libs/" + getOSDetectedClassifier());
   }
 
@@ -74,6 +72,34 @@ class PortAudioImpl implements PortAudio {
       int channels,
       Duration audioChunkDuration,
       AudioChunkProcessor processor) {
+    start(
+        sampleRate,
+        sampleFormat,
+        channels,
+        audioChunkDuration,
+        DEFAULT_FRAMES_PER_READ,
+        DEFAULT_QUEUE_CAPACITY,
+        processor);
+  }
+
+  @Override
+  public void start(
+      int sampleRate,
+      SampleFormat sampleFormat,
+      int channels,
+      Duration audioChunkDuration,
+      int framesPerRead,
+      int ringBufferSize,
+      AudioChunkProcessor processor) {
+    validateParameters(
+        sampleRate,
+        sampleFormat,
+        channels,
+        audioChunkDuration,
+        framesPerRead,
+        ringBufferSize,
+        processor);
+
     log.info(
         "sampleRate:{}, channels:{}, audioChunkDuration:{}.",
         sampleRate,
@@ -83,14 +109,15 @@ class PortAudioImpl implements PortAudio {
     // 重置资源
     isRunning.set(true);
     latch.reset();
-    audioChunkQueue = new SpscArrayQueue<>(QUEUE_CAPACITY);
+    audioChunkQueue = new SpscArrayQueue<>(ringBufferSize);
     int chunkSamples =
         calculateChunkSize(sampleRate, channels, (int) audioChunkDuration.toMillis());
+    Arena auto = Arena.ofAuto();
 
     // 启动录音线程
     new Thread(
             () -> {
-              log.info("Starting microphone recording ......");
+              log.info("Starting microphone recording......");
               MemorySegment streamPtr = NULL;
               int paNoError = paNoError();
               try (Arena arena = Arena.ofConfined()) {
@@ -115,7 +142,7 @@ class PortAudioImpl implements PortAudio {
                         inputParamsPtr, // MIC输入参数指针
                         NULL, // 无输出
                         sampleRate, // 采样率
-                        FRAMES_PER_READ, // 缓冲区大小
+                        framesPerRead, // 缓冲区大小
                         paClipOff(), // 不进行音频裁剪
                         NULL, // 无回调函数，阻塞模式
                         NULL // 无回调函数数据
@@ -133,12 +160,12 @@ class PortAudioImpl implements PortAudio {
 
                 log.info("Microphone recording started successfully.");
 
-                var readBuf = arena.allocate(C_FLOAT, (long) FRAMES_PER_READ * channels);
-                Arena auto = Arena.ofAuto();
+                var readBuf = arena.allocate(C_FLOAT, (long) framesPerRead * channels);
+
                 var chunkBuf = auto.allocate(C_FLOAT, chunkSamples);
                 int chunkOffset = 0;
                 while (isRunning.compareAndSet(true, true)) {
-                  errCode = Pa_ReadStream(streamPtr, readBuf, FRAMES_PER_READ);
+                  errCode = Pa_ReadStream(streamPtr, readBuf, framesPerRead);
                   if (errCode == paInputOverflowed()) {
                     // 丢帧情况，继续
                     log.warn(
@@ -147,20 +174,18 @@ class PortAudioImpl implements PortAudio {
                         paInputOverflowed(),
                         device,
                         sampleRate,
-                        FRAMES_PER_READ);
+                        framesPerRead);
                     continue;
                   } else if (errCode != paNoError) {
                     log.error("Read error: {}", getErrorMsg(errCode));
                     break;
                   }
 
-                  int got = FRAMES_PER_READ * channels;
+                  int got = framesPerRead * channels;
                   int cursor = 0;
                   while (cursor < got) {
                     int need = chunkSamples - chunkOffset;
                     int copy = Math.min(got - cursor, need);
-                    //                        memcpy(chunkBuf + chunkOffset, readBuf + cursor, copy
-                    // * sizeof(float));
 
                     MemorySegment.copy(
                         readBuf,
@@ -194,7 +219,7 @@ class PortAudioImpl implements PortAudio {
 
                 latch.countDown();
                 log.info("Microphone recording stopped.");
-              } catch (Exception e) {
+              } catch (Throwable e) {
                 log.error("Error occurred during audio recording: ", e);
               } finally {
                 if (!NULL.equals(streamPtr)) {

@@ -36,7 +36,6 @@ import java.lang.invoke.MethodHandle;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.SystemUtils;
 
 /**
  * 工具方法
@@ -52,37 +51,6 @@ class Utils {
   private static final MethodHandle FREE =
       LINKER.downcallHandle(
           LINKER.defaultLookup().find("free").orElseThrow(), FunctionDescriptor.ofVoid(ADDRESS));
-
-  /**
-   * 操作系统检测到的分类器
-   *
-   * @return 分类器字符串，如 linux-x86_64、windows-x86_64、osx-arm64 等
-   */
-  static String getOSDetectedClassifier() {
-    // 操作系统类型
-    String osType;
-    if (SystemUtils.IS_OS_LINUX) {
-      osType = "linux";
-    } else if (SystemUtils.IS_OS_WINDOWS) {
-      osType = "windows";
-    } else if (SystemUtils.IS_OS_MAC) {
-      osType = "osx";
-    } else {
-      throw new IllegalStateException("Unsupported OS: " + SystemUtils.OS_NAME);
-    }
-
-    // 系统架构（需手动映射标准化）
-    String arch =
-        switch (SystemUtils.OS_ARCH.toLowerCase()) {
-          case String s when (s.contains("amd64") || s.contains("x86_64")) -> "x86_64";
-          case String s when (s.contains("arm64") || s.contains("aarch64")) -> "arm64";
-          default ->
-              throw new IllegalStateException(
-                  "Unsupported OS-ARCH: " + SystemUtils.OS_ARCH.toLowerCase());
-        };
-
-    return osType + "-" + arch;
-  }
 
   static String whisperContextParams2String(MemorySegment params) {
     return String.format(

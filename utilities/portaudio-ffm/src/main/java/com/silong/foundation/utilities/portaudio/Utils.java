@@ -28,8 +28,8 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.time.Duration;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.SystemUtils;
 
 /**
  * 工具类
@@ -57,35 +57,39 @@ class Utils {
   /** 禁止实例化 */
   private Utils() {}
 
-  /**
-   * 操作系统检测到的分类器
-   *
-   * @return 分类器字符串，如 linux-x86_64、windows-x86_64、osx-arm64 等
-   */
-  static String getOSDetectedClassifier() {
-    // 操作系统类型
-    String osType;
-    if (SystemUtils.IS_OS_LINUX) {
-      osType = "linux";
-    } else if (SystemUtils.IS_OS_WINDOWS) {
-      osType = "windows";
-    } else if (SystemUtils.IS_OS_MAC) {
-      osType = "osx";
-    } else {
-      throw new IllegalStateException("Unsupported OS: " + SystemUtils.OS_NAME);
+  private static boolean isPowerOfTwo(int n) {
+    return n > 0 && (n & (n - 1)) == 0;
+  }
+
+  static void validateParameters(
+      int sampleRate,
+      SampleFormat sampleFormat,
+      int channels,
+      Duration audioChunkDuration,
+      int framesPerRead,
+      int ringBufferSize,
+      AudioChunkProcessor processor) {
+    if (sampleRate <= 0) {
+      throw new IllegalArgumentException("sampleRate must be greater than 0.");
     }
-
-    // 系统架构（需手动映射标准化）
-    String arch =
-        switch (SystemUtils.OS_ARCH.toLowerCase()) {
-          case String s when (s.contains("amd64") || s.contains("x86_64")) -> "x86_64";
-          case String s when (s.contains("arm64") || s.contains("aarch64")) -> "arm64";
-          default ->
-              throw new IllegalStateException(
-                  "Unsupported OS-ARCH: " + SystemUtils.OS_ARCH.toLowerCase());
-        };
-
-    return osType + "-" + arch;
+    if (sampleFormat == null) {
+      throw new IllegalArgumentException("sampleFormat must not be null.");
+    }
+    if (channels <= 0) {
+      throw new IllegalArgumentException("channels must be greater than 0");
+    }
+    if (audioChunkDuration == null) {
+      throw new IllegalArgumentException("audioChunkDuration must not be null.");
+    }
+    if (framesPerRead <= 0) {
+      throw new IllegalArgumentException("framesPerRead must be greater than 0.");
+    }
+    if (!isPowerOfTwo(ringBufferSize)) {
+      throw new IllegalArgumentException("ringBufferSize must be a power of two.");
+    }
+    if (processor == null) {
+      throw new IllegalArgumentException("processor must not be null.");
+    }
   }
 
   /**
