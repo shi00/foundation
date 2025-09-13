@@ -310,8 +310,8 @@
                 <artifactId>maven-source-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>*.json</exclude>
-                        <exclude>**/${native.libsdir.name}/*</exclude>
+                        <exclude>**/*.json</exclude>
+                        <exclude>**/${native.libsdir.name}/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -334,6 +334,10 @@
                         </goals>
                         <configuration>
                             <classifier>${os.detected.classifier}</classifier>
+                            <includes>
+                                <include>**/${os.detected.classifier}/*</include>
+                                <include>**/*.class</include>
+                            </includes>
                         </configuration>
                     </execution>
                 </executions>
