@@ -6,9 +6,8 @@ WORKDIR "c:\vcpkg"
 
 # update vcpkg
 RUN git config --global --add safe.directory C:/vcpkg \
-&& git pull
-RUN for /f "tokens=1 delims=-" %i in ('git describe --tags') do git checkout %i
-RUN @powershell ./bootstrap-vcpkg.bat
+&& git pull origin master \
+&& @powershell ./bootstrap-vcpkg.bat
 
 #install wget
 RUN choco install wget -Y \

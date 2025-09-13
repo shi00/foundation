@@ -23,11 +23,13 @@
  * 模块定义
  *
  * @author louis sin
- * @version 1.0.0
  * @since 2024-04-21 16:11
  */
 module xxhash.ffm {
   requires nativelib.loader;
 
   exports com.silong.foundation.utilities.xxhash;
+
+  opens com.silong.foundation.utilities.xxhash to
+      nativelib.loader;
 }
